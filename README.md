@@ -1,5 +1,4 @@
-# rentease
-
+# RentEase
 A new Flutter project.
 
 ## Getting Started
