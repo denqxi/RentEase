@@ -6,6 +6,8 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/listing_card_row.dart';
 import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
+import '../model/listing_detail.dart';
+import '../view/listing_detail_screen.dart';
 
 /// "Nearby homes" vertical list section on the home screen.
 class NearbySection extends StatelessWidget {
@@ -34,9 +36,15 @@ class NearbySection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           itemCount: listings.length,
           separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-          itemBuilder: (_, i) => ListingCardRow(
+          itemBuilder: (ctx, i) => ListingCardRow(
             listing: listings[i],
             onSavedToggle: () => cubit.toggleSaved(listings[i].id),
+            onTap: () => Navigator.of(ctx).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    ListingDetailScreen(detail: ListingDetail.sample),
+              ),
+            ),
           ),
         ),
       ],

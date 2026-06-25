@@ -12,15 +12,19 @@ class ListingCardLarge extends StatelessWidget {
   const ListingCardLarge({
     required this.listing,
     required this.onSavedToggle,
+    this.onTap,
     super.key,
   });
 
   final Listing listing;
   final VoidCallback onSavedToggle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       width: 220,
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -39,6 +43,7 @@ class ListingCardLarge extends StatelessWidget {
           _Photo(listing: listing, onSavedToggle: onSavedToggle),
           _Details(listing: listing),
         ],
+      ),
       ),
     );
   }

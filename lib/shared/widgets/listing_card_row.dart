@@ -12,15 +12,19 @@ class ListingCardRow extends StatelessWidget {
   const ListingCardRow({
     required this.listing,
     required this.onSavedToggle,
+    this.onTap,
     super.key,
   });
 
   final Listing listing;
   final VoidCallback onSavedToggle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.field),
@@ -41,6 +45,7 @@ class ListingCardRow extends StatelessWidget {
             Expanded(child: _Info(listing: listing)),
           ],
         ),
+      ),
       ),
     );
   }

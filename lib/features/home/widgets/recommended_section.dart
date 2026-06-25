@@ -6,6 +6,8 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
+import '../model/listing_detail.dart';
+import '../view/listing_detail_screen.dart';
 import 'listing_card_large.dart';
 
 /// "Recommended for you" horizontal scroll section.
@@ -30,9 +32,15 @@ class RecommendedSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             itemCount: listings.length,
             separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
-            itemBuilder: (_, i) => ListingCardLarge(
+            itemBuilder: (ctx, i) => ListingCardLarge(
               listing: listings[i],
               onSavedToggle: () => cubit.toggleSaved(listings[i].id),
+              onTap: () => Navigator.of(ctx).push(
+                MaterialPageRoute<void>(
+                  builder: (_) =>
+                      ListingDetailScreen(detail: ListingDetail.sample),
+                ),
+              ),
             ),
           ),
         ),

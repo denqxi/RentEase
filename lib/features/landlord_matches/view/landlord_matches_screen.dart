@@ -56,9 +56,15 @@ class LandlordMatchesScreen extends StatelessWidget {
               sliver: SliverList.separated(
                 itemCount: tenants.length,
                 separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-                itemBuilder: (_, i) => TenantCard(
+                itemBuilder: (ctx, i) => TenantCard(
                   tenant: tenants[i],
                   onSaveToggle: () => cubit.toggleSaved(tenants[i].id),
+                  onTap: () => Navigator.of(ctx).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          TenantDetailScreen(detail: TenantDetail.sample),
+                    ),
+                  ),
                 ),
               ),
             ),

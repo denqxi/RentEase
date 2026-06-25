@@ -7,6 +7,8 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/listing_card_row.dart';
 import '../../home/cubit/home_cubit.dart';
 import '../../home/model/listing.dart';
+import '../../home/model/listing_detail.dart';
+import '../../home/view/listing_detail_screen.dart';
 
 /// Saved tab — listings the user has hearted.
 class SavedScreen extends StatelessWidget {
@@ -58,9 +60,15 @@ class SavedScreen extends StatelessWidget {
                   itemCount: listings.length,
                   separatorBuilder: (_, _) =>
                       const SizedBox(height: AppSpacing.sm),
-                  itemBuilder: (_, i) => ListingCardRow(
+                  itemBuilder: (ctx, i) => ListingCardRow(
                     listing: listings[i],
                     onSavedToggle: () => cubit.toggleSaved(listings[i].id),
+                    onTap: () => Navigator.of(ctx).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            ListingDetailScreen(detail: ListingDetail.sample),
+                      ),
+                    ),
                   ),
                 ),
               ),

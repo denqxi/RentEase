@@ -6,6 +6,8 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
 import '../../landlord_home/model/tenant.dart';
+import '../../landlord_home/model/tenant_detail.dart';
+import '../../landlord_home/view/tenant_detail_screen.dart';
 import '../../landlord_home/widgets/tenant_card.dart';
 import '../../shell/cubit/shell_cubit.dart';
 
@@ -64,9 +66,15 @@ class LandlordSavedScreen extends StatelessWidget {
                 sliver: SliverList.separated(
                   itemCount: tenants.length,
                   separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-                  itemBuilder: (_, i) => TenantCard(
+                  itemBuilder: (ctx, i) => TenantCard(
                     tenant: tenants[i],
                     onSaveToggle: () => cubit.toggleSaved(tenants[i].id),
+                    onTap: () => Navigator.of(ctx).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            TenantDetailScreen(detail: TenantDetail.sample),
+                      ),
+                    ),
                   ),
                 ),
               ),
