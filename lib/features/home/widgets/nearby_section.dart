@@ -3,11 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/constants/mock_data.dart';
 import '../../../shared/widgets/listing_card_row.dart';
 import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
-import '../model/listing_detail.dart';
-import '../view/listing_detail_screen.dart';
+import '../view/property_detail_screen.dart';
 
 /// "Nearby homes" vertical list section on the home screen.
 class NearbySection extends StatelessWidget {
@@ -41,8 +41,9 @@ class NearbySection extends StatelessWidget {
             onSavedToggle: () => cubit.toggleSaved(listings[i].id),
             onTap: () => Navigator.of(ctx).push(
               MaterialPageRoute<void>(
-                builder: (_) =>
-                    ListingDetailScreen(detail: ListingDetail.sample),
+                builder: (_) => PropertyDetailScreen(
+                  property: MockData.properties[i % MockData.properties.length],
+                ),
               ),
             ),
           ),

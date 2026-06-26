@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../cubit/landlord_home_cubit.dart';
 import '../model/tenant.dart';
@@ -31,7 +32,7 @@ class CompatibleTenantsSection extends StatelessWidget {
             ),
             const Spacer(),
             GestureDetector(
-              onTap: () {},
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.findTenants),
               child: Text(
                 'See all',
                 style: AppTextStyles.link.copyWith(color: AppColors.accent),

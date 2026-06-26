@@ -5,9 +5,9 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../cubit/home_cubit.dart';
+import '../../../core/constants/mock_data.dart';
 import '../model/listing.dart';
-import '../model/listing_detail.dart';
-import '../view/listing_detail_screen.dart';
+import '../view/property_detail_screen.dart';
 import 'listing_card_large.dart';
 
 /// "Recommended for you" horizontal scroll section.
@@ -37,8 +37,9 @@ class RecommendedSection extends StatelessWidget {
               onSavedToggle: () => cubit.toggleSaved(listings[i].id),
               onTap: () => Navigator.of(ctx).push(
                 MaterialPageRoute<void>(
-                  builder: (_) =>
-                      ListingDetailScreen(detail: ListingDetail.sample),
+                  builder: (_) => PropertyDetailScreen(
+                    property: MockData.properties[i % MockData.properties.length],
+                  ),
                 ),
               ),
             ),

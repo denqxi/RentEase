@@ -9,6 +9,7 @@ import '../model/user_role.dart';
 import '../widgets/registration_app_bar.dart';
 import 'about_step_view.dart';
 import 'account_step_view.dart';
+import 'check_email_view.dart';
 import 'business_step_view.dart';
 import 'ideal_tenant_step_view.dart';
 import 'landlord_account_step_view.dart';
@@ -85,6 +86,7 @@ class RegistrationFlowScreen extends StatelessWidget {
     return switch (step) {
       RegistrationStep.role => RoleSelectionView(onSignIn: onSignIn),
       RegistrationStep.account => const AccountStepView(),
+      RegistrationStep.checkEmail => const CheckEmailView(),
       RegistrationStep.about => const AboutStepView(),
       RegistrationStep.preferences => const PreferencesStepView(),
       RegistrationStep.landlordAccount => const LandlordAccountStepView(),

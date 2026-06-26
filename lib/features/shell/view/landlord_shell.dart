@@ -53,8 +53,6 @@ class _LandlordShellView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tab = context.watch<ShellCubit>().state.tab;
-    final unreadCount =
-        context.select<ActivityCubit, int>((c) => c.state.unreadCount);
 
     return Scaffold(
       body: IndexedStack(
@@ -63,7 +61,6 @@ class _LandlordShellView extends StatelessWidget {
       ),
       bottomNavigationBar: _BottomNavBar(
         selectedIndex: tab.index,
-        unreadCount: unreadCount,
         onTap: (i) =>
             context.read<ShellCubit>().selectTab(ShellTab.values[i]),
       ),
@@ -74,12 +71,10 @@ class _LandlordShellView extends StatelessWidget {
 class _BottomNavBar extends StatelessWidget {
   const _BottomNavBar({
     required this.selectedIndex,
-    required this.unreadCount,
     required this.onTap,
   });
 
   final int selectedIndex;
-  final int unreadCount;
   final ValueChanged<int> onTap;
 
   @override
@@ -122,7 +117,6 @@ class _BottomNavBar extends StatelessWidget {
               _NavItemAlerts(
                 index: 3,
                 selectedIndex: selectedIndex,
-                unreadCount: unreadCount,
                 onTap: onTap,
               ),
               _NavItem(
@@ -171,7 +165,7 @@ class _NavItem extends StatelessWidget {
           children: <Widget>[
             Icon(
               _selected ? icon : outlinedIcon,
-              color: _selected ? AppColors.accent : AppColors.textSecondary,
+              color: _selected ? AppColors.ownerPrimary : AppColors.textSecondary,
               size: 24,
             ),
             const SizedBox(height: 2),
@@ -180,7 +174,7 @@ class _NavItem extends StatelessWidget {
               style: AppTextStyles.caption.copyWith(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: _selected ? AppColors.accent : AppColors.textSecondary,
+                color: _selected ? AppColors.ownerPrimary : AppColors.textSecondary,
               ),
             ),
           ],
@@ -194,13 +188,11 @@ class _NavItemAlerts extends StatelessWidget {
   const _NavItemAlerts({
     required this.index,
     required this.selectedIndex,
-    required this.unreadCount,
     required this.onTap,
   });
 
   final int index;
   final int selectedIndex;
-  final int unreadCount;
   final ValueChanged<int> onTap;
 
   bool get _selected => index == selectedIndex;
@@ -214,31 +206,12 @@ class _NavItemAlerts extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Stack(
-              clipBehavior: Clip.none,
-              children: <Widget>[
-                Icon(
-                  _selected
-                      ? Icons.notifications_rounded
-                      : Icons.notifications_outlined,
-                  color:
-                      _selected ? AppColors.accent : AppColors.textSecondary,
-                  size: 24,
-                ),
-                if (unreadCount > 0)
-                  Positioned(
-                    top: -2,
-                    right: -4,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: AppColors.destructive,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
+            Icon(
+              _selected
+                  ? Icons.notifications_rounded
+                  : Icons.notifications_outlined,
+              color: _selected ? AppColors.ownerPrimary : AppColors.textSecondary,
+              size: 24,
             ),
             const SizedBox(height: 2),
             Text(
@@ -246,7 +219,7 @@ class _NavItemAlerts extends StatelessWidget {
               style: AppTextStyles.caption.copyWith(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: _selected ? AppColors.accent : AppColors.textSecondary,
+                color: _selected ? AppColors.ownerPrimary : AppColors.textSecondary,
               ),
             ),
           ],

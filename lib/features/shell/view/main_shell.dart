@@ -5,18 +5,15 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/registration/model/user_role.dart';
-import '../../activity/cubit/activity_cubit.dart';
-import '../../activity/view/activity_screen.dart';
 import '../../home/cubit/home_cubit.dart';
 import '../../home/view/home_screen.dart';
-import '../../matches/view/matches_screen.dart';
+import '../../home/view/search_screen.dart';
+import '../../inquiry/view/tenant_inquiries_screen.dart';
 import '../../profile/cubit/profile_cubit.dart';
 import '../../profile/view/profile_screen.dart';
-import '../../saved/view/saved_screen.dart';
 import '../cubit/shell_cubit.dart';
 
-/// Root scaffold of the main app: provides all feature cubits and manages
-/// the bottom navigation between five tabs.
+/// Root scaffold of the tenant app: four tabs — Home, Search, Inquiries, Profile.
 class MainShell extends StatelessWidget {
   const MainShell({super.key});
 
@@ -25,7 +22,6 @@ class MainShell extends StatelessWidget {
     return MultiBlocProvider(
       providers: <BlocProvider>[
         BlocProvider<HomeCubit>(create: (_) => HomeCubit()),
-        BlocProvider<ActivityCubit>(create: (_) => ActivityCubit()),
         BlocProvider<ProfileCubit>(
           create: (_) => ProfileCubit(userRole: UserRole.tenant),
         ),
@@ -41,17 +37,14 @@ class _ShellView extends StatelessWidget {
 
   static const List<Widget> _screens = <Widget>[
     HomeScreen(),
-    MatchesScreen(),
-    SavedScreen(),
-    ActivityScreen(),
+    SearchScreen(),
+    TenantInquiriesScreen(),
     ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     final tab = context.watch<ShellCubit>().state.tab;
-    final unreadCount =
-        context.select<ActivityCubit, int>((c) => c.state.unreadCount);
 
     return Scaffold(
       body: IndexedStack(
@@ -60,7 +53,6 @@ class _ShellView extends StatelessWidget {
       ),
       bottomNavigationBar: _BottomNavBar(
         selectedIndex: tab.index,
-        unreadCount: unreadCount,
         onTap: (i) =>
             context.read<ShellCubit>().selectTab(ShellTab.values[i]),
       ),
@@ -71,12 +63,10 @@ class _ShellView extends StatelessWidget {
 class _BottomNavBar extends StatelessWidget {
   const _BottomNavBar({
     required this.selectedIndex,
-    required this.unreadCount,
     required this.onTap,
   });
 
   final int selectedIndex;
-  final int unreadCount;
   final ValueChanged<int> onTap;
 
   @override
@@ -102,28 +92,22 @@ class _BottomNavBar extends StatelessWidget {
               ),
               _NavItem(
                 index: 1,
-                icon: Icons.favorite_rounded,
-                outlinedIcon: Icons.favorite_border,
-                label: 'Matches',
+                icon: Icons.search_rounded,
+                outlinedIcon: Icons.search_outlined,
+                label: 'Search',
                 selectedIndex: selectedIndex,
                 onTap: onTap,
               ),
               _NavItem(
                 index: 2,
-                icon: Icons.bookmark_rounded,
-                outlinedIcon: Icons.bookmark_border,
-                label: 'Saved',
+                icon: Icons.chat_bubble_rounded,
+                outlinedIcon: Icons.chat_bubble_outline_rounded,
+                label: 'Inquiries',
                 selectedIndex: selectedIndex,
-                onTap: onTap,
-              ),
-              _NavItemAlerts(
-                index: 3,
-                selectedIndex: selectedIndex,
-                unreadCount: unreadCount,
                 onTap: onTap,
               ),
               _NavItem(
-                index: 4,
+                index: 3,
                 icon: Icons.person_rounded,
                 outlinedIcon: Icons.person_outlined,
                 label: 'Profile',
@@ -168,7 +152,7 @@ class _NavItem extends StatelessWidget {
           children: <Widget>[
             Icon(
               _selected ? icon : outlinedIcon,
-              color: _selected ? AppColors.accent : AppColors.textSecondary,
+              color: _selected ? AppColors.primaryMid : AppColors.textSecondary,
               size: 24,
             ),
             const SizedBox(height: 2),
@@ -177,73 +161,7 @@ class _NavItem extends StatelessWidget {
               style: AppTextStyles.caption.copyWith(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: _selected ? AppColors.accent : AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItemAlerts extends StatelessWidget {
-  const _NavItemAlerts({
-    required this.index,
-    required this.selectedIndex,
-    required this.unreadCount,
-    required this.onTap,
-  });
-
-  final int index;
-  final int selectedIndex;
-  final int unreadCount;
-  final ValueChanged<int> onTap;
-
-  bool get _selected => index == selectedIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => onTap(index),
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Stack(
-              clipBehavior: Clip.none,
-              children: <Widget>[
-                Icon(
-                  _selected
-                      ? Icons.notifications_rounded
-                      : Icons.notifications_outlined,
-                  color:
-                      _selected ? AppColors.accent : AppColors.textSecondary,
-                  size: 24,
-                ),
-                if (unreadCount > 0)
-                  Positioned(
-                    top: -2,
-                    right: -4,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: AppColors.destructive,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Alerts',
-              style: AppTextStyles.caption.copyWith(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: _selected ? AppColors.accent : AppColors.textSecondary,
+                color: _selected ? AppColors.primaryMid : AppColors.textSecondary,
               ),
             ),
           ],
