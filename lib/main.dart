@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import 'core/constants/app_colors.dart';
-import 'core/router/app_router.dart';
-import 'features/auth/view/sign_in_entry.dart';
+import 'features/auth/presentation/screens/auth_screen.dart';
 import 'features/onboarding/view/onboarding_screen.dart';
+import 'features/registration/model/user_role.dart';
+import 'features/registration/view/registration_flow_screen.dart';
+import 'features/shell/view/landlord_shell.dart';
+import 'features/shell/view/main_shell.dart';
 
 void main() {
   runApp(const RentEaseApp());
@@ -18,7 +21,6 @@ class RentEaseApp extends StatelessWidget {
     return MaterialApp(
       title: 'RentEase',
       debugShowCheckedModeBanner: false,
-      onGenerateRoute: onGenerateRoute,
       theme: ThemeData(
         fontFamily: 'Inter',
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
@@ -27,7 +29,7 @@ class RentEaseApp extends StatelessWidget {
       // Builder gives a context below the Navigator so onboarding can route.
       home: Builder(
         builder: (context) => OnboardingScreen(
-          onComplete: () => _push(context, const SignInEntry()),
+          onComplete: () => _push(context, const _SignInEntry()),
         ),
       ),
     );
@@ -40,3 +42,32 @@ class RentEaseApp extends StatelessWidget {
   }
 }
 
+/// Wires [SignInScreen] so "Create an account" opens registration and both
+/// successful paths forward to [MainShell].
+class _SignInEntry extends StatelessWidget {
+  const _SignInEntry();
+
+  @override
+  Widget build(BuildContext context) {
+    return SignInScreen(
+      onCreateAccount: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => RegistrationFlowScreen(
+            onComplete: (role) => _pushShell(context, role),
+            onSignIn: () => Navigator.of(context).pop(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _pushShell(BuildContext context, UserRole role) {
+    final shell = role == UserRole.landlord
+        ? const LandlordShell()
+        : const MainShell();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => shell),
+      (route) => false,
+    );
+  }
+}

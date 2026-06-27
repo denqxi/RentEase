@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../shell/cubit/shell_cubit.dart';
 
 /// Search field + dark filter button row at the top of the home screen.
 class HomeSearchBar extends StatelessWidget {
@@ -40,8 +38,6 @@ class _SearchField extends StatelessWidget {
       ),
       child: TextField(
         onChanged: onChanged,
-        readOnly: true,
-        onTap: () => context.read<ShellCubit>().selectTab(ShellTab.search),
         style: AppTextStyles.field,
         decoration: InputDecoration(
           hintText: 'Search homes, areas...',

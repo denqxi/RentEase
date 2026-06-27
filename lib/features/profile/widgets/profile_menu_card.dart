@@ -9,17 +9,11 @@ class ProfileMenuCard extends StatelessWidget {
   const ProfileMenuCard({
     required this.darkMode,
     required this.onDarkModeToggle,
-    this.onEditProfile,
-    this.onEditPreferences,
-    this.onLogOut,
     super.key,
   });
 
   final bool darkMode;
   final VoidCallback onDarkModeToggle;
-  final VoidCallback? onEditProfile;
-  final VoidCallback? onEditPreferences;
-  final VoidCallback? onLogOut;
 
   @override
   Widget build(BuildContext context) {
@@ -40,13 +34,13 @@ class ProfileMenuCard extends StatelessWidget {
           _MenuRow(
             icon: Icons.person_outline,
             label: 'Edit profile',
-            onTap: onEditProfile ?? () {},
+            onTap: () {},
           ),
           const _Divider(),
           _MenuRow(
             icon: Icons.tune_rounded,
             label: 'Edit preferences',
-            onTap: onEditPreferences ?? () {},
+            onTap: () {},
           ),
           const _Divider(),
           _MenuRow(
@@ -57,7 +51,7 @@ class ProfileMenuCard extends StatelessWidget {
           const _Divider(),
           _DarkModeRow(value: darkMode, onToggle: onDarkModeToggle),
           const _Divider(),
-          _LogOutRow(onTap: onLogOut ?? () {}),
+          _LogOutRow(onTap: () {}),
         ],
       ),
     );

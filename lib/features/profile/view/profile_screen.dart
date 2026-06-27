@@ -3,10 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../features/registration/model/user_role.dart';
-import '../../../features/auth/view/sign_in_entry.dart';
 import '../cubit/profile_cubit.dart';
 import '../widgets/profile_menu_card.dart';
 
@@ -42,16 +39,6 @@ class ProfileScreen extends StatelessWidget {
               ProfileMenuCard(
                 darkMode: state.darkMode,
                 onDarkModeToggle: cubit.toggleDarkMode,
-                onEditProfile: state.userRole == UserRole.landlord
-                    ? () => Navigator.of(context).pushNamed(AppRoutes.ownerProfile)
-                    : () => Navigator.of(context).pushNamed(AppRoutes.tenantProfile),
-                onEditPreferences: state.userRole == UserRole.landlord
-                    ? () => Navigator.of(context).pushNamed(AppRoutes.ownerTopsis)
-                    : () => Navigator.of(context).pushNamed(AppRoutes.editConstraints),
-                onLogOut: () => Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute<void>(builder: (_) => const SignInEntry()),
-                  (route) => false,
-                ),
               ),
               const SizedBox(height: AppSpacing.xl),
               Text(
