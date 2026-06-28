@@ -58,7 +58,7 @@ class _OnboardingViewState extends State<_OnboardingView> {
     final cubit = context.read<OnboardingCubit>();
 
     return Scaffold(
-      backgroundColor: AppColors.ink,
+      backgroundColor: context.appColors.ink,
       body: BlocListener<OnboardingCubit, OnboardingState>(
         // When the cubit advances the page (e.g. via "Next" or "Skip"),
         // drive the PageController so the swipe and the buttons stay in sync.

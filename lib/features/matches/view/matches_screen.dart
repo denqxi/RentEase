@@ -21,7 +21,7 @@ class MatchesScreen extends StatelessWidget {
     final cubit = context.read<HomeCubit>();
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.appColors.surface,
       body: SafeArea(
         child: CustomScrollView(
           slivers: <Widget>[
@@ -36,11 +36,11 @@ class MatchesScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text('Matches', style: AppTextStyles.title),
-                    const SizedBox(height: 4),
+                    Text('Matches', style: AppTextStyles.title(context)),
+                    SizedBox(height: 4),
                     Text(
                       'Homes sorted by how well they match you',
-                      style: AppTextStyles.body,
+                      style: AppTextStyles.body(context),
                     ),
                   ],
                 ),
@@ -51,7 +51,7 @@ class MatchesScreen extends StatelessWidget {
               sliver: SliverList.separated(
                 itemCount: listings.length,
                 separatorBuilder: (_, _) =>
-                    const SizedBox(height: AppSpacing.sm),
+                    SizedBox(height: AppSpacing.sm),
                 itemBuilder: (ctx, i) => ListingCardRow(
                   listing: listings[i],
                   onSavedToggle: () => cubit.toggleSaved(listings[i].id),

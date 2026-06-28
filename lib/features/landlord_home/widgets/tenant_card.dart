@@ -22,7 +22,7 @@ class TenantCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.card),
         boxShadow: <BoxShadow>[
           BoxShadow(
@@ -41,11 +41,11 @@ class TenantCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               _TenantAvatar(tenant: tenant),
-              const SizedBox(width: AppSpacing.md),
+              SizedBox(width: AppSpacing.md),
               Expanded(child: _TenantInfo(tenant: tenant)),
-              const Icon(
+              Icon(
                 Icons.chevron_right,
-                color: AppColors.textSecondary,
+                color: context.appColors.textSecondary,
                 size: 20,
               ),
             ],
@@ -86,7 +86,7 @@ class _TenantAvatar extends StatelessWidget {
               end: Alignment.bottomRight,
             ),
           ),
-          child: const Icon(Icons.person, color: AppColors.onInk, size: 28),
+          child: Icon(Icons.person, color: AppColors.onInk, size: 28),
         ),
         Positioned(
           bottom: -4,
@@ -120,14 +120,14 @@ class _MatchPill extends StatelessWidget {
             height: 5,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 3),
+          SizedBox(width: 3),
           Text(
             '$percent%',
-            style: const TextStyle(
+            style: TextStyle(
               color: AppColors.onInk,
               fontSize: 10,
               fontWeight: FontWeight.w700,
-              fontFamily: 'Inter',
+              fontFamily: 'DM Sans',
             ),
           ),
         ],
@@ -150,23 +150,23 @@ class _TenantInfo extends StatelessWidget {
           children: <Widget>[
             Text(
               tenant.name,
-              style: AppTextStyles.label.copyWith(
+              style: AppTextStyles.label(context).copyWith(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
             ),
             if (tenant.isVerified) ...<Widget>[
-              const SizedBox(width: 4),
-              const Icon(Icons.verified_rounded, color: Color(0xFF3B82F6), size: 15),
+              SizedBox(width: 4),
+              Icon(Icons.verified_rounded, color: Color(0xFF3B82F6), size: 15),
             ],
           ],
         ),
-        const SizedBox(height: 2),
+        SizedBox(height: 2),
         Text(
-          '${tenant.occupation} · ${tenant.incomeRange}',
-          style: AppTextStyles.caption.copyWith(fontSize: 12),
+          '${tenant.occupation} Â· ${tenant.incomeRange}',
+          style: AppTextStyles.caption(context).copyWith(fontSize: 12),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: AppSpacing.sm),
         Wrap(
           spacing: AppSpacing.xs,
           runSpacing: AppSpacing.xs,
@@ -189,16 +189,16 @@ class _TagChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.fieldFill,
+        color: context.appColors.fieldFill,
         borderRadius: BorderRadius.circular(AppRadii.chip),
-        border: Border.all(color: AppColors.fieldBorder),
+        border: Border.all(color: context.appColors.fieldBorder),
       ),
       child: Text(
         label,
-        style: AppTextStyles.caption.copyWith(
+        style: AppTextStyles.caption(context).copyWith(
           fontSize: 11,
           fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
+          color: context.appColors.textPrimary,
         ),
       ),
     );

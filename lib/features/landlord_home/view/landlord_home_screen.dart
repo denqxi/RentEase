@@ -21,7 +21,7 @@ class LandlordHomeScreen extends StatelessWidget {
         .select<LandlordHomeCubit, LandlordProperty>((c) => c.state.property);
 
     return Scaffold(
-      backgroundColor: AppColors.fieldFill,
+      backgroundColor: context.appColors.fieldFill,
       body: SafeArea(
         child: CustomScrollView(
           slivers: <Widget>[
@@ -37,9 +37,9 @@ class LandlordHomeScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     const LandlordHeader(),
-                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
                     const LandlordSearchBar(),
-                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
                     PropertyStatsCard(property: property),
                   ],
                 ),

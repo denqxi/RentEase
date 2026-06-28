@@ -38,26 +38,26 @@ class MatchScoreCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               _CircleGauge(percent: matchPercent),
-              const SizedBox(width: AppSpacing.md),
+              SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
                       label,
-                      style: AppTextStyles.label.copyWith(
+                      style: AppTextStyles.label(context).copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(summary, style: AppTextStyles.caption.copyWith(fontSize: 12)),
+                    SizedBox(height: 4),
+                    Text(summary, style: AppTextStyles.caption(context).copyWith(fontSize: 12)),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.md),
           ...reasons.map((r) => _ReasonRow(label: r.$1, met: r.$2)),
         ],
       ),
@@ -76,15 +76,15 @@ class _CircleGauge extends StatelessWidget {
       width: 72,
       height: 72,
       child: CustomPaint(
-        painter: _GaugePainter(percent: percent),
+        painter: _GaugePainter(percent: percent, trackColor: context.appColors.fieldBorder),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
                 '$percent%',
-                style: const TextStyle(
-                  fontFamily: 'Inter',
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                   color: AppColors.accent,
@@ -92,11 +92,11 @@ class _CircleGauge extends StatelessWidget {
               ),
               Text(
                 'MATCH',
-                style: const TextStyle(
-                  fontFamily: 'Inter',
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
                   fontSize: 8,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+                  color: context.appColors.textSecondary,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -109,9 +109,10 @@ class _CircleGauge extends StatelessWidget {
 }
 
 class _GaugePainter extends CustomPainter {
-  const _GaugePainter({required this.percent});
+  const _GaugePainter({required this.percent, required this.trackColor});
 
   final int percent;
+  final Color trackColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -121,7 +122,7 @@ class _GaugePainter extends CustomPainter {
     const startAngle = -math.pi / 2;
 
     final trackPaint = Paint()
-      ..color = AppColors.fieldBorder
+      ..color = trackColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
@@ -143,7 +144,7 @@ class _GaugePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_GaugePainter old) => old.percent != percent;
+  bool shouldRepaint(_GaugePainter old) => old.percent != percent || old.trackColor != trackColor;
 }
 
 class _ReasonRow extends StatelessWidget {
@@ -162,7 +163,7 @@ class _ReasonRow extends StatelessWidget {
             width: 20,
             height: 20,
             decoration: BoxDecoration(
-              color: met ? AppColors.accent : AppColors.textSecondary,
+              color: met ? AppColors.accent : context.appColors.textSecondary,
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -171,13 +172,13 @@ class _ReasonRow extends StatelessWidget {
               size: 12,
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               label,
-              style: AppTextStyles.caption.copyWith(
+              style: AppTextStyles.caption(context).copyWith(
                 fontSize: 13,
-                color: met ? AppColors.textPrimary : AppColors.textSecondary,
+                color: met ? context.appColors.textPrimary : context.appColors.textSecondary,
               ),
             ),
           ),

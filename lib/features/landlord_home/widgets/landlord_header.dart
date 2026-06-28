@@ -19,11 +19,11 @@ class LandlordHeader extends StatelessWidget {
             children: <Widget>[
               Text(
                 'Welcome back,',
-                style: AppTextStyles.caption.copyWith(fontSize: 14),
+                style: AppTextStyles.caption(context).copyWith(fontSize: 14),
               ),
               Text(
                 name,
-                style: AppTextStyles.title.copyWith(fontSize: 22),
+                style: AppTextStyles.title(context).copyWith(fontSize: 22),
               ),
             ],
           ),
@@ -42,7 +42,7 @@ class _LandlordAvatar extends StatelessWidget {
     return Container(
       width: 44,
       height: 44,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
           colors: <Color>[Color(0xFF2C3E6B), Color(0xFF0D1B3A)],
@@ -50,7 +50,7 @@ class _LandlordAvatar extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
       ),
-      child: const Icon(Icons.person, color: AppColors.onInk, size: 24),
+      child: Icon(Icons.person, color: AppColors.onInk, size: 24),
     );
   }
 }

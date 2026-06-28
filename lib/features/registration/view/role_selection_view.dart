@@ -32,32 +32,32 @@ class RoleSelectionView extends StatelessWidget {
             subtitle: 'How do you want to use RentEase? You can change this '
                 'later.',
           ),
-          const SizedBox(height: AppSpacing.lg),
+          SizedBox(height: AppSpacing.lg),
           for (final role in UserRole.values) ...<Widget>[
             RoleOptionCard(
               role: role,
               selected: state.data.role == role,
               onTap: () => cubit.selectRole(role),
             ),
-            const SizedBox(height: AppSpacing.md),
+            SizedBox(height: AppSpacing.md),
           ],
           const Spacer(),
           AppPrimaryButton(
             label: 'Continue',
             onPressed: state.canContinueFromRole ? cubit.next : null,
           ),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.md),
           Center(
             child: GestureDetector(
               onTap: onSignIn,
               child: Text.rich(
                 TextSpan(
-                  style: AppTextStyles.link,
+                  style: AppTextStyles.link(context),
                   children: <InlineSpan>[
                     const TextSpan(text: 'Already have an account? '),
                     TextSpan(
                       text: 'Sign in',
-                      style: AppTextStyles.link.copyWith(
+                      style: AppTextStyles.link(context).copyWith(
                         color: AppColors.accent,
                         fontWeight: FontWeight.w700,
                       ),

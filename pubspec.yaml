@@ -39,6 +39,8 @@ dependencies:
   flutter_bloc: ^9.0.0
   # Value equality for Cubit state classes.
   equatable: ^2.0.7
+  # Google Fonts — DM Sans used app-wide.
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:

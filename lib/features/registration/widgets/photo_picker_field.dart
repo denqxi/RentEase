@@ -17,9 +17,9 @@ class PhotoPickerField extends StatelessWidget {
       children: <Widget>[
         Text(
           'Photos',
-          style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.label(context).copyWith(color: context.appColors.textSecondary),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: AppSpacing.sm),
         const _AddTile(),
       ],
     );
@@ -37,23 +37,23 @@ class _AddTile extends StatelessWidget {
         width: 72,
         height: 72,
         decoration: BoxDecoration(
-          color: AppColors.fieldFill,
+          color: context.appColors.fieldFill,
           borderRadius: BorderRadius.circular(AppRadii.field),
-          border: Border.all(color: AppColors.fieldBorder),
+          border: Border.all(color: context.appColors.fieldBorder),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Icon(
+            Icon(
               Icons.camera_alt_outlined,
-              color: AppColors.textSecondary,
+              color: context.appColors.textSecondary,
               size: 24,
             ),
-            const SizedBox(height: AppSpacing.xs),
+            SizedBox(height: AppSpacing.xs),
             Text(
               'Add',
-              style: AppTextStyles.label.copyWith(
-                color: AppColors.textSecondary,
+              style: AppTextStyles.label(context).copyWith(
+                color: context.appColors.textSecondary,
                 fontSize: 11,
               ),
             ),

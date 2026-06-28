@@ -21,7 +21,7 @@ class RoleOptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surface,
+      color: context.appColors.surface,
       borderRadius: BorderRadius.circular(AppRadii.card),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadii.card),
@@ -31,7 +31,7 @@ class RoleOptionCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadii.card),
             border: Border.all(
-              color: selected ? AppColors.accent : AppColors.fieldBorder,
+              color: selected ? AppColors.accent : context.appColors.fieldBorder,
               width: selected ? 2 : 1,
             ),
           ),
@@ -42,7 +42,7 @@ class RoleOptionCard extends StatelessWidget {
                 backgroundColor: AppColors.accentSoft,
                 child: Icon(role.icon, color: AppColors.accent),
               ),
-              const SizedBox(width: AppSpacing.md),
+              SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,19 +50,19 @@ class RoleOptionCard extends StatelessWidget {
                     Row(
                       children: <Widget>[
                         Icon(role.icon, size: 18, color: AppColors.accent),
-                        const SizedBox(width: AppSpacing.xs),
+                        SizedBox(width: AppSpacing.xs),
                         Text(
                           role.label,
-                          style: AppTextStyles.label.copyWith(fontSize: 17),
+                          style: AppTextStyles.label(context).copyWith(fontSize: 17),
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(role.description, style: AppTextStyles.body),
+                    SizedBox(height: AppSpacing.xs),
+                    Text(role.description, style: AppTextStyles.body(context)),
                   ],
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
+              SizedBox(width: AppSpacing.sm),
               _RadioDot(selected: selected),
             ],
           ),
@@ -85,12 +85,12 @@ class _RadioDot extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: selected ? AppColors.accent : AppColors.fieldBorder,
+          color: selected ? AppColors.accent : context.appColors.fieldBorder,
           width: 2,
         ),
       ),
       child: selected
-          ? const Center(
+          ? Center(
               child: CircleAvatar(radius: 5, backgroundColor: AppColors.accent),
             )
           : null,

@@ -34,9 +34,9 @@ class SuccessView extends StatelessWidget {
         children: <Widget>[
           const Spacer(),
           const _SuccessBadge(),
-          const SizedBox(height: AppSpacing.lg),
-          Text("You're all set!", style: AppTextStyles.heading),
-          const SizedBox(height: AppSpacing.sm),
+          SizedBox(height: AppSpacing.lg),
+          Text("You're all set!", style: AppTextStyles.heading(context)),
+          SizedBox(height: AppSpacing.sm),
           Text(
             isLandlord
                 ? 'Your listing is live. We found tenants that fit your '
@@ -44,9 +44,9 @@ class SuccessView extends StatelessWidget {
                 : 'Your tenant profile is ready. Here are homes matched to '
                     'your preferences.',
             textAlign: TextAlign.center,
-            style: AppTextStyles.body,
+            style: AppTextStyles.body(context),
           ),
-          const SizedBox(height: AppSpacing.lg),
+          SizedBox(height: AppSpacing.lg),
           MatchCard(
             match: isLandlord
                 ? MatchResult.landlordSample
@@ -54,13 +54,13 @@ class SuccessView extends StatelessWidget {
           ),
           const Spacer(),
           AppPrimaryButton(label: 'Explore RentEase', onPressed: onExplore),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.md),
           TextButton(
             onPressed: cubit.restart,
             child: Text(
               'Back to start',
-              style: AppTextStyles.link.copyWith(
-                color: AppColors.textPrimary,
+              style: AppTextStyles.link(context).copyWith(
+                color: context.appColors.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -80,18 +80,18 @@ class _SuccessBadge extends StatelessWidget {
       width: 92,
       height: 92,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.accentSoft,
         shape: BoxShape.circle,
       ),
       child: Container(
         width: 64,
         height: 64,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.accent,
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.check, color: AppColors.onInk, size: 32),
+        child: Icon(Icons.check, color: AppColors.onInk, size: 32),
       ),
     );
   }

@@ -22,7 +22,7 @@ class FormStepLayout extends StatelessWidget {
   final String title;
   final String subtitle;
   final String buttonLabel;
-  final VoidCallback onContinue;
+  final VoidCallback? onContinue;
 
   /// Form controls for this step; spaced automatically.
   final List<Widget> fields;
@@ -40,7 +40,7 @@ class FormStepLayout extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           StepHeader(title: title, subtitle: subtitle),
-          const SizedBox(height: AppSpacing.lg),
+          SizedBox(height: AppSpacing.lg),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
@@ -48,13 +48,13 @@ class FormStepLayout extends StatelessWidget {
                 children: <Widget>[
                   for (final Widget field in fields) ...<Widget>[
                     field,
-                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
                   ],
                 ],
               ),
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          SizedBox(height: AppSpacing.sm),
           AppPrimaryButton(label: buttonLabel, onPressed: onContinue),
         ],
       ),

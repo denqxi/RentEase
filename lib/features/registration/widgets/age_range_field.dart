@@ -22,9 +22,9 @@ class AgeRangeField extends StatelessWidget {
       children: <Widget>[
         Text(
           'Preferred age range',
-          style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.label(context).copyWith(color: context.appColors.textSecondary),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: AppSpacing.sm),
         Row(
           children: <Widget>[
             Expanded(
@@ -34,7 +34,7 @@ class AgeRangeField extends StatelessWidget {
                 onChanged: onMinChanged,
               ),
             ),
-            const SizedBox(width: AppSpacing.md),
+            SizedBox(width: AppSpacing.md),
             Expanded(
               child: _AgeInput(
                 label: 'Max age',
@@ -65,22 +65,22 @@ class _AgeInput extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(label, style: AppTextStyles.label),
-        const SizedBox(height: AppSpacing.sm),
+        Text(label, style: AppTextStyles.label(context)),
+        SizedBox(height: AppSpacing.sm),
         TextField(
           onChanged: onChanged,
           keyboardType: TextInputType.number,
-          style: AppTextStyles.field,
+          style: AppTextStyles.field(context),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppTextStyles.field.copyWith(color: AppColors.hint),
+            hintStyle: AppTextStyles.field(context).copyWith(color: context.appColors.hint),
             filled: true,
-            fillColor: AppColors.fieldFill,
+            fillColor: context.appColors.fieldFill,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
               vertical: AppSpacing.md,
             ),
-            enabledBorder: _border(AppColors.fieldBorder),
+            enabledBorder: _border(context.appColors.fieldBorder),
             focusedBorder: _border(AppColors.accent),
           ),
         ),

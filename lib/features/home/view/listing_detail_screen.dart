@@ -34,7 +34,7 @@ class _ListingDetailView extends StatelessWidget {
     final cubit = context.read<ListingDetailCubit>();
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.appColors.surface,
       body: Stack(
         children: <Widget>[
           CustomScrollView(
@@ -50,11 +50,11 @@ class _ListingDetailView extends StatelessWidget {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate(<Widget>[
                     _TitleRow(detail: detail),
-                    const SizedBox(height: AppSpacing.xs),
+                    SizedBox(height: AppSpacing.xs),
                     _LocationRow(location: detail.location),
-                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
                     _SpecsRow(detail: detail),
-                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
                     MatchScoreCard(
                       matchPercent: detail.matchPercent,
                       label: detail.matchLabel,
@@ -63,15 +63,15 @@ class _ListingDetailView extends StatelessWidget {
                           .map((r) => (r.label, r.met))
                           .toList(),
                     ),
-                    const SizedBox(height: AppSpacing.lg),
+                    SizedBox(height: AppSpacing.lg),
                     _SectionTitle(title: 'About this home'),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(detail.description, style: AppTextStyles.body),
-                    const SizedBox(height: AppSpacing.lg),
+                    SizedBox(height: AppSpacing.sm),
+                    Text(detail.description, style: AppTextStyles.body(context)),
+                    SizedBox(height: AppSpacing.lg),
                     _SectionTitle(title: 'Amenities'),
-                    const SizedBox(height: AppSpacing.sm),
+                    SizedBox(height: AppSpacing.sm),
                     _AmenitiesWrap(amenities: detail.amenities),
-                    const SizedBox(height: AppSpacing.lg),
+                    SizedBox(height: AppSpacing.lg),
                     _LandlordRow(detail: detail),
                   ]),
                 ),
@@ -123,7 +123,7 @@ class _PhotoHeader extends StatelessWidget {
                     icon: detail.isSaved
                         ? Icons.favorite_rounded
                         : Icons.favorite_border,
-                    iconColor: detail.isSaved ? AppColors.destructive : AppColors.textPrimary,
+                    iconColor: detail.isSaved ? AppColors.destructive : context.appColors.textPrimary,
                     onTap: onSaveToggle,
                   ),
                 ],
@@ -164,7 +164,7 @@ class _CircleButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.appColors.surface,
           shape: BoxShape.circle,
           boxShadow: <BoxShadow>[
             BoxShadow(
@@ -176,7 +176,7 @@ class _CircleButton extends StatelessWidget {
         child: Icon(
           icon,
           size: 18,
-          color: iconColor ?? AppColors.textPrimary,
+          color: iconColor ?? context.appColors.textPrimary,
         ),
       ),
     );
@@ -195,7 +195,7 @@ class _DotIndicator extends StatelessWidget {
       height: 6,
       margin: const EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
-        color: active ? AppColors.surface : AppColors.surface.withValues(alpha: 0.5),
+        color: active ? context.appColors.surface : context.appColors.surface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(3),
       ),
     );
@@ -213,22 +213,22 @@ class _TitleRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Expanded(
-          child: Text(detail.title, style: AppTextStyles.title),
+          child: Text(detail.title, style: AppTextStyles.title(context)),
         ),
-        const SizedBox(width: AppSpacing.sm),
+        SizedBox(width: AppSpacing.sm),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: <Widget>[
             Text(
               '\$${detail.pricePerMonth.toLocale()}',
-              style: AppTextStyles.title.copyWith(
+              style: AppTextStyles.title(context).copyWith(
                 color: AppColors.accent,
                 fontSize: 20,
               ),
             ),
             Text(
               'per month',
-              style: AppTextStyles.caption.copyWith(fontSize: 11),
+              style: AppTextStyles.caption(context).copyWith(fontSize: 11),
             ),
           ],
         ),
@@ -246,9 +246,9 @@ class _LocationRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
-        const SizedBox(width: 4),
-        Text(location, style: AppTextStyles.caption.copyWith(fontSize: 13)),
+        Icon(Icons.location_on_outlined, size: 14, color: context.appColors.textSecondary),
+        SizedBox(width: 4),
+        Text(location, style: AppTextStyles.caption(context).copyWith(fontSize: 13)),
       ],
     );
   }
@@ -264,11 +264,11 @@ class _SpecsRow extends StatelessWidget {
     return Row(
       children: <Widget>[
         _SpecChip(value: '${detail.beds}', label: 'Bedrooms'),
-        const SizedBox(width: AppSpacing.sm),
+        SizedBox(width: AppSpacing.sm),
         _SpecChip(value: '${detail.baths}', label: 'Bathrooms'),
-        const SizedBox(width: AppSpacing.sm),
+        SizedBox(width: AppSpacing.sm),
         _SpecChip(value: '${detail.sqft} ft²', label: 'Area'),
-        const SizedBox(width: AppSpacing.sm),
+        SizedBox(width: AppSpacing.sm),
         _SpecChip(value: detail.propertyType, label: 'Type'),
       ],
     );
@@ -290,24 +290,24 @@ class _SpecChip extends StatelessWidget {
           horizontal: AppSpacing.xs,
         ),
         decoration: BoxDecoration(
-          color: AppColors.fieldFill,
+          color: context.appColors.fieldFill,
           borderRadius: BorderRadius.circular(AppRadii.field),
-          border: Border.all(color: AppColors.fieldBorder),
+          border: Border.all(color: context.appColors.fieldBorder),
         ),
         child: Column(
           children: <Widget>[
             Text(
               value,
-              style: AppTextStyles.label.copyWith(
+              style: AppTextStyles.label(context).copyWith(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: 2),
             Text(
               label,
-              style: AppTextStyles.caption.copyWith(fontSize: 10),
+              style: AppTextStyles.caption(context).copyWith(fontSize: 10),
               textAlign: TextAlign.center,
             ),
           ],
@@ -326,7 +326,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: AppTextStyles.title.copyWith(fontSize: 18),
+      style: AppTextStyles.title(context).copyWith(fontSize: 18),
     );
   }
 }
@@ -368,9 +368,9 @@ class _AmenityChip extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: AppColors.fieldFill,
+        color: context.appColors.fieldFill,
         borderRadius: BorderRadius.circular(AppRadii.chip),
-        border: Border.all(color: AppColors.fieldBorder),
+        border: Border.all(color: context.appColors.fieldBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -378,15 +378,15 @@ class _AmenityChip extends StatelessWidget {
           Icon(
             _icons[label] ?? Icons.check_circle_outline,
             size: 14,
-            color: AppColors.textSecondary,
+            color: context.appColors.textSecondary,
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           Text(
             label,
-            style: AppTextStyles.caption.copyWith(
+            style: AppTextStyles.caption(context).copyWith(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
+              color: context.appColors.textPrimary,
             ),
           ),
         ],
@@ -405,16 +405,16 @@ class _LandlordRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.card),
-        border: Border.all(color: AppColors.fieldBorder),
+        border: Border.all(color: context.appColors.fieldBorder),
       ),
       child: Row(
         children: <Widget>[
           Container(
             width: 44,
             height: 44,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: <Color>[Color(0xFF2C3E6B), Color(0xFF0D1B3A)],
@@ -422,23 +422,23 @@ class _LandlordRow extends StatelessWidget {
                 end: Alignment.bottomRight,
               ),
             ),
-            child: const Icon(Icons.person, color: AppColors.onInk, size: 22),
+            child: Icon(Icons.person, color: AppColors.onInk, size: 22),
           ),
-          const SizedBox(width: AppSpacing.md),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
                   detail.landlordName,
-                  style: AppTextStyles.label.copyWith(
+                  style: AppTextStyles.label(context).copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
                   '${detail.landlordRole} · ${detail.landlordResponseTime}',
-                  style: AppTextStyles.caption.copyWith(fontSize: 12),
+                  style: AppTextStyles.caption(context).copyWith(fontSize: 12),
                 ),
               ],
             ),
@@ -447,11 +447,11 @@ class _LandlordRow extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.fieldFill,
+              color: context.appColors.fieldFill,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.fieldBorder),
+              border: Border.all(color: context.appColors.fieldBorder),
             ),
-            child: const Icon(Icons.chat_bubble_outline, size: 16, color: AppColors.textSecondary),
+            child: Icon(Icons.chat_bubble_outline, size: 16, color: context.appColors.textSecondary),
           ),
         ],
       ),
@@ -474,27 +474,27 @@ class _BottomBar extends StatelessWidget {
         AppSpacing.lg,
         AppSpacing.sm + MediaQuery.of(context).padding.bottom,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.fieldBorder)),
+      decoration: BoxDecoration(
+        color: context.appColors.surface,
+        border: Border(top: BorderSide(color: context.appColors.fieldBorder)),
       ),
       child: Row(
         children: <Widget>[
           _HeartButton(isSaved: isSaved, onTap: onSaveToggle),
-          const SizedBox(width: AppSpacing.md),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: SizedBox(
               height: AppSizes.buttonHeight,
               child: ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.ink,
+                  backgroundColor: context.appColors.ink,
                   foregroundColor: AppColors.onInk,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadii.button),
                   ),
                 ),
-                child: const Text('Contact landlord', style: AppTextStyles.buttonLabel),
+                child: Text('Contact landlord', style: AppTextStyles.buttonLabel),
               ),
             ),
           ),
@@ -518,13 +518,13 @@ class _HeartButton extends StatelessWidget {
         width: AppSizes.buttonHeight,
         height: AppSizes.buttonHeight,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.appColors.surface,
           borderRadius: BorderRadius.circular(AppRadii.button),
-          border: Border.all(color: AppColors.fieldBorder),
+          border: Border.all(color: context.appColors.fieldBorder),
         ),
         child: Icon(
           isSaved ? Icons.favorite_rounded : Icons.favorite_border,
-          color: isSaved ? AppColors.destructive : AppColors.textSecondary,
+          color: isSaved ? AppColors.destructive : context.appColors.textSecondary,
           size: 22,
         ),
       ),

@@ -105,4 +105,97 @@ abstract final class AppColors {
 
   // ── Admin ────────────────────────────────────────────────────────────────
   static const Color adminNavy = Color(0xFF1A1A2E);
+<<<<<<< Updated upstream
+=======
+}
+
+/// Theme-adaptive color tokens that flip between light and dark values.
+///
+/// Access via [BuildContext.appColors] inside any widget build method.
+/// Light values exactly match the corresponding [AppColors] constants so
+/// existing light-mode appearance is unchanged.
+class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
+  const AppAdaptiveColors({
+    required this.surface,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.fieldBorder,
+    required this.fieldFill,
+    required this.hint,
+    required this.ink,
+    required this.indicatorInactive,
+  });
+
+  final Color surface;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color fieldBorder;
+  final Color fieldFill;
+  final Color hint;
+  final Color ink;
+  final Color indicatorInactive;
+
+  static const light = AppAdaptiveColors(
+    surface:           Color(0xFFFFFFFF),
+    textPrimary:       Color(0xFF1A1A2E),
+    textSecondary:     Color(0xFF7A7A8C),
+    fieldBorder:       Color(0xFFE3E5E9),
+    fieldFill:         Color(0xFFF2F3F5),
+    hint:              Color(0xFFA0A3AD),
+    ink:               Color(0xFF1A1A2E),
+    indicatorInactive: Color(0xFFD9D9E0),
+  );
+
+  static const dark = AppAdaptiveColors(
+    surface:           Color(0xFF1E1E24),
+    textPrimary:       Color(0xFFE4E4EF),
+    textSecondary:     Color(0xFFA8A8B8),
+    fieldBorder:       Color(0xFF404050),
+    fieldFill:         Color(0xFF2A2A36),
+    hint:              Color(0xFF7A7A8C),
+    ink:               Color(0xFFE4E4EF),
+    indicatorInactive: Color(0xFF404050),
+  );
+
+  @override
+  AppAdaptiveColors copyWith({
+    Color? surface,
+    Color? textPrimary,
+    Color? textSecondary,
+    Color? fieldBorder,
+    Color? fieldFill,
+    Color? hint,
+    Color? ink,
+    Color? indicatorInactive,
+  }) => AppAdaptiveColors(
+    surface:           surface           ?? this.surface,
+    textPrimary:       textPrimary       ?? this.textPrimary,
+    textSecondary:     textSecondary     ?? this.textSecondary,
+    fieldBorder:       fieldBorder       ?? this.fieldBorder,
+    fieldFill:         fieldFill         ?? this.fieldFill,
+    hint:              hint              ?? this.hint,
+    ink:               ink               ?? this.ink,
+    indicatorInactive: indicatorInactive ?? this.indicatorInactive,
+  );
+
+  @override
+  AppAdaptiveColors lerp(ThemeExtension<AppAdaptiveColors>? other, double t) {
+    if (other is! AppAdaptiveColors) return this;
+    return AppAdaptiveColors(
+      surface:           Color.lerp(surface,           other.surface,           t)!,
+      textPrimary:       Color.lerp(textPrimary,       other.textPrimary,       t)!,
+      textSecondary:     Color.lerp(textSecondary,     other.textSecondary,     t)!,
+      fieldBorder:       Color.lerp(fieldBorder,       other.fieldBorder,       t)!,
+      fieldFill:         Color.lerp(fieldFill,         other.fieldFill,         t)!,
+      hint:              Color.lerp(hint,              other.hint,              t)!,
+      ink:               Color.lerp(ink,               other.ink,               t)!,
+      indicatorInactive: Color.lerp(indicatorInactive, other.indicatorInactive, t)!,
+    );
+  }
+}
+
+extension AppAdaptiveColorsX on BuildContext {
+  AppAdaptiveColors get appColors =>
+      Theme.of(this).extension<AppAdaptiveColors>()!;
+>>>>>>> Stashed changes
 }

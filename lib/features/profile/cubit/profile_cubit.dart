@@ -9,7 +9,4 @@ part 'profile_state.dart';
 class ProfileCubit extends Cubit<ProfileState> {
   ProfileCubit({UserRole userRole = UserRole.tenant})
       : super(ProfileState(userRole: userRole));
-
-  /// Flips the dark appearance setting.
-  void toggleDarkMode() => emit(state.copyWith(darkMode: !state.darkMode));
 }

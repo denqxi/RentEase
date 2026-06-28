@@ -5,7 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../cubit/landlord_home_cubit.dart';
 
-/// Search field ("Search tenants…") + dark filter button.
+/// Search field ("Search tenantsâ€¦") + dark filter button.
 class LandlordSearchBar extends StatelessWidget {
   const LandlordSearchBar({super.key});
 
@@ -14,7 +14,7 @@ class LandlordSearchBar extends StatelessWidget {
     return Row(
       children: <Widget>[
         Expanded(child: _SearchField(onChanged: context.read<LandlordHomeCubit>().updateSearch)),
-        const SizedBox(width: AppSpacing.sm),
+        SizedBox(width: AppSpacing.sm),
         const _FilterButton(),
       ],
     );
@@ -32,14 +32,14 @@ class _SearchField extends StatelessWidget {
       onChanged: onChanged,
       decoration: InputDecoration(
         hintText: 'Search tenants...',
-        hintStyle: const TextStyle(
-          color: AppColors.hint,
+        hintStyle: TextStyle(
+          color: context.appColors.hint,
           fontSize: 14,
-          fontFamily: 'Inter',
+          fontFamily: 'DM Sans',
         ),
-        prefixIcon: const Icon(Icons.search, color: AppColors.hint, size: 20),
+        prefixIcon: Icon(Icons.search, color: context.appColors.hint, size: 20),
         filled: true,
-        fillColor: AppColors.fieldFill,
+        fillColor: context.appColors.fieldFill,
         contentPadding: const EdgeInsets.symmetric(vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.field),
@@ -51,7 +51,7 @@ class _SearchField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.field),
-          borderSide: const BorderSide(color: AppColors.accent),
+          borderSide: BorderSide(color: AppColors.accent),
         ),
       ),
     );
@@ -69,10 +69,10 @@ class _FilterButton extends StatelessWidget {
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: AppColors.ink,
+          color: context.appColors.ink,
           borderRadius: BorderRadius.circular(AppRadii.field),
         ),
-        child: const Icon(Icons.tune_rounded, color: AppColors.onInk, size: 20),
+        child: Icon(Icons.tune_rounded, color: AppColors.onInk, size: 20),
       ),
     );
   }

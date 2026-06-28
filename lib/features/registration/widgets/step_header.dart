@@ -15,9 +15,9 @@ class StepHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(title, style: AppTextStyles.title),
-        const SizedBox(height: AppSpacing.sm),
-        Text(subtitle, style: AppTextStyles.body),
+        Text(title, style: AppTextStyles.title(context)),
+        SizedBox(height: AppSpacing.sm),
+        Text(subtitle, style: AppTextStyles.body(context)),
       ],
     );
   }

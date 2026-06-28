@@ -80,9 +80,9 @@ class _BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.fieldBorder)),
+      decoration: BoxDecoration(
+        color: context.appColors.surface,
+        border: Border(top: BorderSide(color: context.appColors.fieldBorder)),
       ),
       child: SafeArea(
         top: false,
@@ -165,16 +165,24 @@ class _NavItem extends StatelessWidget {
           children: <Widget>[
             Icon(
               _selected ? icon : outlinedIcon,
+<<<<<<< Updated upstream
               color: _selected ? AppColors.ownerPrimary : AppColors.textSecondary,
+=======
+              color: _selected ? AppColors.accent : context.appColors.textSecondary,
+>>>>>>> Stashed changes
               size: 24,
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: 2),
             Text(
               label,
-              style: AppTextStyles.caption.copyWith(
+              style: AppTextStyles.caption(context).copyWith(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
+<<<<<<< Updated upstream
                 color: _selected ? AppColors.ownerPrimary : AppColors.textSecondary,
+=======
+                color: _selected ? AppColors.accent : context.appColors.textSecondary,
+>>>>>>> Stashed changes
               ),
             ),
           ],
@@ -206,20 +214,52 @@ class _NavItemAlerts extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
+<<<<<<< Updated upstream
             Icon(
               _selected
                   ? Icons.notifications_rounded
                   : Icons.notifications_outlined,
               color: _selected ? AppColors.ownerPrimary : AppColors.textSecondary,
               size: 24,
+=======
+            Stack(
+              clipBehavior: Clip.none,
+              children: <Widget>[
+                Icon(
+                  _selected
+                      ? Icons.notifications_rounded
+                      : Icons.notifications_outlined,
+                  color:
+                      _selected ? AppColors.accent : context.appColors.textSecondary,
+                  size: 24,
+                ),
+                if (unreadCount > 0)
+                  Positioned(
+                    top: -2,
+                    right: -4,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: AppColors.destructive,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+>>>>>>> Stashed changes
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: 2),
             Text(
               'Alerts',
-              style: AppTextStyles.caption.copyWith(
+              style: AppTextStyles.caption(context).copyWith(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
+<<<<<<< Updated upstream
                 color: _selected ? AppColors.ownerPrimary : AppColors.textSecondary,
+=======
+                color: _selected ? AppColors.accent : context.appColors.textSecondary,
+>>>>>>> Stashed changes
               ),
             ),
           ],

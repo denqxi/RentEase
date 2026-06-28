@@ -14,6 +14,7 @@ class Phase2TenantScreen extends StatelessWidget {
     final String ownerInitials = property['ownerInitials'] as String;
 
     return Scaffold(
+<<<<<<< Updated upstream
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
@@ -21,6 +22,15 @@ class Phase2TenantScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new,
               color: AppColors.textPrimary, size: 20),
+=======
+      backgroundColor: context.appColors.surface,
+      appBar: AppBar(
+        backgroundColor: context.appColors.surface,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: context.appColors.textPrimary, size: 20),
+>>>>>>> Stashed changes
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Row(
@@ -30,14 +40,22 @@ class Phase2TenantScreen extends StatelessWidget {
               backgroundColor: AppColors.tenantFillBlue,
               child: Text(
                 ownerInitials,
+<<<<<<< Updated upstream
                 style: const TextStyle(
+=======
+                style: TextStyle(
+>>>>>>> Stashed changes
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   color: AppColors.tenantTextDeep,
                 ),
               ),
             ),
+<<<<<<< Updated upstream
             const SizedBox(width: 8),
+=======
+            SizedBox(width: 8),
+>>>>>>> Stashed changes
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -47,6 +65,7 @@ class Phase2TenantScreen extends StatelessWidget {
                   children: [
                     Text(
                       ownerName,
+<<<<<<< Updated upstream
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -58,6 +77,19 @@ class Phase2TenantScreen extends StatelessWidget {
                       width: 7,
                       height: 7,
                       decoration: const BoxDecoration(
+=======
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: context.appColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+>>>>>>> Stashed changes
                         color: Color(0xFF4CAF50),
                         shape: BoxShape.circle,
                       ),
@@ -66,16 +98,26 @@ class Phase2TenantScreen extends StatelessWidget {
                 ),
                 Text(
                   property['name'] as String,
+<<<<<<< Updated upstream
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textSecondary,
+=======
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: context.appColors.textSecondary,
+>>>>>>> Stashed changes
                   ),
                 ),
               ],
             ),
           ],
         ),
+<<<<<<< Updated upstream
         actions: const [
+=======
+        actions: [
+>>>>>>> Stashed changes
           PhaseBadge(phase: 2),
           SizedBox(width: 16),
         ],
@@ -91,6 +133,7 @@ class Phase2TenantScreen extends StatelessWidget {
                 Center(
                   child: Text(
                     'Owner accepted your inquiry!',
+<<<<<<< Updated upstream
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
@@ -98,6 +141,15 @@ class Phase2TenantScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
+=======
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.appColors.textSecondary,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12),
+>>>>>>> Stashed changes
 
                 // Owner message
                 Row(
@@ -105,6 +157,7 @@ class Phase2TenantScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 16,
+<<<<<<< Updated upstream
                       backgroundColor: AppColors.fieldBg,
                       child: Text(
                         ownerInitials,
@@ -120,16 +173,37 @@ class Phase2TenantScreen extends StatelessWidget {
                       constraints: BoxConstraints(
                         maxWidth:
                             MediaQuery.of(context).size.width * 0.65,
+=======
+                      backgroundColor: context.appColors.fieldFill,
+                      child: Text(
+                        ownerInitials,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: context.appColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.65,
+>>>>>>> Stashed changes
                       ),
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
+<<<<<<< Updated upstream
                           color: AppColors.fieldFill,
+=======
+                          color: context.appColors.fieldFill,
+>>>>>>> Stashed changes
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(12),
                             topRight: Radius.circular(12),
                             bottomRight: Radius.circular(12),
                           ),
+<<<<<<< Updated upstream
                           border: Border.all(color: AppColors.border),
                         ),
                         child: const Text(
@@ -137,25 +211,46 @@ class Phase2TenantScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             color: AppColors.textPrimary,
+=======
+                          border: Border.all(color: context.appColors.fieldBorder),
+                        ),
+                        child: Text(
+                          'Kumusta! Yes, available pa ang room. 😊',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: context.appColors.textPrimary,
+>>>>>>> Stashed changes
                           ),
                         ),
                       ),
                     ),
                   ],
                 ),
+<<<<<<< Updated upstream
                 const SizedBox(height: 8),
+=======
+                SizedBox(height: 8),
+>>>>>>> Stashed changes
 
                 // Tenant message
                 Align(
                   alignment: Alignment.centerRight,
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
+<<<<<<< Updated upstream
                       maxWidth:
                           MediaQuery.of(context).size.width * 0.65,
                     ),
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: const BoxDecoration(
+=======
+                      maxWidth: MediaQuery.of(context).size.width * 0.65,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+>>>>>>> Stashed changes
                         color: AppColors.primaryMid,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(12),
@@ -163,7 +258,11 @@ class Phase2TenantScreen extends StatelessWidget {
                           bottomLeft: Radius.circular(12),
                         ),
                       ),
+<<<<<<< Updated upstream
                       child: const Text(
+=======
+                      child: Text(
+>>>>>>> Stashed changes
                         'Salamat! When can I schedule a visit?',
                         style: TextStyle(
                           fontSize: 13,
@@ -182,7 +281,11 @@ class Phase2TenantScreen extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
+<<<<<<< Updated upstream
               children: const [
+=======
+              children: [
+>>>>>>> Stashed changes
                 _QuickReplyChip('When can I visit?'),
                 SizedBox(width: 8),
                 _QuickReplyChip('Is the room still available?'),
@@ -198,6 +301,7 @@ class Phase2TenantScreen extends StatelessWidget {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
+<<<<<<< Updated upstream
                       color: AppColors.fieldBg,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: AppColors.border),
@@ -207,6 +311,17 @@ class Phase2TenantScreen extends StatelessWidget {
                         hintText: 'Type a message...',
                         hintStyle: TextStyle(
                           color: AppColors.textHint,
+=======
+                      color: context.appColors.fieldFill,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: context.appColors.fieldBorder),
+                    ),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Type a message...',
+                        hintStyle: TextStyle(
+                          color: context.appColors.hint,
+>>>>>>> Stashed changes
                           fontSize: 13,
                         ),
                         border: InputBorder.none,
@@ -216,11 +331,19 @@ class Phase2TenantScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+<<<<<<< Updated upstream
                 const SizedBox(width: 8),
                 CircleAvatar(
                   radius: 20,
                   backgroundColor: AppColors.primaryMid,
                   child: const Icon(Icons.send_rounded,
+=======
+                SizedBox(width: 8),
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.primaryMid,
+                  child: Icon(Icons.send_rounded,
+>>>>>>> Stashed changes
                       color: Colors.white, size: 18),
                 ),
               ],
@@ -249,7 +372,11 @@ class _QuickReplyChip extends StatelessWidget {
       ),
       child: Text(
         label,
+<<<<<<< Updated upstream
         style: const TextStyle(
+=======
+        style: TextStyle(
+>>>>>>> Stashed changes
           fontSize: 12,
           color: AppColors.primaryMid,
         ),

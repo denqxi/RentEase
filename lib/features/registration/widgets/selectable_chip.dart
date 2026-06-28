@@ -21,7 +21,7 @@ class SelectableChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? AppColors.accent : AppColors.fieldFill,
+      color: selected ? AppColors.accent : context.appColors.fieldFill,
       borderRadius: BorderRadius.circular(AppRadii.chip),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadii.chip),
@@ -34,13 +34,13 @@ class SelectableChip extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadii.chip),
             border: Border.all(
-              color: selected ? AppColors.accent : AppColors.fieldBorder,
+              color: selected ? AppColors.accent : context.appColors.fieldBorder,
             ),
           ),
           child: Text(
             label,
-            style: AppTextStyles.label.copyWith(
-              color: selected ? AppColors.onInk : AppColors.textPrimary,
+            style: AppTextStyles.label(context).copyWith(
+              color: selected ? AppColors.onInk : context.appColors.textPrimary,
             ),
           ),
         ),

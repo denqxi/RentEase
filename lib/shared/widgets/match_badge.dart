@@ -39,10 +39,10 @@ class MatchBadge extends StatelessWidget {
               color: _dotColor,
             ),
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           Text(
             showLabel ? '$percent% match' : '$percent%',
-            style: AppTextStyles.label.copyWith(
+            style: AppTextStyles.label(context).copyWith(
               color: Colors.white,
               fontSize: 11,
               fontWeight: FontWeight.w600,

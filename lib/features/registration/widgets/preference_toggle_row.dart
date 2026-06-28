@@ -29,7 +29,7 @@ class PreferenceToggleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        Expanded(child: Text(label, style: AppTextStyles.label)),
+        Expanded(child: Text(label, style: AppTextStyles.label(context))),
         _Segmented(
           leftLabel: leftLabel,
           rightLabel: rightLabel,
@@ -59,9 +59,9 @@ class _Segmented extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: AppColors.fieldFill,
+        color: context.appColors.fieldFill,
         borderRadius: BorderRadius.circular(AppRadii.field),
-        border: Border.all(color: AppColors.fieldBorder),
+        border: Border.all(color: context.appColors.fieldBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -110,8 +110,8 @@ class _Segment extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: AppTextStyles.label.copyWith(
-            color: selected ? AppColors.onInk : AppColors.textSecondary,
+          style: AppTextStyles.label(context).copyWith(
+            color: selected ? AppColors.onInk : context.appColors.textSecondary,
           ),
         ),
       ),

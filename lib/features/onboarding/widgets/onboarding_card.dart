@@ -26,8 +26,8 @@ class OnboardingCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
+      decoration: BoxDecoration(
+        color: context.appColors.surface,
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppRadii.card),
         ),
@@ -49,7 +49,7 @@ class OnboardingCard extends StatelessWidget {
                 count: state.pageCount,
                 currentIndex: state.currentPage,
               ),
-              const SizedBox(height: AppSpacing.xl),
+              SizedBox(height: AppSpacing.xl),
               // ValueKey forces Flutter to unmount the old widget and mount a
               // fresh one on every page change, which restarts the entrance
               // animation from the beginning.
@@ -58,7 +58,7 @@ class OnboardingCard extends StatelessWidget {
                 title: page.title,
                 subtitle: page.subtitle,
               ),
-              const SizedBox(height: AppSpacing.xl),
+              SizedBox(height: AppSpacing.xl),
               OnboardingFooter(
                 isLastPage: state.isLastPage,
                 onPrimary: onPrimary,
@@ -155,19 +155,19 @@ class _OnboardingTextState extends State<_OnboardingText>
           opacity: _titleOpacity,
           child: AnimatedBuilder(
             animation: _titleY,
-            child: Text(widget.title, style: AppTextStyles.heading),
+            child: Text(widget.title, style: AppTextStyles.heading(context)),
             builder: (_, Widget? child) => Transform.translate(
               offset: Offset(0, _titleY.value),
               child: child,
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
+        SizedBox(height: AppSpacing.md),
         FadeTransition(
           opacity: _subtitleOpacity,
           child: AnimatedBuilder(
             animation: _subtitleY,
-            child: Text(widget.subtitle, style: AppTextStyles.body),
+            child: Text(widget.subtitle, style: AppTextStyles.body(context)),
             builder: (_, Widget? child) => Transform.translate(
               offset: Offset(0, _subtitleY.value),
               child: child,

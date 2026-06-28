@@ -37,45 +37,51 @@ class RegistrationFlowScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<RegistrationCubit>(
       create: (_) => RegistrationCubit(),
-      child: Scaffold(
-        backgroundColor: AppColors.surface,
-        body: SafeArea(
-          child: BlocBuilder<RegistrationCubit, RegistrationState>(
-            buildWhen: (previous, current) => previous.step != current.step,
-            builder: (context, state) {
-              final cubit = context.read<RegistrationCubit>();
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  // The app bar lives OUTSIDE AnimatedSwitcher so _ProgressBar
-                  // persists across step changes and can animate its value.
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.lg,
-                      AppSpacing.md,
-                      AppSpacing.lg,
-                      0,
-                    ),
-                    child: RegistrationAppBar(
-                      onBack: state.step == RegistrationStep.role
-                          ? onSignIn
-                          : cubit.back,
-                      stepNumber: state.step.formStepNumber,
-                      stepCount: state.formStepCount,
-                    ),
-                  ),
-                  Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 250),
-                      child: KeyedSubtree(
-                        key: ValueKey<RegistrationStep>(state.step),
-                        child: _viewForStep(state.step, context),
+      child: BlocListener<RegistrationCubit, RegistrationState>(
+        listenWhen: (prev, curr) =>
+            curr.step == RegistrationStep.success &&
+            prev.step != RegistrationStep.success,
+        listener: (context, state) {
+          onComplete(state.data.role ?? UserRole.tenant);
+        },
+        child: Scaffold(
+          backgroundColor: context.appColors.surface,
+          body: SafeArea(
+            child: BlocBuilder<RegistrationCubit, RegistrationState>(
+              buildWhen: (previous, current) => previous.step != current.step,
+              builder: (context, state) {
+                final cubit = context.read<RegistrationCubit>();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        AppSpacing.md,
+                        AppSpacing.lg,
+                        0,
+                      ),
+                      child: RegistrationAppBar(
+                        onBack: state.step == RegistrationStep.role
+                            ? onSignIn
+                            : cubit.back,
+                        stepNumber: state.step.formStepNumber,
+                        stepCount: state.formStepCount,
                       ),
                     ),
-                  ),
-                ],
-              );
-            },
+                    Expanded(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 250),
+                        child: KeyedSubtree(
+                          key: ValueKey<RegistrationStep>(state.step),
+                          child: _viewForStep(state.step, context),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+<<<<<<< Updated upstream
 import 'core/constants/app_colors.dart';
 import 'core/router/app_router.dart';
 import 'features/auth/view/sign_in_entry.dart';
@@ -40,3 +42,16 @@ class RentEaseApp extends StatelessWidget {
   }
 }
 
+=======
+import 'app.dart';
+import 'core/cubit/app_theme_cubit.dart';
+
+void main() {
+  runApp(
+    BlocProvider(
+      create: (_) => AppThemeCubit(),
+      child: const RentEaseApp(),
+    ),
+  );
+}
+>>>>>>> Stashed changes

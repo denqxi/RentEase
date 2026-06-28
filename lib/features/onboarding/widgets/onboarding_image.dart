@@ -28,12 +28,12 @@ class _ImageFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const DecoratedBox(
+    return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: <Color>[AppColors.primary, AppColors.ink],
+          colors: <Color>[AppColors.primary, context.appColors.ink],
         ),
       ),
     );

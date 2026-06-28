@@ -51,24 +51,23 @@ class Listing extends Equatable {
     );
   }
 
-  /// Prototype sample data.
+  /// Prototype sample data — Davao City boarding houses.
   static const List<Listing> samples = <Listing>[
     Listing(
       id: '1',
-      title: 'Sunny 2-Bed Apartment',
-      location: 'Downtown, Portland',
-      pricePerMonth: 1800,
-      beds: 2,
+      title: 'Sunshine Boarding House',
+      location: 'Matina, Davao City',
+      pricePerMonth: 3800,
+      beds: 1,
       baths: 1,
-      sqft: 820,
       matchPercent: 92,
       imageSeed: 1,
     ),
     Listing(
       id: '2',
-      title: 'Modern Studio Loft',
-      location: 'Westside, Portland',
-      pricePerMonth: 1250,
+      title: 'BlueSky Dormitory',
+      location: 'Ecoland, Davao City',
+      pricePerMonth: 4200,
       beds: 1,
       baths: 1,
       matchPercent: 88,
@@ -77,19 +76,19 @@ class Listing extends Equatable {
     ),
     Listing(
       id: '3',
-      title: 'Cozy Garden House',
-      location: 'North Hills, Portland',
-      pricePerMonth: 2200,
-      beds: 3,
-      baths: 2,
+      title: 'Sunrise Manor',
+      location: 'Buhangin, Davao City',
+      pricePerMonth: 5500,
+      beds: 1,
+      baths: 1,
       matchPercent: 84,
       imageSeed: 3,
     ),
     Listing(
       id: '4',
-      title: 'Riverside 1-Bed Flat',
-      location: 'Riverside, Portland',
-      pricePerMonth: 1500,
+      title: 'Green Leaf Boarding House',
+      location: 'Mintal, Davao City',
+      pricePerMonth: 3500,
       beds: 1,
       baths: 1,
       matchPercent: 81,
@@ -97,9 +96,9 @@ class Listing extends Equatable {
     ),
     Listing(
       id: '5',
-      title: 'Bright Boarding Room',
-      location: 'Near University, Portland',
-      pricePerMonth: 850,
+      title: 'Casa Mia Dormitory',
+      location: 'Bangkal, Davao City',
+      pricePerMonth: 3200,
       beds: 1,
       baths: 1,
       matchPercent: 79,

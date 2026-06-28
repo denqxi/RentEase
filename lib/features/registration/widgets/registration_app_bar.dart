@@ -29,14 +29,14 @@ class RegistrationAppBar extends StatelessWidget {
       children: <Widget>[
         _BackButton(onTap: onBack),
         if (stepNumber != null && stepCount != null) ...<Widget>[
-          const SizedBox(width: AppSpacing.md),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: _ProgressBar(value: stepNumber! / stepCount!),
           ),
-          const SizedBox(width: AppSpacing.md),
+          SizedBox(width: AppSpacing.md),
           Text(
             '$stepNumber / $stepCount',
-            style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.label(context).copyWith(color: context.appColors.textSecondary),
           ),
         ],
       ],
@@ -52,18 +52,18 @@ class _BackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surface,
+      color: context.appColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadii.field),
-        side: const BorderSide(color: AppColors.fieldBorder),
+        side: BorderSide(color: context.appColors.fieldBorder),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadii.field),
         onTap: onTap,
-        child: const SizedBox(
+        child: SizedBox(
           width: 44,
           height: 44,
-          child: Icon(Icons.chevron_left, color: AppColors.textPrimary),
+          child: Icon(Icons.chevron_left, color: context.appColors.textPrimary),
         ),
       ),
     );
@@ -125,7 +125,7 @@ class _ProgressBarState extends State<_ProgressBar>
         child: LinearProgressIndicator(
           value: _animation.value,
           minHeight: 6,
-          backgroundColor: AppColors.fieldFill,
+          backgroundColor: context.appColors.fieldFill,
           valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
         ),
       ),

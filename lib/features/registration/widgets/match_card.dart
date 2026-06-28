@@ -31,20 +31,20 @@ class MatchCard extends StatelessWidget {
             ),
             child: Text(
               '${match.scorePercent}%',
-              style: AppTextStyles.label.copyWith(
+              style: AppTextStyles.label(context).copyWith(
                 color: AppColors.onInk,
                 fontSize: 14,
               ),
             ),
           ),
-          const SizedBox(width: AppSpacing.md),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(match.title, style: AppTextStyles.label),
-                const SizedBox(height: AppSpacing.xs),
-                Text(match.location, style: AppTextStyles.body),
+                Text(match.title, style: AppTextStyles.label(context)),
+                SizedBox(height: AppSpacing.xs),
+                Text(match.location, style: AppTextStyles.body(context)),
               ],
             ),
           ),

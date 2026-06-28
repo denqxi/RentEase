@@ -2,20 +2,29 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 
+<<<<<<< Updated upstream
 /// Custom toggle switch. Does not use Flutter's built-in Switch widget.
 ///
 /// Width 44 px, height 24 px. White thumb, configurable active track color.
+=======
+/// Styled toggle matching RentEase design: accent track when active,
+/// indicatorInactive track when off, white thumb always.
+>>>>>>> Stashed changes
 class AppToggle extends StatelessWidget {
   const AppToggle({
     required this.value,
     required this.onChanged,
+<<<<<<< Updated upstream
     this.activeColor,
+=======
+>>>>>>> Stashed changes
     super.key,
   });
 
   final bool value;
   final ValueChanged<bool> onChanged;
 
+<<<<<<< Updated upstream
   /// Defaults to [AppColors.primaryMid] when null.
   final Color? activeColor;
 
@@ -28,11 +37,28 @@ class AppToggle extends StatelessWidget {
         painter: _TogglePainter(
           value: value,
           activeColor: activeColor ?? AppColors.primaryMid,
+=======
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 46,
+      height: 28,
+      child: FittedBox(
+        fit: BoxFit.contain,
+        child: Switch(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: context.appColors.surface,
+          activeTrackColor: AppColors.accent,
+          inactiveThumbColor: context.appColors.surface,
+          inactiveTrackColor: context.appColors.indicatorInactive,
+>>>>>>> Stashed changes
         ),
       ),
     );
   }
 }
+<<<<<<< Updated upstream
 
 class _TogglePainter extends CustomPainter {
   const _TogglePainter({required this.value, required this.activeColor});
@@ -69,3 +95,5 @@ class _TogglePainter extends CustomPainter {
   bool shouldRepaint(_TogglePainter old) =>
       old.value != value || old.activeColor != activeColor;
 }
+=======
+>>>>>>> Stashed changes

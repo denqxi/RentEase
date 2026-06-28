@@ -49,20 +49,20 @@ class LabeledTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(label, style: AppTextStyles.label),
-        const SizedBox(height: AppSpacing.sm),
+        Text(label, style: AppTextStyles.label(context)),
+        SizedBox(height: AppSpacing.sm),
         TextField(
           onChanged: onChanged,
           keyboardType: keyboardType,
           obscureText: obscureText,
           maxLines: obscureText ? 1 : maxLines,
           minLines: maxLines > 1 ? maxLines : null,
-          style: AppTextStyles.field,
+          style: AppTextStyles.field(context),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppTextStyles.field.copyWith(color: AppColors.hint),
+            hintStyle: AppTextStyles.field(context).copyWith(color: context.appColors.hint),
             prefixText: prefixText,
-            prefixStyle: AppTextStyles.field.copyWith(color: AppColors.hint),
+            prefixStyle: AppTextStyles.field(context).copyWith(color: context.appColors.hint),
             suffixIcon: onToggleObscure == null
                 ? null
                 : IconButton(
@@ -71,17 +71,17 @@ class LabeledTextField extends StatelessWidget {
                       obscureText
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
-                      color: AppColors.hint,
+                      color: context.appColors.hint,
                       size: 20,
                     ),
                   ),
             filled: true,
-            fillColor: AppColors.fieldFill,
+            fillColor: context.appColors.fieldFill,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
               vertical: AppSpacing.md,
             ),
-            enabledBorder: _border(AppColors.fieldBorder),
+            enabledBorder: _border(context.appColors.fieldBorder),
             focusedBorder: _border(AppColors.accent),
           ),
         ),

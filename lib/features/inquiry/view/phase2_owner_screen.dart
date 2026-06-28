@@ -21,30 +21,50 @@ class Phase2OwnerScreen extends StatelessWidget {
               backgroundColor: AppColors.ownerFill,
               child: Text(
                 inquiry['tenantInitials'] as String,
+<<<<<<< Updated upstream
                 style: const TextStyle(
+=======
+                style: TextStyle(
+>>>>>>> Stashed changes
                   color: AppColors.ownerText,
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),
               ),
             ),
+<<<<<<< Updated upstream
             const SizedBox(width: AppSpacing.sm),
+=======
+            SizedBox(width: AppSpacing.sm),
+>>>>>>> Stashed changes
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   inquiry['tenantName'] as String,
+<<<<<<< Updated upstream
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                     color: AppColors.textPrimary,
+=======
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: context.appColors.textPrimary,
+>>>>>>> Stashed changes
                   ),
                 ),
                 Text(
                   inquiry['propertyName'] as String,
+<<<<<<< Updated upstream
                   style: const TextStyle(
                     color: AppColors.textSecondary,
+=======
+                  style: TextStyle(
+                    color: context.appColors.textSecondary,
+>>>>>>> Stashed changes
                     fontSize: 12,
                   ),
                 ),
@@ -54,7 +74,11 @@ class Phase2OwnerScreen extends StatelessWidget {
         ),
         actions: [
           PhaseBadge(phase: 2),
+<<<<<<< Updated upstream
           const SizedBox(width: AppSpacing.md),
+=======
+          SizedBox(width: AppSpacing.md),
+>>>>>>> Stashed changes
         ],
       ),
       body: Column(
@@ -69,6 +93,7 @@ class Phase2OwnerScreen extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
+<<<<<<< Updated upstream
                     color: AppColors.fieldBg,
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -77,6 +102,16 @@ class Phase2OwnerScreen extends StatelessWidget {
                       'Owner accepted your inquiry. You can now chat.',
                       style: TextStyle(
                         color: AppColors.textSecondary,
+=======
+                    color: context.appColors.fieldFill,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Owner accepted your inquiry. You can now chat.',
+                      style: TextStyle(
+                        color: context.appColors.textSecondary,
+>>>>>>> Stashed changes
                         fontSize: 13,
                       ),
                       textAlign: TextAlign.center,
@@ -92,7 +127,11 @@ class Phase2OwnerScreen extends StatelessWidget {
                       maxWidth: MediaQuery.of(context).size.width * 0.7,
                     ),
                     padding: const EdgeInsets.all(10),
+<<<<<<< Updated upstream
                     decoration: const BoxDecoration(
+=======
+                    decoration: BoxDecoration(
+>>>>>>> Stashed changes
                       color: AppColors.ownerPrimary,
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(12),
@@ -100,13 +139,21 @@ class Phase2OwnerScreen extends StatelessWidget {
                         bottomLeft: Radius.circular(12),
                       ),
                     ),
+<<<<<<< Updated upstream
                     child: const Text(
+=======
+                    child: Text(
+>>>>>>> Stashed changes
                       'Hello! Yes the room is still available.',
                       style: TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
                 ),
+<<<<<<< Updated upstream
                 const SizedBox(height: AppSpacing.sm),
+=======
+                SizedBox(height: AppSpacing.sm),
+>>>>>>> Stashed changes
 
                 // Tenant bubble (left)
                 Align(
@@ -117,18 +164,31 @@ class Phase2OwnerScreen extends StatelessWidget {
                     ),
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
+<<<<<<< Updated upstream
                       color: AppColors.fieldBg,
+=======
+                      color: context.appColors.fieldFill,
+>>>>>>> Stashed changes
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(12),
                         topRight: Radius.circular(12),
                         bottomRight: Radius.circular(12),
                       ),
+<<<<<<< Updated upstream
                       border: Border.all(color: AppColors.border),
                     ),
                     child: const Text(
                       'Great! Can I visit this weekend?',
                       style: TextStyle(
                         color: AppColors.textPrimary,
+=======
+                      border: Border.all(color: context.appColors.fieldBorder),
+                    ),
+                    child: Text(
+                      'Great! Can I visit this weekend?',
+                      style: TextStyle(
+                        color: context.appColors.textPrimary,
+>>>>>>> Stashed changes
                         fontSize: 12,
                       ),
                     ),
@@ -146,9 +206,15 @@ class Phase2OwnerScreen extends StatelessWidget {
               child: TextButton(
                 onPressed: () {},
                 style: TextButton.styleFrom(
+<<<<<<< Updated upstream
                   foregroundColor: AppColors.textSecondary,
                 ),
                 child: const Text('Mark as booked'),
+=======
+                  foregroundColor: context.appColors.textSecondary,
+                ),
+                child: Text('Mark as booked'),
+>>>>>>> Stashed changes
               ),
             ),
           ),
@@ -166,11 +232,19 @@ class Phase2OwnerScreen extends StatelessWidget {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
+<<<<<<< Updated upstream
                       color: AppColors.fieldBg,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: AppColors.border),
                     ),
                     child: const TextField(
+=======
+                      color: context.appColors.fieldFill,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: context.appColors.fieldBorder),
+                    ),
+                    child: TextField(
+>>>>>>> Stashed changes
                       decoration: InputDecoration(
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 16,
@@ -183,11 +257,19 @@ class Phase2OwnerScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+<<<<<<< Updated upstream
                 const SizedBox(width: AppSpacing.sm),
                 CircleAvatar(
                   radius: 20,
                   backgroundColor: AppColors.ownerPrimary,
                   child: const Icon(Icons.send, color: Colors.white, size: 18),
+=======
+                SizedBox(width: AppSpacing.sm),
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.ownerPrimary,
+                  child: Icon(Icons.send, color: Colors.white, size: 18),
+>>>>>>> Stashed changes
                 ),
               ],
             ),

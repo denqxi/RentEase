@@ -16,7 +16,7 @@ class ActivityTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.field),
         boxShadow: <BoxShadow>[
           BoxShadow(
@@ -29,26 +29,26 @@ class ActivityTile extends StatelessWidget {
       child: Row(
         children: <Widget>[
           _IconBadge(type: item.type),
-          const SizedBox(width: AppSpacing.md),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
                   item.title,
-                  style: AppTextStyles.label.copyWith(fontSize: 13),
+                  style: AppTextStyles.label(context).copyWith(fontSize: 13),
                 ),
-                const SizedBox(height: 3),
-                Text(item.timeAgo, style: AppTextStyles.caption),
+                SizedBox(height: 3),
+                Text(item.timeAgo, style: AppTextStyles.caption(context)),
               ],
             ),
           ),
           if (!item.isRead) ...<Widget>[
-            const SizedBox(width: AppSpacing.sm),
+            SizedBox(width: AppSpacing.sm),
             Container(
               width: 8,
               height: 8,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.unread,
                 shape: BoxShape.circle,
               ),

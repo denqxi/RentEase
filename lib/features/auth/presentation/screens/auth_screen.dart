@@ -5,7 +5,7 @@ import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
 
-/// Sign-in screen — hero building image behind a bottom-anchored white card.
+/// Sign-in screen â€” hero building image behind a bottom-anchored white card.
 class SignInScreen extends StatefulWidget {
   const SignInScreen({this.onCreateAccount, super.key});
 
@@ -57,7 +57,7 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 }
 
-// ─── Background ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _SignInBackground extends StatelessWidget {
   const _SignInBackground();
@@ -69,11 +69,11 @@ class _SignInBackground extends StatelessWidget {
       fit: BoxFit.cover,
       alignment: Alignment.topCenter,
       errorBuilder: (_, _, _) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.primary, Color(0xFF0E8FA0), AppColors.ink],
+            colors: [AppColors.primary, Color(0xFF0E8FA0), context.appColors.ink],
           ),
         ),
       ),
@@ -81,7 +81,7 @@ class _SignInBackground extends StatelessWidget {
   }
 }
 
-// ─── Card ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _SignInCard extends StatelessWidget {
   const _SignInCard({
@@ -109,8 +109,8 @@ class _SignInCard extends StatelessWidget {
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.73,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
+      decoration: BoxDecoration(
+        color: context.appColors.surface,
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppRadii.card),
         ),
@@ -135,14 +135,14 @@ class _SignInCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const _SignInLogoRow(),
-              const SizedBox(height: AppSpacing.lg),
-              Text('Sign in', style: AppTextStyles.title),
-              const SizedBox(height: AppSpacing.sm),
+              SizedBox(height: AppSpacing.lg),
+              Text('Sign in', style: AppTextStyles.title(context)),
+              SizedBox(height: AppSpacing.sm),
               Text(
-                'Welcome back — continue your rental journey with RentEase.',
-                style: AppTextStyles.body,
+                'Welcome back! continue your rental journey with RentEase.',
+                style: AppTextStyles.body(context),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.lg),
               _SignInFields(
                 emailController: emailController,
                 passwordController: passwordController,
@@ -151,15 +151,15 @@ class _SignInCard extends StatelessWidget {
                 onRememberMeChanged: onRememberMeChanged,
                 onTogglePassword: onTogglePassword,
               ),
-              const SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.lg),
               AppPrimaryButton(label: 'Sign In', onPressed: () {}),
-              const SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.lg),
               const _OrDivider(),
-              const SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.lg),
               const _GoogleButton(),
-              const SizedBox(height: AppSpacing.md),
+              SizedBox(height: AppSpacing.md),
               _CreateAccountRow(onCreateAccount: onCreateAccount),
-              const SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.lg),
             ],
           ),
         ),
@@ -168,7 +168,7 @@ class _SignInCard extends StatelessWidget {
   }
 }
 
-// ─── Logo ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Logo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _SignInLogoRow extends StatelessWidget {
   const _SignInLogoRow();
@@ -180,7 +180,7 @@ class _SignInLogoRow extends StatelessWidget {
         'assets/images/logo.png',
         height: 36,
         fit: BoxFit.contain,
-        errorBuilder: (_, _, _) => const Row(
+        errorBuilder: (_, _, _) => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.home_work_rounded, color: AppColors.primary, size: 22),
@@ -188,10 +188,10 @@ class _SignInLogoRow extends StatelessWidget {
             Text(
               'RentEase',
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: 'DM Sans',
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: context.appColors.textPrimary,
               ),
             ),
           ],
@@ -201,7 +201,7 @@ class _SignInLogoRow extends StatelessWidget {
   }
 }
 
-// ─── Form fields ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Form fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _SignInFields extends StatelessWidget {
   const _SignInFields({
@@ -226,15 +226,15 @@ class _SignInFields extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _FieldLabel(label: 'Email'),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: AppSpacing.sm),
         _AuthTextField(
           controller: emailController,
           hintText: 'you@email.com',
           keyboardType: TextInputType.emailAddress,
         ),
-        const SizedBox(height: AppSpacing.md),
+        SizedBox(height: AppSpacing.md),
         const _FieldLabel(label: 'Password'),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: AppSpacing.sm),
         _AuthTextField(
           controller: passwordController,
           hintText: 'Your password',
@@ -245,12 +245,12 @@ class _SignInFields extends StatelessWidget {
               obscurePassword
                   ? Icons.visibility_off_outlined
                   : Icons.visibility_outlined,
-              color: AppColors.hint,
+              color: context.appColors.hint,
               size: 20,
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
+        SizedBox(height: AppSpacing.md),
         _RememberForgotRow(
           rememberMe: rememberMe,
           onChanged: onRememberMeChanged,
@@ -269,7 +269,7 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
+      style: AppTextStyles.label(context).copyWith(color: context.appColors.textSecondary),
     );
   }
 }
@@ -295,10 +295,10 @@ class _AuthTextField extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: AppTextStyles.field,
+      style: AppTextStyles.field(context),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: AppTextStyles.field.copyWith(color: AppColors.hint),
+        hintStyle: AppTextStyles.field(context).copyWith(color: context.appColors.hint),
         suffixIcon: suffixIcon != null
             ? Padding(
                 padding: const EdgeInsets.only(right: AppSpacing.md),
@@ -312,14 +312,14 @@ class _AuthTextField extends StatelessWidget {
           vertical: 14,
         ),
         filled: true,
-        fillColor: AppColors.fieldFill,
+        fillColor: context.appColors.fieldFill,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.field),
-          borderSide: const BorderSide(color: AppColors.fieldBorder),
+          borderSide: BorderSide(color: context.appColors.fieldBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.field),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
     );
@@ -348,15 +348,15 @@ class _RememberForgotRow extends StatelessWidget {
             activeColor: AppColors.primary,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            side: const BorderSide(color: AppColors.hint, width: 1.5),
+            side: BorderSide(color: context.appColors.hint, width: 1.5),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ),
-        const SizedBox(width: AppSpacing.sm),
+        SizedBox(width: AppSpacing.sm),
         Text(
           'Remember me',
-          style: AppTextStyles.label.copyWith(
-            color: AppColors.textSecondary,
+          style: AppTextStyles.label(context).copyWith(
+            color: context.appColors.textSecondary,
             fontWeight: FontWeight.w400,
           ),
         ),
@@ -365,7 +365,7 @@ class _RememberForgotRow extends StatelessWidget {
           onTap: () {},
           child: Text(
             'Forgot password?',
-            style: AppTextStyles.label.copyWith(color: AppColors.primary),
+            style: AppTextStyles.label(context).copyWith(color: AppColors.primary),
           ),
         ),
       ],
@@ -373,7 +373,7 @@ class _RememberForgotRow extends StatelessWidget {
   }
 }
 
-// ─── Divider & Social ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Divider & Social â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _OrDivider extends StatelessWidget {
   const _OrDivider();
@@ -382,22 +382,22 @@ class _OrDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Expanded(
-          child: Divider(color: AppColors.fieldBorder, thickness: 1),
+        Expanded(
+          child: Divider(color: context.appColors.fieldBorder, thickness: 1),
         ),
         Padding(
           padding:
               const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           child: Text(
             'or continue with',
-            style: AppTextStyles.label.copyWith(
-              color: AppColors.hint,
+            style: AppTextStyles.label(context).copyWith(
+              color: context.appColors.hint,
               fontWeight: FontWeight.w400,
             ),
           ),
         ),
-        const Expanded(
-          child: Divider(color: AppColors.fieldBorder, thickness: 1),
+        Expanded(
+          child: Divider(color: context.appColors.fieldBorder, thickness: 1),
         ),
       ],
     );
@@ -415,11 +415,11 @@ class _GoogleButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: () {},
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.fieldBorder),
+          side: BorderSide(color: context.appColors.fieldBorder),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadii.button),
           ),
-          backgroundColor: AppColors.surface,
+          backgroundColor: context.appColors.surface,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -429,11 +429,11 @@ class _GoogleButton extends StatelessWidget {
               height: 20,
               child: CustomPaint(painter: _GoogleLogoPainter()),
             ),
-            const SizedBox(width: AppSpacing.sm),
+            SizedBox(width: AppSpacing.sm),
             Text(
               'Continue with Google',
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.textPrimary,
+              style: AppTextStyles.body(context).copyWith(
+                color: context.appColors.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -444,7 +444,7 @@ class _GoogleButton extends StatelessWidget {
   }
 }
 
-// ─── Footer ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _CreateAccountRow extends StatelessWidget {
   const _CreateAccountRow({this.onCreateAccount});
@@ -456,8 +456,8 @@ class _CreateAccountRow extends StatelessWidget {
     return Center(
       child: RichText(
         text: TextSpan(
-          style: AppTextStyles.label.copyWith(
-            color: AppColors.textSecondary,
+          style: AppTextStyles.label(context).copyWith(
+            color: context.appColors.textSecondary,
             fontWeight: FontWeight.w400,
           ),
           children: [
@@ -467,7 +467,7 @@ class _CreateAccountRow extends StatelessWidget {
                 onTap: onCreateAccount,
                 child: Text(
                   'Create an account',
-                  style: AppTextStyles.label.copyWith(
+                  style: AppTextStyles.label(context).copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -481,7 +481,7 @@ class _CreateAccountRow extends StatelessWidget {
   }
 }
 
-// ─── Painters ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Painters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _GoogleLogoPainter extends CustomPainter {
   @override

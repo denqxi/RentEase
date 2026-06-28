@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/theme/app_text_styles.dart';
+import '../../../core/cubit/app_theme_cubit.dart';
+import '../../../shared/widgets/app_toggle.dart';
 
-/// White card containing the profile settings menu rows.
 class ProfileMenuCard extends StatelessWidget {
+<<<<<<< Updated upstream
   const ProfileMenuCard({
     required this.darkMode,
     required this.onDarkModeToggle,
@@ -20,12 +22,19 @@ class ProfileMenuCard extends StatelessWidget {
   final VoidCallback? onEditProfile;
   final VoidCallback? onEditPreferences;
   final VoidCallback? onLogOut;
+=======
+  const ProfileMenuCard({required this.onLogout, super.key});
+
+  final VoidCallback onLogout;
+>>>>>>> Stashed changes
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surfaceContainer,
         borderRadius: BorderRadius.circular(AppRadii.card),
         boxShadow: <BoxShadow>[
           BoxShadow(
@@ -37,6 +46,7 @@ class ProfileMenuCard extends StatelessWidget {
       ),
       child: Column(
         children: <Widget>[
+<<<<<<< Updated upstream
           _MenuRow(
             icon: Icons.person_outline,
             label: 'Edit profile',
@@ -48,16 +58,21 @@ class ProfileMenuCard extends StatelessWidget {
             label: 'Edit preferences',
             onTap: onEditPreferences ?? () {},
           ),
+=======
+          _MenuRow(icon: Icons.person_outline,      label: 'Edit profile',    onTap: () {}),
           const _Divider(),
-          _MenuRow(
-            icon: Icons.access_time_outlined,
-            label: 'Account information',
-            onTap: () {},
-          ),
+          _MenuRow(icon: Icons.tune_rounded,         label: 'My preferences', onTap: () {}),
+>>>>>>> Stashed changes
           const _Divider(),
-          _DarkModeRow(value: darkMode, onToggle: onDarkModeToggle),
+          _MenuRow(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () {}),
           const _Divider(),
+          const _DarkModeRow(),
+          const _Divider(),
+<<<<<<< Updated upstream
           _LogOutRow(onTap: onLogOut ?? () {}),
+=======
+          _LogOutRow(onTap: onLogout),
+>>>>>>> Stashed changes
         ],
       ),
     );
@@ -77,6 +92,8 @@ class _MenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadii.card),
@@ -88,15 +105,19 @@ class _MenuRow extends StatelessWidget {
         child: Row(
           children: <Widget>[
             _IconCircle(icon: icon),
-            const SizedBox(width: AppSpacing.md),
+            SizedBox(width: AppSpacing.md),
             Expanded(
-              child: Text(label, style: AppTextStyles.label.copyWith(fontSize: 15, fontWeight: FontWeight.w500)),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: cs.onSurface,
+                ),
+              ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondary,
-              size: 20,
-            ),
+            Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 20),
           ],
         ),
       ),
@@ -105,13 +126,13 @@ class _MenuRow extends StatelessWidget {
 }
 
 class _DarkModeRow extends StatelessWidget {
-  const _DarkModeRow({required this.value, required this.onToggle});
-
-  final bool value;
-  final VoidCallback onToggle;
+  const _DarkModeRow();
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<AppThemeCubit>().state;
+    final cs = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
@@ -120,20 +141,21 @@ class _DarkModeRow extends StatelessWidget {
       child: Row(
         children: <Widget>[
           _IconCircle(icon: Icons.dark_mode_outlined),
-          const SizedBox(width: AppSpacing.md),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
               'Dark appearance',
-              style: AppTextStyles.label.copyWith(
+              style: TextStyle(
+                fontFamily: 'DM Sans',
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
+                color: cs.onSurface,
               ),
             ),
           ),
-          Switch(
-            value: value,
-            onChanged: (_) => onToggle(),
-            activeThumbColor: AppColors.accent,
+          AppToggle(
+            value: isDark,
+            onChanged: (_) => context.read<AppThemeCubit>().toggle(),
           ),
         ],
       ),
@@ -165,16 +187,13 @@ class _LogOutRow extends StatelessWidget {
                 color: AppColors.destructive.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
-                Icons.logout_rounded,
-                color: AppColors.destructive,
-                size: 18,
-              ),
+              child: Icon(Icons.logout_rounded, color: AppColors.destructive, size: 18),
             ),
-            const SizedBox(width: AppSpacing.md),
+            SizedBox(width: AppSpacing.md),
             Text(
               'Log out',
-              style: AppTextStyles.label.copyWith(
+              style: TextStyle(
+                fontFamily: 'DM Sans',
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
                 color: AppColors.destructive,
@@ -198,10 +217,10 @@ class _IconCircle extends StatelessWidget {
       width: 36,
       height: 36,
       decoration: BoxDecoration(
-        color: AppColors.accentSoft,
+        color: AppColors.primary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Icon(icon, color: AppColors.accent, size: 18),
+      child: Icon(icon, color: AppColors.primary, size: 18),
     );
   }
 }
@@ -211,10 +230,10 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Divider(
+    return Divider(
       height: 1,
       indent: AppSpacing.md + 36 + AppSpacing.md,
-      color: AppColors.fieldBorder,
+      color: Theme.of(context).colorScheme.outlineVariant,
     );
   }
 }
