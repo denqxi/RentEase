@@ -37,17 +37,17 @@ class OnboardingFooter extends StatelessWidget {
           label: isLastPage ? 'Get Started' : 'Next',
           onPressed: onPrimary,
         ),
-        const SizedBox(height: AppSpacing.md),
+        SizedBox(height: AppSpacing.md),
         TextButton(
           onPressed: onSecondary,
           child: Text(
             isLastPage ? 'I already have an account' : 'Skip',
             style: isLastPage
-                ? AppTextStyles.link.copyWith(
-                    color: AppColors.textPrimary,
+                ? AppTextStyles.link(context).copyWith(
+                    color: context.appColors.textPrimary,
                     fontWeight: FontWeight.w600,
                   )
-                : AppTextStyles.link,
+                : AppTextStyles.link(context),
           ),
         ),
       ],

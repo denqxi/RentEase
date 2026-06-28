@@ -21,7 +21,7 @@ class LandlordMatchesScreen extends StatelessWidget {
     final cubit = context.read<LandlordHomeCubit>();
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.appColors.surface,
       body: SafeArea(
         child: CustomScrollView(
           slivers: <Widget>[
@@ -36,11 +36,11 @@ class LandlordMatchesScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text('Matches', style: AppTextStyles.title),
-                    const SizedBox(height: AppSpacing.xs),
+                    Text('Matches', style: AppTextStyles.title(context)),
+                    SizedBox(height: AppSpacing.xs),
                     Text(
                       'Tenants sorted by best fit for your property',
-                      style: AppTextStyles.caption.copyWith(fontSize: 13),
+                      style: AppTextStyles.caption(context).copyWith(fontSize: 13),
                     ),
                   ],
                 ),
@@ -55,7 +55,7 @@ class LandlordMatchesScreen extends StatelessWidget {
               ),
               sliver: SliverList.separated(
                 itemCount: tenants.length,
-                separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+                separatorBuilder: (_, _) => SizedBox(height: AppSpacing.sm),
                 itemBuilder: (ctx, i) => TenantCard(
                   tenant: tenants[i],
                   onSaveToggle: () => cubit.toggleSaved(tenants[i].id),

@@ -27,29 +27,29 @@ class PreferenceDropdown extends StatelessWidget {
       children: <Widget>[
         Text(
           label,
-          style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.label(context).copyWith(color: context.appColors.textSecondary),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: AppSpacing.sm),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           decoration: BoxDecoration(
-            color: AppColors.fieldFill,
+            color: context.appColors.fieldFill,
             borderRadius: BorderRadius.circular(AppRadii.field),
-            border: Border.all(color: AppColors.fieldBorder),
+            border: Border.all(color: context.appColors.fieldBorder),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: value,
               isExpanded: true,
-              icon: const Icon(Icons.keyboard_arrow_down,
-                  color: AppColors.textSecondary),
-              style: AppTextStyles.field,
+              icon: Icon(Icons.keyboard_arrow_down,
+                  color: context.appColors.textSecondary),
+              style: AppTextStyles.field(context),
               borderRadius: BorderRadius.circular(AppRadii.field),
               items: items
                   .map(
                     (item) => DropdownMenuItem<String>(
                       value: item,
-                      child: Text(item, style: AppTextStyles.field),
+                      child: Text(item, style: AppTextStyles.field(context)),
                     ),
                   )
                   .toList(),

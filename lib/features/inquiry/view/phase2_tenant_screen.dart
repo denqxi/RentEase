@@ -1,0 +1,257 @@
+import 'package:flutter/material.dart';
+
+import '../../../core/constants/app_colors.dart';
+import '../../../shared/widgets/phase_badge.dart';
+
+class Phase2TenantScreen extends StatelessWidget {
+  const Phase2TenantScreen({required this.property, super.key});
+
+  final Map<String, dynamic> property;
+
+  @override
+  Widget build(BuildContext context) {
+    final String ownerName = property['ownerName'] as String;
+    final String ownerInitials = property['ownerInitials'] as String;
+
+    return Scaffold(
+      backgroundColor: context.appColors.surface,
+      appBar: AppBar(
+        backgroundColor: context.appColors.surface,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: context.appColors.textPrimary, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: AppColors.tenantFillBlue,
+              child: Text(
+                ownerInitials,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.tenantTextDeep,
+                ),
+              ),
+            ),
+            SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      ownerName,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: context.appColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: Color(0xFF4CAF50),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  property['name'] as String,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: context.appColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          PhaseBadge(phase: 2),
+          SizedBox(width: 16),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Message list
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // System message
+                Center(
+                  child: Text(
+                    'Owner accepted your inquiry!',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.appColors.textSecondary,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                // Owner message
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    CircleAvatar(
+                      radius: 16,
+                      backgroundColor: context.appColors.fieldFill,
+                      child: Text(
+                        ownerInitials,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: context.appColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.65,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: context.appColors.fieldFill,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            topRight: Radius.circular(12),
+                            bottomRight: Radius.circular(12),
+                          ),
+                          border: Border.all(color: context.appColors.fieldBorder),
+                        ),
+                        child: Text(
+                          'Kumusta! Yes, available pa ang room. 😊',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: context.appColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8),
+
+                // Tenant message
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.65,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryMid,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          topRight: Radius.circular(12),
+                          bottomLeft: Radius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Salamat! When can I schedule a visit?',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Quick reply chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                _QuickReplyChip('When can I visit?'),
+                SizedBox(width: 8),
+                _QuickReplyChip('Is the room still available?'),
+              ],
+            ),
+          ),
+
+          // Input bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: context.appColors.fieldFill,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: context.appColors.fieldBorder),
+                    ),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Type a message...',
+                        hintStyle: TextStyle(
+                          color: context.appColors.hint,
+                          fontSize: 13,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.primaryMid,
+                  child: Icon(Icons.send_rounded,
+                      color: Colors.white, size: 18),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickReplyChip extends StatelessWidget {
+  const _QuickReplyChip(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.tenantFillBlue,
+        border: Border.all(
+            color: AppColors.primaryMid.withValues(alpha: 0.4)),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          color: AppColors.primaryMid,
+        ),
+      ),
+    );
+  }
+}

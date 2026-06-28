@@ -1,73 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_dimensions.dart';
-import '../../../core/theme/app_text_styles.dart';
+import '../../shell/cubit/shell_cubit.dart';
 
-/// Search field + dark filter button row at the top of the home screen.
+/// Full-width pill search bar on the Home screen.
+/// Read-only â€” tapping navigates to the Search tab.
 class HomeSearchBar extends StatelessWidget {
-  const HomeSearchBar({required this.onChanged, super.key});
+  const HomeSearchBar({this.onChanged, super.key});
 
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Expanded(child: _SearchField(onChanged: onChanged)),
-        const SizedBox(width: AppSpacing.sm),
-        const _FilterButton(),
-      ],
-    );
-  }
-}
-
-class _SearchField extends StatelessWidget {
-  const _SearchField({required this.onChanged});
-
-  final ValueChanged<String> onChanged;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 48,
       decoration: BoxDecoration(
-        color: AppColors.fieldFill,
-        borderRadius: BorderRadius.circular(AppRadii.button),
-        border: Border.all(color: AppColors.fieldBorder),
+        color: context.appColors.fieldFill,
+        borderRadius: BorderRadius.circular(14),
       ),
       child: TextField(
+        readOnly: true,
+        onTap: () => context.read<ShellCubit>().selectTab(ShellTab.search),
         onChanged: onChanged,
-        style: AppTextStyles.field,
+        style: TextStyle(
+          fontFamily: 'DM Sans',
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: context.appColors.textPrimary,
+        ),
         decoration: InputDecoration(
-          hintText: 'Search homes, areas...',
-          hintStyle: AppTextStyles.field.copyWith(color: AppColors.hint),
-          prefixIcon: const Icon(
+          hintText: 'Search boarding houses...',
+          hintStyle: TextStyle(
+            fontFamily: 'DM Sans',
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: context.appColors.hint,
+          ),
+          prefixIcon: Icon(
             Icons.search,
-            color: AppColors.textSecondary,
+            color: context.appColors.textSecondary,
             size: 20,
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          contentPadding: EdgeInsets.symmetric(vertical: 14),
         ),
       ),
-    );
-  }
-}
-
-class _FilterButton extends StatelessWidget {
-  const _FilterButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: AppColors.ink,
-        borderRadius: BorderRadius.circular(AppRadii.button),
-      ),
-      child: const Icon(Icons.tune_rounded, color: AppColors.onInk, size: 20),
     );
   }
 }

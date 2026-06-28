@@ -33,7 +33,7 @@ class _TenantDetailView extends StatelessWidget {
     final cubit = context.read<TenantDetailCubit>();
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.appColors.surface,
       body: Stack(
         children: <Widget>[
           CustomScrollView(
@@ -61,7 +61,7 @@ class _TenantDetailView extends StatelessWidget {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate(<Widget>[
                     _AvatarSection(detail: detail),
-                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
                     MatchScoreCard(
                       matchPercent: detail.matchPercent,
                       label: detail.matchLabel,
@@ -70,12 +70,12 @@ class _TenantDetailView extends StatelessWidget {
                           .map((r) => (r.label, r.met))
                           .toList(),
                     ),
-                    const SizedBox(height: AppSpacing.lg),
+                    SizedBox(height: AppSpacing.lg),
                     Text(
                       'Applicant details',
-                      style: AppTextStyles.title.copyWith(fontSize: 18),
+                      style: AppTextStyles.title(context).copyWith(fontSize: 18),
                     ),
-                    const SizedBox(height: AppSpacing.sm),
+                    SizedBox(height: AppSpacing.sm),
                     _ApplicantDetailsTable(detail: detail),
                   ]),
                 ),
@@ -110,11 +110,11 @@ class _CircleButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: AppColors.fieldFill,
+          color: context.appColors.fieldFill,
           shape: BoxShape.circle,
-          border: Border.all(color: AppColors.fieldBorder),
+          border: Border.all(color: context.appColors.fieldBorder),
         ),
-        child: const Icon(Icons.arrow_back, size: 18, color: AppColors.textPrimary),
+        child: Icon(Icons.arrow_back, size: 18, color: context.appColors.textPrimary),
       ),
     );
   }
@@ -149,17 +149,17 @@ class _AvatarSection extends StatelessWidget {
               end: Alignment.bottomRight,
             ),
           ),
-          child: const Icon(Icons.person, color: AppColors.onInk, size: 40),
+          child: Icon(Icons.person, color: AppColors.onInk, size: 40),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: AppSpacing.sm),
         Text(
           detail.name,
-          style: AppTextStyles.title.copyWith(fontSize: 20),
+          style: AppTextStyles.title(context).copyWith(fontSize: 20),
         ),
-        const SizedBox(height: 2),
+        SizedBox(height: 2),
         Text(
           '${detail.occupation} · ${detail.incomeRange}',
-          style: AppTextStyles.caption.copyWith(fontSize: 13),
+          style: AppTextStyles.caption(context).copyWith(fontSize: 13),
         ),
       ],
     );
@@ -184,7 +184,7 @@ class _ApplicantDetailsTable extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.fieldFill,
+        color: context.appColors.fieldFill,
         borderRadius: BorderRadius.circular(AppRadii.card),
       ),
       child: Column(
@@ -202,12 +202,12 @@ class _ApplicantDetailsTable extends StatelessWidget {
                     Expanded(
                       child: Text(
                         rows[i].$1,
-                        style: AppTextStyles.caption.copyWith(fontSize: 13),
+                        style: AppTextStyles.caption(context).copyWith(fontSize: 13),
                       ),
                     ),
                     Text(
                       rows[i].$2,
-                      style: AppTextStyles.label.copyWith(
+                      style: AppTextStyles.label(context).copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
@@ -216,7 +216,7 @@ class _ApplicantDetailsTable extends StatelessWidget {
                 ),
               ),
               if (!isLast)
-                const Divider(height: 1, color: AppColors.fieldBorder),
+                Divider(height: 1, color: context.appColors.fieldBorder),
             ],
           );
         }),
@@ -240,9 +240,9 @@ class _BottomBar extends StatelessWidget {
         AppSpacing.lg,
         AppSpacing.sm + MediaQuery.of(context).padding.bottom,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.fieldBorder)),
+      decoration: BoxDecoration(
+        color: context.appColors.surface,
+        border: Border(top: BorderSide(color: context.appColors.fieldBorder)),
       ),
       child: Row(
         children: <Widget>[
@@ -252,31 +252,31 @@ class _BottomBar extends StatelessWidget {
               width: AppSizes.buttonHeight,
               height: AppSizes.buttonHeight,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.appColors.surface,
                 borderRadius: BorderRadius.circular(AppRadii.button),
-                border: Border.all(color: AppColors.fieldBorder),
+                border: Border.all(color: context.appColors.fieldBorder),
               ),
               child: Icon(
                 isSaved ? Icons.favorite_rounded : Icons.favorite_border,
-                color: isSaved ? AppColors.destructive : AppColors.textSecondary,
+                color: isSaved ? AppColors.destructive : context.appColors.textSecondary,
                 size: 22,
               ),
             ),
           ),
-          const SizedBox(width: AppSpacing.md),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: SizedBox(
               height: AppSizes.buttonHeight,
               child: ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.ink,
+                  backgroundColor: context.appColors.ink,
                   foregroundColor: AppColors.onInk,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadii.button),
                   ),
                 ),
-                child: const Text('Contact tenant', style: AppTextStyles.buttonLabel),
+                child: Text('Contact tenant', style: AppTextStyles.buttonLabel),
               ),
             ),
           ),

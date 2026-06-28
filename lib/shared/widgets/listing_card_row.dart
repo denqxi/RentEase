@@ -26,7 +26,7 @@ class ListingCardRow extends StatelessWidget {
       onTap: onTap,
       child: Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.field),
         boxShadow: <BoxShadow>[
           BoxShadow(
@@ -41,7 +41,7 @@ class ListingCardRow extends StatelessWidget {
         child: Row(
           children: <Widget>[
             _Thumbnail(listing: listing, onSavedToggle: onSavedToggle),
-            const SizedBox(width: AppSpacing.md),
+            SizedBox(width: AppSpacing.md),
             Expanded(child: _Info(listing: listing)),
           ],
         ),
@@ -102,54 +102,54 @@ class _Info extends StatelessWidget {
             Expanded(
               child: Text(
                 listing.title,
-                style: AppTextStyles.label.copyWith(fontSize: 14),
+                style: AppTextStyles.label(context).copyWith(fontSize: 14),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(width: AppSpacing.sm),
+            SizedBox(width: AppSpacing.sm),
             Text(
               '\$${listing.pricePerMonth.toLocale()}',
-              style: AppTextStyles.label.copyWith(
+              style: AppTextStyles.label(context).copyWith(
                 color: AppColors.accent,
                 fontSize: 14,
               ),
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.xs),
+        SizedBox(height: AppSpacing.xs),
         Row(
           children: <Widget>[
-            const Icon(
+            Icon(
               Icons.location_on_outlined,
               size: 12,
-              color: AppColors.textSecondary,
+              color: context.appColors.textSecondary,
             ),
-            const SizedBox(width: 2),
+            SizedBox(width: 2),
             Expanded(
               child: Text(
                 listing.location,
-                style: AppTextStyles.caption,
+                style: AppTextStyles.caption(context),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.xs),
+        SizedBox(height: AppSpacing.xs),
         Row(
           children: <Widget>[
-            const Icon(Icons.bed, size: 12, color: AppColors.textSecondary),
-            const SizedBox(width: 2),
-            Text('${listing.beds} bd', style: AppTextStyles.caption),
-            const SizedBox(width: AppSpacing.sm),
-            const Icon(
+            Icon(Icons.bed, size: 12, color: context.appColors.textSecondary),
+            SizedBox(width: 2),
+            Text('${listing.beds} bd', style: AppTextStyles.caption(context)),
+            SizedBox(width: AppSpacing.sm),
+            Icon(
               Icons.bathroom_outlined,
               size: 12,
-              color: AppColors.textSecondary,
+              color: context.appColors.textSecondary,
             ),
-            const SizedBox(width: 2),
-            Text('${listing.baths} ba', style: AppTextStyles.caption),
+            SizedBox(width: 2),
+            Text('${listing.baths} ba', style: AppTextStyles.caption(context)),
           ],
         ),
       ],
@@ -176,7 +176,7 @@ class _HeartButton extends StatelessWidget {
         ),
         child: Icon(
           isSaved ? Icons.favorite : Icons.favorite_border,
-          color: isSaved ? AppColors.accent : AppColors.textSecondary,
+          color: isSaved ? AppColors.accent : context.appColors.textSecondary,
           size: 14,
         ),
       ),

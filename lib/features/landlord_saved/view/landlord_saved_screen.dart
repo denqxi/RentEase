@@ -22,7 +22,7 @@ class LandlordSavedScreen extends StatelessWidget {
     final cubit = context.read<LandlordHomeCubit>();
 
     return Scaffold(
-      backgroundColor: tenants.isEmpty ? AppColors.surface : AppColors.surface,
+      backgroundColor: tenants.isEmpty ? context.appColors.surface : context.appColors.surface,
       body: SafeArea(
         child: CustomScrollView(
           slivers: <Widget>[
@@ -37,11 +37,11 @@ class LandlordSavedScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text('Saved', style: AppTextStyles.title),
-                    const SizedBox(height: AppSpacing.xs),
+                    Text('Saved', style: AppTextStyles.title(context)),
+                    SizedBox(height: AppSpacing.xs),
                     Text(
                       'Applicants you saved for later',
-                      style: AppTextStyles.caption.copyWith(fontSize: 13),
+                      style: AppTextStyles.caption(context).copyWith(fontSize: 13),
                     ),
                   ],
                 ),
@@ -65,7 +65,7 @@ class LandlordSavedScreen extends StatelessWidget {
                 ),
                 sliver: SliverList.separated(
                   itemCount: tenants.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+                  separatorBuilder: (_, _) => SizedBox(height: AppSpacing.sm),
                   itemBuilder: (ctx, i) => TenantCard(
                     tenant: tenants[i],
                     onSaveToggle: () => cubit.toggleSaved(tenants[i].id),
@@ -99,37 +99,37 @@ class _EmptyState extends StatelessWidget {
           width: 72,
           height: 72,
           decoration: BoxDecoration(
-            color: AppColors.fieldFill,
+            color: context.appColors.fieldFill,
             shape: BoxShape.circle,
-            border: Border.all(color: AppColors.fieldBorder),
+            border: Border.all(color: context.appColors.fieldBorder),
           ),
-          child: const Icon(Icons.favorite_border, color: AppColors.textSecondary, size: 32),
+          child: Icon(Icons.favorite_border, color: context.appColors.textSecondary, size: 32),
         ),
-        const SizedBox(height: AppSpacing.md),
+        SizedBox(height: AppSpacing.md),
         Text(
           'Nothing saved yet',
-          style: AppTextStyles.label.copyWith(fontSize: 16, fontWeight: FontWeight.w700),
+          style: AppTextStyles.label(context).copyWith(fontSize: 16, fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: AppSpacing.sm),
         Text(
           'Tap the heart on any tenant to keep\nthem here.',
           textAlign: TextAlign.center,
-          style: AppTextStyles.caption.copyWith(fontSize: 13),
+          style: AppTextStyles.caption(context).copyWith(fontSize: 13),
         ),
-        const SizedBox(height: AppSpacing.xl),
+        SizedBox(height: AppSpacing.xl),
         SizedBox(
           width: 200,
           height: AppSizes.buttonHeight,
           child: ElevatedButton(
             onPressed: onBrowse,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.ink,
+              backgroundColor: context.appColors.ink,
               foregroundColor: AppColors.onInk,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadii.button),
               ),
             ),
-            child: const Text('Browse now', style: AppTextStyles.buttonLabel),
+            child: Text('Browse now', style: AppTextStyles.buttonLabel),
           ),
         ),
       ],

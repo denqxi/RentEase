@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/match_badge.dart';
 import '../model/listing.dart';
 
 /// Large card used in the "Recommended for you" horizontal scroll.
+/// 220 wide x 270 tall; image area 155px with gradient overlay.
 class ListingCardLarge extends StatelessWidget {
   const ListingCardLarge({
     required this.listing,
@@ -25,25 +25,26 @@ class ListingCardLarge extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-      width: 220,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.07),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          _Photo(listing: listing, onSavedToggle: onSavedToggle),
-          _Details(listing: listing),
-        ],
-      ),
+        width: 220,
+        height: 270,
+        decoration: BoxDecoration(
+          color: context.appColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            _Photo(listing: listing, onSavedToggle: onSavedToggle),
+            _Details(listing: listing),
+          ],
+        ),
       ),
     );
   }
@@ -58,15 +59,38 @@ class _Photo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 158,
+      height: 155,
       child: Stack(
         children: <Widget>[
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppRadii.card),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            child: SizedBox.expand(
+              child: ListingImagePlaceholder(seed: listing.imageSeed),
             ),
-            child: ListingImagePlaceholder(seed: listing.imageSeed),
           ),
+          // Gradient overlay bottom
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 60,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: <Color>[
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.35),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Match badge top-left
           Positioned(
             top: 10,
             left: 10,
@@ -75,6 +99,7 @@ class _Photo extends StatelessWidget {
               showLabel: true,
             ),
           ),
+          // Heart top-right
           Positioned(
             top: 8,
             right: 8,
@@ -94,95 +119,69 @@ class _Details extends StatelessWidget {
 
   final Listing listing;
 
+  String _fmt(int value) => value
+      .toString()
+      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.sm + 2),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm + 2,
+        AppSpacing.sm,
+        AppSpacing.sm + 2,
+        AppSpacing.sm,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  listing.title,
-                  style: AppTextStyles.label.copyWith(fontSize: 13),
-                  maxLines: 2,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                '\$${_fmt(listing.pricePerMonth)}/mo',
-                style: AppTextStyles.label.copyWith(
-                  color: AppColors.accent,
-                  fontSize: 13,
-                ),
-              ),
-            ],
+          Text(
+            listing.title,
+            style: TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: context.appColors.textPrimary,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: AppSpacing.xs),
+          SizedBox(height: AppSpacing.xs),
+          Text(
+            '₱${_fmt(listing.pricePerMonth)}/mo',
+            style: TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.accent,
+            ),
+          ),
+          SizedBox(height: AppSpacing.xs),
           Row(
             children: <Widget>[
-              const Icon(
+              Icon(
                 Icons.location_on_outlined,
                 size: 12,
-                color: AppColors.textSecondary,
+                color: context.appColors.textSecondary,
               ),
-              const SizedBox(width: 2),
+              SizedBox(width: 2),
               Expanded(
                 child: Text(
                   listing.location,
-                  style: AppTextStyles.caption,
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: context.appColors.textSecondary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.xs),
-          _Stats(listing: listing),
         ],
       ),
-    );
-  }
-
-  String _fmt(int value) => value
-      .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
-}
-
-class _Stats extends StatelessWidget {
-  const _Stats({required this.listing});
-
-  final Listing listing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        const Icon(Icons.bed, size: 12, color: AppColors.textSecondary),
-        const SizedBox(width: 2),
-        Text('${listing.beds} bd', style: AppTextStyles.caption),
-        const SizedBox(width: AppSpacing.sm),
-        const Icon(
-          Icons.bathroom_outlined,
-          size: 12,
-          color: AppColors.textSecondary,
-        ),
-        const SizedBox(width: 2),
-        Text('${listing.baths} ba', style: AppTextStyles.caption),
-        if (listing.sqft != null) ...<Widget>[
-          const SizedBox(width: AppSpacing.sm),
-          const Icon(
-            Icons.crop_free,
-            size: 12,
-            color: AppColors.textSecondary,
-          ),
-          const SizedBox(width: 2),
-          Text('${listing.sqft} ft²', style: AppTextStyles.caption),
-        ],
-      ],
     );
   }
 }
@@ -206,7 +205,7 @@ class _HeartButton extends StatelessWidget {
         ),
         child: Icon(
           isSaved ? Icons.favorite : Icons.favorite_border,
-          color: isSaved ? AppColors.accent : AppColors.textSecondary,
+          color: isSaved ? AppColors.accent : context.appColors.textSecondary,
           size: 17,
         ),
       ),

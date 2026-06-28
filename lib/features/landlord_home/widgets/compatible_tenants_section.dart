@@ -27,24 +27,24 @@ class CompatibleTenantsSection extends StatelessWidget {
           children: <Widget>[
             Text(
               'Compatible tenants',
-              style: AppTextStyles.title.copyWith(fontSize: 18),
+              style: AppTextStyles.title(context).copyWith(fontSize: 18),
             ),
             const Spacer(),
             GestureDetector(
               onTap: () {},
               child: Text(
                 'See all',
-                style: AppTextStyles.link.copyWith(color: AppColors.accent),
+                style: AppTextStyles.link(context).copyWith(color: AppColors.accent),
               ),
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.md),
+        SizedBox(height: AppSpacing.md),
         ListView.separated(
           physics: const NeverScrollableScrollPhysics(),
           shrinkWrap: true,
           itemCount: tenants.length,
-          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+          separatorBuilder: (_, _) => SizedBox(height: AppSpacing.sm),
           itemBuilder: (ctx, i) => TenantCard(
             tenant: tenants[i],
             onSaveToggle: () => cubit.toggleSaved(tenants[i].id),

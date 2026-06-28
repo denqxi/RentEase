@@ -85,9 +85,9 @@ class _BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.fieldBorder)),
+      decoration: BoxDecoration(
+        color: context.appColors.surface,
+        border: Border(top: BorderSide(color: context.appColors.fieldBorder)),
       ),
       child: SafeArea(
         top: false,
@@ -171,16 +171,16 @@ class _NavItem extends StatelessWidget {
           children: <Widget>[
             Icon(
               _selected ? icon : outlinedIcon,
-              color: _selected ? AppColors.accent : AppColors.textSecondary,
+              color: _selected ? AppColors.accent : context.appColors.textSecondary,
               size: 24,
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: 2),
             Text(
               label,
-              style: AppTextStyles.caption.copyWith(
+              style: AppTextStyles.caption(context).copyWith(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: _selected ? AppColors.accent : AppColors.textSecondary,
+                color: _selected ? AppColors.accent : context.appColors.textSecondary,
               ),
             ),
           ],
@@ -222,7 +222,7 @@ class _NavItemAlerts extends StatelessWidget {
                       ? Icons.notifications_rounded
                       : Icons.notifications_outlined,
                   color:
-                      _selected ? AppColors.accent : AppColors.textSecondary,
+                      _selected ? AppColors.accent : context.appColors.textSecondary,
                   size: 24,
                 ),
                 if (unreadCount > 0)
@@ -232,7 +232,7 @@ class _NavItemAlerts extends StatelessWidget {
                     child: Container(
                       width: 8,
                       height: 8,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: AppColors.destructive,
                         shape: BoxShape.circle,
                       ),
@@ -240,13 +240,13 @@ class _NavItemAlerts extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: 2),
             Text(
               'Alerts',
-              style: AppTextStyles.caption.copyWith(
+              style: AppTextStyles.caption(context).copyWith(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: _selected ? AppColors.accent : AppColors.textSecondary,
+                color: _selected ? AppColors.accent : context.appColors.textSecondary,
               ),
             ),
           ],

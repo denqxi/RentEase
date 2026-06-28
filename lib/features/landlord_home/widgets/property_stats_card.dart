@@ -16,7 +16,7 @@ class PropertyStatsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.card),
         boxShadow: <BoxShadow>[
           BoxShadow(
@@ -45,7 +45,7 @@ class PropertyStatsCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         property.name,
-                        style: AppTextStyles.label.copyWith(
+                        style: AppTextStyles.label(context).copyWith(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
@@ -54,13 +54,13 @@ class PropertyStatsCard extends StatelessWidget {
                     _StatusBadge(label: property.status),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.md),
+                SizedBox(height: AppSpacing.md),
                 Row(
                   children: <Widget>[
                     _StatItem(value: property.matchCount, label: 'Matches'),
-                    const SizedBox(width: AppSpacing.xl),
+                    SizedBox(width: AppSpacing.xl),
                     _StatItem(value: property.viewCount, label: 'Views'),
-                    const SizedBox(width: AppSpacing.xl),
+                    SizedBox(width: AppSpacing.xl),
                     _StatItem(value: property.saveCount, label: 'Saves'),
                   ],
                 ),
@@ -88,7 +88,7 @@ class _StatusBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: AppTextStyles.caption.copyWith(
+        style: AppTextStyles.caption(context).copyWith(
           color: AppColors.accent,
           fontWeight: FontWeight.w600,
           fontSize: 12,
@@ -111,12 +111,12 @@ class _StatItem extends StatelessWidget {
       children: <Widget>[
         Text(
           '$value',
-          style: AppTextStyles.label.copyWith(
+          style: AppTextStyles.label(context).copyWith(
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
         ),
-        Text(label, style: AppTextStyles.caption),
+        Text(label, style: AppTextStyles.caption(context)),
       ],
     );
   }

@@ -3,77 +3,68 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
 /// App-wide text style tokens.
-///
-/// Never hardcode font sizes/weights inline in widgets — reference these.
 abstract final class AppTextStyles {
-  /// Large screen heading (e.g. onboarding titles).
-  static const TextStyle heading = TextStyle(
-    fontFamily: 'Inter',
+  static TextStyle heading(BuildContext context) => TextStyle(
+    fontFamily: 'DM Sans',
     fontSize: 28,
     fontWeight: FontWeight.w800,
     height: 1.15,
     letterSpacing: -0.4,
-    color: AppColors.textPrimary,
+    color: context.appColors.textPrimary,
   );
 
-  /// Supporting paragraph text below a heading.
-  static const TextStyle body = TextStyle(
-    fontFamily: 'Inter',
+  static TextStyle body(BuildContext context) => TextStyle(
+    fontFamily: 'DM Sans',
     fontSize: 15,
     fontWeight: FontWeight.w400,
     height: 1.5,
-    color: AppColors.textSecondary,
+    color: context.appColors.textSecondary,
   );
 
-  /// Label used inside primary (filled) buttons.
+  /// Label used inside primary (filled) buttons — always white.
   static const TextStyle buttonLabel = TextStyle(
-    fontFamily: 'Inter',
+    fontFamily: 'DM Sans',
     fontSize: 16,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.2,
     color: AppColors.onInk,
   );
 
-  /// Tertiary / link-style action text (e.g. "Skip").
-  static const TextStyle link = TextStyle(
-    fontFamily: 'Inter',
+  static TextStyle link(BuildContext context) => TextStyle(
+    fontFamily: 'DM Sans',
     fontSize: 14,
     fontWeight: FontWeight.w500,
-    color: AppColors.textSecondary,
+    color: context.appColors.textSecondary,
   );
 
-  /// Section/step title (smaller than [heading]).
-  static const TextStyle title = TextStyle(
-    fontFamily: 'Inter',
+  static TextStyle title(BuildContext context) => TextStyle(
+    fontFamily: 'DM Sans',
     fontSize: 24,
     fontWeight: FontWeight.w800,
     height: 1.2,
     letterSpacing: -0.3,
-    color: AppColors.textPrimary,
+    color: context.appColors.textPrimary,
   );
 
-  /// Field / row label.
-  static const TextStyle label = TextStyle(
-    fontFamily: 'Inter',
+  static TextStyle label(BuildContext context) => TextStyle(
+    fontFamily: 'DM Sans',
     fontSize: 13,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: context.appColors.textPrimary,
   );
 
-  /// Input text and hint sizing inside fields.
-  static const TextStyle field = TextStyle(
-    fontFamily: 'Inter',
+  static TextStyle field(BuildContext context) => TextStyle(
+    fontFamily: 'DM Sans',
     fontSize: 15,
     fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
+    color: context.appColors.textPrimary,
   );
 
-  /// Small 12 px secondary text for bed/bath/location details.
-  static const TextStyle caption = TextStyle(
-    fontFamily: 'Inter',
+  static TextStyle caption(BuildContext context) => TextStyle(
+    fontFamily: 'DM Sans',
     fontSize: 12,
     fontWeight: FontWeight.w400,
     height: 1.4,
-    color: AppColors.textSecondary,
+    color: context.appColors.textSecondary,
   );
 }

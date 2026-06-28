@@ -19,7 +19,7 @@ class ActivityScreen extends StatelessWidget {
     final cubit = context.read<ActivityCubit>();
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.appColors.surface,
       body: SafeArea(
         child: CustomScrollView(
           slivers: <Widget>[
@@ -33,13 +33,13 @@ class ActivityScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: <Widget>[
-                    Text('Activity', style: AppTextStyles.title),
+                    Text('Activity', style: AppTextStyles.title(context)),
                     const Spacer(),
                     GestureDetector(
                       onTap: cubit.markAllRead,
                       child: Text(
                         'Mark all read',
-                        style: AppTextStyles.link.copyWith(
+                        style: AppTextStyles.link(context).copyWith(
                           color: AppColors.accent,
                           fontWeight: FontWeight.w600,
                         ),
@@ -54,7 +54,7 @@ class ActivityScreen extends StatelessWidget {
               sliver: SliverList.separated(
                 itemCount: items.length,
                 separatorBuilder: (_, _) =>
-                    const SizedBox(height: AppSpacing.sm),
+                    SizedBox(height: AppSpacing.sm),
                 itemBuilder: (_, i) => ActivityTile(item: items[i]),
               ),
             ),

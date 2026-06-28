@@ -20,17 +20,12 @@ class RegistrationCubit extends Cubit<RegistrationState> {
   static const List<RegistrationStep> _tenantOrder = <RegistrationStep>[
     RegistrationStep.role,
     RegistrationStep.account,
-    RegistrationStep.about,
-    RegistrationStep.preferences,
     RegistrationStep.success,
   ];
 
   static const List<RegistrationStep> _landlordOrder = <RegistrationStep>[
     RegistrationStep.role,
     RegistrationStep.landlordAccount,
-    RegistrationStep.business,
-    RegistrationStep.property,
-    RegistrationStep.idealTenant,
     RegistrationStep.success,
   ];
 

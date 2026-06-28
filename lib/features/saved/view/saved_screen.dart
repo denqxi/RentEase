@@ -21,7 +21,7 @@ class SavedScreen extends StatelessWidget {
     final cubit = context.read<HomeCubit>();
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.appColors.surface,
       body: SafeArea(
         child: CustomScrollView(
           slivers: <Widget>[
@@ -36,9 +36,9 @@ class SavedScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text('Saved', style: AppTextStyles.title),
-                    const SizedBox(height: 4),
-                    Text('Homes you saved for later', style: AppTextStyles.body),
+                    Text('Saved', style: AppTextStyles.title(context)),
+                    SizedBox(height: 4),
+                    Text('Homes you saved for later', style: AppTextStyles.body(context)),
                   ],
                 ),
               ),
@@ -49,7 +49,7 @@ class SavedScreen extends StatelessWidget {
                   child: Text(
                     'No saved homes yet.\nTap ♡ on a listing to save it.',
                     textAlign: TextAlign.center,
-                    style: AppTextStyles.body,
+                    style: AppTextStyles.body(context),
                   ),
                 ),
               )
@@ -59,7 +59,7 @@ class SavedScreen extends StatelessWidget {
                 sliver: SliverList.separated(
                   itemCount: listings.length,
                   separatorBuilder: (_, _) =>
-                      const SizedBox(height: AppSpacing.sm),
+                      SizedBox(height: AppSpacing.sm),
                   itemBuilder: (ctx, i) => ListingCardRow(
                     listing: listings[i],
                     onSavedToggle: () => cubit.toggleSaved(listings[i].id),

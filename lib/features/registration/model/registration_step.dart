@@ -27,10 +27,10 @@ enum RegistrationStep {
   /// 1-based position within the progress bar, or null for steps that don't
   /// show a progress bar (role, success).
   int? get formStepNumber => switch (this) {
-        RegistrationStep.account => 1,
+        RegistrationStep.account => null,
         RegistrationStep.about => 2,
         RegistrationStep.preferences => 3,
-        RegistrationStep.landlordAccount => 1,
+        RegistrationStep.landlordAccount => null,
         RegistrationStep.business => 2,
         RegistrationStep.property => 3,
         RegistrationStep.idealTenant => 4,

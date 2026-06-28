@@ -52,7 +52,7 @@ class _Dot extends StatelessWidget {
       height: _height,
       width: active ? _activeWidth : _inactiveWidth,
       decoration: BoxDecoration(
-        color: active ? AppColors.primary : AppColors.indicatorInactive,
+        color: active ? AppColors.primary : context.appColors.indicatorInactive,
         borderRadius: BorderRadius.circular(_height / 2),
       ),
     );
