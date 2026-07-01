@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
 
 /// Sign-in screen â€” hero building image behind a bottom-anchored white card.
 class SignInScreen extends StatefulWidget {
-  const SignInScreen({this.onCreateAccount, super.key});
+  const SignInScreen({this.onCreateAccount, this.onSignIn, super.key});
 
   /// Called when the user taps "Create an account".
   final VoidCallback? onCreateAccount;
+
+  /// Called when the user taps "Sign In".
+  final VoidCallback? onSignIn;
 
   @override
   State<SignInScreen> createState() => _SignInScreenState();
@@ -49,6 +53,7 @@ class _SignInScreenState extends State<SignInScreen> {
               onTogglePassword: () =>
                   setState(() => _obscurePassword = !_obscurePassword),
               onCreateAccount: widget.onCreateAccount,
+              onSignIn: widget.onSignIn,
             ),
           ),
         ],
@@ -92,6 +97,7 @@ class _SignInCard extends StatelessWidget {
     required this.onRememberMeChanged,
     required this.onTogglePassword,
     this.onCreateAccount,
+    this.onSignIn,
   });
 
   final TextEditingController emailController;
@@ -101,6 +107,7 @@ class _SignInCard extends StatelessWidget {
   final ValueChanged<bool?> onRememberMeChanged;
   final VoidCallback onTogglePassword;
   final VoidCallback? onCreateAccount;
+  final VoidCallback? onSignIn;
 
   @override
   Widget build(BuildContext context) {
@@ -152,13 +159,15 @@ class _SignInCard extends StatelessWidget {
                 onTogglePassword: onTogglePassword,
               ),
               SizedBox(height: AppSpacing.lg),
-              AppPrimaryButton(label: 'Sign In', onPressed: () {}),
+              AppPrimaryButton(label: 'Sign In', onPressed: onSignIn ?? () {}),
               SizedBox(height: AppSpacing.lg),
               const _OrDivider(),
               SizedBox(height: AppSpacing.lg),
               const _GoogleButton(),
               SizedBox(height: AppSpacing.md),
               _CreateAccountRow(onCreateAccount: onCreateAccount),
+              SizedBox(height: AppSpacing.md),
+              const _DemoModeRow(),
               SizedBox(height: AppSpacing.lg),
             ],
           ),
@@ -176,25 +185,29 @@ class _SignInLogoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Image.asset(
-        'assets/images/logo.png',
-        height: 36,
-        fit: BoxFit.contain,
-        errorBuilder: (_, _, _) => Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.home_work_rounded, color: AppColors.primary, size: 22),
-            SizedBox(width: 6),
-            Text(
-              'RentEase',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: context.appColors.textPrimary,
+      child: GestureDetector(
+        onLongPress: () =>
+            Navigator.of(context).pushNamed(AppRouter.adminLogin),
+        child: Image.asset(
+          'assets/images/logo.png',
+          height: 36,
+          fit: BoxFit.contain,
+          errorBuilder: (_, _, _) => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.home_work_rounded, color: AppColors.primary, size: 22),
+              SizedBox(width: 6),
+              Text(
+                'RentEase',
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: context.appColors.textPrimary,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -475,6 +488,68 @@ class _CreateAccountRow extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DemoModeRow extends StatelessWidget {
+  const _DemoModeRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: GestureDetector(
+        onTap: () => _showDemoModeSheet(context),
+        child: Text(
+          'Try Demo Mode',
+          style: AppTextStyles.label(context).copyWith(
+            color: context.appColors.textSecondary,
+            fontWeight: FontWeight.w600,
+            decoration: TextDecoration.underline,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDemoModeSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: context.appColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.card)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Try Demo Mode', style: AppTextStyles.title(sheetContext)),
+              SizedBox(height: AppSpacing.sm),
+              Text(
+                'Jump straight into the app with sample data. '
+                'Nothing you do here is saved permanently.',
+                style: AppTextStyles.body(sheetContext),
+              ),
+              SizedBox(height: AppSpacing.lg),
+              AppPrimaryButton(
+                label: 'Continue as Demo Tenant',
+                onPressed: () => Navigator.of(sheetContext)
+                    .pushNamedAndRemoveUntil(AppRouter.tenantHome, (_) => false),
+              ),
+              SizedBox(height: AppSpacing.sm),
+              AppButton(
+                label: 'Continue as Demo Owner',
+                variant: AppButtonVariant.outline,
+                onPressed: () => Navigator.of(sheetContext)
+                    .pushNamedAndRemoveUntil(AppRouter.landlordHome, (_) => false),
+              ),
+            ],
+          ),
         ),
       ),
     );

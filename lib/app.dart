@@ -5,6 +5,7 @@ import 'core/cubit/app_theme_cubit.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/screens/auth_screen.dart';
+import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/onboarding/view/onboarding_screen.dart';
 import 'features/registration/model/user_role.dart';
 import 'features/registration/view/registration_flow_screen.dart';
@@ -23,9 +24,15 @@ class RentEaseApp extends StatelessWidget {
         themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
         onGenerateRoute: AppRouter.onGenerateRoute,
         home: Builder(
-          builder: (ctx) => OnboardingScreen(
-            onComplete: () => Navigator.of(ctx).push(
-              MaterialPageRoute<void>(builder: (_) => const _SignInEntry()),
+          builder: (ctx) => SplashScreen(
+            onComplete: () => Navigator.of(ctx).pushReplacement(
+              MaterialPageRoute<void>(
+                builder: (onboardingCtx) => OnboardingScreen(
+                  onComplete: () => Navigator.of(onboardingCtx).push(
+                    MaterialPageRoute<void>(builder: (_) => const _SignInEntry()),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -40,6 +47,10 @@ class _SignInEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SignInScreen(
+      onSignIn: () => Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRouter.roleSelection,
+        (_) => false,
+      ),
       onCreateAccount: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => RegistrationFlowScreen(

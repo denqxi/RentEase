@@ -89,6 +89,7 @@ class _TenantDetailView extends StatelessWidget {
             child: _BottomBar(
               isSaved: detail.isSaved,
               onSaveToggle: cubit.toggleSaved,
+              tenantName: detail.name,
             ),
           ),
         ],
@@ -226,10 +227,15 @@ class _ApplicantDetailsTable extends StatelessWidget {
 }
 
 class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.isSaved, required this.onSaveToggle});
+  const _BottomBar({
+    required this.isSaved,
+    required this.onSaveToggle,
+    required this.tenantName,
+  });
 
   final bool isSaved;
   final VoidCallback onSaveToggle;
+  final String tenantName;
 
   @override
   Widget build(BuildContext context) {
@@ -268,7 +274,12 @@ class _BottomBar extends StatelessWidget {
             child: SizedBox(
               height: AppSizes.buttonHeight,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Invitation sent to $tenantName!'),
+                    backgroundColor: context.appColors.ink,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.appColors.ink,
                   foregroundColor: AppColors.onInk,

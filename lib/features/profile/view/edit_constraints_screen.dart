@@ -115,7 +115,7 @@ class _EditConstraintsScreenState extends State<EditConstraintsScreen> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppRadii.field),
                         borderSide: const BorderSide(
-                          color: AppColors.primaryMid,
+                          color: AppColors.ink,
                           width: 1,
                         ),
                       ),
@@ -158,7 +158,6 @@ class _EditConstraintsScreenState extends State<EditConstraintsScreen> {
                         value: wifiRequired,
                         onChanged: (val) =>
                             setState(() => wifiRequired = val),
-                        activeColor: AppColors.primaryMid,
                       ),
                     ],
                   ),
@@ -180,7 +179,6 @@ class _EditConstraintsScreenState extends State<EditConstraintsScreen> {
                         value: privateBath,
                         onChanged: (val) =>
                             setState(() => privateBath = val),
-                        activeColor: AppColors.primaryMid,
                       ),
                     ],
                   ),
@@ -203,7 +201,7 @@ class _EditConstraintsScreenState extends State<EditConstraintsScreen> {
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.primaryMid,
+                          color: AppColors.ink,
                         ),
                       ),
                     ],
@@ -213,7 +211,7 @@ class _EditConstraintsScreenState extends State<EditConstraintsScreen> {
                     min: 0,
                     max: 10,
                     divisions: 20,
-                    activeColor: AppColors.primaryMid,
+                    activeColor: AppColors.ink,
                     onChanged: (val) =>
                         setState(() => maxDistance = val),
                   ),
@@ -265,7 +263,7 @@ class _EditConstraintsScreenState extends State<EditConstraintsScreen> {
               children: [
                 AppButton(
                   label: 'Save changes',
-                  color: AppColors.primaryMid,
+                  color: AppColors.ink,
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 const SizedBox(height: AppSpacing.sm),

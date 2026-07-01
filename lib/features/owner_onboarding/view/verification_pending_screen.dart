@@ -1,179 +1,145 @@
 import 'package:flutter/material.dart';
-<<<<<<< Updated upstream
-import '../../../core/constants/app_colors.dart';
-=======
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../shared/widgets/card_over_hero_layout.dart';
->>>>>>> Stashed changes
+import '../../../features/registration/widgets/registration_app_bar.dart';
+import '../../../shared/widgets/app_button.dart';
 
 class VerificationPendingScreen extends StatelessWidget {
   const VerificationPendingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< Updated upstream
     return Scaffold(
+      backgroundColor: context.appColors.surface,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                0,
+              ),
+              child: RegistrationAppBar(
+                onBack: () => Navigator.of(context).maybePop(),
+                stepNumber: 2,
+                stepCount: 2,
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Verification in progress',
+                      style: AppTextStyles.title(context),
+                    ),
+                    SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Our team is reviewing your documents. You\'ll be notified once approved.',
+                      style: AppTextStyles.body(context),
+                    ),
+                    SizedBox(height: AppSpacing.xl),
+                    _StatusCard(context: context),
+                    const Spacer(),
+                    AppPrimaryButton(
+                      label: 'Continue to Dashboard',
+                      onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
+                        AppRouter.landlordHome,
+                        (_) => false,
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.sm),
+                    Center(
+                      child: Text(
+                        'This usually takes 1–2 business days.',
+                        style: AppTextStyles.caption(context),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusCard extends StatelessWidget {
+  const _StatusCard({required this.context});
+
+  final BuildContext context;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: context.appColors.fieldFill,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: context.appColors.fieldBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              const SizedBox(height: 48),
-              CircleAvatar(
-                radius: 36,
-                backgroundColor: AppColors.amberFill,
-                child: Icon(
-                  Icons.access_time,
-                  color: AppColors.amberPrimary,
-                  size: 32,
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: Color(0x33F59E0B),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.access_time_rounded,
+                  color: AppColors.matchMedium,
+                  size: 24,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(width: AppSpacing.md),
               Text(
-                'Verification in progress.',
+                'Under review',
                 style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
+                  fontFamily: 'DM Sans',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: context.appColors.textPrimary,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Your documents have been submitted and are being reviewed.',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              // Row 1
-              Row(
-                children: [
-                  Icon(Icons.check_circle, color: AppColors.primaryMid, size: 20),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Documents submitted',
-                    style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // Row 2
-              Row(
-                children: [
-                  Icon(Icons.access_time, color: AppColors.amberPrimary, size: 20),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Admin review',
-                    style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.amberFill,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'In progress',
-                      style: TextStyle(
-                        color: AppColors.amberText,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // Row 3
-              Row(
-                children: [
-                  Icon(Icons.radio_button_unchecked, color: AppColors.border, size: 20),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Account approved',
-                    style: TextStyle(color: AppColors.textHint, fontSize: 14),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.fieldBg,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'Waiting',
-                      style: TextStyle(
-                        color: AppColors.textHint,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'You will be notified via email when your account is approved.',
-                style: TextStyle(color: AppColors.textHint, fontSize: 13),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
-        ),
-=======
-    return CardOverHeroLayout(
-      hero: const HeroPlaceholder(),
-      cardContent: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: Color(0x33F59E0B),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.access_time_rounded, color: AppColors.matchMedium, size: 32),
-          ),
-          SizedBox(height: AppSpacing.md),
-          Text(
-            'Verification in progress',
-            style: TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: context.appColors.textPrimary,
-              letterSpacing: -0.3,
-            ),
-          ),
-          SizedBox(height: AppSpacing.sm),
-          Text(
-            'Our team is reviewing your documents. You\'ll be notified once approved.',
-            style: AppTextStyles.body(context),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: AppSpacing.xl),
-          _ChecklistRow(
+          SizedBox(height: AppSpacing.lg),
+          const _ChecklistRow(
             icon: Icons.check_circle_rounded,
             color: AppColors.matchHigh,
             label: 'Documents submitted',
-            badge: null,
           ),
-          SizedBox(height: AppSpacing.sm),
-          _ChecklistRow(
+          SizedBox(height: AppSpacing.md),
+          const _ChecklistRow(
             icon: Icons.access_time_rounded,
             color: AppColors.matchMedium,
             label: 'Identity verification',
             badge: 'In progress',
             badgeColor: AppColors.matchMedium,
           ),
-          SizedBox(height: AppSpacing.sm),
+          SizedBox(height: AppSpacing.md),
           _ChecklistRow(
             icon: Icons.circle_outlined,
             color: context.appColors.indicatorInactive,
@@ -181,28 +147,18 @@ class VerificationPendingScreen extends StatelessWidget {
             badge: 'Waiting',
             badgeColor: context.appColors.indicatorInactive,
           ),
-          SizedBox(height: AppSpacing.xl),
-          Text(
-            'This usually takes 1â€“2 business days.',
-            style: AppTextStyles.caption(context),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: AppSpacing.lg),
         ],
->>>>>>> Stashed changes
       ),
     );
   }
 }
-<<<<<<< Updated upstream
-=======
 
 class _ChecklistRow extends StatelessWidget {
   const _ChecklistRow({
     required this.icon,
     required this.color,
     required this.label,
-    required this.badge,
+    this.badge,
     this.badgeColor,
   });
 
@@ -249,4 +205,3 @@ class _ChecklistRow extends StatelessWidget {
     );
   }
 }
->>>>>>> Stashed changes

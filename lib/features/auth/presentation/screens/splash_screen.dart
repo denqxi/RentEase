@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import 'welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  const SplashScreen({required this.onComplete, super.key});
+
+  final VoidCallback onComplete;
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -16,9 +17,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const WelcomeScreen()),
-      );
+      widget.onComplete();
     });
   }
 

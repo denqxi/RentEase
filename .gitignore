@@ -46,6 +46,8 @@ app.*.map.json
 
 # Ignore Claude configuration file
 CLAUDE.md
+PROTOTYPE.md
+DATA_DICTIONARY.md
 
 #Ignore the following files for the purpose of this project
 .vscode/

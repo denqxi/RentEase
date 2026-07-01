@@ -172,7 +172,12 @@ class _TenantCard extends StatelessWidget {
                     variant: AppButtonVariant.outline,
                     isSmall: true,
                     isFullWidth: false,
-                    onPressed: () {},
+                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Invitation sent to ${tenant['name']}!'),
+                        backgroundColor: context.appColors.ink,
+                      ),
+                    ),
                   )
                 else
                   const SizedBox.shrink(),

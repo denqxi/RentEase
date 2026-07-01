@@ -30,10 +30,6 @@ enum RegistrationStep {
   /// show a progress bar (role, success).
   int? get formStepNumber => switch (this) {
         RegistrationStep.account => null,
-<<<<<<< Updated upstream
-        RegistrationStep.checkEmail => null,
-=======
->>>>>>> Stashed changes
         RegistrationStep.about => 2,
         RegistrationStep.preferences => 3,
         RegistrationStep.landlordAccount => null,

@@ -14,11 +14,7 @@ class Phase1OwnerScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         leading: const BackButton(),
-<<<<<<< Updated upstream
-        title: const Text('New inquiry'),
-=======
         title: Text('New inquiry'),
->>>>>>> Stashed changes
         actions: [
           Container(
             margin: const EdgeInsets.only(right: AppSpacing.md),
@@ -27,11 +23,7 @@ class Phase1OwnerScreen extends StatelessWidget {
               color: AppColors.amberFill,
               borderRadius: BorderRadius.circular(12),
             ),
-<<<<<<< Updated upstream
-            child: const Text(
-=======
             child: Text(
->>>>>>> Stashed changes
               'Review',
               style: TextStyle(
                 color: AppColors.amberText,
@@ -49,11 +41,7 @@ class Phase1OwnerScreen extends StatelessWidget {
           children: [
             // Bot label
             Row(
-<<<<<<< Updated upstream
-              children: const [
-=======
               children: [
->>>>>>> Stashed changes
                 Icon(
                   Icons.smart_toy_outlined,
                   size: 12,
@@ -70,11 +58,7 @@ class Phase1OwnerScreen extends StatelessWidget {
                 ),
               ],
             ),
-<<<<<<< Updated upstream
-            const SizedBox(height: 6),
-=======
             SizedBox(height: 6),
->>>>>>> Stashed changes
 
             // Tenant summary card
             Container(
@@ -88,19 +72,6 @@ class Phase1OwnerScreen extends StatelessWidget {
                 children: [
                   Text(
                     inquiry['tenantName'] as String,
-<<<<<<< Updated upstream
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${inquiry['gender']} · ${inquiry['school']}',
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-=======
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
@@ -112,23 +83,11 @@ class Phase1OwnerScreen extends StatelessWidget {
                     '${inquiry['gender']} · ${inquiry['school']}',
                     style: TextStyle(
                       color: context.appColors.textSecondary,
->>>>>>> Stashed changes
                       fontSize: 13,
                     ),
                   ),
                   Text(
                     'Move-in: ${inquiry['moveIn']} · Stay: ${inquiry['stay']}',
-<<<<<<< Updated upstream
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const Text(
-                    'Group size: 1 person',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-=======
                     style: TextStyle(
                       color: context.appColors.textSecondary,
                       fontSize: 13,
@@ -138,40 +97,25 @@ class Phase1OwnerScreen extends StatelessWidget {
                     'Group size: 1 person',
                     style: TextStyle(
                       color: context.appColors.textSecondary,
->>>>>>> Stashed changes
                       fontSize: 13,
                     ),
                   ),
                   Text(
                     'Budget: ₱${inquiry['budget']}',
-<<<<<<< Updated upstream
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-=======
                     style: TextStyle(
                       color: context.appColors.textSecondary,
->>>>>>> Stashed changes
                       fontSize: 13,
                     ),
                   ),
                   Text(
                     '${inquiry['isSmoker'] == true ? 'Smoker' : 'Non-smoker'} · ${inquiry['hasPet'] == true ? 'Has pet' : 'No pet'}',
-<<<<<<< Updated upstream
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-=======
                     style: TextStyle(
                       color: context.appColors.textSecondary,
->>>>>>> Stashed changes
                       fontSize: 13,
                     ),
                   ),
                   if (inquiry['passesAllRules'] == true) ...[
-<<<<<<< Updated upstream
-                    const SizedBox(height: AppSpacing.sm),
-=======
                     SizedBox(height: AppSpacing.sm),
->>>>>>> Stashed changes
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
@@ -179,11 +123,7 @@ class Phase1OwnerScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: AppColors.greenPrimary),
                       ),
-<<<<<<< Updated upstream
-                      child: const Text(
-=======
                       child: Text(
->>>>>>> Stashed changes
                         'Passes all your rules',
                         style: TextStyle(
                           color: AppColors.greenText,
@@ -197,22 +137,14 @@ class Phase1OwnerScreen extends StatelessWidget {
               ),
             ),
 
-<<<<<<< Updated upstream
-            const SizedBox(height: AppSpacing.lg),
-=======
             SizedBox(height: AppSpacing.lg),
->>>>>>> Stashed changes
 
             AppButton(
               label: 'Accept inquiry',
               color: AppColors.ownerPrimary,
               onPressed: () {},
             ),
-<<<<<<< Updated upstream
-            const SizedBox(height: AppSpacing.sm),
-=======
             SizedBox(height: AppSpacing.sm),
->>>>>>> Stashed changes
             AppButton(
               label: 'Decline',
               isDanger: true,

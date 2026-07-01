@@ -7,26 +7,14 @@ import '../../../core/cubit/app_theme_cubit.dart';
 import '../../../shared/widgets/app_toggle.dart';
 
 class ProfileMenuCard extends StatelessWidget {
-<<<<<<< Updated upstream
   const ProfileMenuCard({
-    required this.darkMode,
-    required this.onDarkModeToggle,
-    this.onEditProfile,
-    this.onEditPreferences,
-    this.onLogOut,
+    required this.onLogout,
+    required this.onEditPreferences,
     super.key,
   });
 
-  final bool darkMode;
-  final VoidCallback onDarkModeToggle;
-  final VoidCallback? onEditProfile;
-  final VoidCallback? onEditPreferences;
-  final VoidCallback? onLogOut;
-=======
-  const ProfileMenuCard({required this.onLogout, super.key});
-
   final VoidCallback onLogout;
->>>>>>> Stashed changes
+  final VoidCallback onEditPreferences;
 
   @override
   Widget build(BuildContext context) {
@@ -46,33 +34,11 @@ class ProfileMenuCard extends StatelessWidget {
       ),
       child: Column(
         children: <Widget>[
-<<<<<<< Updated upstream
-          _MenuRow(
-            icon: Icons.person_outline,
-            label: 'Edit profile',
-            onTap: onEditProfile ?? () {},
-          ),
-          const _Divider(),
-          _MenuRow(
-            icon: Icons.tune_rounded,
-            label: 'Edit preferences',
-            onTap: onEditPreferences ?? () {},
-          ),
-=======
-          _MenuRow(icon: Icons.person_outline,      label: 'Edit profile',    onTap: () {}),
-          const _Divider(),
-          _MenuRow(icon: Icons.tune_rounded,         label: 'My preferences', onTap: () {}),
->>>>>>> Stashed changes
-          const _Divider(),
-          _MenuRow(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () {}),
+          _MenuRow(icon: Icons.tune_rounded,         label: 'My preferences', onTap: onEditPreferences),
           const _Divider(),
           const _DarkModeRow(),
           const _Divider(),
-<<<<<<< Updated upstream
-          _LogOutRow(onTap: onLogOut ?? () {}),
-=======
           _LogOutRow(onTap: onLogout),
->>>>>>> Stashed changes
         ],
       ),
     );

@@ -32,7 +32,7 @@ class CompatibleTenantsSection extends StatelessWidget {
             ),
             const Spacer(),
             GestureDetector(
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.findTenants),
+              onTap: () => Navigator.of(context).pushNamed(AppRouter.findTenants),
               child: Text(
                 'See all',
                 style: AppTextStyles.link(context).copyWith(color: AppColors.accent),

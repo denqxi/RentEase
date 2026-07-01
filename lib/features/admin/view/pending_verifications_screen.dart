@@ -1,72 +1,4 @@
 import 'package:flutter/material.dart';
-<<<<<<< Updated upstream
-import '../../../core/constants/app_colors.dart';
-import '../../../shared/widgets/app_button.dart';
-
-class PendingVerificationsScreen extends StatelessWidget {
-  const PendingVerificationsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pending verifications'),
-        actions: [
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_none),
-                onPressed: () {},
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: AppColors.amberPrimary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '2',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: const [
-          _VerificationCard(
-            ownerName: 'Maria Reyes',
-            submittedDate: 'Submitted Jun 20, 2025',
-            docs: [
-              'Government ID',
-              'Barangay certificate',
-              'Property photos (4 files)',
-            ],
-          ),
-          _VerificationCard(
-            ownerName: 'Ana Santos',
-            submittedDate: 'Submitted Jun 20, 2025',
-            docs: [
-              'Government ID',
-              'Proof of ownership',
-              'Property photos (3 files)',
-            ],
-          ),
-        ],
-=======
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -186,7 +118,6 @@ class _PendingVerificationsScreenState extends State<PendingVerificationsScreen>
             onReject: status == 'pending' ? () => _reject(item['id'] as String) : null,
           );
         },
->>>>>>> Stashed changes
       ),
     );
   }
@@ -194,70 +125,6 @@ class _PendingVerificationsScreenState extends State<PendingVerificationsScreen>
 
 class _VerificationCard extends StatelessWidget {
   const _VerificationCard({
-<<<<<<< Updated upstream
-    required this.ownerName,
-    required this.submittedDate,
-    required this.docs,
-  });
-
-  final String ownerName;
-  final String submittedDate;
-  final List<String> docs;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.border),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              ownerName,
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-            Text(
-              submittedDate,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-            ),
-            const SizedBox(height: 12),
-            ...docs.map(
-              (doc) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: [
-                    Icon(Icons.description_outlined,
-                        color: AppColors.textSecondary, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        doc,
-                        style: TextStyle(color: AppColors.textPrimary, fontSize: 13),
-                      ),
-                    ),
-                    Icon(Icons.check_circle, color: AppColors.primaryMid, size: 16),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () {},
-              style: TextButton.styleFrom(foregroundColor: AppColors.primaryMid),
-              child: const Text('View documents'),
-            ),
-            const SizedBox(height: 8),
-=======
     required this.item,
     required this.onApprove,
     required this.onReject,
@@ -266,6 +133,30 @@ class _VerificationCard extends StatelessWidget {
   final Map<String, dynamic> item;
   final VoidCallback? onApprove;
   final VoidCallback? onReject;
+
+  void _previewDocument(BuildContext context, String docName) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(docName, style: TextStyle(fontFamily: 'DM Sans', fontWeight: FontWeight.w700)),
+        content: Container(
+          height: 180,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: context.appColors.fieldFill,
+            borderRadius: BorderRadius.circular(AppRadii.field),
+          ),
+          child: Icon(Icons.description_rounded, size: 48, color: context.appColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('Close', style: TextStyle(color: context.appColors.textSecondary)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -338,32 +229,20 @@ class _VerificationCard extends StatelessWidget {
                 SizedBox(width: 6),
                 Text(d, style: AppTextStyles.caption(context)),
                 const Spacer(),
-                Text('View', style: AppTextStyles.caption(context).copyWith(color: AppColors.primary)),
+                GestureDetector(
+                  onTap: () => _previewDocument(context, d),
+                  child: Text('View', style: AppTextStyles.caption(context).copyWith(color: AppColors.primary)),
+                ),
               ],
             ),
           )),
           if (onApprove != null) ...[
             SizedBox(height: AppSpacing.sm),
->>>>>>> Stashed changes
             Row(
               children: [
                 Expanded(
                   child: AppButton(
                     label: 'Approve',
-<<<<<<< Updated upstream
-                    color: AppColors.primaryMid,
-                    isSmall: true,
-                    onPressed: () {},
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: AppButton(
-                    label: 'Reject',
-                    isDanger: true,
-                    isSmall: true,
-                    onPressed: () {},
-=======
                     isSmall: true,
                     onPressed: onApprove,
                   ),
@@ -375,17 +254,12 @@ class _VerificationCard extends StatelessWidget {
                     variant: AppButtonVariant.destructiveOutline,
                     isSmall: true,
                     onPressed: onReject,
->>>>>>> Stashed changes
                   ),
                 ),
               ],
             ),
           ],
-<<<<<<< Updated upstream
-        ),
-=======
         ],
->>>>>>> Stashed changes
       ),
     );
   }

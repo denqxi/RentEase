@@ -5,7 +5,6 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
-import '../../shell/view/main_shell.dart';
 import '../../tenant_onboarding/view/hard_constraints_screen.dart';
 import '../cubit/registration_cubit.dart';
 
@@ -42,7 +41,7 @@ class CheckEmailView extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: const BoxDecoration(
-                color: AppColors.primaryMid,
+                color: AppColors.ink,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -55,7 +54,7 @@ class CheckEmailView extends StatelessWidget {
 
           const SizedBox(height: AppSpacing.lg),
 
-          Text('Check your email', style: AppTextStyles.heading),
+          Text('Check your email', style: AppTextStyles.heading(context)),
 
           const SizedBox(height: AppSpacing.sm),
 
@@ -64,7 +63,7 @@ class CheckEmailView extends StatelessWidget {
                 ? 'We sent a verification link to\n$email'
                 : 'We sent a verification link to your email address.',
             textAlign: TextAlign.center,
-            style: AppTextStyles.body,
+            style: AppTextStyles.body(context),
           ),
 
           const SizedBox(height: AppSpacing.sm),
@@ -72,7 +71,7 @@ class CheckEmailView extends StatelessWidget {
           Text(
             'Click the link in the email to verify your account\nbefore continuing.',
             textAlign: TextAlign.center,
-            style: AppTextStyles.body.copyWith(
+            style: AppTextStyles.body(context).copyWith(
               color: AppColors.textSecondary,
               fontSize: 13,
             ),
@@ -84,13 +83,7 @@ class CheckEmailView extends StatelessWidget {
             label: 'I\'ve verified my email',
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => HardConstraintsScreen(
-                  onComplete: () => Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute<void>(
-                        builder: (_) => const MainShell()),
-                    (route) => false,
-                  ),
-                ),
+                builder: (_) => HardConstraintsScreen(),
               ),
             ),
           ),
@@ -101,8 +94,8 @@ class CheckEmailView extends StatelessWidget {
             onPressed: () {},
             child: Text(
               'Resend email',
-              style: AppTextStyles.link.copyWith(
-                color: AppColors.primaryMid,
+              style: AppTextStyles.link(context).copyWith(
+                color: AppColors.ink,
                 fontWeight: FontWeight.w600,
               ),
             ),

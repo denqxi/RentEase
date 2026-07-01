@@ -1,18 +1,31 @@
 import 'package:flutter/material.dart';
 
-/// Renders a colour-gradient placeholder for a listing photo.
+/// Renders a property photo, picked by [seed] so each listing looks distinct.
 ///
-/// [seed] (1–5) selects a distinct palette so each listing looks unique.
+/// Falls back to a colour-gradient placeholder if the asset is missing.
 class ListingImagePlaceholder extends StatelessWidget {
   const ListingImagePlaceholder({required this.seed, super.key});
 
   final int seed;
 
+  static const List<String> _assets = <String>[
+    'assets/images/hero-room.png',
+    'assets/images/hero-modern.png',
+    'assets/images/hero-pool.png',
+    'assets/images/hero-interior.png',
+    'assets/images/hero-building.png',
+  ];
+
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(gradient: _gradient),
-      child: const SizedBox.expand(),
+    final String asset = _assets[(seed - 1) % _assets.length];
+    return Image.asset(
+      asset,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => DecoratedBox(
+        decoration: BoxDecoration(gradient: _gradient),
+        child: const SizedBox.expand(),
+      ),
     );
   }
 

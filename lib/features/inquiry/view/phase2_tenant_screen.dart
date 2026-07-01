@@ -3,26 +3,89 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/widgets/phase_badge.dart';
 
-class Phase2TenantScreen extends StatelessWidget {
+class Phase2TenantScreen extends StatefulWidget {
   const Phase2TenantScreen({required this.property, super.key});
 
   final Map<String, dynamic> property;
 
   @override
+  State<Phase2TenantScreen> createState() => _Phase2TenantScreenState();
+}
+
+class _Phase2TenantScreenState extends State<Phase2TenantScreen> {
+  final _messageController = TextEditingController();
+  final _scrollController = ScrollController();
+
+  late final List<_ChatMessage> _messages = <_ChatMessage>[
+    _ChatMessage(text: 'Owner accepted your inquiry!', isSystem: true),
+    _ChatMessage(
+      text: 'Kumusta! Yes, available pa ang room. \u{1F60A}',
+      isTenant: false,
+    ),
+  ];
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  String _ownerReplyFor(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('visit') || lower.contains('schedule')) {
+      return 'Sure! You can visit anytime this week, 9am-6pm. Just message me before you head over.';
+    }
+    if (lower.contains('available') || lower.contains('vacant')) {
+      return 'Yes, still available! Room is ready for move-in.';
+    }
+    if (lower.contains('deposit') || lower.contains('advance')) {
+      final int deposit = (widget.property['deposit'] as num?)?.toInt() ?? 0;
+      final int advance = (widget.property['advanceMonths'] as num?)?.toInt() ?? 1;
+      return 'Deposit is ₱$deposit and advance is $advance month(s).';
+    }
+    if (lower.contains('curfew')) {
+      return 'Curfew here is ${widget.property['curfew'] ?? 'flexible'}.';
+    }
+    return 'Got it, thanks for the message! Let me know if you have other questions.';
+  }
+
+  void _sendMessage(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+    setState(() {
+      _messages.add(_ChatMessage(text: trimmed, isTenant: true));
+      _messageController.clear();
+    });
+    _scrollToBottom();
+
+    Future.delayed(const Duration(milliseconds: 700), () {
+      if (!mounted) return;
+      setState(() {
+        _messages.add(_ChatMessage(text: _ownerReplyFor(trimmed)));
+      });
+      _scrollToBottom();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final String ownerName = property['ownerName'] as String;
-    final String ownerInitials = property['ownerInitials'] as String;
+    final String ownerName = widget.property['ownerName'] as String;
+    final String ownerInitials = widget.property['ownerInitials'] as String;
 
     return Scaffold(
-<<<<<<< Updated upstream
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: AppColors.textPrimary, size: 20),
-=======
       backgroundColor: context.appColors.surface,
       appBar: AppBar(
         backgroundColor: context.appColors.surface,
@@ -30,249 +93,62 @@ class Phase2TenantScreen extends StatelessWidget {
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new,
               color: context.appColors.textPrimary, size: 20),
->>>>>>> Stashed changes
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Row(
           children: [
             CircleAvatar(
               radius: 16,
-              backgroundColor: AppColors.tenantFillBlue,
+              backgroundColor: AppColors.accentSoft,
               child: Text(
                 ownerInitials,
-<<<<<<< Updated upstream
-                style: const TextStyle(
-=======
                 style: TextStyle(
->>>>>>> Stashed changes
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.tenantTextDeep,
+                  color: context.appColors.ink,
                 ),
               ),
             ),
-<<<<<<< Updated upstream
-            const SizedBox(width: 8),
-=======
             SizedBox(width: 8),
->>>>>>> Stashed changes
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      ownerName,
-<<<<<<< Updated upstream
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-=======
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: context.appColors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(width: 4),
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
->>>>>>> Stashed changes
-                        color: Color(0xFF4CAF50),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ],
+                Text(
+                  ownerName,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: context.appColors.textPrimary,
+                  ),
                 ),
                 Text(
-                  property['name'] as String,
-<<<<<<< Updated upstream
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-=======
+                  widget.property['name'] as String,
                   style: TextStyle(
                     fontSize: 11,
                     color: context.appColors.textSecondary,
->>>>>>> Stashed changes
                   ),
                 ),
               ],
             ),
           ],
         ),
-<<<<<<< Updated upstream
-        actions: const [
-=======
         actions: [
->>>>>>> Stashed changes
           PhaseBadge(phase: 2),
           SizedBox(width: 16),
         ],
       ),
       body: Column(
         children: [
-          // Message list
           Expanded(
-            child: ListView(
+            child: ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
-              children: [
-                // System message
-                Center(
-                  child: Text(
-                    'Owner accepted your inquiry!',
-<<<<<<< Updated upstream
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-=======
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: context.appColors.textSecondary,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12),
->>>>>>> Stashed changes
-
-                // Owner message
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    CircleAvatar(
-                      radius: 16,
-<<<<<<< Updated upstream
-                      backgroundColor: AppColors.fieldBg,
-                      child: Text(
-                        ownerInitials,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth:
-                            MediaQuery.of(context).size.width * 0.65,
-=======
-                      backgroundColor: context.appColors.fieldFill,
-                      child: Text(
-                        ownerInitials,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: context.appColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width * 0.65,
->>>>>>> Stashed changes
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-<<<<<<< Updated upstream
-                          color: AppColors.fieldFill,
-=======
-                          color: context.appColors.fieldFill,
->>>>>>> Stashed changes
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(12),
-                            topRight: Radius.circular(12),
-                            bottomRight: Radius.circular(12),
-                          ),
-<<<<<<< Updated upstream
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: const Text(
-                          'Kumusta! Yes, available pa ang room. 😊',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textPrimary,
-=======
-                          border: Border.all(color: context.appColors.fieldBorder),
-                        ),
-                        child: Text(
-                          'Kumusta! Yes, available pa ang room. 😊',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: context.appColors.textPrimary,
->>>>>>> Stashed changes
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-<<<<<<< Updated upstream
-                const SizedBox(height: 8),
-=======
-                SizedBox(height: 8),
->>>>>>> Stashed changes
-
-                // Tenant message
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-<<<<<<< Updated upstream
-                      maxWidth:
-                          MediaQuery.of(context).size.width * 0.65,
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: const BoxDecoration(
-=======
-                      maxWidth: MediaQuery.of(context).size.width * 0.65,
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
->>>>>>> Stashed changes
-                        color: AppColors.primaryMid,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(12),
-                          topRight: Radius.circular(12),
-                          bottomLeft: Radius.circular(12),
-                        ),
-                      ),
-<<<<<<< Updated upstream
-                      child: const Text(
-=======
-                      child: Text(
->>>>>>> Stashed changes
-                        'Salamat! When can I schedule a visit?',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              itemCount: _messages.length,
+              itemBuilder: (_, i) => _MessageBubble(
+                message: _messages[i],
+                ownerInitials: ownerInitials,
+              ),
             ),
           ),
 
@@ -281,14 +157,21 @@ class Phase2TenantScreen extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
-<<<<<<< Updated upstream
-              children: const [
-=======
               children: [
->>>>>>> Stashed changes
-                _QuickReplyChip('When can I visit?'),
+                _QuickReplyChip(
+                  label: 'When can I visit?',
+                  onTap: () => _sendMessage('When can I visit?'),
+                ),
                 SizedBox(width: 8),
-                _QuickReplyChip('Is the room still available?'),
+                _QuickReplyChip(
+                  label: 'Is the room still available?',
+                  onTap: () => _sendMessage('Is the room still available?'),
+                ),
+                SizedBox(width: 8),
+                _QuickReplyChip(
+                  label: 'How much is the deposit?',
+                  onTap: () => _sendMessage('How much is the deposit?'),
+                ),
               ],
             ),
           ),
@@ -301,27 +184,17 @@ class Phase2TenantScreen extends StatelessWidget {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-<<<<<<< Updated upstream
-                      color: AppColors.fieldBg,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: const TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Type a message...',
-                        hintStyle: TextStyle(
-                          color: AppColors.textHint,
-=======
                       color: context.appColors.fieldFill,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: context.appColors.fieldBorder),
                     ),
                     child: TextField(
+                      controller: _messageController,
+                      onSubmitted: _sendMessage,
                       decoration: InputDecoration(
                         hintText: 'Type a message...',
                         hintStyle: TextStyle(
                           color: context.appColors.hint,
->>>>>>> Stashed changes
                           fontSize: 13,
                         ),
                         border: InputBorder.none,
@@ -331,20 +204,15 @@ class Phase2TenantScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-<<<<<<< Updated upstream
-                const SizedBox(width: 8),
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: AppColors.primaryMid,
-                  child: const Icon(Icons.send_rounded,
-=======
                 SizedBox(width: 8),
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: AppColors.primaryMid,
-                  child: Icon(Icons.send_rounded,
->>>>>>> Stashed changes
-                      color: Colors.white, size: 18),
+                GestureDetector(
+                  onTap: () => _sendMessage(_messageController.text),
+                  child: CircleAvatar(
+                    radius: 20,
+                    backgroundColor: context.appColors.ink,
+                    child: Icon(Icons.send_rounded,
+                        color: AppColors.onInk, size: 18),
+                  ),
                 ),
               ],
             ),
@@ -355,30 +223,140 @@ class Phase2TenantScreen extends StatelessWidget {
   }
 }
 
-class _QuickReplyChip extends StatelessWidget {
-  const _QuickReplyChip(this.label);
+class _ChatMessage {
+  _ChatMessage({required this.text, this.isTenant = false, this.isSystem = false});
 
-  final String label;
+  final String text;
+  final bool isTenant;
+  final bool isSystem;
+}
+
+class _MessageBubble extends StatelessWidget {
+  const _MessageBubble({required this.message, required this.ownerInitials});
+
+  final _ChatMessage message;
+  final String ownerInitials;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        color: AppColors.tenantFillBlue,
-        border: Border.all(
-            color: AppColors.primaryMid.withValues(alpha: 0.4)),
-        borderRadius: BorderRadius.circular(20),
+    if (message.isSystem) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Center(
+          child: Text(
+            message.text,
+            style: TextStyle(
+              fontSize: 12,
+              color: context.appColors.textSecondary,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (!message.isTenant) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: context.appColors.fieldFill,
+              child: Text(
+                ownerInitials,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: context.appColors.textSecondary,
+                ),
+              ),
+            ),
+            SizedBox(width: 8),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.65,
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: context.appColors.fieldFill,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
+                  border: Border.all(color: context.appColors.fieldBorder),
+                ),
+                child: Text(
+                  message.text,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: context.appColors.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.65,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: context.appColors.ink,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+                bottomLeft: Radius.circular(12),
+              ),
+            ),
+            child: Text(
+              message.text,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.onInk,
+              ),
+            ),
+          ),
+        ),
       ),
-      child: Text(
-        label,
-<<<<<<< Updated upstream
-        style: const TextStyle(
-=======
-        style: TextStyle(
->>>>>>> Stashed changes
-          fontSize: 12,
-          color: AppColors.primaryMid,
+    );
+  }
+}
+
+class _QuickReplyChip extends StatelessWidget {
+  const _QuickReplyChip({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: AppColors.accentSoft,
+          border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.accent,
+          ),
         ),
       ),
     );

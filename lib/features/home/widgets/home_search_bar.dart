@@ -2,11 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
-<<<<<<< Updated upstream
-import '../../../core/constants/app_dimensions.dart';
-import '../../../core/theme/app_text_styles.dart';
-=======
->>>>>>> Stashed changes
 import '../../shell/cubit/shell_cubit.dart';
 
 /// Full-width pill search bar on the Home screen.
@@ -28,18 +23,12 @@ class HomeSearchBar extends StatelessWidget {
         readOnly: true,
         onTap: () => context.read<ShellCubit>().selectTab(ShellTab.search),
         onChanged: onChanged,
-<<<<<<< Updated upstream
-        readOnly: true,
-        onTap: () => context.read<ShellCubit>().selectTab(ShellTab.search),
-        style: AppTextStyles.field,
-=======
         style: TextStyle(
           fontFamily: 'DM Sans',
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: context.appColors.textPrimary,
         ),
->>>>>>> Stashed changes
         decoration: InputDecoration(
           hintText: 'Search boarding houses...',
           hintStyle: TextStyle(

@@ -1,17 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-<<<<<<< Updated upstream
-import '../../../core/theme/app_text_styles.dart';
-import '../../../core/constants/mock_data.dart';
-import '../../../shared/widgets/listing_card_row.dart';
-=======
 import '../../../core/constants/mock_data.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/match_badge.dart';
->>>>>>> Stashed changes
 import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
 import '../view/property_detail_screen.dart';
@@ -71,12 +65,8 @@ class NearbySection extends StatelessWidget {
             onTap: () => Navigator.of(ctx).push(
               MaterialPageRoute<void>(
                 builder: (_) => PropertyDetailScreen(
-<<<<<<< Updated upstream
-                  property: MockData.properties[i % MockData.properties.length],
-=======
                   property:
                       MockData.properties[i % MockData.properties.length],
->>>>>>> Stashed changes
                 ),
               ),
             ),

@@ -105,8 +105,6 @@ abstract final class AppColors {
 
   // ── Admin ────────────────────────────────────────────────────────────────
   static const Color adminNavy = Color(0xFF1A1A2E);
-<<<<<<< Updated upstream
-=======
 }
 
 /// Theme-adaptive color tokens that flip between light and dark values.
@@ -197,5 +195,4 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
 extension AppAdaptiveColorsX on BuildContext {
   AppAdaptiveColors get appColors =>
       Theme.of(this).extension<AppAdaptiveColors>()!;
->>>>>>> Stashed changes
 }

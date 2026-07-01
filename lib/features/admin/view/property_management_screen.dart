@@ -1,8 +1,3 @@
-<<<<<<< Updated upstream
-import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/mock_data.dart';
-=======
 ﻿import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -10,209 +5,41 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/vacancy_status_pill.dart';
->>>>>>> Stashed changes
 
 class PropertyManagementScreen extends StatefulWidget {
   const PropertyManagementScreen({super.key});
 
-<<<<<<< Updated upstream
-=======
   static const routeName = '/admin/properties';
 
->>>>>>> Stashed changes
   @override
   State<PropertyManagementScreen> createState() => _PropertyManagementScreenState();
 }
 
-<<<<<<< Updated upstream
-class _PropertyManagementScreenState extends State<PropertyManagementScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final TextEditingController _searchController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-=======
 class _PropertyManagementScreenState extends State<PropertyManagementScreen> {
   final _searchController = TextEditingController();
   String _query = '';
 
   @override
   void dispose() {
->>>>>>> Stashed changes
     _searchController.dispose();
     super.dispose();
   }
 
-<<<<<<< Updated upstream
-  @override
-  Widget build(BuildContext context) {
-    final properties = MockData.properties as List;
+  void _toggleFlag(Map<String, dynamic> property) {
+    setState(() {
+      final i = MockData.properties.indexOf(property);
+      if (i == -1) return;
+      MockData.properties[i] = {
+        ...MockData.properties[i],
+        'isFlagged': !(property['isFlagged'] == true),
+      };
+    });
+  }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Properties'),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                prefixIcon: Icon(Icons.search, color: AppColors.textHint),
-                hintText: 'Search properties...',
-                filled: true,
-                fillColor: AppColors.fieldBg,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide(color: AppColors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide(color: AppColors.primaryMid),
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-              ),
-            ),
-          ),
-          TabBar(
-            controller: _tabController,
-            labelColor: AppColors.primaryMid,
-            indicatorColor: AppColors.primaryMid,
-            unselectedLabelColor: AppColors.textSecondary,
-            tabs: const [
-              Tab(text: 'All'),
-              Tab(text: 'Available'),
-              Tab(text: 'Booked'),
-              Tab(text: 'Flagged'),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // Tab 1: All
-                ListView.builder(
-                  itemCount: properties.length,
-                  itemBuilder: (context, index) {
-                    final p = properties[index] as Map;
-                    return Card(
-                      elevation: 0,
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: AppColors.border),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 64,
-                              height: 64,
-                              decoration: BoxDecoration(
-                                color: AppColors.tenantFillBlue,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.business,
-                                color: AppColors.primaryMid,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    p['name'] ?? '',
-                                    style: TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  Text(
-                                    p['ownerName'] ?? '',
-                                    style: TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.greenFill,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      'Available',
-                                      style: TextStyle(
-                                        color: AppColors.greenText,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            PopupMenuButton<String>(
-                              icon: Icon(Icons.more_vert, color: AppColors.textSecondary),
-                              onSelected: (value) {},
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'remove',
-                                  child: Text('Remove listing'),
-                                ),
-                                const PopupMenuItem(
-                                  value: 'clear_flag',
-                                  child: Text('Clear flag'),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                // Tab 2: Available
-                Center(
-                  child: Text(
-                    'No available properties.',
-                    style: TextStyle(color: AppColors.textHint, fontSize: 14),
-                  ),
-                ),
-                // Tab 3: Booked
-                Center(
-                  child: Text(
-                    'No booked properties.',
-                    style: TextStyle(color: AppColors.textHint, fontSize: 14),
-                  ),
-                ),
-                // Tab 4: Flagged
-                Center(
-                  child: Text(
-                    'No flagged properties.',
-                    style: TextStyle(color: AppColors.textHint, fontSize: 14),
-                  ),
-=======
+  void _removeListing(Map<String, dynamic> property) {
+    setState(() => MockData.properties.remove(property));
+  }
+
   List<Map<String, dynamic>> get _filtered {
     if (_query.isEmpty) return MockData.properties;
     return MockData.properties.where((p) {
@@ -271,24 +98,27 @@ class _PropertyManagementScreenState extends State<PropertyManagementScreen> {
                     Tab(text: 'Active'),
                     Tab(text: 'Flagged'),
                   ],
->>>>>>> Stashed changes
                 ),
               ],
             ),
           ),
-<<<<<<< Updated upstream
-=======
         ),
         body: TabBarView(
           children: [
-            _PropertyList(properties: _filtered, showFlaggedOnly: false),
+            _PropertyList(
+              properties: _filtered,
+              onToggleFlag: _toggleFlag,
+              onRemove: _removeListing,
+            ),
             _PropertyList(
               properties: _filtered.where((p) => p['vacancyStatus'] == 'available').toList(),
-              showFlaggedOnly: false,
+              onToggleFlag: _toggleFlag,
+              onRemove: _removeListing,
             ),
             _PropertyList(
               properties: _filtered.where((p) => p['isFlagged'] == true).toList(),
-              showFlaggedOnly: true,
+              onToggleFlag: _toggleFlag,
+              onRemove: _removeListing,
             ),
           ],
         ),
@@ -298,10 +128,15 @@ class _PropertyManagementScreenState extends State<PropertyManagementScreen> {
 }
 
 class _PropertyList extends StatelessWidget {
-  const _PropertyList({required this.properties, required this.showFlaggedOnly});
+  const _PropertyList({
+    required this.properties,
+    required this.onToggleFlag,
+    required this.onRemove,
+  });
 
   final List<Map<String, dynamic>> properties;
-  final bool showFlaggedOnly;
+  final ValueChanged<Map<String, dynamic>> onToggleFlag;
+  final ValueChanged<Map<String, dynamic>> onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -313,15 +148,25 @@ class _PropertyList extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       itemCount: properties.length,
       separatorBuilder: (_, _) => SizedBox(height: AppSpacing.sm),
-      itemBuilder: (_, i) => _PropertyCard(property: properties[i]),
+      itemBuilder: (_, i) => _PropertyCard(
+        property: properties[i],
+        onToggleFlag: () => onToggleFlag(properties[i]),
+        onRemove: () => onRemove(properties[i]),
+      ),
     );
   }
 }
 
 class _PropertyCard extends StatelessWidget {
-  const _PropertyCard({required this.property});
+  const _PropertyCard({
+    required this.property,
+    required this.onToggleFlag,
+    required this.onRemove,
+  });
 
   final Map<String, dynamic> property;
+  final VoidCallback onToggleFlag;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -381,11 +226,23 @@ class _PropertyCard extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
+          PopupMenuButton<String>(
             icon: Icon(Icons.more_vert_rounded, color: context.appColors.textSecondary, size: 18),
-            onPressed: () {},
+            onSelected: (value) {
+              if (value == 'flag') onToggleFlag();
+              if (value == 'remove') onRemove();
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'flag',
+                child: Text(isFlagged ? 'Unflag listing' : 'Flag listing'),
+              ),
+              PopupMenuItem(
+                value: 'remove',
+                child: Text('Remove listing', style: TextStyle(color: AppColors.destructive)),
+              ),
+            ],
           ),
->>>>>>> Stashed changes
         ],
       ),
     );

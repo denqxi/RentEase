@@ -1,101 +1,20 @@
 import 'package:flutter/material.dart';
-<<<<<<< Updated upstream
-import '../../../core/constants/app_colors.dart';
-import '../../../shared/widgets/app_button.dart';
-=======
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../shared/widgets/app_button.dart';
-import 'pending_verifications_screen.dart';
->>>>>>> Stashed changes
+import 'admin_shell.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
 
-<<<<<<< Updated upstream
-=======
   static const routeName = '/admin/login';
 
->>>>>>> Stashed changes
   @override
   State<AdminLoginScreen> createState() => _AdminLoginScreenState();
 }
 
 class _AdminLoginScreenState extends State<AdminLoginScreen> {
-<<<<<<< Updated upstream
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-
-  @override
-  void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.adminNavy,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 48),
-                const Icon(Icons.home_work_rounded, color: Colors.white, size: 48),
-                const SizedBox(height: 8),
-                const Text(
-                  'RentEase',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Admin access',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                _AdminTextField(
-                  controller: emailController,
-                  hint: 'Admin email',
-                ),
-                const SizedBox(height: 16),
-                _AdminTextField(
-                  controller: passwordController,
-                  hint: 'Password',
-                  obscure: true,
-                ),
-                const SizedBox(height: 24),
-                AppButton(
-                  label: 'Log in',
-                  color: AppColors.primaryMid,
-                  onPressed: () {},
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Admin credentials are managed internally.',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 12,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-=======
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
@@ -117,7 +36,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     if (!mounted) return;
     setState(() => _loading = false);
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const PendingVerificationsScreen()),
+      MaterialPageRoute<void>(builder: (_) => const AdminShell()),
     );
   }
 
@@ -192,7 +111,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     ),
               const Spacer(),
             ],
->>>>>>> Stashed changes
           ),
         ),
       ),
@@ -200,18 +118,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   }
 }
 
-<<<<<<< Updated upstream
-class _AdminTextField extends StatelessWidget {
-  const _AdminTextField({
-    required this.controller,
-    required this.hint,
-    this.obscure = false,
-  });
-
-  final TextEditingController controller;
-  final String hint;
-  final bool obscure;
-=======
 class _DarkTextField extends StatelessWidget {
   const _DarkTextField({
     required this.controller,
@@ -228,30 +134,11 @@ class _DarkTextField extends StatelessWidget {
   final bool obscureText;
   final Widget? suffixIcon;
   final ValueChanged<String>? onChanged;
->>>>>>> Stashed changes
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
-<<<<<<< Updated upstream
-      obscureText: obscure,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
-        fillColor: Colors.white.withValues(alpha: 0.1),
-        filled: true,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white),
-        ),
-        contentPadding: const EdgeInsets.all(16),
-=======
       keyboardType: keyboardType,
       obscureText: obscureText,
       onChanged: onChanged,
@@ -279,7 +166,6 @@ class _DarkTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadii.field),
           borderSide: BorderSide(color: AppColors.accent, width: 1.5),
         ),
->>>>>>> Stashed changes
       ),
     );
   }

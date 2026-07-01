@@ -1,29 +1,10 @@
 import 'package:flutter/material.dart';
-<<<<<<< Updated upstream
-=======
 import 'package:flutter/services.dart';
->>>>>>> Stashed changes
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_text_styles.dart';
 
-<<<<<<< Updated upstream
-/// Standard text field used across all RentEase screens.
-class AppTextField extends StatelessWidget {
-  const AppTextField({
-    this.controller,
-    this.hintText,
-    this.prefixText,
-    this.keyboardType,
-    this.obscureText = false,
-    this.suffixIcon,
-    this.prefixIcon,
-    this.readOnly = false,
-    this.onTap,
-    this.maxLines = 1,
-    this.label,
-=======
 /// Reusable styled input field matching the RentEase design system.
 class AppTextField extends StatelessWidget {
   const AppTextField({
@@ -43,27 +24,15 @@ class AppTextField extends StatelessWidget {
     this.minLines,
     this.inputFormatters,
     this.focusNode,
->>>>>>> Stashed changes
     super.key,
   });
 
   final TextEditingController? controller;
-<<<<<<< Updated upstream
-  final String? hintText;
-  final String? prefixText;
-=======
   final String hintText;
->>>>>>> Stashed changes
   final String? label;
   final TextInputType? keyboardType;
   final bool obscureText;
   final Widget? suffixIcon;
-<<<<<<< Updated upstream
-  final Widget? prefixIcon;
-  final bool readOnly;
-  final VoidCallback? onTap;
-  final int? maxLines;
-=======
   final String? prefixText;
   final Widget? prefixIcon;
   final bool readOnly;
@@ -145,54 +114,11 @@ class LabelledField extends StatelessWidget {
 
   final String label;
   final Widget child;
->>>>>>> Stashed changes
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-<<<<<<< Updated upstream
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (label != null) ...[
-          Text(
-            label!,
-            style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-        ],
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          obscureText: obscureText,
-          readOnly: readOnly,
-          onTap: onTap,
-          maxLines: obscureText ? 1 : maxLines,
-          style: AppTextStyles.field,
-          decoration: InputDecoration(
-            hintText: hintText,
-            prefixText: prefixText,
-            hintStyle: AppTextStyles.field.copyWith(color: AppColors.textHint),
-            suffixIcon: suffixIcon,
-            prefixIcon: prefixIcon,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: 14,
-            ),
-            filled: true,
-            fillColor: AppColors.fieldBg,
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadii.field),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadii.field),
-              borderSide:
-                  const BorderSide(color: AppColors.primaryMid, width: 1.5),
-            ),
-          ),
-        ),
-=======
       children: [
         Text(
           label,
@@ -200,7 +126,6 @@ class LabelledField extends StatelessWidget {
         ),
         SizedBox(height: AppSpacing.sm),
         child,
->>>>>>> Stashed changes
       ],
     );
   }

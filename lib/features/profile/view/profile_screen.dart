@@ -3,18 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-<<<<<<< Updated upstream
-import '../../../core/router/app_router.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../features/registration/model/user_role.dart';
-import '../../../features/auth/view/sign_in_entry.dart';
-=======
 import '../../../core/constants/mock_data.dart';
 import '../../../core/router/app_router.dart';
 import '../../../features/home/cubit/home_cubit.dart';
->>>>>>> Stashed changes
 import '../cubit/profile_cubit.dart';
 import '../widgets/profile_menu_card.dart';
+import 'edit_constraints_screen.dart';
 import 'saved_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -54,23 +48,6 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
               ),
-<<<<<<< Updated upstream
-              const SizedBox(height: AppSpacing.sm),
-              _RoleBadge(role: state.userRole.label),
-              const SizedBox(height: AppSpacing.xl),
-              ProfileMenuCard(
-                darkMode: state.darkMode,
-                onDarkModeToggle: cubit.toggleDarkMode,
-                onEditProfile: state.userRole == UserRole.landlord
-                    ? () => Navigator.of(context).pushNamed(AppRoutes.ownerProfile)
-                    : () => Navigator.of(context).pushNamed(AppRoutes.tenantProfile),
-                onEditPreferences: state.userRole == UserRole.landlord
-                    ? () => Navigator.of(context).pushNamed(AppRoutes.ownerTopsis)
-                    : () => Navigator.of(context).pushNamed(AppRoutes.editConstraints),
-                onLogOut: () => Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute<void>(builder: (_) => const SignInEntry()),
-                  (route) => false,
-=======
 
               // Avatar + name + badge
               SizedBox(height: AppSpacing.md),
@@ -92,7 +69,6 @@ class ProfileScreen extends StatelessWidget {
                     SizedBox(height: AppSpacing.sm),
                     _RoleBadge(role: state.userRole.label),
                   ],
->>>>>>> Stashed changes
                 ),
               ),
 
@@ -113,6 +89,11 @@ class ProfileScreen extends StatelessWidget {
                   onLogout: () => Navigator.of(context).pushNamedAndRemoveUntil(
                     AppRouter.signIn,
                     (_) => false,
+                  ),
+                  onEditPreferences: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const EditConstraintsScreen(),
+                    ),
                   ),
                 ),
               ),

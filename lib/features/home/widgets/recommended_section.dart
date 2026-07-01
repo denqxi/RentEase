@@ -5,7 +5,6 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
 import '../cubit/home_cubit.dart';
-import '../../../core/constants/mock_data.dart';
 import '../model/listing.dart';
 import '../view/property_detail_screen.dart';
 import 'listing_card_large.dart';
@@ -38,12 +37,8 @@ class RecommendedSection extends StatelessWidget {
               onTap: () => Navigator.of(ctx).push(
                 MaterialPageRoute<void>(
                   builder: (_) => PropertyDetailScreen(
-<<<<<<< Updated upstream
-                    property: MockData.properties[i % MockData.properties.length],
-=======
                     property:
                         MockData.properties[i % MockData.properties.length],
->>>>>>> Stashed changes
                   ),
                 ),
               ),

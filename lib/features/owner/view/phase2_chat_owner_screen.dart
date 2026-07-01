@@ -34,13 +34,7 @@ class _Phase2ChatOwnerScreenState extends State<Phase2ChatOwnerScreen> {
     super.dispose();
   }
 
-  void _sendMessage() {
-    final text = _messageController.text.trim();
-    if (text.isEmpty) return;
-    setState(() {
-      _messages.add(_ChatMessage(text: text, isOwner: true));
-      _messageController.clear();
-    });
+  void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -49,6 +43,38 @@ class _Phase2ChatOwnerScreenState extends State<Phase2ChatOwnerScreen> {
           curve: Curves.easeOut,
         );
       }
+    });
+  }
+
+  String _tenantReplyFor(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('move in') || lower.contains('when')) {
+      return 'I can move in as early as next week, if that works!';
+    }
+    if (lower.contains('document') || lower.contains('requirement')) {
+      return 'Sure, I have my valid ID and proof of enrollment ready.';
+    }
+    if (lower.contains('visit') || lower.contains('viewing')) {
+      return 'Yes, I would love to schedule a viewing this week.';
+    }
+    return 'Sounds good, thank you!';
+  }
+
+  void _sendMessage([String? quickReply]) {
+    final text = (quickReply ?? _messageController.text).trim();
+    if (text.isEmpty) return;
+    setState(() {
+      _messages.add(_ChatMessage(text: text, isOwner: true));
+      _messageController.clear();
+    });
+    _scrollToBottom();
+
+    Future.delayed(const Duration(milliseconds: 700), () {
+      if (!mounted) return;
+      setState(() {
+        _messages.add(_ChatMessage(text: _tenantReplyFor(text)));
+      });
+      _scrollToBottom();
     });
   }
 
@@ -145,6 +171,24 @@ class _Phase2ChatOwnerScreenState extends State<Phase2ChatOwnerScreen> {
               padding: const EdgeInsets.all(AppSpacing.md),
               itemCount: _messages.length,
               itemBuilder: (_, i) => _MessageBubble(message: _messages[i]),
+            ),
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+            child: Row(
+              children: [
+                _QuickReplyChip(
+                  label: 'When can you move in?',
+                  onTap: () => _sendMessage('When can you move in?'),
+                ),
+                SizedBox(width: AppSpacing.sm),
+                _QuickReplyChip(
+                  label: 'Any documents ready?',
+                  onTap: () => _sendMessage('Do you have your documents ready?'),
+                ),
+              ],
             ),
           ),
           Padding(
@@ -272,6 +316,35 @@ class _MessageBubble extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _QuickReplyChip extends StatelessWidget {
+  const _QuickReplyChip({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: AppColors.accentSoft,
+          border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.accent,
+          ),
+        ),
       ),
     );
   }

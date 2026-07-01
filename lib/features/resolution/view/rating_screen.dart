@@ -27,7 +27,7 @@ class _RatingScreenState extends State<RatingScreen> {
               // Teal circle with check
               const CircleAvatar(
                 radius: 44,
-                backgroundColor: AppColors.primaryMid,
+                backgroundColor: AppColors.ink,
                 child: Icon(Icons.check, color: Colors.white, size: 44),
               ),
               const SizedBox(height: 20),
@@ -113,7 +113,7 @@ class _RatingScreenState extends State<RatingScreen> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                        color: AppColors.primaryMid),
+                        color: AppColors.ink),
                   ),
                   contentPadding: const EdgeInsets.all(14),
                 ),
@@ -121,7 +121,7 @@ class _RatingScreenState extends State<RatingScreen> {
               const SizedBox(height: 24),
               AppButton(
                 label: 'Submit Rating',
-                color: AppColors.primaryMid,
+                color: AppColors.ink,
                 onPressed: () {},
               ),
               const SizedBox(height: 24),

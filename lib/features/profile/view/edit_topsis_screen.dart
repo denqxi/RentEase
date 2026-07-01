@@ -116,7 +116,7 @@ class _EditTopsisScreenState extends State<EditTopsisScreen> {
               children: [
                 AppButton(
                   label: 'Save changes',
-                  color: AppColors.primaryMid,
+                  color: AppColors.ink,
                   onPressed:
                       _isValid ? () => Navigator.of(context).pop() : null,
                 ),
@@ -170,7 +170,7 @@ class _SliderSection extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: AppColors.primaryMid,
+                color: AppColors.ink,
               ),
             ),
           ],
@@ -180,7 +180,7 @@ class _SliderSection extends StatelessWidget {
           min: 0,
           max: 1,
           divisions: 20,
-          activeColor: AppColors.primaryMid,
+          activeColor: AppColors.ink,
           onChanged: onChanged,
         ),
       ],

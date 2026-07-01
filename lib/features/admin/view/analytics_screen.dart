@@ -1,7 +1,3 @@
-<<<<<<< Updated upstream
-import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
-=======
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -9,21 +5,10 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
->>>>>>> Stashed changes
 
 class AnalyticsScreen extends StatelessWidget {
   const AnalyticsScreen({super.key});
 
-<<<<<<< Updated upstream
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Platform analytics'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-=======
   static const routeName = '/admin/analytics';
 
   @override
@@ -40,7 +25,6 @@ class AnalyticsScreen extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.md),
->>>>>>> Stashed changes
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -48,86 +32,6 @@ class AnalyticsScreen extends StatelessWidget {
               crossAxisCount: 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-<<<<<<< Updated upstream
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.2,
-              children: [
-                _MetricCard(
-                  label: 'Total users',
-                  value: '32',
-                  valueColor: AppColors.primaryMid,
-                ),
-                _MetricCard(
-                  label: 'Active listings',
-                  value: '12',
-                  valueColor: AppColors.primaryCyan,
-                ),
-                _MetricCard(
-                  label: 'Match success rate',
-                  value: '78%',
-                  valueColor: AppColors.greenPrimary,
-                ),
-                _MetricCard(
-                  label: 'Avg inquiries/listing',
-                  value: '4.2',
-                  valueColor: AppColors.amberPrimary,
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Monthly match activity',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 200,
-              child: CustomPaint(
-                painter: _BarChartPainter(),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Recent activity',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 8),
-            _ActivityTile(
-              icon: Icons.person_add,
-              title: 'New user registered',
-              date: 'Jun 26, 2025',
-            ),
-            _ActivityTile(
-              icon: Icons.verified,
-              title: 'Listing verified',
-              date: 'Jun 25, 2025',
-            ),
-            _ActivityTile(
-              icon: Icons.check_circle,
-              title: 'Booking confirmed',
-              date: 'Jun 24, 2025',
-            ),
-            _ActivityTile(
-              icon: Icons.handshake,
-              title: 'Inquiry matched',
-              date: 'Jun 23, 2025',
-            ),
-            _ActivityTile(
-              icon: Icons.admin_panel_settings,
-              title: 'Account approved',
-              date: 'Jun 22, 2025',
-            ),
-=======
               crossAxisSpacing: AppSpacing.sm,
               mainAxisSpacing: AppSpacing.sm,
               childAspectRatio: 1.4,
@@ -170,7 +74,6 @@ class AnalyticsScreen extends StatelessWidget {
               ('New inquiry submitted for bh002', '1 day ago', Icons.mail_rounded, AppColors.matchMedium),
               ('Benito Cruz account suspended', '2 days ago', Icons.block_rounded, AppColors.destructive),
             ].map((e) => _ActivityRow(label: e.$1, time: e.$2, icon: e.$3, color: e.$4)),
->>>>>>> Stashed changes
           ],
         ),
       ),
@@ -179,54 +82,25 @@ class AnalyticsScreen extends StatelessWidget {
 }
 
 class _MetricCard extends StatelessWidget {
-<<<<<<< Updated upstream
-  const _MetricCard({
-    required this.label,
-    required this.value,
-    required this.valueColor,
-  });
-
-  final String label;
-  final String value;
-  final Color valueColor;
-=======
   const _MetricCard({required this.label, required this.value, required this.color});
 
   final String label;
   final String value;
   final Color color;
->>>>>>> Stashed changes
 
   @override
   Widget build(BuildContext context) {
     return Container(
-<<<<<<< Updated upstream
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.fieldBg,
-        borderRadius: BorderRadius.circular(10),
-=======
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: context.appColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: context.appColors.fieldBorder, width: 0.5),
->>>>>>> Stashed changes
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-<<<<<<< Updated upstream
-          Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              color: valueColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
-=======
           Text(label, style: AppTextStyles.caption(context)),
           SizedBox(height: 4),
           Text(
@@ -237,7 +111,6 @@ class _MetricCard extends StatelessWidget {
               fontWeight: FontWeight.w800,
               color: color,
               letterSpacing: -0.5,
->>>>>>> Stashed changes
             ),
           ),
         ],
@@ -246,33 +119,6 @@ class _MetricCard extends StatelessWidget {
   }
 }
 
-<<<<<<< Updated upstream
-class _ActivityTile extends StatelessWidget {
-  const _ActivityTile({
-    required this.icon,
-    required this.title,
-    required this.date,
-  });
-
-  final IconData icon;
-  final String title;
-  final String date;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(
-        radius: 16,
-        backgroundColor: AppColors.tenantFillBlue,
-        child: Icon(icon, color: AppColors.primaryMid, size: 16),
-      ),
-      title: Text(title, style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
-      trailing: Text(
-        date,
-        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-      ),
-=======
 class _BarChart extends StatelessWidget {
   const _BarChart({required this.values, required this.labels});
 
@@ -288,71 +134,11 @@ class _BarChart extends StatelessWidget {
         labelColor: context.appColors.textSecondary,
       ),
       child: const SizedBox.expand(),
->>>>>>> Stashed changes
     );
   }
 }
 
 class _BarChartPainter extends CustomPainter {
-<<<<<<< Updated upstream
-  final List<int> values = const [8, 12, 15, 10, 18, 22];
-  final List<String> months = const ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const int maxValue = 22;
-    const double bottomPadding = 20;
-    const double gapCount = 5;
-    final double gapWidth = 8;
-    final double totalGapWidth = gapCount * gapWidth;
-    final double barWidth = (size.width - totalGapWidth) / 6;
-    final double chartHeight = size.height - bottomPadding;
-
-    final barPaint = Paint()..color = AppColors.primaryMid;
-    final baselinePaint = Paint()
-      ..color = AppColors.border
-      ..strokeWidth = 1;
-
-    // Draw baseline
-    canvas.drawLine(
-      Offset(0, chartHeight),
-      Offset(size.width, chartHeight),
-      baselinePaint,
-    );
-
-    for (int i = 0; i < values.length; i++) {
-      final double barHeight = (values[i] / maxValue) * chartHeight;
-      final double left = i * (barWidth + gapWidth);
-      final double top = chartHeight - barHeight;
-
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(left, top, barWidth, barHeight),
-          const Radius.circular(4),
-        ),
-        barPaint,
-      );
-
-      // Month label
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: months[i],
-          style: TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 10,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      textPainter.paint(
-        canvas,
-        Offset(
-          left + (barWidth - textPainter.width) / 2,
-          chartHeight + 4,
-        ),
-      );
-=======
   _BarChartPainter({
     required this.values,
     required this.labels,
@@ -392,15 +178,12 @@ class _BarChartPainter extends CustomPainter {
         textDirection: TextDirection.ltr,
       )..layout();
       tp.paint(canvas, Offset(left + barWidth * 0.35 - tp.width / 2, size.height - 18));
->>>>>>> Stashed changes
     }
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-<<<<<<< Updated upstream
-=======
 
 class _ActivityRow extends StatelessWidget {
   const _ActivityRow({
@@ -441,4 +224,3 @@ class _ActivityRow extends StatelessWidget {
     );
   }
 }
->>>>>>> Stashed changes
