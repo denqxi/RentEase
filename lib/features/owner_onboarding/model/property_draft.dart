@@ -12,6 +12,8 @@ class NewPropertyDraft {
   static String curfew = '10:00 PM';
   static int rent = 0;
   static Set<String> amenities = <String>{};
+  static double? latitude;
+  static double? longitude;
 
   static void reset() {
     name = '';
@@ -24,5 +26,7 @@ class NewPropertyDraft {
     curfew = '10:00 PM';
     rent = 0;
     amenities = <String>{};
+    latitude = null;
+    longitude = null;
   }
 }

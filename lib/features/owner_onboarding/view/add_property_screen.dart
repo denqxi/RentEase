@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/constants/mock_data.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../features/registration/widgets/step_header.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
+import '../../../shared/widgets/map_zoom_controls.dart';
 import '../model/property_draft.dart';
 import 'property_rules_screen.dart';
 
@@ -20,7 +24,8 @@ class AddPropertyScreen extends StatefulWidget {
 class _AddPropertyScreenState extends State<AddPropertyScreen> {
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
-  bool _hasLocation = false;
+  final _mapController = MapController();
+  LatLng? _pinnedLocation;
   final List<bool> _photoSlots = [false, false, false];
 
   bool get _canContinue =>
@@ -30,6 +35,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
   void dispose() {
     _nameController.dispose();
     _addressController.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -100,52 +106,87 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                                   .copyWith(color: context.appColors.textSecondary),
                             ),
                             const SizedBox(height: AppSpacing.sm),
-                            GestureDetector(
-                              onTap: () => setState(() => _hasLocation = true),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                height: 140,
-                                decoration: BoxDecoration(
-                                  color: _hasLocation
-                                      ? AppColors.accentSoft
-                                      : context.appColors.fieldFill,
-                                  borderRadius:
-                                      BorderRadius.circular(AppRadii.field),
-                                  border: Border.all(
-                                    color: _hasLocation
-                                        ? AppColors.accent
-                                        : context.appColors.fieldBorder,
-                                    width: _hasLocation ? 1.5 : 1,
-                                  ),
+                            Container(
+                              height: 180,
+                              decoration: BoxDecoration(
+                                borderRadius:
+                                    BorderRadius.circular(AppRadii.field),
+                                border: Border.all(
+                                  color: _pinnedLocation != null
+                                      ? AppColors.accent
+                                      : context.appColors.fieldBorder,
+                                  width: _pinnedLocation != null ? 1.5 : 1,
                                 ),
-                                child: Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Stack(
+                                children: [
+                                  FlutterMap(
+                                    mapController: _mapController,
+                                    options: MapOptions(
+                                      initialCenter: const LatLng(
+                                        MockData.tenantPoiLat,
+                                        MockData.tenantPoiLng,
+                                      ),
+                                      initialZoom: 14,
+                                      onTap: (_, latLng) => setState(
+                                          () => _pinnedLocation = latLng),
+                                    ),
                                     children: [
-                                      Icon(
-                                        _hasLocation
-                                            ? Icons.location_pin
-                                            : Icons.map_rounded,
-                                        color: _hasLocation
-                                            ? AppColors.accent
-                                            : context.appColors.hint,
-                                        size: 32,
+                                      TileLayer(
+                                        urlTemplate:
+                                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                        userAgentPackageName:
+                                            'com.rentease.app',
                                       ),
-                                      const SizedBox(height: AppSpacing.sm),
-                                      Text(
-                                        _hasLocation
-                                            ? 'Location set'
-                                            : 'Tap to pin location',
-                                        style: AppTextStyles.caption(context)
-                                            .copyWith(
-                                                color: _hasLocation
-                                                    ? AppColors.accent
-                                                    : context
-                                                        .appColors.textSecondary),
-                                      ),
+                                      if (_pinnedLocation != null)
+                                        MarkerLayer(
+                                          markers: [
+                                            Marker(
+                                              point: _pinnedLocation!,
+                                              width: 40,
+                                              height: 40,
+                                              alignment: Alignment.topCenter,
+                                              child: Icon(Icons.location_pin,
+                                                  color: AppColors.accent,
+                                                  size: 40),
+                                            ),
+                                          ],
+                                        ),
                                     ],
                                   ),
-                                ),
+                                  MapZoomControls(controller: _mapController),
+                                  Positioned(
+                                    left: AppSpacing.sm,
+                                    bottom: AppSpacing.sm,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: context.appColors.surface,
+                                        borderRadius: BorderRadius.circular(
+                                            AppRadii.field),
+                                        border: Border.all(
+                                            color:
+                                                context.appColors.fieldBorder),
+                                      ),
+                                      child: Text(
+                                        _pinnedLocation == null
+                                            ? 'Tap to pin your property'
+                                            : 'Pinned '
+                                                '${_pinnedLocation!.latitude.toStringAsFixed(4)}, '
+                                                '${_pinnedLocation!.longitude.toStringAsFixed(4)}',
+                                        style: AppTextStyles.caption(context)
+                                            .copyWith(
+                                          color: _pinnedLocation != null
+                                              ? AppColors.accent
+                                              : context
+                                                  .appColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(height: AppSpacing.md),
@@ -211,6 +252,10 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                               NewPropertyDraft.name = _nameController.text.trim();
                               NewPropertyDraft.address =
                                   _addressController.text.trim();
+                              NewPropertyDraft.latitude =
+                                  _pinnedLocation?.latitude;
+                              NewPropertyDraft.longitude =
+                                  _pinnedLocation?.longitude;
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
                                   builder: (_) => const PropertyRulesScreen(),

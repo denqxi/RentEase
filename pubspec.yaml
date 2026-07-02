@@ -41,9 +41,14 @@ dependencies:
   equatable: ^2.0.7
   # Google Fonts — DM Sans used app-wide.
   google_fonts: ^6.2.1
+  # Leaflet-style maps (OpenStreetMap tiles) — POI pinning and map browsing.
+  flutter_map: ^8.1.1
+  latlong2: ^0.9.1
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
 
   # Cubit/Bloc unit testing utilities.

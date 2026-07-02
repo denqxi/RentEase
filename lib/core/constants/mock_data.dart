@@ -36,6 +36,8 @@ class MockData {
       'bScore': 1,
       'isOutsidePreference': false,
       'vacancyStatus': 'available',
+      'latitude': 7.0668,
+      'longitude': 125.6034,
     },
     {
       'id': 'bh002',
@@ -61,6 +63,8 @@ class MockData {
       'bScore': 1,
       'isOutsidePreference': false,
       'vacancyStatus': 'pending',
+      'latitude': 7.0585,
+      'longitude': 125.6103,
     },
     {
       'id': 'bh003',
@@ -92,6 +96,8 @@ class MockData {
       'budgetExcess': 1000,
       'distanceExcess': 1.2,
       'vacancyStatus': 'available',
+      'latitude': 7.1063,
+      'longitude': 125.6291,
     },
   ];
 
@@ -216,6 +222,72 @@ class MockData {
       'groupSize': 1,
       'emergencyContact': 'Pedro Ramos — 09189876543',
       'passesAllRules': true,
+    },
+  ];
+
+  /// Searchable Davao City places for the POI search bar (mock geocoder).
+  static const List<Map<String, dynamic>> davaoPlaces = [
+    {'name': 'University of Southeastern Philippines (Matina)', 'lat': 7.0707, 'lng': 125.6087, 'type': 'school'},
+    {'name': 'Ateneo de Davao University', 'lat': 7.0731, 'lng': 125.6110, 'type': 'school'},
+    {'name': 'University of Mindanao (Matina)', 'lat': 7.0633, 'lng': 125.5989, 'type': 'school'},
+    {'name': 'UP Mindanao (Mintal)', 'lat': 7.0850, 'lng': 125.5090, 'type': 'school'},
+    {'name': 'Holy Cross of Davao College', 'lat': 7.0790, 'lng': 125.6155, 'type': 'school'},
+    {'name': 'SM City Davao (Ecoland)', 'lat': 7.0508, 'lng': 125.5962, 'type': 'workplace'},
+    {'name': 'Davao Doctors Hospital', 'lat': 7.0682, 'lng': 125.6068, 'type': 'workplace'},
+    {'name': 'Abreeza Mall (Bajada)', 'lat': 7.0908, 'lng': 125.6120, 'type': 'workplace'},
+  ];
+
+  /// Named areas used to mock reverse-geocoding of an arbitrary map tap.
+  static const List<Map<String, dynamic>> davaoAreas = [
+    {'name': 'Matina', 'lat': 7.0660, 'lng': 125.6030},
+    {'name': 'Ecoland', 'lat': 7.0580, 'lng': 125.6100},
+    {'name': 'Buhangin', 'lat': 7.1060, 'lng': 125.6290},
+    {'name': 'Toril', 'lat': 7.0210, 'lng': 125.4990},
+    {'name': 'Poblacion', 'lat': 7.0800, 'lng': 125.6150},
+    {'name': 'Mintal', 'lat': 7.0850, 'lng': 125.5090},
+    {'name': 'Bajada', 'lat': 7.0910, 'lng': 125.6120},
+  ];
+
+  /// Resolved inquiries (owner side) — history log of past decisions.
+  static final List<Map<String, dynamic>> ownerInquiryHistory = [
+    {
+      'tenantName': 'Sofia Lim',
+      'tenantInitials': 'SL',
+      'propertyName': 'Sunshine Boarding House',
+      'status': 'Booked',
+      'date': 'Jun 10, 2025',
+    },
+    {
+      'tenantName': 'Carla Mendoza',
+      'tenantInitials': 'CM',
+      'propertyName': 'Sunshine Boarding House',
+      'status': 'Declined',
+      'date': 'May 28, 2025',
+    },
+    {
+      'tenantName': 'Liza Fernandez',
+      'tenantInitials': 'LF',
+      'propertyName': 'Sunshine Boarding House',
+      'status': 'Accepted',
+      'date': 'May 15, 2025',
+    },
+  ];
+
+  /// Ratings left by previous landlords about a tenant (owner-facing).
+  static final List<Map<String, dynamic>> tenantRatings = [
+    {
+      'landlordName': 'Ana Reyes',
+      'stars': 5,
+      'date': 'Apr 2025',
+      'comment': 'Paid rent on time every month and kept the room clean. '
+          'Would gladly accept her again.',
+    },
+    {
+      'landlordName': 'Juan dela Cruz',
+      'stars': 4,
+      'date': 'Nov 2024',
+      'comment': 'Quiet and respectful of house rules. Occasionally late '
+          'with utility share but always settled it.',
     },
   ];
 

@@ -72,7 +72,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                     Icon(Icons.access_time_rounded, color: AppColors.matchMedium, size: 14),
                     SizedBox(width: 4),
                     Text(
-                      'Temporary â€” not saved',
+                      'Temporary not saved',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12,

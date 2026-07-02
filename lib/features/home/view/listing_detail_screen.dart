@@ -85,6 +85,7 @@ class _ListingDetailView extends StatelessWidget {
             child: _BottomBar(
               isSaved: detail.isSaved,
               onSaveToggle: cubit.toggleSaved,
+              landlordName: detail.landlordName,
             ),
           ),
         ],
@@ -460,10 +461,15 @@ class _LandlordRow extends StatelessWidget {
 }
 
 class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.isSaved, required this.onSaveToggle});
+  const _BottomBar({
+    required this.isSaved,
+    required this.onSaveToggle,
+    required this.landlordName,
+  });
 
   final bool isSaved;
   final VoidCallback onSaveToggle;
+  final String landlordName;
 
   @override
   Widget build(BuildContext context) {
@@ -486,7 +492,12 @@ class _BottomBar extends StatelessWidget {
             child: SizedBox(
               height: AppSizes.buttonHeight,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Inquiry sent to $landlordName!'),
+                    backgroundColor: context.appColors.ink,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.appColors.ink,
                   foregroundColor: AppColors.onInk,

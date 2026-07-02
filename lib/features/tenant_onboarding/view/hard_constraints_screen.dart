@@ -7,7 +7,7 @@ import '../../../features/registration/widgets/form_step_layout.dart';
 import '../../../features/registration/widgets/labeled_text_field.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../shared/widgets/app_toggle.dart';
-import 'poi_setup_screen.dart';
+import 'soft_preferences_step_screen.dart';
 
 class HardConstraintsScreen extends StatefulWidget {
   const HardConstraintsScreen({super.key});
@@ -44,7 +44,9 @@ class _HardConstraintsScreenState extends State<HardConstraintsScreen> {
 
   void _continue() {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const PoiSetupScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => const SoftPreferencesStepScreen(),
+      ),
     );
   }
 
@@ -63,7 +65,7 @@ class _HardConstraintsScreenState extends State<HardConstraintsScreen> {
               child: RegistrationAppBar(
                 onBack: () => Navigator.of(context).pop(),
                 stepNumber: 1,
-                stepCount: 4,
+                stepCount: 5,
               ),
             ),
             Expanded(

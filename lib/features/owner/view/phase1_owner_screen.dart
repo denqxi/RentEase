@@ -2,6 +2,7 @@
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/constants/mock_data.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import 'phase2_chat_owner_screen.dart';
@@ -145,11 +146,16 @@ class Phase1OwnerScreen extends StatelessWidget {
                 children: [
                   AppButton(
                     label: 'Accept',
-                    onPressed: () => Navigator.of(context).pushReplacement(
-                      MaterialPageRoute<void>(
-                        builder: (_) => Phase2ChatOwnerScreen(inquiry: inquiry),
-                      ),
-                    ),
+                    onPressed: () {
+                      // Accepting unlocks Phase 2 — persist so the inquiry
+                      // list shows "Open chat" instead of Accept/Decline.
+                      inquiry['phase'] = 2;
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute<void>(
+                          builder: (_) => Phase2ChatOwnerScreen(inquiry: inquiry),
+                        ),
+                      );
+                    },
                   ),
                   SizedBox(height: AppSpacing.sm),
                   AppButton(
@@ -201,6 +207,14 @@ class Phase1OwnerScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
+              MockData.ownerInquiries.remove(inquiry);
+              MockData.ownerInquiryHistory.insert(0, {
+                'tenantName': inquiry['tenantName'],
+                'tenantInitials': inquiry['tenantInitials'],
+                'propertyName': inquiry['propertyName'],
+                'status': 'Declined',
+                'date': 'Jul 2, 2026',
+              });
               Navigator.of(ctx).pop();
               Navigator.of(context).pop();
             },

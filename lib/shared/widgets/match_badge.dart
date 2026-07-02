@@ -17,8 +17,14 @@ class MatchBadge extends StatelessWidget {
   final int percent;
   final bool showLabel;
 
-  Color get _dotColor =>
-      percent >= 80 ? AppColors.matchHigh : AppColors.matchMedium;
+  /// Color psychology: green = strong match, amber = moderate, red = weak.
+  static Color colorFor(int percent) => percent >= 80
+      ? AppColors.matchHigh
+      : percent >= 60
+          ? AppColors.matchMedium
+          : AppColors.destructive;
+
+  Color get _dotColor => colorFor(percent);
 
   @override
   Widget build(BuildContext context) {

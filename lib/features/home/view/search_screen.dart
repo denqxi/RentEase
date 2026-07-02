@@ -4,9 +4,11 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
+import '../../../shared/widgets/match_badge.dart';
 import '../../../shared/widgets/verified_badge.dart';
 import '../../inquiry/view/phase1_tenant_screen.dart';
 import '../../tenant/view/session_filter_sheet.dart';
+import 'map_view_screen.dart';
 import 'property_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -79,6 +81,31 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                   const Spacer(),
+                  // Map view button
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            MapViewScreen(properties: _displayedProperties),
+                      ),
+                    ),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: context.appColors.fieldFill,
+                        borderRadius: BorderRadius.circular(12),
+                        border:
+                            Border.all(color: context.appColors.fieldBorder),
+                      ),
+                      child: Icon(
+                        Icons.map_rounded,
+                        color: AppColors.accent,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 8),
                   // Filter button â€” filled accent when session active
                   GestureDetector(
                     onTap: _showFilterSheet,
@@ -410,7 +437,8 @@ class _PropertyCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.accentSoft,
+                          color: MatchBadge.colorFor((ciScore * 100).round())
+                              .withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -419,7 +447,7 @@ class _PropertyCard extends StatelessWidget {
                             fontFamily: 'DM Sans',
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.accent,
+                            color: MatchBadge.colorFor((ciScore * 100).round()),
                           ),
                         ),
                       ),

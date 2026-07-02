@@ -10,11 +10,15 @@ class ProfileMenuCard extends StatelessWidget {
   const ProfileMenuCard({
     required this.onLogout,
     required this.onEditPreferences,
+    this.onSoftPreferences,
     super.key,
   });
 
   final VoidCallback onLogout;
   final VoidCallback onEditPreferences;
+
+  /// Tenant-only row; hidden when null (owner profile).
+  final VoidCallback? onSoftPreferences;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +40,14 @@ class ProfileMenuCard extends StatelessWidget {
         children: <Widget>[
           _MenuRow(icon: Icons.tune_rounded,         label: 'My preferences', onTap: onEditPreferences),
           const _Divider(),
+          if (onSoftPreferences != null) ...[
+            _MenuRow(
+              icon: Icons.star_border_rounded,
+              label: 'Soft preferences',
+              onTap: onSoftPreferences!,
+            ),
+            const _Divider(),
+          ],
           const _DarkModeRow(),
           const _Divider(),
           _LogOutRow(onTap: onLogout),

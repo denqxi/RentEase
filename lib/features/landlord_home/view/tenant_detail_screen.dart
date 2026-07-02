@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/constants/mock_data.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/match_score_card.dart';
 import '../cubit/tenant_detail_cubit.dart';
@@ -77,6 +78,13 @@ class _TenantDetailView extends StatelessWidget {
                     ),
                     SizedBox(height: AppSpacing.sm),
                     _ApplicantDetailsTable(detail: detail),
+                    SizedBox(height: AppSpacing.lg),
+                    Text(
+                      'Ratings from previous landlords',
+                      style: AppTextStyles.title(context).copyWith(fontSize: 18),
+                    ),
+                    SizedBox(height: AppSpacing.sm),
+                    const _TenantRatingsSection(),
                   ]),
                 ),
               ),
@@ -222,6 +230,95 @@ class _ApplicantDetailsTable extends StatelessWidget {
           );
         }),
       ),
+    );
+  }
+}
+
+class _TenantRatingsSection extends StatelessWidget {
+  const _TenantRatingsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final ratings = MockData.tenantRatings;
+    final double avg = ratings.isEmpty
+        ? 0
+        : ratings.fold<int>(0, (sum, r) => sum + (r['stars'] as int)) /
+            ratings.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Icon(Icons.star_rounded, color: AppColors.matchMedium, size: 20),
+            SizedBox(width: 4),
+            Text(
+              avg.toStringAsFixed(1),
+              style: AppTextStyles.label(context).copyWith(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            SizedBox(width: 6),
+            Text(
+              '(${ratings.length} ratings)',
+              style: AppTextStyles.caption(context),
+            ),
+          ],
+        ),
+        SizedBox(height: AppSpacing.sm),
+        ...ratings.map(
+          (r) => Container(
+            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: context.appColors.surface,
+              borderRadius: BorderRadius.circular(AppRadii.card),
+              border:
+                  Border.all(color: context.appColors.fieldBorder, width: 0.5),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        r['landlordName'] as String,
+                        style: AppTextStyles.label(context).copyWith(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    ...List<Widget>.generate(
+                      5,
+                      (i) => Icon(
+                        i < (r['stars'] as int)
+                            ? Icons.star_rounded
+                            : Icons.star_border_rounded,
+                        color: AppColors.matchMedium,
+                        size: 14,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 2),
+                Text(
+                  r['date'] as String,
+                  style: AppTextStyles.caption(context).copyWith(fontSize: 11),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  r['comment'] as String,
+                  style: AppTextStyles.caption(context)
+                      .copyWith(fontSize: 12.5, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/constants/mock_data.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/phase_badge.dart';
 
@@ -97,8 +98,26 @@ class _Phase2ChatOwnerScreenState extends State<Phase2ChatOwnerScreen> {
           ),
           TextButton(
             onPressed: () {
+              final inquiry = widget.inquiry;
+              MockData.ownerInquiries.remove(inquiry);
+              MockData.ownerInquiryHistory.insert(0, {
+                'tenantName': inquiry['tenantName'],
+                'tenantInitials': inquiry['tenantInitials'],
+                'propertyName': inquiry['propertyName'],
+                'status': 'Booked',
+                'date': 'Jul 2, 2026',
+              });
               Navigator.of(ctx).pop();
               Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Booking confirmed for ${inquiry['tenantName']}. '
+                    'Moved to inquiry history.',
+                  ),
+                  backgroundColor: context.appColors.ink,
+                ),
+              );
             },
             child: Text(
               'Confirm',

@@ -17,8 +17,12 @@ class LabeledTextField extends StatelessWidget {
     this.obscureText = false,
     this.onToggleObscure,
     this.maxLines = 1,
+    this.controller,
     super.key,
   });
+
+  /// Optional controller so callers can set the text programmatically.
+  final TextEditingController? controller;
 
   /// Field label shown above the input.
   final String label;
@@ -52,6 +56,7 @@ class LabeledTextField extends StatelessWidget {
         Text(label, style: AppTextStyles.label(context)),
         SizedBox(height: AppSpacing.sm),
         TextField(
+          controller: controller,
           onChanged: onChanged,
           keyboardType: keyboardType,
           obscureText: obscureText,

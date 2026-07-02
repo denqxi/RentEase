@@ -41,8 +41,8 @@ class _DistancePreferenceScreenState
               ),
               child: RegistrationAppBar(
                 onBack: () => Navigator.of(context).pop(),
-                stepNumber: 3,
-                stepCount: 4,
+                stepNumber: 4,
+                stepCount: 5,
               ),
             ),
             Expanded(

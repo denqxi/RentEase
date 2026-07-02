@@ -10,6 +10,7 @@ import '../cubit/profile_cubit.dart';
 import '../widgets/profile_menu_card.dart';
 import 'edit_constraints_screen.dart';
 import 'saved_screen.dart';
+import 'soft_preferences_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -93,6 +94,11 @@ class ProfileScreen extends StatelessWidget {
                   onEditPreferences: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => const EditConstraintsScreen(),
+                    ),
+                  ),
+                  onSoftPreferences: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const SoftPreferencesScreen(),
                     ),
                   ),
                 ),

@@ -68,8 +68,8 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                 onBack: widget.onSave != null
                     ? () => Navigator.of(context).pop()
                     : () => Navigator.of(context).pop(),
-                stepNumber: widget.onSave == null ? 4 : null,
-                stepCount: widget.onSave == null ? 4 : null,
+                stepNumber: widget.onSave == null ? 5 : null,
+                stepCount: widget.onSave == null ? 5 : null,
               ),
             ),
             Expanded(

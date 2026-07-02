@@ -12,6 +12,17 @@ class RatingScreen extends StatefulWidget {
 
 class _RatingScreenState extends State<RatingScreen> {
   int _starRating = 0;
+  final _reviewController = TextEditingController();
+
+  @override
+  void dispose() {
+    _reviewController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    Navigator.of(context).pop();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +103,7 @@ class _RatingScreenState extends State<RatingScreen> {
               const SizedBox(height: 20),
               // Review text area
               TextField(
+                controller: _reviewController,
                 maxLines: 5,
                 decoration: InputDecoration(
                   filled: true,
@@ -122,7 +134,7 @@ class _RatingScreenState extends State<RatingScreen> {
               AppButton(
                 label: 'Submit Rating',
                 color: AppColors.ink,
-                onPressed: () {},
+                onPressed: _starRating > 0 ? _submit : null,
               ),
               const SizedBox(height: 24),
             ],

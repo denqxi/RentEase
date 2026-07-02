@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
 import '../../../shared/widgets/phase_badge.dart';
+import '../../resolution/view/rating_screen.dart';
 import 'phase1_tenant_screen.dart';
 import 'phase2_tenant_screen.dart';
 
@@ -255,13 +256,18 @@ class _ResolvedTab extends StatelessWidget {
       itemBuilder: (_, i) {
         if (i == _resolved.length) return SizedBox(height: AppSpacing.lg);
         final item = _resolved[i];
-        return _InquiryCard(
-          propertyInitials: item['initials']!,
-          propertyName: item['name']!,
-          ownerName: item['owner']!,
-          phase: 0,
-          date: '',
-          isResolved: true,
+        return GestureDetector(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const RatingScreen()),
+          ),
+          child: _InquiryCard(
+            propertyInitials: item['initials']!,
+            propertyName: item['name']!,
+            ownerName: item['owner']!,
+            phase: 0,
+            date: '',
+            isResolved: true,
+          ),
         );
       },
     );

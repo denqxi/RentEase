@@ -75,6 +75,10 @@ class _OwnerTopsisScreenState extends State<OwnerTopsisScreen> {
       'bScore': 1,
       'isOutsidePreference': false,
       'vacancyStatus': 'available',
+      // Fall back to the Matina area when the owner skipped map pinning,
+      // so the property always renders on the tenant map view.
+      'latitude': NewPropertyDraft.latitude ?? 7.0660,
+      'longitude': NewPropertyDraft.longitude ?? 125.6030,
     });
     NewPropertyDraft.reset();
   }
