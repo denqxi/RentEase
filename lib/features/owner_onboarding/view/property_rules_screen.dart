@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/constants/mock_data.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../features/registration/widgets/step_header.dart';
@@ -25,15 +26,17 @@ class _PropertyRulesScreenState extends State<PropertyRulesScreen> {
   String? _genderPolicy;
   bool _smokingAllowed = false;
   bool _petsAllowed = false;
-  String _curfew = '10:00 PM';
+  int _curfewHours = 22;
+
+  String get _curfew => MockData.formatCurfew(_curfewHours);
 
   Future<void> _pickCurfew() async {
     final picked = await showTimePicker(
       context: context,
-      initialTime: const TimeOfDay(hour: 22, minute: 0),
+      initialTime: TimeOfDay(hour: _curfewHours, minute: 0),
     );
     if (picked != null && mounted) {
-      setState(() => _curfew = picked.format(context));
+      setState(() => _curfewHours = picked.hour);
     }
   }
 
@@ -207,7 +210,7 @@ class _PropertyRulesScreenState extends State<PropertyRulesScreen> {
                             _genderPolicy ?? 'Mixed / Any';
                         NewPropertyDraft.smokingAllowed = _smokingAllowed;
                         NewPropertyDraft.petsAllowed = _petsAllowed;
-                        NewPropertyDraft.curfew = _curfew;
+                        NewPropertyDraft.curfewHours = _curfewHours;
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (_) => const PricingAmenitiesScreen(),

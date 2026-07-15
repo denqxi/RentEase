@@ -133,7 +133,7 @@ class _TenantCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '#${tenant['rank']}',
+                        '#${tenant['ownerRank']}',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 10,
@@ -151,14 +151,14 @@ class _TenantCard extends StatelessWidget {
                 ),
                 Text(tenant['school'] as String, style: AppTextStyles.caption(context)),
                 Text(
-                  '₱${tenant['budget']}/mo budget Â· ${tenant['intendedStay']} months',
+                  '₱${tenant['maxBudget']}/mo budget Â· ${tenant['intendedStay']} months',
                   style: AppTextStyles.caption(context),
                 ),
                 SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
                     CiScorePill(
-                      score: (tenant['ciScore'] as num).toDouble(),
+                      score: (tenant['ownerCi'] as num).toDouble(),
                       isOwner: true,
                     ),
                     SizedBox(width: AppSpacing.xs),

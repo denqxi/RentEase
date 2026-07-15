@@ -4,7 +4,41 @@ import '../../../core/constants/app_colors.dart';
 import '../../../shared/widgets/app_button.dart';
 
 class RatingScreen extends StatefulWidget {
-  const RatingScreen({super.key});
+  /// Tenant-side variant: rate the property after booking a room.
+  const RatingScreen({
+    this.subjectName = 'Sunshine Boarding House',
+    this.moveInLabel = 'Move-in: August 1, 2026',
+    super.key,
+  })  : isOwnerView = false,
+        subjectInitials = null;
+
+  /// Owner-side variant: rate the tenant after confirming their booking.
+  const RatingScreen.forOwner({
+    required this.subjectName,
+    required String this.subjectInitials,
+    this.moveInLabel = 'Move-in: August 1, 2026',
+    super.key,
+  }) : isOwnerView = true;
+
+  /// Who or what is being rated — the property name on the tenant side,
+  /// the tenant name on the owner side.
+  final String subjectName;
+
+  /// Tenant initials shown in the header avatar (owner view only).
+  final String? subjectInitials;
+
+  final String moveInLabel;
+  final bool isOwnerView;
+
+  String get _heading => isOwnerView ? 'Tenant booked in!' : 'Room booked!';
+
+  String get _prompt =>
+      isOwnerView ? 'Rate this tenant' : 'Rate your experience';
+
+  String get _reviewHint => isOwnerView
+      ? 'Share your experience with this tenant — future landlords will '
+          'see this on their credibility profile...'
+      : 'Share your experience with this boarding house...';
 
   @override
   State<RatingScreen> createState() => _RatingScreenState();
@@ -35,33 +69,43 @@ class _RatingScreenState extends State<RatingScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 48),
-              // Teal circle with check
-              const CircleAvatar(
+              // Owner view: tenant initials avatar. Tenant view: check circle.
+              CircleAvatar(
                 radius: 44,
-                backgroundColor: AppColors.ink,
-                child: Icon(Icons.check, color: Colors.white, size: 44),
+                backgroundColor:
+                    widget.isOwnerView ? AppColors.accentSoft : AppColors.ink,
+                child: widget.isOwnerView
+                    ? Text(
+                        widget.subjectInitials!,
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.accent,
+                        ),
+                      )
+                    : const Icon(Icons.check, color: Colors.white, size: 44),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Room booked!',
-                style: TextStyle(
+              Text(
+                widget._heading,
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Villa Hazel Dormitory',
-                style: TextStyle(
+              Text(
+                widget.subjectName,
+                style: const TextStyle(
                   fontSize: 15,
                   color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 2),
-              const Text(
-                'Move-in: January 15, 2025',
-                style: TextStyle(
+              Text(
+                widget.moveInLabel,
+                style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,
                 ),
@@ -69,9 +113,9 @@ class _RatingScreenState extends State<RatingScreen> {
               const SizedBox(height: 28),
               Align(
                 alignment: Alignment.centerLeft,
-                child: const Text(
-                  'Rate your experience',
-                  style: TextStyle(
+                child: Text(
+                  widget._prompt,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
@@ -108,8 +152,7 @@ class _RatingScreenState extends State<RatingScreen> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: AppColors.fieldFill,
-                  hintText:
-                      'Share your experience with this boarding house...',
+                  hintText: widget._reviewHint,
                   hintStyle: const TextStyle(
                     color: AppColors.textHint,
                     fontSize: 13,

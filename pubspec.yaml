@@ -44,6 +44,9 @@ dependencies:
   # Leaflet-style maps (OpenStreetMap tiles) — POI pinning and map browsing.
   flutter_map: ^8.1.1
   latlong2: ^0.9.1
+  firebase_core: ^4.11.0
+  firebase_auth: ^6.5.4
+  cloud_firestore: ^6.6.0
 
 dev_dependencies:
   flutter_test:

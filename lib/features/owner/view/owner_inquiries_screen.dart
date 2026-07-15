@@ -61,22 +61,14 @@ class _IncomingTab extends StatefulWidget {
 
 class _IncomingTabState extends State<_IncomingTab> {
   void _decline(Map<String, dynamic> inquiry) {
-    setState(() {
-      MockData.ownerInquiries.remove(inquiry);
-      MockData.ownerInquiryHistory.insert(0, {
-        'tenantName': inquiry['tenantName'],
-        'tenantInitials': inquiry['tenantInitials'],
-        'propertyName': inquiry['propertyName'],
-        'status': 'Declined',
-        'date': 'Jul 2, 2026',
-      });
-    });
+    setState(() => MockData.declineInquiry(inquiry));
   }
 
   @override
   Widget build(BuildContext context) {
     final sorted = [...MockData.ownerInquiries]
-      ..sort((a, b) => (b['ciScore'] as double).compareTo(a['ciScore'] as double));
+      ..sort((a, b) => (b['tenantCiSnapshot'] as double)
+          .compareTo(a['tenantCiSnapshot'] as double));
 
     if (sorted.isEmpty) {
       return Center(
@@ -214,7 +206,7 @@ class _OwnerInquiryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int phase = inquiry['phase'] as int;
+    final int phase = inquiry['stage'] as int;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -260,7 +252,7 @@ class _OwnerInquiryCard extends StatelessWidget {
                           ),
                         ),
                         CiScorePill(
-                          score: (inquiry['ciScore'] as num).toDouble(),
+                          score: (inquiry['tenantCiSnapshot'] as num).toDouble(),
                           isOwner: true,
                         ),
                       ],

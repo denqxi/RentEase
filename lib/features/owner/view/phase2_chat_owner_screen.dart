@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../features/resolution/view/rating_screen.dart';
 import '../../../shared/widgets/phase_badge.dart';
 
 class Phase2ChatOwnerScreen extends StatefulWidget {
@@ -19,14 +20,18 @@ class _Phase2ChatOwnerScreenState extends State<Phase2ChatOwnerScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
 
-  final List<_ChatMessage> _messages = [
-    _ChatMessage(text: 'Inquiry accepted. Chat is now open.', isSystem: true),
-    _ChatMessage(
-      text: 'Hello! I\'m interested in your boarding house. Is it still available?',
-      isOwner: false,
-    ),
-    _ChatMessage(text: 'Yes it\'s available! When are you planning to move in?', isOwner: true),
-  ];
+  /// Shared thread — the tenant's Phase 2 screen reads the same list, so
+  /// messages sent here appear on their side too.
+  List<_ChatMessage> get _messages => MockData.chatThread(
+        widget.inquiry['propertyName'] as String,
+        widget.inquiry['tenantName'] as String,
+      )
+          .map((m) => _ChatMessage(
+                text: m['text']!,
+                isOwner: m['sender'] == 'owner',
+                isSystem: m['sender'] == 'system',
+              ))
+          .toList();
 
   @override
   void dispose() {
@@ -47,36 +52,19 @@ class _Phase2ChatOwnerScreenState extends State<Phase2ChatOwnerScreen> {
     });
   }
 
-  String _tenantReplyFor(String message) {
-    final lower = message.toLowerCase();
-    if (lower.contains('move in') || lower.contains('when')) {
-      return 'I can move in as early as next week, if that works!';
-    }
-    if (lower.contains('document') || lower.contains('requirement')) {
-      return 'Sure, I have my valid ID and proof of enrollment ready.';
-    }
-    if (lower.contains('visit') || lower.contains('viewing')) {
-      return 'Yes, I would love to schedule a viewing this week.';
-    }
-    return 'Sounds good, thank you!';
-  }
-
   void _sendMessage([String? quickReply]) {
     final text = (quickReply ?? _messageController.text).trim();
     if (text.isEmpty) return;
     setState(() {
-      _messages.add(_ChatMessage(text: text, isOwner: true));
+      MockData.sendChatMessage(
+        propertyName: widget.inquiry['propertyName'] as String,
+        tenantName: widget.inquiry['tenantName'] as String,
+        sender: 'owner',
+        text: text,
+      );
       _messageController.clear();
     });
     _scrollToBottom();
-
-    Future.delayed(const Duration(milliseconds: 700), () {
-      if (!mounted) return;
-      setState(() {
-        _messages.add(_ChatMessage(text: _tenantReplyFor(text)));
-      });
-      _scrollToBottom();
-    });
   }
 
   Future<void> _showMarkBookedDialog() async {
@@ -99,14 +87,7 @@ class _Phase2ChatOwnerScreenState extends State<Phase2ChatOwnerScreen> {
           TextButton(
             onPressed: () {
               final inquiry = widget.inquiry;
-              MockData.ownerInquiries.remove(inquiry);
-              MockData.ownerInquiryHistory.insert(0, {
-                'tenantName': inquiry['tenantName'],
-                'tenantInitials': inquiry['tenantInitials'],
-                'propertyName': inquiry['propertyName'],
-                'status': 'Booked',
-                'date': 'Jul 2, 2026',
-              });
+              MockData.bookInquiry(inquiry);
               Navigator.of(ctx).pop();
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
@@ -116,6 +97,15 @@ class _Phase2ChatOwnerScreenState extends State<Phase2ChatOwnerScreen> {
                     'Moved to inquiry history.',
                   ),
                   backgroundColor: context.appColors.ink,
+                ),
+              );
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => RatingScreen.forOwner(
+                    subjectName: inquiry['tenantName'] as String,
+                    subjectInitials: inquiry['tenantInitials'] as String,
+                    moveInLabel: 'Move-in: ${inquiry['moveIn'] ?? 'TBD'}',
+                  ),
                 ),
               );
             },

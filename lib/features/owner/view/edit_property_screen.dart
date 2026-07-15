@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_toggle.dart';
 
@@ -23,23 +24,23 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
   late final TextEditingController _addressController;
   late final TextEditingController _rentController;
   late final TextEditingController _depositController;
-  late final TextEditingController _curfewController;
 
   late String _genderPolicy;
   late bool _smokingAllowed;
   late bool _petsAllowed;
   late int _advanceMonths;
+  int? _curfewHours;
   late Set<String> _selectedAmenities;
 
   @override
   void initState() {
     super.initState();
     final p = widget.property;
-    _nameController = TextEditingController(text: p['name'] as String);
+    _nameController = TextEditingController(text: p['title'] as String);
     _addressController = TextEditingController(text: p['address'] as String);
-    _rentController = TextEditingController(text: '${p['rent']}');
-    _depositController = TextEditingController(text: '${p['deposit']}');
-    _curfewController = TextEditingController(text: p['curfew'] as String? ?? '');
+    _rentController = TextEditingController(text: '${p['monthlyRent']}');
+    _depositController = TextEditingController(text: '${p['depositAmount']}');
+    _curfewHours = (p['curfewHours'] as num?)?.toInt();
     _genderPolicy = p['allowedGender'] as String? ?? 'Any';
     _smokingAllowed = p['smokingAllowed'] as bool? ?? false;
     _petsAllowed = p['petsAllowed'] as bool? ?? false;
@@ -55,29 +56,39 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
     _addressController.dispose();
     _rentController.dispose();
     _depositController.dispose();
-    _curfewController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickCurfew() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: _curfewHours ?? 22, minute: 0),
+    );
+    if (picked != null && mounted) {
+      setState(() => _curfewHours = picked.hour);
+    }
   }
 
   void _save() {
     final p = widget.property;
-    p['name'] = _nameController.text.trim();
+    p['title'] = _nameController.text.trim();
     p['address'] = _addressController.text.trim();
-    p['rent'] = int.tryParse(_rentController.text.trim()) ?? p['rent'];
-    p['deposit'] =
-        int.tryParse(_depositController.text.trim()) ?? p['deposit'];
-    p['curfew'] = _curfewController.text.trim();
+    p['monthlyRent'] =
+        int.tryParse(_rentController.text.trim()) ?? p['monthlyRent'];
+    p['depositAmount'] =
+        int.tryParse(_depositController.text.trim()) ?? p['depositAmount'];
+    p['curfewHours'] = _curfewHours;
     p['allowedGender'] = _genderPolicy;
     p['smokingAllowed'] = _smokingAllowed;
     p['petsAllowed'] = _petsAllowed;
     p['advanceMonths'] = _advanceMonths;
     p['amenityList'] = _selectedAmenities.toList();
-    p['amenities'] = _selectedAmenities.length;
+    p['amenityScore'] = _selectedAmenities.length;
 
     Navigator.of(context).pop(true);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${p['name']} updated.'),
+        content: Text('${p['title']} updated.'),
         backgroundColor: context.appColors.ink,
       ),
     );
@@ -197,7 +208,37 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
             ),
             SizedBox(height: AppSpacing.md),
             _FieldLabel('Curfew'),
-            _TextInput(controller: _curfewController, hint: 'e.g. 10:00 PM or None'),
+            GestureDetector(
+              onTap: _pickCurfew,
+              child: AbsorbPointer(
+                child: Container(
+                  height: 52,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  alignment: Alignment.centerLeft,
+                  decoration: BoxDecoration(
+                    color: context.appColors.fieldFill,
+                    borderRadius: BorderRadius.circular(12),
+                    border:
+                        Border.all(color: context.appColors.fieldBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          MockData.formatCurfew(_curfewHours),
+                          style: AppTextStyles.field(context),
+                        ),
+                      ),
+                      Icon(
+                        Icons.access_time_rounded,
+                        size: 18,
+                        color: context.appColors.textSecondary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
             SizedBox(height: AppSpacing.lg),
 
             _SectionLabel(

@@ -8,7 +8,7 @@ part 'home_state.dart';
 /// Manages all listing data and the heart-toggle save state shared across
 /// Home, Matches, and Saved tabs.
 class HomeCubit extends Cubit<HomeState> {
-  HomeCubit() : super(const HomeState());
+  HomeCubit() : super(HomeState());
 
   /// Flips the saved flag for the listing with [id].
   void toggleSaved(String id) {

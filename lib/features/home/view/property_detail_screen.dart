@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/mock_data.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/ci_score_pill.dart';
 import '../../../shared/widgets/constraint_check_row.dart';
@@ -16,7 +17,7 @@ class PropertyDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isOutside = property['isOutsidePreference'] == true;
     final int bScore = (property['bScore'] as num).toInt();
-    final int seed = (property['id'] as String).hashCode % 5 + 1;
+    final int seed = (property['propertyId'] as String).hashCode % 5 + 1;
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
@@ -132,7 +133,7 @@ class PropertyDetailScreen extends StatelessWidget {
                       children: [
                         // Title + address + price
                         Text(
-                          property['name'] as String,
+                          property['title'] as String,
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -149,7 +150,7 @@ class PropertyDetailScreen extends StatelessWidget {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          '₱${property['rent']} / month',
+                          '₱${property['monthlyRent']} / month',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -247,13 +248,13 @@ class PropertyDetailScreen extends StatelessWidget {
                           ),
                           _RuleRow(
                             label: 'Curfew',
-                            value: property['curfew'] as String,
+                            value: MockData.formatCurfew(property['curfewHours'] as num?),
                           ),
                           SizedBox(height: 16),
                           Row(
                             children: [
                               CiScorePill(
-                                score: (property['ciScore'] as num)
+                                score: (property['tenantCi'] as num)
                                     .toDouble(),
                               ),
                               SizedBox(width: 8),
@@ -267,7 +268,7 @@ class PropertyDetailScreen extends StatelessWidget {
                                       Border.all(color: context.appColors.fieldBorder),
                                 ),
                                 child: Text(
-                                  '#${property['rank']} Rank',
+                                  '#${property['tenantRank']} Rank',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
@@ -293,7 +294,7 @@ class PropertyDetailScreen extends StatelessWidget {
                           ConstraintCheckRow(
                             label: 'Monthly rent',
                             value:
-                                '₱${property['rent']} — within budget',
+                                '₱${property['monthlyRent']} — within budget',
                             isPassing:
                                 (property['budgetExcess'] ?? 0) == 0,
                           ),
@@ -332,23 +333,29 @@ class PropertyDetailScreen extends StatelessWidget {
                 AppButton(
                   label: 'Send Inquiry',
                   color: AppColors.ink,
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          Phase1TenantScreen(property: property),
-                    ),
-                  ),
+                  onPressed: () {
+                    MockData.sendInquiry(property);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            Phase1TenantScreen(property: property),
+                      ),
+                    );
+                  },
                 ),
               if (isOutside) ...[
                 AppButton(
                   label: 'Send Inquiry Anyway',
                   color: AppColors.ink,
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          Phase1TenantScreen(property: property),
-                    ),
-                  ),
+                  onPressed: () {
+                    MockData.sendInquiry(property);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            Phase1TenantScreen(property: property),
+                      ),
+                    );
+                  },
                 ),
                 SizedBox(height: 8),
                 AppButton(

@@ -7,8 +7,8 @@ import 'property_management_screen.dart';
 import 'user_management_screen.dart';
 
 /// Root scaffold for the admin panel — bottom nav across the four admin
-/// screens. Without this, Analytics / Users / Properties were only ever
-/// reachable by directly instantiating them; nothing in the UI linked to them.
+/// screens. The dashboard's pending-review card can jump straight to the
+/// Verify tab via [AnalyticsScreen.onGoToVerify].
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
 
@@ -18,13 +18,6 @@ class AdminShell extends StatefulWidget {
 
 class _AdminShellState extends State<AdminShell> {
   int _index = 0;
-
-  static const List<Widget> _screens = <Widget>[
-    AnalyticsScreen(),
-    PendingVerificationsScreen(),
-    UserManagementScreen(),
-    PropertyManagementScreen(),
-  ];
 
   static const List<FloatingNavBarItem> _items = <FloatingNavBarItem>[
     FloatingNavBarItem(icon: Icons.bar_chart_rounded, label: 'Dashboard'),
@@ -37,7 +30,15 @@ class _AdminShellState extends State<AdminShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      body: IndexedStack(index: _index, children: _screens),
+      body: IndexedStack(
+        index: _index,
+        children: <Widget>[
+          AnalyticsScreen(onGoToVerify: () => setState(() => _index = 1)),
+          const PendingVerificationsScreen(),
+          const UserManagementScreen(),
+          const PropertyManagementScreen(),
+        ],
+      ),
       bottomNavigationBar: FloatingNavBar(
         items: _items,
         selectedIndex: _index,

@@ -9,9 +9,9 @@ import '../../../features/registration/widgets/registration_app_bar.dart';
 
 class TopsisWeightScreen extends StatefulWidget {
   const TopsisWeightScreen({
-    this.initialRent = 0.50,
-    this.initialDistance = 0.30,
-    this.initialAmenities = 0.20,
+    this.initialRent = 0.40,
+    this.initialDistance = 0.35,
+    this.initialAmenities = 0.25,
     this.onSave,
     super.key,
   });
@@ -38,17 +38,59 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
     _amenities = widget.initialAmenities;
   }
 
-  double get _total => _rent + _distance + _amenities;
-  bool get _isExact => (_total - 1.0).abs() < 0.001;
-
   double _round(double v) => (v * 20).round() / 20;
+
+  /// Sets [changed] to [newValue] and redistributes the remainder across
+  /// the other two weights proportionally to their current share, so the
+  /// three always sum to exactly 1.0 (100%).
+  void _setWeight({
+    required double newValue,
+    required double otherA,
+    required double otherB,
+    required ValueChanged<double> setChanged,
+    required ValueChanged<double> setOtherA,
+    required ValueChanged<double> setOtherB,
+  }) {
+    const double minWeight = 0.05;
+    final double clamped = newValue.clamp(minWeight, 1 - 2 * minWeight);
+    final double remainder = 1 - clamped;
+    final double othersSum = otherA + otherB;
+
+    double newA, newB;
+    if (othersSum <= 0) {
+      newA = remainder / 2;
+      newB = remainder / 2;
+    } else {
+      newA = remainder * (otherA / othersSum);
+      newB = remainder * (otherB / othersSum);
+    }
+    // Enforce the floor on both, then push any resulting slack back onto
+    // whichever of the two has room, keeping the total exact.
+    if (newA < minWeight) {
+      newB -= (minWeight - newA);
+      newA = minWeight;
+    }
+    if (newB < minWeight) {
+      newA -= (minWeight - newB);
+      newB = minWeight;
+    }
+
+    setState(() {
+      setChanged(_round(clamped));
+      setOtherA(_round(newA));
+      setOtherB(_round(newB));
+    });
+  }
 
   void _continue() {
     if (widget.onSave != null) {
       widget.onSave!();
     } else {
-      Navigator.of(context)
-          .pushNamedAndRemoveUntil(AppRouter.tenantHome, (_) => false);
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRouter.matchingTransition,
+        (_) => false,
+        arguments: false, // tenant
+      );
     }
   }
 
@@ -75,27 +117,48 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
             Expanded(
               child: FormStepLayout(
                 title: 'What matters most\nto you?',
-                subtitle: 'Adjust the sliders so they add up to 100%.',
+                subtitle: 'Drag a slider — the others adjust to keep the '
+                    'total at 100%.',
                 buttonLabel: widget.onSave != null
                     ? 'Save Changes'
                     : 'Find My Matches',
-                onContinue: _isExact ? _continue : null,
+                onContinue: _continue,
                 fields: [
                   _WeightSlider(
                     label: 'Monthly rent',
                     value: _rent,
-                    onChanged: (v) => setState(() => _rent = _round(v)),
+                    onChanged: (v) => _setWeight(
+                      newValue: v,
+                      otherA: _distance,
+                      otherB: _amenities,
+                      setChanged: (nv) => _rent = nv,
+                      setOtherA: (nv) => _distance = nv,
+                      setOtherB: (nv) => _amenities = nv,
+                    ),
                   ),
                   _WeightSlider(
                     label: 'Distance from POI',
                     value: _distance,
-                    onChanged: (v) => setState(() => _distance = _round(v)),
+                    onChanged: (v) => _setWeight(
+                      newValue: v,
+                      otherA: _rent,
+                      otherB: _amenities,
+                      setChanged: (nv) => _distance = nv,
+                      setOtherA: (nv) => _rent = nv,
+                      setOtherB: (nv) => _amenities = nv,
+                    ),
                   ),
                   _WeightSlider(
                     label: 'Number of amenities',
                     value: _amenities,
-                    onChanged: (v) =>
-                        setState(() => _amenities = _round(v)),
+                    onChanged: (v) => _setWeight(
+                      newValue: v,
+                      otherA: _rent,
+                      otherB: _distance,
+                      setChanged: (nv) => _amenities = nv,
+                      setOtherA: (nv) => _rent = nv,
+                      setOtherB: (nv) => _distance = nv,
+                    ),
                   ),
                   Divider(color: context.appColors.fieldBorder),
                   Row(
@@ -104,33 +167,18 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                           style: AppTextStyles.label(context)
                               .copyWith(color: context.appColors.textSecondary)),
                       const Spacer(),
-                      if (_isExact) ...[
-                        Icon(Icons.check_circle_rounded,
-                            color: AppColors.accent, size: 16),
-                        SizedBox(width: 4),
-                        Text(
-                          '100%',
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.accent,
-                          ),
+                      Icon(Icons.check_circle_rounded,
+                          color: AppColors.accent, size: 16),
+                      SizedBox(width: 4),
+                      Text(
+                        '100%',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.accent,
                         ),
-                      ] else ...[
-                        Icon(Icons.warning_amber_rounded,
-                            color: AppColors.destructive, size: 16),
-                        SizedBox(width: 4),
-                        Text(
-                          '${(_total * 100).round()}%',
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.destructive,
-                          ),
-                        ),
-                      ],
+                      ),
                     ],
                   ),
                   if (widget.onSave != null)

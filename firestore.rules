@@ -1,0 +1,207 @@
+rules_version = '2';
+
+// RentEase Firestore security rules — enforce the CLAUDE.md invariants:
+//  - role is permanent after signup
+//  - owner cannot write properties until verified (admin-controlled)
+//  - isVerified / verificationStatus writable by admin only
+//  - matches are written by Cloud Functions only (server-side TOPSIS)
+//  - messages only inside inquiries where the user is a participant,
+//    and only after the owner accepts (stage 2)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+
+    function isAdmin() {
+      return signedIn() && userDoc(request.auth.uid).role == 'admin';
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isVerifiedOwner() {
+      return signedIn()
+        && userDoc(request.auth.uid).role == 'owner'
+        && get(/databases/$(database)/documents/ownerProfiles/$(request.auth.uid))
+             .data.verificationStatus == 'verified';
+    }
+
+    // ---------- users ----------
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create: if isSelf(userId)
+        && request.resource.data.role in ['tenant', 'owner']; // no admin self-registration
+      allow update: if (isSelf(userId)
+          && request.resource.data.role == resource.data.role      // role is permanent
+          && request.resource.data.status == resource.data.status) // status is admin-controlled
+        || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ---------- tenantProfiles ----------
+    match /tenantProfiles/{userId} {
+      allow read: if signedIn();
+      allow create, update: if isSelf(userId)
+        // computed fields are server-side only
+        && !request.resource.data.diff(resource == null ? {} : resource.data)
+              .affectedKeys().hasAny(['avgRating', 'totalRatings',
+                                      'profileCompleteness', 'credibilityScore']);
+      allow delete: if isSelf(userId) || isAdmin();
+    }
+
+    // ---------- ownerProfiles ----------
+    match /ownerProfiles/{userId} {
+      allow read: if signedIn();
+      // Owner may create/update their profile but NEVER set verification fields.
+      allow create: if isSelf(userId)
+        && request.resource.data.verificationStatus in ['none', 'pending'];
+      allow update: if (isSelf(userId)
+          // owner can only move none -> pending (document submission)
+          && (request.resource.data.verificationStatus == resource.data.verificationStatus
+              || (resource.data.verificationStatus == 'none'
+                  && request.resource.data.verificationStatus == 'pending'))
+          && !request.resource.data.diff(resource.data).affectedKeys()
+                .hasAny(['verifiedAt', 'rejectedAt', 'avgRating',
+                         'totalRatings', 'totalListings']))
+        || isAdmin(); // admin approves/rejects
+      allow delete: if isAdmin();
+    }
+
+    // ---------- properties ----------
+    match /properties/{propertyId} {
+      allow read: if true; // public browse
+      // Owner must be admin-verified before ANY property write.
+      allow create: if isVerifiedOwner()
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update: if (isVerifiedOwner()
+          && resource.data.ownerId == request.auth.uid
+          && request.resource.data.ownerId == resource.data.ownerId)
+        || isAdmin();
+      allow delete: if (isVerifiedOwner() && resource.data.ownerId == request.auth.uid)
+        || isAdmin();
+
+      // ---------- rooms (subcollection) ----------
+      match /rooms/{roomId} {
+        allow read: if true;
+        allow write: if isVerifiedOwner()
+          && get(/databases/$(database)/documents/properties/$(propertyId))
+               .data.ownerId == request.auth.uid;
+      }
+    }
+
+    // ---------- matches ----------
+    // Computed by Cloud Functions (Admin SDK bypasses rules) — clients read only.
+    match /matches/{matchId} {
+      allow read: if signedIn()
+        && (resource.data.tenantId == request.auth.uid
+            || resource.data.ownerId == request.auth.uid
+            || isAdmin());
+      allow write: if false;
+    }
+
+    // ---------- inquiries ----------
+    match /inquiries/{inquiryId} {
+      function isParticipant() {
+        return signedIn()
+          && (resource.data.tenantId == request.auth.uid
+              || resource.data.ownerId == request.auth.uid);
+      }
+      allow read: if isParticipant() || isAdmin();
+      // Tenant may create an inquiry only for a match with bScore == 1.
+      allow create: if signedIn()
+        && request.resource.data.tenantId == request.auth.uid
+        && get(/databases/$(database)/documents/matches/$(request.resource.data.matchId))
+             .data.bScore == 1
+        && request.resource.data.stage == 1
+        && request.resource.data.ownerDecision == 'pending';
+      // Owner decides (accept unlocks stage 2); participants update status.
+      allow update: if isParticipant()
+        && request.resource.data.tenantId == resource.data.tenantId
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.matchId == resource.data.matchId
+        // only the owner can change ownerDecision / unlock stage 2
+        && (request.resource.data.ownerDecision == resource.data.ownerDecision
+            || resource.data.ownerId == request.auth.uid)
+        && (request.resource.data.stage == resource.data.stage
+            || resource.data.ownerId == request.auth.uid);
+      allow delete: if isAdmin();
+
+      // ---------- messages (subcollection) ----------
+      match /messages/{messageId} {
+        function inquiry() {
+          return get(/databases/$(database)/documents/inquiries/$(inquiryId)).data;
+        }
+        allow read: if signedIn()
+          && (inquiry().tenantId == request.auth.uid
+              || inquiry().ownerId == request.auth.uid
+              || isAdmin());
+        // Free chat only after owner accepts (stage 2).
+        allow create: if signedIn()
+          && request.resource.data.senderId == request.auth.uid
+          && (inquiry().tenantId == request.auth.uid
+              || inquiry().ownerId == request.auth.uid)
+          && inquiry().stage == 2
+          && inquiry().ownerDecision == 'accepted'
+          && request.resource.data.isAutoGenerated == false;
+        // readAt receipt update by the counterpart only.
+        allow update: if signedIn()
+          && (inquiry().tenantId == request.auth.uid
+              || inquiry().ownerId == request.auth.uid)
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['readAt']);
+        allow delete: if false;
+      }
+    }
+
+    // ---------- ratings ----------
+    match /ratings/{ratingId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.raterId == request.auth.uid
+        && request.resource.data.stars >= 1
+        && request.resource.data.stars <= 5
+        // only participants of a booked inquiry may rate
+        && get(/databases/$(database)/documents/inquiries/$(request.resource.data.inquiryId))
+             .data.status == 'booked'
+        && (get(/databases/$(database)/documents/inquiries/$(request.resource.data.inquiryId))
+              .data.tenantId == request.auth.uid
+            || get(/databases/$(database)/documents/inquiries/$(request.resource.data.inquiryId))
+              .data.ownerId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // ---------- notifications ----------
+    match /notifications/{notifId} {
+      allow read: if signedIn() && resource.data.recipientId == request.auth.uid;
+      allow create: if false; // Cloud Functions only
+      allow update: if signedIn()
+        && resource.data.recipientId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['isRead']);
+      allow delete: if signedIn() && resource.data.recipientId == request.auth.uid;
+    }
+
+    // ---------- adminLogs ----------
+    match /adminLogs/{logId} {
+      allow read, create: if isAdmin();
+      allow update, delete: if false; // immutable audit trail
+    }
+
+    // ---------- reports ----------
+    match /reports/{reportId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.reporterId == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.status == 'open';
+      allow update, delete: if isAdmin();
+    }
+  }
+}

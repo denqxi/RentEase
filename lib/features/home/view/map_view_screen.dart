@@ -205,7 +205,7 @@ class _PropertyPin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int percent =
-        ((property['ciScore'] as num).toDouble() * 100).round();
+        ((property['tenantCi'] as num).toDouble() * 100).round();
     final Color color = MatchBadge.colorFor(percent);
 
     return GestureDetector(
@@ -258,7 +258,7 @@ class _PinCallout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int percent =
-        ((property['ciScore'] as num).toDouble() * 100).round();
+        ((property['tenantCi'] as num).toDouble() * 100).round();
     final Color tierColor = MatchBadge.colorFor(percent);
 
     return GestureDetector(
@@ -307,7 +307,7 @@ class _PinCallout extends StatelessWidget {
                     SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        property['name'] as String,
+                        property['title'] as String,
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12.5,
@@ -327,7 +327,7 @@ class _PinCallout extends StatelessWidget {
                   children: <Widget>[
                     Expanded(
                       child: Text(
-                        '₱${property['rent']}/mo · ${property['distance']} km',
+                        '₱${property['monthlyRent']}/mo · ${property['distance']} km',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 11,

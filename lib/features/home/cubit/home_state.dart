@@ -2,10 +2,10 @@ part of 'home_cubit.dart';
 
 /// State for [HomeCubit] — holds all listings and the search query.
 class HomeState extends Equatable {
-  const HomeState({
-    this.listings = Listing.samples,
+  HomeState({
+    List<Listing>? listings,
     this.searchQuery = '',
-  });
+  }) : listings = listings ?? Listing.samples;
 
   final List<Listing> listings;
   final String searchQuery;

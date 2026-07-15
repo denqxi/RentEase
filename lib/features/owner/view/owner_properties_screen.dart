@@ -18,7 +18,11 @@ class OwnerPropertiesScreen extends StatefulWidget {
 
 class _OwnerPropertiesScreenState extends State<OwnerPropertiesScreen> {
   void _setStatus(Map<String, dynamic> property, String status) {
-    setState(() => property['vacancyStatus'] = status);
+    setState(() {
+      property['vacancyStatus'] = status;
+      // Keep the schema field in sync with the 3-state UI status.
+      property['isAvailable'] = status == 'available';
+    });
   }
 
   Future<void> _editProperty(Map<String, dynamic> property) async {
@@ -185,7 +189,7 @@ class _PropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int seed = (property['id'] as String).hashCode % 5 + 1;
+    final int seed = (property['propertyId'] as String).hashCode % 5 + 1;
     final String status = property['vacancyStatus'] as String;
 
     return Container(
@@ -211,7 +215,7 @@ class _PropertyCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  property['name'] as String,
+                  property['title'] as String,
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 15,
@@ -221,8 +225,8 @@ class _PropertyCard extends StatelessWidget {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  '${property['address']} · ₱${property['rent']}/mo · '
-                  '${property['amenities']} amenities',
+                  '${property['address']} · ₱${property['monthlyRent']}/mo · '
+                  '${property['amenityScore']} amenities',
                   style: AppTextStyles.caption(context),
                 ),
                 SizedBox(height: AppSpacing.sm + 2),

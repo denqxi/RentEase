@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_text_field.dart';
+import '../../../shared/widgets/card_over_hero_layout.dart';
 import 'admin_shell.dart';
 
+/// Admin sign-in — card-over-hero like the tenant/owner auth screens, but
+/// with a dark ink hero to signal the elevated role. No create-account link:
+/// admin accounts are provisioned manually (see CLAUDE.md rule 8).
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
 
@@ -42,129 +48,179 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.appColors.ink,
-      body: SafeArea(
+    return CardOverHeroLayout(
+      cardHeightFraction: 0.62,
+      hero: const _AdminHero(),
+      cardContent: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Sign in', style: AppTextStyles.title(context)),
+          SizedBox(height: 4),
+          Text(
+            'Authorized personnel only.',
+            style: AppTextStyles.body(context)
+                .copyWith(color: context.appColors.textSecondary),
+          ),
+          SizedBox(height: AppSpacing.lg),
+          LabelledField(
+            label: 'ADMIN EMAIL',
+            child: AppTextField(
+              controller: _emailController,
+              hintText: 'admin@rentease.ph',
+              keyboardType: TextInputType.emailAddress,
+              prefixIcon: Icon(
+                Icons.mail_outline_rounded,
+                size: 18,
+                color: context.appColors.hint,
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
+          SizedBox(height: AppSpacing.md),
+          LabelledField(
+            label: 'PASSWORD',
+            child: AppTextField(
+              controller: _passwordController,
+              hintText: 'Enter password',
+              obscureText: _obscure,
+              prefixIcon: Icon(
+                Icons.lock_outline_rounded,
+                size: 18,
+                color: context.appColors.hint,
+              ),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscure
+                      ? Icons.visibility_off_rounded
+                      : Icons.visibility_rounded,
+                  color: context.appColors.hint,
+                  size: 20,
+                ),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
+          SizedBox(height: AppSpacing.lg),
+          _loading
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                    child: CircularProgressIndicator(color: AppColors.accent),
+                  ),
+                )
+              : AppButton(
+                  label: 'Sign in',
+                  onPressed: _canSubmit ? _login : null,
+                ),
+          SizedBox(height: AppSpacing.md),
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.shield_outlined,
+                  size: 13,
+                  color: context.appColors.textSecondary,
+                ),
+                SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    'Admin accounts are provisioned by the platform team.',
+                    style: AppTextStyles.caption(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: AppSpacing.lg),
+        ],
+      ),
+    );
+  }
+}
+
+/// Dark ink hero with the brand mark and an admin badge chip.
+class _AdminHero extends StatelessWidget {
+  const _AdminHero();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: context.appColors.ink,
+      child: SafeArea(
+        bottom: false,
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.xl,
+            AppSpacing.lg,
+            0,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: AppSpacing.xl),
-              Text(
-                'RentEase',
-                style: TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.onInk,
-                  letterSpacing: -0.5,
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.accent,
+                  borderRadius: BorderRadius.circular(16),
                 ),
+                child: Icon(
+                  Icons.admin_panel_settings_rounded,
+                  color: AppColors.onInk,
+                  size: 30,
+                ),
+              ),
+              SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Text(
+                    'RentEase',
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                      color: AppColors.onInk,
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(AppRadii.chip),
+                      border: Border.all(color: AppColors.accent, width: 0.5),
+                    ),
+                    child: Text(
+                      'ADMIN',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: 4),
               Text(
-                'Admin Panel',
+                'Platform verification, users, and listings.',
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 13,
                   color: context.appColors.indicatorInactive,
                 ),
               ),
-              const Spacer(),
-              Text(
-                'Sign in',
-                style: TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.onInk,
-                ),
-              ),
-              SizedBox(height: AppSpacing.lg),
-              _DarkTextField(
-                controller: _emailController,
-                hintText: 'Admin email',
-                keyboardType: TextInputType.emailAddress,
-                onChanged: (_) => setState(() {}),
-              ),
-              SizedBox(height: AppSpacing.sm),
-              _DarkTextField(
-                controller: _passwordController,
-                hintText: 'Password',
-                obscureText: _obscure,
-                onChanged: (_) => setState(() {}),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                    color: context.appColors.indicatorInactive,
-                    size: 20,
-                  ),
-                  onPressed: () => setState(() => _obscure = !_obscure),
-                ),
-              ),
-              SizedBox(height: AppSpacing.lg),
-              _loading
-                  ? Center(child: CircularProgressIndicator(color: AppColors.accent))
-                  : AppButton(
-                      label: 'Sign in',
-                      onPressed: _canSubmit ? _login : null,
-                    ),
-              const Spacer(),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DarkTextField extends StatelessWidget {
-  const _DarkTextField({
-    required this.controller,
-    required this.hintText,
-    this.keyboardType,
-    this.obscureText = false,
-    this.suffixIcon,
-    this.onChanged,
-  });
-
-  final TextEditingController controller;
-  final String hintText;
-  final TextInputType? keyboardType;
-  final bool obscureText;
-  final Widget? suffixIcon;
-  final ValueChanged<String>? onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      onChanged: onChanged,
-      style: TextStyle(
-        fontFamily: 'DM Sans',
-        fontSize: 14,
-        color: AppColors.onInk,
-      ),
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: TextStyle(
-          fontFamily: 'DM Sans',
-          fontSize: 14,
-          color: context.appColors.indicatorInactive,
-        ),
-        suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: context.appColors.textPrimary.withValues(alpha: 0.12),
-        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 14),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.field),
-          borderSide: BorderSide(color: context.appColors.textSecondary, width: 0.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.field),
-          borderSide: BorderSide(color: AppColors.accent, width: 1.5),
         ),
       ),
     );

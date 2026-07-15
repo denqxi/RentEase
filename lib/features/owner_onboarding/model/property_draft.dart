@@ -9,7 +9,8 @@ class NewPropertyDraft {
   static String genderPolicy = 'Mixed / Any';
   static bool smokingAllowed = false;
   static bool petsAllowed = false;
-  static String curfew = '10:00 PM';
+  /// Schema-aligned: `properties.curfewHours` (24h clock hour, e.g. 22).
+  static int curfewHours = 22;
   static int rent = 0;
   static Set<String> amenities = <String>{};
   static double? latitude;
@@ -23,7 +24,7 @@ class NewPropertyDraft {
     genderPolicy = 'Mixed / Any';
     smokingAllowed = false;
     petsAllowed = false;
-    curfew = '10:00 PM';
+    curfewHours = 22;
     rent = 0;
     amenities = <String>{};
     latitude = null;

@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/mock_data.dart';
 
 /// A rental property listing displayed across home, matches, and saved screens.
 class Listing extends Equatable {
@@ -51,59 +52,23 @@ class Listing extends Equatable {
     );
   }
 
-  /// Prototype sample data — Davao City boarding houses.
-  static const List<Listing> samples = <Listing>[
-    Listing(
-      id: '1',
-      title: 'Sunshine Boarding House',
-      location: 'Matina, Davao City',
-      pricePerMonth: 3800,
-      beds: 1,
-      baths: 1,
-      matchPercent: 92,
-      imageSeed: 1,
-    ),
-    Listing(
-      id: '2',
-      title: 'BlueSky Dormitory',
-      location: 'Ecoland, Davao City',
-      pricePerMonth: 4200,
-      beds: 1,
-      baths: 1,
-      matchPercent: 88,
-      imageSeed: 2,
-      isSaved: true,
-    ),
-    Listing(
-      id: '3',
-      title: 'Sunrise Manor',
-      location: 'Buhangin, Davao City',
-      pricePerMonth: 5500,
-      beds: 1,
-      baths: 1,
-      matchPercent: 84,
-      imageSeed: 3,
-    ),
-    Listing(
-      id: '4',
-      title: 'Green Leaf Boarding House',
-      location: 'Mintal, Davao City',
-      pricePerMonth: 3500,
-      beds: 1,
-      baths: 1,
-      matchPercent: 81,
-      imageSeed: 4,
-    ),
-    Listing(
-      id: '5',
-      title: 'Casa Mia Dormitory',
-      location: 'Bangkal, Davao City',
-      pricePerMonth: 3200,
-      beds: 1,
-      baths: 1,
-      matchPercent: 79,
-      imageSeed: 5,
-    ),
+  /// Prototype sample data — derived from [MockData.properties] so home,
+  /// search, and detail always agree. Only compatible (bScore == 1)
+  /// properties appear; matchPercent is the tenant-side Ci score.
+  static final List<Listing> samples = [
+    for (final (i, p)
+        in MockData.properties.where((p) => p['bScore'] == 1).indexed)
+      Listing(
+        id: p['propertyId'] as String,
+        title: p['title'] as String,
+        location: p['address'] as String,
+        pricePerMonth: (p['monthlyRent'] as num).toInt(),
+        beds: 1,
+        baths: 1,
+        matchPercent: ((p['tenantCi'] as num) * 100).round(),
+        imageSeed: i % 5 + 1,
+        isSaved: p['propertyId'] == 'bh002',
+      ),
   ];
 
   @override

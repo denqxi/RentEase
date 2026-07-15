@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/mock_data.dart';
 import '../../../shared/widgets/phase_badge.dart';
 import '../../../shared/widgets/verified_badge.dart';
 
@@ -22,7 +23,7 @@ class Phase1TenantScreen extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          property['name'] as String,
+          property['title'] as String,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -83,7 +84,7 @@ class Phase1TenantScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Curfew: ${property['curfew']}',
+                            'Curfew: ${MockData.formatCurfew(property['curfewHours'] as num?)}',
                             style: TextStyle(
                               fontSize: 13,
                               color: context.appColors.textPrimary,

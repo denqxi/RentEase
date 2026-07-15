@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubit/registration_cubit.dart';
 import '../widgets/form_step_layout.dart';
 import '../widgets/labeled_text_field.dart';
+import '../widgets/password_requirements.dart';
 
 /// Step 1/3 — "Create your account".
 class AccountStepView extends StatefulWidget {
@@ -16,6 +17,7 @@ class AccountStepView extends StatefulWidget {
 class _AccountStepViewState extends State<AccountStepView> {
   // Obscure toggle is purely local UI state for the password field.
   bool _obscurePassword = true;
+  String _password = '';
 
   @override
   Widget build(BuildContext context) {
@@ -45,18 +47,22 @@ class _AccountStepViewState extends State<AccountStepView> {
         ),
         LabeledTextField(
           label: 'Phone number',
-          hint: '+1 555 000 1234',
+          hint: '+63 912 345 6789',
           keyboardType: TextInputType.phone,
           onChanged: cubit.updatePhone,
         ),
         LabeledTextField(
           label: 'Password',
-          hint: 'At least 8 characters',
+          hint: '12–16 characters',
           obscureText: _obscurePassword,
           onToggleObscure: () =>
               setState(() => _obscurePassword = !_obscurePassword),
-          onChanged: cubit.updatePassword,
+          onChanged: (v) {
+            cubit.updatePassword(v);
+            setState(() => _password = v);
+          },
         ),
+        PasswordRequirements(password: _password),
       ],
     );
   }

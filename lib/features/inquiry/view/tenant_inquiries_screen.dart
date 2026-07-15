@@ -21,7 +21,6 @@ class _TenantInquiriesScreenState extends State<TenantInquiriesScreen> {
   @override
   Widget build(BuildContext context) {
     final int activeCount = MockData.inquiries.length;
-    final property = MockData.properties[0];
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
@@ -88,7 +87,7 @@ class _TenantInquiriesScreenState extends State<TenantInquiriesScreen> {
             // â”€â”€ Tab content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Expanded(
               child: _selectedTab == 0
-                  ? _ActiveTab(property: property)
+                  ? _ActiveTab(onReturned: () => setState(() {}))
                   : const _ResolvedTab(),
             ),
           ],
@@ -189,12 +188,26 @@ class _SegTab extends StatelessWidget {
 // â”€â”€ Active tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _ActiveTab extends StatelessWidget {
-  const _ActiveTab({required this.property});
+  const _ActiveTab({required this.onReturned});
 
-  final Map<String, dynamic> property;
+  /// Called when a pushed inquiry screen pops, so stage changes made
+  /// elsewhere (e.g. an owner acceptance) re-render this list.
+  final VoidCallback onReturned;
 
   @override
   Widget build(BuildContext context) {
+    if (MockData.inquiries.isEmpty) {
+      return Center(
+        child: Text(
+          'No active inquiries yet.',
+          style: TextStyle(
+            fontFamily: 'DM Sans',
+            fontSize: 14,
+            color: context.appColors.textSecondary,
+          ),
+        ),
+      );
+    }
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       itemCount: MockData.inquiries.length + 1,
@@ -203,18 +216,24 @@ class _ActiveTab extends StatelessWidget {
           return SizedBox(height: AppSpacing.lg);
         }
         final inquiry = MockData.inquiries[i];
-        final int phase = inquiry['phase'] as int;
+        final int phase = inquiry['stage'] as int;
         final bool isPhase1 = phase == 1;
+        final property = MockData.properties.firstWhere(
+          (p) => p['title'] == inquiry['propertyName'],
+          orElse: () => MockData.properties[0],
+        );
 
         return GestureDetector(
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => isPhase1
-                    ? Phase1TenantScreen(property: property)
-                    : Phase2TenantScreen(property: property),
-              ),
-            );
+            Navigator.of(context)
+                .push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => isPhase1
+                        ? Phase1TenantScreen(property: property)
+                        : Phase2TenantScreen(property: property),
+                  ),
+                )
+                .then((_) => onReturned());
           },
           child: _InquiryCard(
             propertyInitials: inquiry['propertyInitials'] as String,
@@ -235,37 +254,46 @@ class _ActiveTab extends StatelessWidget {
 class _ResolvedTab extends StatelessWidget {
   const _ResolvedTab();
 
-  static const List<Map<String, String>> _resolved = <Map<String, String>>[
-    {
-      'initials': 'SB',
-      'name': 'Sunshine Boarding House',
-      'owner': 'Maria Reyes',
-    },
-    {
-      'initials': 'BD',
-      'name': 'BlueSky Dormitory',
-      'owner': 'Ana Santos',
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final resolved = MockData.tenantResolvedInquiries;
+    if (resolved.isEmpty) {
+      return Center(
+        child: Text(
+          'No resolved inquiries yet.',
+          style: TextStyle(
+            fontFamily: 'DM Sans',
+            fontSize: 14,
+            color: context.appColors.textSecondary,
+          ),
+        ),
+      );
+    }
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      itemCount: _resolved.length + 1,
+      itemCount: resolved.length + 1,
       itemBuilder: (_, i) {
-        if (i == _resolved.length) return SizedBox(height: AppSpacing.lg);
-        final item = _resolved[i];
+        if (i == resolved.length) return SizedBox(height: AppSpacing.lg);
+        final item = resolved[i];
+        final bool isBooked = item['status'] == 'Booked';
         return GestureDetector(
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const RatingScreen()),
-          ),
+          // Only booked stays can be rated.
+          onTap: isBooked
+              ? () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => RatingScreen(
+                        subjectName: item['propertyName'] as String,
+                        moveInLabel: 'Booked: ${item['date']}',
+                      ),
+                    ),
+                  )
+              : null,
           child: _InquiryCard(
-            propertyInitials: item['initials']!,
-            propertyName: item['name']!,
-            ownerName: item['owner']!,
+            propertyInitials: item['propertyInitials'] as String,
+            propertyName: item['propertyName'] as String,
+            ownerName: item['ownerName'] as String,
             phase: 0,
-            date: '',
+            date: item['date'] as String? ?? '',
             isResolved: true,
           ),
         );

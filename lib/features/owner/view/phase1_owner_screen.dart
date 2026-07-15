@@ -96,7 +96,7 @@ class Phase1OwnerScreen extends StatelessWidget {
                           _SummaryRow('Move-in date', inquiry['moveIn'] as String),
                           _SummaryRow('Length of stay', inquiry['stay'] as String),
                           _SummaryRow('Group size', '${inquiry['groupSize']} person(s)'),
-                          _SummaryRow('Budget', '₱${inquiry['budget']}/mo'),
+                          _SummaryRow('Budget', '₱${inquiry['maxBudget']}/mo'),
                           _SummaryRow('Smoker', inquiry['isSmoker'] == true ? 'Yes' : 'No'),
                           _SummaryRow('Has pet', inquiry['hasPet'] == true ? 'Yes' : 'No'),
                           _SummaryRow('Emergency contact', inquiry['emergencyContact'] as String),
@@ -147,9 +147,9 @@ class Phase1OwnerScreen extends StatelessWidget {
                   AppButton(
                     label: 'Accept',
                     onPressed: () {
-                      // Accepting unlocks Phase 2 — persist so the inquiry
-                      // list shows "Open chat" instead of Accept/Decline.
-                      inquiry['phase'] = 2;
+                      // Accepting unlocks Phase 2 on both the owner and the
+                      // tenant side of the inquiry.
+                      MockData.acceptInquiry(inquiry);
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute<void>(
                           builder: (_) => Phase2ChatOwnerScreen(inquiry: inquiry),
@@ -207,14 +207,7 @@ class Phase1OwnerScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              MockData.ownerInquiries.remove(inquiry);
-              MockData.ownerInquiryHistory.insert(0, {
-                'tenantName': inquiry['tenantName'],
-                'tenantInitials': inquiry['tenantInitials'],
-                'propertyName': inquiry['propertyName'],
-                'status': 'Declined',
-                'date': 'Jul 2, 2026',
-              });
+              MockData.declineInquiry(inquiry);
               Navigator.of(ctx).pop();
               Navigator.of(context).pop();
             },

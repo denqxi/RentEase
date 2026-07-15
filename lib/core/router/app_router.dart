@@ -25,6 +25,7 @@ import '../../features/owner_onboarding/view/verification_pending_screen.dart';
 import '../../features/profile/view/owner_profile_screen.dart';
 import '../../features/registration/model/user_role.dart';
 import '../../features/registration/view/registration_flow_screen.dart';
+import '../../features/onboarding/view/matching_transition_screen.dart';
 import '../../features/shell/view/main_shell.dart';
 import '../../features/tenant_onboarding/view/distance_preference_screen.dart';
 import '../../features/tenant_onboarding/view/hard_constraints_screen.dart';
@@ -44,6 +45,7 @@ class AppRouter {
   static const poiSetup = '/onboarding/poi';
   static const distancePreference = '/onboarding/distance';
   static const topsisWeight = '/onboarding/topsis';
+  static const matchingTransition = '/onboarding/matching';
 
   static const tenantHome = '/tenant/home';
   static const landlordHome = '/landlord/home';
@@ -110,7 +112,10 @@ class AppRouter {
         final poiName = (settings.arguments as String?) ?? 'School';
         page = DistancePreferenceScreen(poiName: poiName);
       case topsisWeight:
-        page = TopsisWeightScreen(onSave: () {});
+        page = const TopsisWeightScreen();
+      case matchingTransition:
+        final isOwner = (settings.arguments as bool?) ?? false;
+        page = MatchingTransitionScreen(isOwner: isOwner);
 
       case tenantHome:
         page = const MainShell();

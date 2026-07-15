@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/mock_data.dart';
 import '../../../shared/widgets/phase_badge.dart';
 
 class Phase2TenantScreen extends StatefulWidget {
@@ -16,13 +17,18 @@ class _Phase2TenantScreenState extends State<Phase2TenantScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
 
-  late final List<_ChatMessage> _messages = <_ChatMessage>[
-    _ChatMessage(text: 'Owner accepted your inquiry!', isSystem: true),
-    _ChatMessage(
-      text: 'Kumusta! Yes, available pa ang room. \u{1F60A}',
-      isTenant: false,
-    ),
-  ];
+  /// Shared thread — the owner's Phase 2 screen reads the same list, so
+  /// messages sent here appear on their side too.
+  List<_ChatMessage> get _messages => MockData.chatThread(
+        widget.property['title'] as String,
+        MockData.tenantName,
+      )
+          .map((m) => _ChatMessage(
+                text: m['text']!,
+                isTenant: m['sender'] == 'tenant',
+                isSystem: m['sender'] == 'system',
+              ))
+          .toList();
 
   @override
   void dispose() {
@@ -43,41 +49,19 @@ class _Phase2TenantScreenState extends State<Phase2TenantScreen> {
     });
   }
 
-  String _ownerReplyFor(String message) {
-    final lower = message.toLowerCase();
-    if (lower.contains('visit') || lower.contains('schedule')) {
-      return 'Sure! You can visit anytime this week, 9am-6pm. Just message me before you head over.';
-    }
-    if (lower.contains('available') || lower.contains('vacant')) {
-      return 'Yes, still available! Room is ready for move-in.';
-    }
-    if (lower.contains('deposit') || lower.contains('advance')) {
-      final int deposit = (widget.property['deposit'] as num?)?.toInt() ?? 0;
-      final int advance = (widget.property['advanceMonths'] as num?)?.toInt() ?? 1;
-      return 'Deposit is ₱$deposit and advance is $advance month(s).';
-    }
-    if (lower.contains('curfew')) {
-      return 'Curfew here is ${widget.property['curfew'] ?? 'flexible'}.';
-    }
-    return 'Got it, thanks for the message! Let me know if you have other questions.';
-  }
-
   void _sendMessage(String text) {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
     setState(() {
-      _messages.add(_ChatMessage(text: trimmed, isTenant: true));
+      MockData.sendChatMessage(
+        propertyName: widget.property['title'] as String,
+        tenantName: MockData.tenantName,
+        sender: 'tenant',
+        text: trimmed,
+      );
       _messageController.clear();
     });
     _scrollToBottom();
-
-    Future.delayed(const Duration(milliseconds: 700), () {
-      if (!mounted) return;
-      setState(() {
-        _messages.add(_ChatMessage(text: _ownerReplyFor(trimmed)));
-      });
-      _scrollToBottom();
-    });
   }
 
   @override
@@ -123,7 +107,7 @@ class _Phase2TenantScreenState extends State<Phase2TenantScreen> {
                   ),
                 ),
                 Text(
-                  widget.property['name'] as String,
+                  widget.property['title'] as String,
                   style: TextStyle(
                     fontSize: 11,
                     color: context.appColors.textSecondary,

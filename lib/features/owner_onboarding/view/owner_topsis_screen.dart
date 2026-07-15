@@ -51,21 +51,21 @@ class _OwnerTopsisScreenState extends State<OwnerTopsisScreen> {
   void _commitDraftProperty() {
     final id = 'bh${100 + MockData.properties.length}';
     MockData.properties.add(<String, dynamic>{
-      'id': id,
-      'name': NewPropertyDraft.name,
+      'propertyId': id,
+      'title': NewPropertyDraft.name,
       'address': NewPropertyDraft.address,
-      'rent': NewPropertyDraft.rent,
+      'monthlyRent': NewPropertyDraft.rent,
       'distance': 1.0,
-      'amenities': NewPropertyDraft.amenities.length,
-      'ciScore': 0.75,
-      'rank': MockData.properties.length + 1,
+      'amenityScore': NewPropertyDraft.amenities.length,
+      'tenantCi': 0.75,
+      'tenantRank': MockData.properties.length + 1,
       'isVerified': true,
       'verifiedSince': 'Just now',
       'allowedGender': NewPropertyDraft.genderPolicy,
       'smokingAllowed': NewPropertyDraft.smokingAllowed,
       'petsAllowed': NewPropertyDraft.petsAllowed,
-      'curfew': NewPropertyDraft.curfew,
-      'deposit': NewPropertyDraft.deposit,
+      'curfewHours': NewPropertyDraft.curfewHours,
+      'depositAmount': NewPropertyDraft.deposit,
       'advanceMonths': NewPropertyDraft.advanceMonths,
       'ownerName': MockData.ownerName,
       'ownerInitials': MockData.ownerInitials,
@@ -75,6 +75,7 @@ class _OwnerTopsisScreenState extends State<OwnerTopsisScreen> {
       'bScore': 1,
       'isOutsidePreference': false,
       'vacancyStatus': 'available',
+      'isAvailable': true,
       // Fall back to the Matina area when the owner skipped map pinning,
       // so the property always renders on the tenant map view.
       'latitude': NewPropertyDraft.latitude ?? 7.0660,
@@ -196,7 +197,10 @@ class _OwnerTopsisScreenState extends State<OwnerTopsisScreen> {
                           ? () {
                               _commitDraftProperty();
                               Navigator.of(context).pushNamedAndRemoveUntil(
-                                  AppRouter.landlordHome, (_) => false);
+                                AppRouter.matchingTransition,
+                                (_) => false,
+                                arguments: true, // owner
+                              );
                             }
                           : null,
                     ),

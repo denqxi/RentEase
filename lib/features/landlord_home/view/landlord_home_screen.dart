@@ -249,7 +249,7 @@ class _PropertyCardLarge extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  property['name'] as String,
+                  property['title'] as String,
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,
@@ -261,7 +261,7 @@ class _PropertyCardLarge extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '₱${_fmt(property['rent'] as int)}/mo',
+                  '₱${_fmt(property['monthlyRent'] as int)}/mo',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,

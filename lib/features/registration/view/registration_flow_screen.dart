@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/constants/mock_data.dart';
 import '../cubit/registration_cubit.dart';
 import '../model/registration_step.dart';
 import '../model/user_role.dart';
@@ -42,7 +43,19 @@ class RegistrationFlowScreen extends StatelessWidget {
             curr.step == RegistrationStep.success &&
             prev.step != RegistrationStep.success,
         listener: (context, state) {
-          onComplete(state.data.role ?? UserRole.tenant);
+          final data = state.data;
+          final role = data.role ?? UserRole.tenant;
+          // Persist a temporary in-memory account so the new user can sign
+          // back in during this session (resets on app restart).
+          MockData.registerAccount(
+            email: data.email,
+            password: data.password,
+            role: role == UserRole.landlord ? 'owner' : 'tenant',
+            name: role == UserRole.landlord
+                ? data.fullName
+                : '${data.firstName} ${data.lastName}'.trim(),
+          );
+          onComplete(role);
         },
         child: Scaffold(
           backgroundColor: context.appColors.surface,

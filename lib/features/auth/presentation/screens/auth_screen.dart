@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/constants/mock_data.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
@@ -33,6 +34,42 @@ class _SignInScreenState extends State<SignInScreen> {
     super.dispose();
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.destructive,
+      ),
+    );
+  }
+
+  /// Authenticates against the in-memory account list (seeded demo accounts
+  /// plus any created via signup this session) and routes by role.
+  void _handleSignIn() {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (email.isEmpty || password.isEmpty) {
+      _showError('Enter your email and password.');
+      return;
+    }
+    final account = MockData.findAccount(email);
+    if (account == null) {
+      _showError('No account found for that email. '
+          'Create one or use Demo Mode.');
+      return;
+    }
+    if (account['password'] != password) {
+      _showError('Incorrect password. Please try again.');
+      return;
+    }
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      account['role'] == 'owner'
+          ? AppRouter.landlordHome
+          : AppRouter.tenantHome,
+      (_) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,7 +90,7 @@ class _SignInScreenState extends State<SignInScreen> {
               onTogglePassword: () =>
                   setState(() => _obscurePassword = !_obscurePassword),
               onCreateAccount: widget.onCreateAccount,
-              onSignIn: widget.onSignIn,
+              onSignIn: _handleSignIn,
             ),
           ),
         ],

@@ -34,49 +34,53 @@ class FloatingNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: SizedBox(
-        height: _totalH,
-        child: Stack(
-          children: <Widget>[
-            // White bar
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                height: _barH,
-                decoration: BoxDecoration(
-                  color: context.appColors.surface,
-                  boxShadow: const <BoxShadow>[
-                    BoxShadow(
-                      color: Color(0x16000000),
-                      blurRadius: 12,
-                      offset: Offset(0, -3),
-                    ),
-                  ],
-                ),
+    final double bottomInset = MediaQuery.of(context).padding.bottom;
+
+    return SizedBox(
+      height: _totalH + bottomInset,
+      child: Stack(
+        children: <Widget>[
+          // White bar — extends all the way down through the bottom
+          // safe-area inset so no page content shows through beneath it.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              height: _barH + bottomInset,
+              decoration: BoxDecoration(
+                color: context.appColors.surface,
+                boxShadow: const <BoxShadow>[
+                  BoxShadow(
+                    color: Color(0x16000000),
+                    blurRadius: 12,
+                    offset: Offset(0, -3),
+                  ),
+                ],
               ),
             ),
-            // Nav items
-            Positioned.fill(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: List.generate(
-                  items.length,
-                  (i) => Expanded(
-                    child: _NavItem(
-                      data: items[i],
-                      selected: i == selectedIndex,
-                      onTap: () => onTap(i),
-                    ),
+          ),
+          // Nav items — kept above the unsafe zone
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: bottomInset,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: List.generate(
+                items.length,
+                (i) => Expanded(
+                  child: _NavItem(
+                    data: items[i],
+                    selected: i == selectedIndex,
+                    onTap: () => onTap(i),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -310,7 +310,7 @@ class _TenantRatingsSection extends StatelessWidget {
                 ),
                 SizedBox(height: 6),
                 Text(
-                  r['comment'] as String,
+                  r['review'] as String,
                   style: AppTextStyles.caption(context)
                       .copyWith(fontSize: 12.5, height: 1.4),
                 ),

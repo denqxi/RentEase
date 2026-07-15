@@ -24,10 +24,9 @@ class _SearchScreenState extends State<SearchScreen> {
   double _sessionDistance = 5.0;
 
   List<Map<String, dynamic>> get _displayedProperties {
-    if (!_isSessionActive) {
-      return MockData.properties.where((p) => p['bScore'] == 1).toList();
-    }
-    return MockData.properties;
+    // bScore == 0 properties are out of the pool regardless of session
+    // overrides — session filters only re-scope within the compatible set.
+    return MockData.properties.where((p) => p['bScore'] == 1).toList();
   }
 
   void _showFilterSheet() {
@@ -347,9 +346,9 @@ class _PropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int seed = (property['id'] as String).hashCode % 5 + 1;
-    final double ciScore = (property['ciScore'] as num).toDouble();
-    final int rent = (property['rent'] as num).toInt();
+    final int seed = (property['propertyId'] as String).hashCode % 5 + 1;
+    final double ciScore = (property['tenantCi'] as num).toDouble();
+    final int rent = (property['monthlyRent'] as num).toInt();
     final bool isVerified = property['isVerified'] as bool? ?? false;
 
     return GestureDetector(
@@ -424,7 +423,7 @@ class _PropertyCard extends StatelessWidget {
                     children: <Widget>[
                       Expanded(
                         child: Text(
-                          property['name'] as String,
+                          property['title'] as String,
                           style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 15,

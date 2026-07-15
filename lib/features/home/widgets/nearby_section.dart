@@ -65,8 +65,9 @@ class NearbySection extends StatelessWidget {
             onTap: () => Navigator.of(ctx).push(
               MaterialPageRoute<void>(
                 builder: (_) => PropertyDetailScreen(
-                  property:
-                      MockData.properties[i % MockData.properties.length],
+                  property: MockData.properties.firstWhere(
+                    (p) => p['propertyId'] == listings[i].id,
+                  ),
                 ),
               ),
             ),
