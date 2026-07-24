@@ -8,6 +8,7 @@ import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/card_over_hero_layout.dart';
 import 'email_verification_screen.dart';
 import 'auth_screen.dart';
+import 'terms_and_conditions_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({this.isOwner = false, super.key});
@@ -26,6 +27,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _confirmController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  bool _agreedToTerms = false;
 
   @override
   void dispose() {
@@ -119,13 +121,69 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
           ),
           SizedBox(height: AppSpacing.lg),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: Checkbox(
+                  value: _agreedToTerms,
+                  onChanged: (value) => setState(() => _agreedToTerms = value ?? false),
+                  activeColor: AppColors.accent,
+                  side: BorderSide(color: context.appColors.fieldBorder),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _agreedToTerms = !_agreedToTerms),
+                  child: RichText(
+                    text: TextSpan(
+                      style: AppTextStyles.label(context).copyWith(
+                        color: context.appColors.textSecondary,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      children: [
+                        const TextSpan(text: 'I agree to the '),
+                        WidgetSpan(
+                          child: GestureDetector(
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const TermsAndConditionsScreen(),
+                              ),
+                            ),
+                            child: Text(
+                              'Terms and Agreement',
+                              style: TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.lg),
           AppButton(
             label: 'Sign up',
-            onPressed: () => Navigator.of(context).pushReplacement(
-              MaterialPageRoute<void>(
-                builder: (_) => EmailVerificationScreen(isOwner: widget.isOwner),
-              ),
-            ),
+            onPressed: _agreedToTerms
+                ? () => Navigator.of(context).pushReplacement(
+                      MaterialPageRoute<void>(
+                        builder: (_) => EmailVerificationScreen(isOwner: widget.isOwner),
+                      ),
+                    )
+                : null,
           ),
           SizedBox(height: AppSpacing.md),
           Center(

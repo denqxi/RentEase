@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/utils/weight_utils.dart';
 import '../../../shared/widgets/app_button.dart';
 
 class EditTopsisScreen extends StatefulWidget {
@@ -16,17 +17,31 @@ class _EditTopsisScreenState extends State<EditTopsisScreen> {
   double distanceWeight = 0.35;
   double amenitiesWeight = 0.25;
 
-  double get _total => rentWeight + distanceWeight + amenitiesWeight;
-  bool get _isValid => (_total - 1.0).abs() < 0.001;
+  double _round(double v) => (v * 20).round() / 20;
+
+  void _setWeight({
+    required double newValue,
+    required double otherA,
+    required double otherB,
+    required ValueChanged<double> setChanged,
+    required ValueChanged<double> setOtherA,
+    required ValueChanged<double> setOtherB,
+  }) {
+    final result = normalizeWeights(
+      newValue: newValue,
+      otherA: otherA,
+      otherB: otherB,
+      round: _round,
+    );
+    setState(() {
+      setChanged(result.changed);
+      setOtherA(result.otherA);
+      setOtherB(result.otherB);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final totalPct = '${(_total * 100).round()}%';
-    final totalColor = _isValid ? AppColors.greenPrimary : AppColors.redPrimary;
-    final totalIcon = _isValid
-        ? Icons.check_circle_outline
-        : Icons.warning_amber_outlined;
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.surface,
@@ -59,7 +74,14 @@ class _EditTopsisScreenState extends State<EditTopsisScreen> {
                   _SliderSection(
                     label: 'Monthly rent',
                     value: rentWeight,
-                    onChanged: (v) => setState(() => rentWeight = v),
+                    onChanged: (v) => _setWeight(
+                      newValue: v,
+                      otherA: distanceWeight,
+                      otherB: amenitiesWeight,
+                      setChanged: (nv) => rentWeight = nv,
+                      setOtherA: (nv) => distanceWeight = nv,
+                      setOtherB: (nv) => amenitiesWeight = nv,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
 
@@ -67,7 +89,14 @@ class _EditTopsisScreenState extends State<EditTopsisScreen> {
                   _SliderSection(
                     label: 'Distance',
                     value: distanceWeight,
-                    onChanged: (v) => setState(() => distanceWeight = v),
+                    onChanged: (v) => _setWeight(
+                      newValue: v,
+                      otherA: rentWeight,
+                      otherB: amenitiesWeight,
+                      setChanged: (nv) => distanceWeight = nv,
+                      setOtherA: (nv) => rentWeight = nv,
+                      setOtherB: (nv) => amenitiesWeight = nv,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
 
@@ -75,7 +104,14 @@ class _EditTopsisScreenState extends State<EditTopsisScreen> {
                   _SliderSection(
                     label: 'Amenities',
                     value: amenitiesWeight,
-                    onChanged: (v) => setState(() => amenitiesWeight = v),
+                    onChanged: (v) => _setWeight(
+                      newValue: v,
+                      otherA: rentWeight,
+                      otherB: distanceWeight,
+                      setChanged: (nv) => amenitiesWeight = nv,
+                      setOtherA: (nv) => rentWeight = nv,
+                      setOtherB: (nv) => distanceWeight = nv,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
@@ -90,16 +126,17 @@ class _EditTopsisScreenState extends State<EditTopsisScreen> {
                           color: AppColors.textPrimary,
                         ),
                       ),
-                      Text(
-                        totalPct,
+                      const Text(
+                        '100%',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: totalColor,
+                          color: AppColors.greenPrimary,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Icon(totalIcon, size: 16, color: totalColor),
+                      const Icon(Icons.check_circle_outline,
+                          size: 16, color: AppColors.greenPrimary),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.xl),
@@ -117,8 +154,7 @@ class _EditTopsisScreenState extends State<EditTopsisScreen> {
                 AppButton(
                   label: 'Save changes',
                   color: AppColors.ink,
-                  onPressed:
-                      _isValid ? () => Navigator.of(context).pop() : null,
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 const Text(

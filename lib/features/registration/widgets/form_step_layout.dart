@@ -16,6 +16,7 @@ class FormStepLayout extends StatelessWidget {
     required this.buttonLabel,
     required this.onContinue,
     required this.fields,
+    this.footer,
     super.key,
   });
 
@@ -26,6 +27,11 @@ class FormStepLayout extends StatelessWidget {
 
   /// Form controls for this step; spaced automatically.
   final List<Widget> fields;
+
+  /// Optional content pinned above the primary button, outside the
+  /// scrollable field area — for gating content like a terms checkbox that
+  /// should stay attached to the action it gates rather than scroll away.
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +60,11 @@ class FormStepLayout extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(height: AppSpacing.sm),
+          if (footer != null) ...<Widget>[
+            footer!,
+            SizedBox(height: AppSpacing.md),
+          ] else
+            SizedBox(height: AppSpacing.sm),
           AppPrimaryButton(label: buttonLabel, onPressed: onContinue),
         ],
       ),

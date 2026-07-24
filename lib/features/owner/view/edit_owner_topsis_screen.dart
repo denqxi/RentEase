@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/weight_utils.dart';
 
 class EditOwnerTopsisScreen extends StatefulWidget {
   const EditOwnerTopsisScreen({
@@ -33,10 +34,28 @@ class _EditOwnerTopsisScreenState extends State<EditOwnerTopsisScreen> {
     _profile = widget.initialProfile;
   }
 
-  double get _total => _stay + _credibility + _profile;
-  bool get _isExact => (_total - 1.0).abs() < 0.001;
-
   double _round(double v) => (v * 20).round() / 20;
+
+  void _setWeight({
+    required double newValue,
+    required double otherA,
+    required double otherB,
+    required ValueChanged<double> setChanged,
+    required ValueChanged<double> setOtherA,
+    required ValueChanged<double> setOtherB,
+  }) {
+    final result = normalizeWeights(
+      newValue: newValue,
+      otherA: otherA,
+      otherB: otherB,
+      round: _round,
+    );
+    setState(() {
+      setChanged(result.changed);
+      setOtherA(result.otherA);
+      setOtherB(result.otherB);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +95,8 @@ class _EditOwnerTopsisScreenState extends State<EditOwnerTopsisScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Adjust the weights below to add up to 100%.',
+                'Drag a slider — the others adjust to keep the total at '
+                '100%.',
                 style: AppTextStyles.body(context),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -88,20 +108,40 @@ class _EditOwnerTopsisScreenState extends State<EditOwnerTopsisScreen> {
                       _WeightSlider(
                         label: 'Stay duration',
                         value: _stay,
-                        onChanged: (v) => setState(() => _stay = _round(v)),
+                        onChanged: (v) => _setWeight(
+                          newValue: v,
+                          otherA: _credibility,
+                          otherB: _profile,
+                          setChanged: (nv) => _stay = nv,
+                          setOtherA: (nv) => _credibility = nv,
+                          setOtherB: (nv) => _profile = nv,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _WeightSlider(
                         label: 'Credibility score',
                         value: _credibility,
-                        onChanged: (v) =>
-                            setState(() => _credibility = _round(v)),
+                        onChanged: (v) => _setWeight(
+                          newValue: v,
+                          otherA: _stay,
+                          otherB: _profile,
+                          setChanged: (nv) => _credibility = nv,
+                          setOtherA: (nv) => _stay = nv,
+                          setOtherB: (nv) => _profile = nv,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _WeightSlider(
                         label: 'Profile completeness',
                         value: _profile,
-                        onChanged: (v) => setState(() => _profile = _round(v)),
+                        onChanged: (v) => _setWeight(
+                          newValue: v,
+                          otherA: _stay,
+                          otherB: _credibility,
+                          setChanged: (nv) => _profile = nv,
+                          setOtherA: (nv) => _stay = nv,
+                          setOtherB: (nv) => _credibility = nv,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       Divider(color: context.appColors.fieldBorder),
@@ -114,33 +154,18 @@ class _EditOwnerTopsisScreenState extends State<EditOwnerTopsisScreen> {
                                 color: context.appColors.textSecondary),
                           ),
                           const Spacer(),
-                          if (_isExact) ...[
-                            Icon(Icons.check_circle_rounded,
-                                color: AppColors.accent, size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              '100%',
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.accent,
-                              ),
+                          Icon(Icons.check_circle_rounded,
+                              color: AppColors.accent, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            '100%',
+                            style: TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.accent,
                             ),
-                          ] else ...[
-                            Icon(Icons.warning_amber_rounded,
-                                color: AppColors.destructive, size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${(_total * 100).round()}%',
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.destructive,
-                              ),
-                            ),
-                          ],
+                          ),
                         ],
                       ),
                     ],
@@ -152,27 +177,21 @@ class _EditOwnerTopsisScreenState extends State<EditOwnerTopsisScreen> {
                 width: double.infinity,
                 height: AppSizes.buttonHeight,
                 child: ElevatedButton(
-                  onPressed: _isExact ? () => Navigator.of(context).pop() : null,
+                  onPressed: () => Navigator.of(context).pop(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _isExact
-                        ? context.appColors.ink
-                        : context.appColors.indicatorInactive,
-                    foregroundColor: _isExact
-                        ? AppColors.onInk
-                        : context.appColors.textSecondary,
+                    backgroundColor: context.appColors.ink,
+                    foregroundColor: AppColors.onInk,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(AppRadii.button)),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Save Changes',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: _isExact
-                          ? AppColors.onInk
-                          : context.appColors.textSecondary,
+                      color: AppColors.onInk,
                     ),
                   ),
                 ),

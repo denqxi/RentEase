@@ -4,14 +4,15 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/utils/weight_utils.dart';
 import '../../../features/registration/widgets/form_step_layout.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 
 class TopsisWeightScreen extends StatefulWidget {
   const TopsisWeightScreen({
-    this.initialRent = 0.40,
+    this.initialRent = 0.35,
     this.initialDistance = 0.35,
-    this.initialAmenities = 0.25,
+    this.initialAmenities = 0.30,
     this.onSave,
     super.key,
   });
@@ -40,9 +41,6 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
 
   double _round(double v) => (v * 20).round() / 20;
 
-  /// Sets [changed] to [newValue] and redistributes the remainder across
-  /// the other two weights proportionally to their current share, so the
-  /// three always sum to exactly 1.0 (100%).
   void _setWeight({
     required double newValue,
     required double otherA,
@@ -51,34 +49,16 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
     required ValueChanged<double> setOtherA,
     required ValueChanged<double> setOtherB,
   }) {
-    const double minWeight = 0.05;
-    final double clamped = newValue.clamp(minWeight, 1 - 2 * minWeight);
-    final double remainder = 1 - clamped;
-    final double othersSum = otherA + otherB;
-
-    double newA, newB;
-    if (othersSum <= 0) {
-      newA = remainder / 2;
-      newB = remainder / 2;
-    } else {
-      newA = remainder * (otherA / othersSum);
-      newB = remainder * (otherB / othersSum);
-    }
-    // Enforce the floor on both, then push any resulting slack back onto
-    // whichever of the two has room, keeping the total exact.
-    if (newA < minWeight) {
-      newB -= (minWeight - newA);
-      newA = minWeight;
-    }
-    if (newB < minWeight) {
-      newA -= (minWeight - newB);
-      newB = minWeight;
-    }
-
+    final result = normalizeWeights(
+      newValue: newValue,
+      otherA: otherA,
+      otherB: otherB,
+      round: _round,
+    );
     setState(() {
-      setChanged(_round(clamped));
-      setOtherA(_round(newA));
-      setOtherB(_round(newB));
+      setChanged(result.changed);
+      setOtherA(result.otherA);
+      setOtherB(result.otherB);
     });
   }
 

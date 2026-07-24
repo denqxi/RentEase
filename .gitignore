@@ -48,6 +48,7 @@ app.*.map.json
 CLAUDE.md
 PROTOTYPE.md
 DATA_DICTIONARY.md
+RENTEASE_FIREBASE.md
 
 #Ignore the following files for the purpose of this project
 .vscode/

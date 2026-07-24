@@ -5,6 +5,7 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/weight_utils.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../features/registration/widgets/step_header.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -43,10 +44,28 @@ class _OwnerTopsisScreenState extends State<OwnerTopsisScreen> {
     _profile = widget.initialProfile;
   }
 
-  double get _total => _stay + _credibility + _profile;
-  bool get _isExact => (_total - 1.0).abs() < 0.001;
-
   double _round(double v) => (v * 20).round() / 20;
+
+  void _setWeight({
+    required double newValue,
+    required double otherA,
+    required double otherB,
+    required ValueChanged<double> setChanged,
+    required ValueChanged<double> setOtherA,
+    required ValueChanged<double> setOtherB,
+  }) {
+    final result = normalizeWeights(
+      newValue: newValue,
+      otherA: otherA,
+      otherB: otherB,
+      round: _round,
+    );
+    setState(() {
+      setChanged(result.changed);
+      setOtherA(result.otherA);
+      setOtherB(result.otherB);
+    });
+  }
 
   void _commitDraftProperty() {
     final id = 'bh${100 + MockData.properties.length}';
@@ -118,7 +137,8 @@ class _OwnerTopsisScreenState extends State<OwnerTopsisScreen> {
                   children: [
                     const StepHeader(
                       title: 'What matters most\nin a tenant?',
-                      subtitle: 'Adjust the weights below to add up to 100%.',
+                      subtitle: 'Drag a slider — the others adjust to keep '
+                          'the total at 100%.',
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     Expanded(
@@ -129,22 +149,40 @@ class _OwnerTopsisScreenState extends State<OwnerTopsisScreen> {
                             _WeightSlider(
                               label: 'Stay duration',
                               value: _stay,
-                              onChanged: (v) =>
-                                  setState(() => _stay = _round(v)),
+                              onChanged: (v) => _setWeight(
+                                newValue: v,
+                                otherA: _credibility,
+                                otherB: _profile,
+                                setChanged: (nv) => _stay = nv,
+                                setOtherA: (nv) => _credibility = nv,
+                                setOtherB: (nv) => _profile = nv,
+                              ),
                             ),
                             const SizedBox(height: AppSpacing.md),
                             _WeightSlider(
                               label: 'Credibility score',
                               value: _credibility,
-                              onChanged: (v) =>
-                                  setState(() => _credibility = _round(v)),
+                              onChanged: (v) => _setWeight(
+                                newValue: v,
+                                otherA: _stay,
+                                otherB: _profile,
+                                setChanged: (nv) => _credibility = nv,
+                                setOtherA: (nv) => _stay = nv,
+                                setOtherB: (nv) => _profile = nv,
+                              ),
                             ),
                             const SizedBox(height: AppSpacing.md),
                             _WeightSlider(
                               label: 'Profile completeness',
                               value: _profile,
-                              onChanged: (v) =>
-                                  setState(() => _profile = _round(v)),
+                              onChanged: (v) => _setWeight(
+                                newValue: v,
+                                otherA: _stay,
+                                otherB: _credibility,
+                                setChanged: (nv) => _profile = nv,
+                                setOtherA: (nv) => _stay = nv,
+                                setOtherB: (nv) => _credibility = nv,
+                              ),
                             ),
                             const SizedBox(height: AppSpacing.md),
                             Divider(color: context.appColors.fieldBorder),
@@ -157,33 +195,18 @@ class _OwnerTopsisScreenState extends State<OwnerTopsisScreen> {
                                       color: context.appColors.textSecondary),
                                 ),
                                 const Spacer(),
-                                if (_isExact) ...[
-                                  Icon(Icons.check_circle_rounded,
-                                      color: AppColors.accent, size: 16),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '100%',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.accent,
-                                    ),
+                                Icon(Icons.check_circle_rounded,
+                                    color: AppColors.accent, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '100%',
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.accent,
                                   ),
-                                ] else ...[
-                                  Icon(Icons.warning_amber_rounded,
-                                      color: AppColors.destructive, size: 16),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${(_total * 100).round()}%',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.destructive,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ],
                             ),
                           ],
@@ -193,16 +216,14 @@ class _OwnerTopsisScreenState extends State<OwnerTopsisScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     AppPrimaryButton(
                       label: 'Find Tenants',
-                      onPressed: _isExact
-                          ? () {
-                              _commitDraftProperty();
-                              Navigator.of(context).pushNamedAndRemoveUntil(
-                                AppRouter.matchingTransition,
-                                (_) => false,
-                                arguments: true, // owner
-                              );
-                            }
-                          : null,
+                      onPressed: () {
+                        _commitDraftProperty();
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          AppRouter.matchingTransition,
+                          (_) => false,
+                          arguments: true, // owner
+                        );
+                      },
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Center(

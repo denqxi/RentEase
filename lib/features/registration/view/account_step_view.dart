@@ -5,6 +5,7 @@ import '../cubit/registration_cubit.dart';
 import '../widgets/form_step_layout.dart';
 import '../widgets/labeled_text_field.dart';
 import '../widgets/password_requirements.dart';
+import '../widgets/terms_agreement_field.dart';
 
 /// Step 1/3 — "Create your account".
 class AccountStepView extends StatefulWidget {
@@ -18,6 +19,7 @@ class _AccountStepViewState extends State<AccountStepView> {
   // Obscure toggle is purely local UI state for the password field.
   bool _obscurePassword = true;
   String _password = '';
+  bool _agreedToTerms = false;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +29,11 @@ class _AccountStepViewState extends State<AccountStepView> {
       title: 'Create your account',
       subtitle: 'Tell us a bit about you.',
       buttonLabel: 'Continue',
-      onContinue: cubit.next,
+      onContinue: _agreedToTerms ? cubit.next : null,
+      footer: TermsAgreementField(
+        value: _agreedToTerms,
+        onChanged: (v) => setState(() => _agreedToTerms = v),
+      ),
       fields: <Widget>[
         LabeledTextField(
           label: 'First name',
