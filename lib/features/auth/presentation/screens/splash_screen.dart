@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_colors.dart';
-
 class SplashScreen extends StatefulWidget {
   const SplashScreen({required this.onComplete, super.key});
 
@@ -11,78 +9,116 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fadeAnimation;
+  late final Animation<double> _scaleAnimation;
+  late final Animation<double> _glowAnimation;
+
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+
+    _glowAnimation = Tween<double>(begin: 0.2, end: 0.7).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+
+    _controller.repeat(reverse: true);
+
+    Future.delayed(const Duration(seconds: 3), () {
       if (!mounted) return;
       widget.onComplete();
     });
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: context.appColors.ink,
+      backgroundColor: Colors.white,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            'assets/images/building2.png',
-            fit: BoxFit.cover,
-            alignment: Alignment.topCenter,
-            errorBuilder: (_, _, _) => Container(color: AppColors.accentSoft),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Color(0x99000000),
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (_, __) {
+              return Stack(
+                children: [
+                  Positioned(
+                    top: 40,
+                    right: -30,
+                    child: Opacity(
+                      opacity: _glowAnimation.value,
+                      child: Container(
+                        width: 180,
+                        height: 180,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(90),
+                          gradient: const RadialGradient(
+                            colors: [Color(0x33A7D8FF), Color(0x00FFFFFF)],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 30,
+                    left: -40,
+                    child: Opacity(
+                      opacity: _glowAnimation.value,
+                      child: Container(
+                        width: 220,
+                        height: 220,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(110),
+                          gradient: const RadialGradient(
+                            colors: [Color(0x22A7D8FF), Color(0x00FFFFFF)],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
-                stops: [0.4, 1.0],
-              ),
-            ),
+              );
+            },
           ),
           Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset(
-                  'assets/images/logo.png',
-                  width: 80,
-                  height: 80,
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: Image.asset(
+                  'assets/images/logo (2).png',
+                  width: 220,
+                  height: 220,
                   fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => Icon(
+                  errorBuilder: (_, __, ___) => const Icon(
                     Icons.home_work_rounded,
-                    color: AppColors.onInk,
-                    size: 80,
+                    size: 120,
+                    color: Color(0xFF0F3D63),
                   ),
                 ),
-                SizedBox(height: 16),
-                Text(
-                  'RentEase',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.onInk,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Find your perfect boarding house',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 14,
-                    color: AppColors.onInk,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],
