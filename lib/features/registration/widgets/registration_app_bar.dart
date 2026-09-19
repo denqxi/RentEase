@@ -51,19 +51,33 @@ class _BackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: context.appColors.surface,
-      shape: RoundedRectangleBorder(
+    return Container(
+      decoration: BoxDecoration(
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.field),
-        side: BorderSide(color: context.appColors.fieldBorder),
+        border: Border.all(
+          color: context.appColors.fieldBorder.withOpacity(0.4),
+          width: 1,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
-      child: InkWell(
+      child: Material(
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(AppRadii.field),
-        onTap: onTap,
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Icon(Icons.chevron_left, color: context.appColors.textPrimary),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.field),
+          onTap: onTap,
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Icon(Icons.chevron_left, color: context.appColors.textPrimary),
+          ),
         ),
       ),
     );

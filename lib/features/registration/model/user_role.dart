@@ -1,22 +1,25 @@
-import 'package:flutter/material.dart';
-
 /// The role a user signs up as.
 enum UserRole {
   tenant(
     label: 'Tenant',
     description: 'Looking for a rental that matches your lifestyle.',
-    icon: Icons.home_outlined,
+    imagePath: 'assets/images/tenant.png',
   ),
   landlord(
-    label: 'Landlord',
+    label: 'Owner',
     description: 'Looking for compatible tenants for your property.',
-    icon: Icons.vpn_key_outlined,
+    imagePath: 'assets/images/owner.png',
+  ),
+  guest(
+    label: 'Guest',
+    description: 'Browse listings without creating an account.',
+    imagePath: 'assets/images/guest.png',
   );
 
   const UserRole({
     required this.label,
     required this.description,
-    required this.icon,
+    required this.imagePath,
   });
 
   /// Human-readable role name.
@@ -25,6 +28,6 @@ enum UserRole {
   /// Short explanation shown under the role name.
   final String description;
 
-  /// Leading icon for the role card.
-  final IconData icon;
+  /// Asset path for the role illustration shown in the option card.
+  final String imagePath;
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
@@ -6,6 +6,7 @@ import '../../../../core/constants/mock_data.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
+
 
 /// Sign-in screen â€” hero building image behind a bottom-anchored white card.
 class SignInScreen extends StatefulWidget {
@@ -179,14 +180,14 @@ class _SignInCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const _SignInLogoRow(),
-              SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.md),
               Text('Sign in', style: AppTextStyles.title(context)),
-              SizedBox(height: AppSpacing.sm),
+              SizedBox(height: 4),
               Text(
                 'Welcome back! continue your rental journey with RentEase.',
                 style: AppTextStyles.body(context),
               ),
-              SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.md),
               _SignInFields(
                 emailController: emailController,
                 passwordController: passwordController,
@@ -195,17 +196,15 @@ class _SignInCard extends StatelessWidget {
                 onRememberMeChanged: onRememberMeChanged,
                 onTogglePassword: onTogglePassword,
               ),
-              SizedBox(height: AppSpacing.lg),
-              AppPrimaryButton(label: 'Sign In', onPressed: onSignIn ?? () {}),
-              SizedBox(height: AppSpacing.lg),
-              const _OrDivider(),
-              SizedBox(height: AppSpacing.lg),
-              const _GoogleButton(),
               SizedBox(height: AppSpacing.md),
+              AppPrimaryButton(label: 'Sign In', onPressed: onSignIn ?? () {}),
+              SizedBox(height: AppSpacing.sm),
               _CreateAccountRow(onCreateAccount: onCreateAccount),
               SizedBox(height: AppSpacing.md),
-              const _DemoModeRow(),
-              SizedBox(height: AppSpacing.lg),
+              const _OrDivider(),
+              SizedBox(height: AppSpacing.md),
+              const _GoogleButton(),
+              SizedBox(height: AppSpacing.md),
             ],
           ),
         ),
@@ -227,18 +226,18 @@ class _SignInLogoRow extends StatelessWidget {
             Navigator.of(context).pushNamed(AppRouter.adminLogin),
         child: Image.asset(
           'assets/images/logo.png',
-          height: 36,
+          height: 46,
           fit: BoxFit.contain,
           errorBuilder: (_, _, _) => Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.home_work_rounded, color: AppColors.primary, size: 22),
+              Icon(Icons.home_work_rounded, color: AppColors.primary, size: 26),
               SizedBox(width: 6),
               Text(
                 'RentEase',
                 style: TextStyle(
                   fontFamily: 'DM Sans',
-                  fontSize: 18,
+                  fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: context.appColors.textPrimary,
                 ),
@@ -477,7 +476,10 @@ class _GoogleButton extends StatelessWidget {
             SizedBox(
               width: 20,
               height: 20,
-              child: CustomPaint(painter: _GoogleLogoPainter()),
+              child: Image.asset(
+                'assets/images/google.png',
+                fit: BoxFit.contain,
+              ),
             ),
             SizedBox(width: AppSpacing.sm),
             Text(
@@ -531,137 +533,3 @@ class _CreateAccountRow extends StatelessWidget {
   }
 }
 
-class _DemoModeRow extends StatelessWidget {
-  const _DemoModeRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: GestureDetector(
-        onTap: () => _showDemoModeSheet(context),
-        child: Text(
-          'Try Demo Mode',
-          style: AppTextStyles.label(context).copyWith(
-            color: context.appColors.textSecondary,
-            fontWeight: FontWeight.w600,
-            decoration: TextDecoration.underline,
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showDemoModeSheet(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: context.appColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.card)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Try Demo Mode', style: AppTextStyles.title(sheetContext)),
-              SizedBox(height: AppSpacing.sm),
-              Text(
-                'Jump straight into the app with sample data. '
-                'Nothing you do here is saved permanently.',
-                style: AppTextStyles.body(sheetContext),
-              ),
-              SizedBox(height: AppSpacing.lg),
-              AppPrimaryButton(
-                label: 'Continue as Demo Tenant',
-                onPressed: () => Navigator.of(sheetContext)
-                    .pushNamedAndRemoveUntil(AppRouter.tenantHome, (_) => false),
-              ),
-              SizedBox(height: AppSpacing.sm),
-              AppButton(
-                label: 'Continue as Demo Owner',
-                variant: AppButtonVariant.outline,
-                onPressed: () => Navigator.of(sheetContext)
-                    .pushNamedAndRemoveUntil(AppRouter.landlordHome, (_) => false),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// â”€â”€â”€ Painters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-/// Paints Google's official multi-color "G" mark, traced from Google's
-/// brand-guideline SVG (24x24 viewBox) rather than an approximated shape,
-/// so the sign-in button matches the real logo.
-class _GoogleLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.save();
-    canvas.scale(size.width / 24, size.height / 24);
-
-    // Blue segment.
-    final blue = Path()
-      ..moveTo(22.56, 12.25)
-      ..relativeCubicTo(0, -0.78, -0.07, -1.53, -0.2, -2.25)
-      ..lineTo(12, 10)
-      ..relativeLineTo(0, 4.26)
-      ..relativeLineTo(5.92, 0)
-      ..relativeCubicTo(-0.26, 1.37, -1.04, 2.53, -2.21, 3.31)
-      ..relativeLineTo(0, 2.77)
-      ..relativeLineTo(3.57, 0)
-      ..relativeCubicTo(2.08, -1.92, 3.28, -4.74, 3.28, -8.09)
-      ..close();
-
-    // Green segment.
-    final green = Path()
-      ..moveTo(12, 23)
-      ..relativeCubicTo(2.97, 0, 5.46, -0.98, 7.28, -2.66)
-      ..relativeLineTo(-3.57, -2.77)
-      ..relativeCubicTo(-0.98, 0.66, -2.23, 1.06, -3.71, 1.06)
-      ..relativeCubicTo(-2.86, 0, -5.29, -1.93, -6.16, -4.53)
-      ..lineTo(2.18, 14.09)
-      ..relativeLineTo(0, 2.84)
-      ..cubicTo(3.99, 20.53, 7.7, 23, 12, 23)
-      ..close();
-
-    // Yellow segment (includes one SVG smooth-cubic "s" reflected manually).
-    final yellow = Path()
-      ..moveTo(5.84, 14.09)
-      ..relativeCubicTo(-0.22, -0.66, -0.35, -1.36, -0.35, -2.09)
-      ..cubicTo(5.49, 11.27, 5.62, 10.57, 5.84, 9.91)
-      ..lineTo(5.84, 7.07)
-      ..lineTo(2.18, 7.07)
-      ..cubicTo(1.43, 8.55, 1, 10.22, 1, 12)
-      ..cubicTo(1, 13.78, 1.43, 15.45, 2.18, 16.93)
-      ..relativeLineTo(2.85, -2.22)
-      ..relativeLineTo(0.81, -0.62)
-      ..close();
-
-    // Red segment.
-    final red = Path()
-      ..moveTo(12, 5.38)
-      ..relativeCubicTo(1.62, 0, 3.06, 0.56, 4.21, 1.64)
-      ..relativeLineTo(3.15, -3.15)
-      ..cubicTo(17.45, 2.09, 14.97, 1, 12, 1)
-      ..cubicTo(7.7, 1, 3.99, 3.47, 2.18, 7.07)
-      ..relativeLineTo(3.66, 2.84)
-      ..relativeCubicTo(0.87, -2.6, 3.3, -4.53, 6.16, -4.53)
-      ..close();
-
-    final fill = Paint()..style = PaintingStyle.fill;
-    canvas.drawPath(blue, fill..color = const Color(0xFF4285F4));
-    canvas.drawPath(green, fill..color = const Color(0xFF34A853));
-    canvas.drawPath(yellow, fill..color = const Color(0xFFFBBC05));
-    canvas.drawPath(red, fill..color = const Color(0xFFEA4335));
-
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

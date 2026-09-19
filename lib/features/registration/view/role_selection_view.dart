@@ -27,6 +27,7 @@ class RoleSelectionView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          // ── Header ──────────────────────────────────────────────────────
           const StepHeader(
             title: 'Join RentEase',
             subtitle: 'How do you want to use RentEase? You can change this '
