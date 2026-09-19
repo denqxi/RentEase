@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../features/home/model/listing.dart';
+import 'guest_access_sheet.dart';
 import 'listing_image_placeholder.dart';
 import 'match_badge.dart';
 
@@ -12,12 +13,14 @@ class ListingCardRow extends StatelessWidget {
   const ListingCardRow({
     required this.listing,
     required this.onSavedToggle,
+    this.isGuest = false,
     this.onTap,
     super.key,
   });
 
   final Listing listing;
   final VoidCallback onSavedToggle;
+  final bool isGuest;
   final VoidCallback? onTap;
 
   @override
@@ -40,7 +43,11 @@ class ListingCardRow extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.sm),
         child: Row(
           children: <Widget>[
-            _Thumbnail(listing: listing, onSavedToggle: onSavedToggle),
+            _Thumbnail(
+              listing: listing,
+              isGuest: isGuest,
+              onSavedToggle: onSavedToggle,
+            ),
             SizedBox(width: AppSpacing.md),
             Expanded(child: _Info(listing: listing)),
           ],
@@ -52,10 +59,15 @@ class ListingCardRow extends StatelessWidget {
 }
 
 class _Thumbnail extends StatelessWidget {
-  const _Thumbnail({required this.listing, required this.onSavedToggle});
+  const _Thumbnail({
+    required this.listing,
+    required this.onSavedToggle,
+    this.isGuest = false,
+  });
 
   final Listing listing;
   final VoidCallback onSavedToggle;
+  final bool isGuest;
 
   @override
   Widget build(BuildContext context) {
@@ -71,14 +83,23 @@ class _Thumbnail extends StatelessWidget {
           Positioned(
             bottom: 6,
             left: 6,
-            child: MatchBadge(percent: listing.matchPercent),
+            child: MatchBadge(
+              percent: listing.matchPercent,
+              isLocked: isGuest,
+            ),
           ),
           Positioned(
             top: 6,
             right: 6,
             child: _HeartButton(
               isSaved: listing.isSaved,
-              onTap: onSavedToggle,
+              onTap: () {
+                if (isGuest) {
+                  GuestAccessSheet.show(context);
+                  return;
+                }
+                onSavedToggle();
+              },
             ),
           ),
         ],

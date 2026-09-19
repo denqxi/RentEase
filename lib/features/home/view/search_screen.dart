@@ -1,12 +1,16 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
+import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/match_badge.dart';
 import '../../../shared/widgets/verified_badge.dart';
 import '../../inquiry/view/phase1_tenant_screen.dart';
+import '../../profile/cubit/profile_cubit.dart';
+import '../../registration/model/user_role.dart';
 import '../../tenant/view/session_filter_sheet.dart';
 import 'map_view_screen.dart';
 import 'property_detail_screen.dart';
@@ -23,7 +27,8 @@ class _SearchScreenState extends State<SearchScreen> {
   double _sessionBudget = 6000;
   double _sessionDistance = 5.0;
 
-  List<Map<String, dynamic>> get _displayedProperties {
+  List<Map<String, dynamic>> _displayedProperties({required bool isGuest}) {
+    if (isGuest) return MockData.properties;
     // bScore == 0 properties are out of the pool regardless of session
     // overrides — session filters only re-scope within the compatible set.
     return MockData.properties.where((p) => p['bScore'] == 1).toList();
@@ -53,7 +58,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final properties = _displayedProperties;
+    final isGuest = context.select<ProfileCubit, bool>(
+      (c) => c.state.userRole == UserRole.guest,
+    );
+    final properties = _displayedProperties(isGuest: isGuest);
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
@@ -85,7 +93,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) =>
-                            MapViewScreen(properties: _displayedProperties),
+                            MapViewScreen(properties: properties),
                       ),
                     ),
                     child: Container(
@@ -244,9 +252,11 @@ class _SearchScreenState extends State<SearchScreen> {
                   return _PropertyCard(
                     property: p,
                     rank: i + 1,
+                    isGuest: isGuest,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => PropertyDetailScreen(property: p),
+                        builder: (_) =>
+                            PropertyDetailScreen(property: p, isGuest: isGuest),
                       ),
                     ),
                   );
@@ -333,11 +343,13 @@ class _PropertyCard extends StatelessWidget {
   const _PropertyCard({
     required this.property,
     required this.rank,
+    required this.isGuest,
     required this.onTap,
   });
 
   final Map<String, dynamic> property;
   final int rank;
+  final bool isGuest;
   final VoidCallback onTap;
 
   String _fmtRent(int rent) => rent
@@ -347,7 +359,7 @@ class _PropertyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int seed = (property['propertyId'] as String).hashCode % 5 + 1;
-    final double ciScore = (property['tenantCi'] as num).toDouble();
+    final tenantCi = property['tenantCi'] as num?;
     final int rent = (property['monthlyRent'] as num).toInt();
     final bool isVerified = property['isVerified'] as bool? ?? false;
 
@@ -433,23 +445,29 @@ class _PropertyCard extends StatelessWidget {
                         ),
                       ),
                       SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: MatchBadge.colorFor((ciScore * 100).round())
-                              .withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${(ciScore * 100).round()}% match',
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: MatchBadge.colorFor((ciScore * 100).round()),
+                      if (isGuest)
+                        MatchBadge(percent: 0, showLabel: true, isLocked: true)
+                      else if (tenantCi != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: MatchBadge.colorFor(
+                                    (tenantCi * 100).round())
+                                .withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${(tenantCi * 100).round()}% match',
+                            style: TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: MatchBadge.colorFor(
+                                  (tenantCi * 100).round()),
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                   SizedBox(height: 4),
@@ -505,7 +523,7 @@ class _PropertyCard extends StatelessWidget {
                       if (isVerified) const VerifiedBadge(isVerified: true),
                     ],
                   ),
-                  if (property['bScore'] == 1) ...[
+                  if (property['bScore'] == 1 || isGuest) ...[
                     SizedBox(height: AppSpacing.sm),
 
                     // Send Inquiry button
@@ -513,12 +531,18 @@ class _PropertyCard extends StatelessWidget {
                       width: double.infinity,
                       height: 40,
                       child: ElevatedButton(
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) =>
-                                Phase1TenantScreen(property: property),
-                          ),
-                        ),
+                        onPressed: () {
+                          if (isGuest) {
+                            GuestAccessSheet.show(context);
+                            return;
+                          }
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  Phase1TenantScreen(property: property),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: context.appColors.ink,
                           foregroundColor: AppColors.onInk,

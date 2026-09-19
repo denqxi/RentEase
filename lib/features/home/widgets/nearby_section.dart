@@ -4,8 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
+import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/match_badge.dart';
+import '../../profile/cubit/profile_cubit.dart';
+import '../../registration/model/user_role.dart';
 import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
 import '../view/property_detail_screen.dart';
@@ -19,6 +22,9 @@ class NearbySection extends StatelessWidget {
     final listings =
         context.select<HomeCubit, List<Listing>>((c) => c.state.nearby);
     final cubit = context.read<HomeCubit>();
+    final isGuest = context.select<ProfileCubit, bool>(
+      (c) => c.state.userRole == UserRole.guest,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -28,7 +34,7 @@ class NearbySection extends StatelessWidget {
           child: Row(
             children: <Widget>[
               Text(
-                'Compatible properties',
+                isGuest ? 'All properties' : 'Compatible properties',
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 18,
@@ -61,13 +67,21 @@ class NearbySection extends StatelessWidget {
           separatorBuilder: (_, _) => SizedBox(height: AppSpacing.sm),
           itemBuilder: (ctx, i) => _NearbyCard(
             listing: listings[i],
-            onSavedToggle: () => cubit.toggleSaved(listings[i].id),
+            isGuest: isGuest,
+            onSavedToggle: () {
+              if (isGuest) {
+                GuestAccessSheet.show(ctx);
+                return;
+              }
+              cubit.toggleSaved(listings[i].id);
+            },
             onTap: () => Navigator.of(ctx).push(
               MaterialPageRoute<void>(
                 builder: (_) => PropertyDetailScreen(
                   property: MockData.properties.firstWhere(
                     (p) => p['propertyId'] == listings[i].id,
                   ),
+                  isGuest: isGuest,
                 ),
               ),
             ),
@@ -82,11 +96,13 @@ class _NearbyCard extends StatelessWidget {
   const _NearbyCard({
     required this.listing,
     required this.onSavedToggle,
+    this.isGuest = false,
     this.onTap,
   });
 
   final Listing listing;
   final VoidCallback onSavedToggle;
+  final bool isGuest;
   final VoidCallback? onTap;
 
   String _fmt(int value) => value
@@ -127,7 +143,10 @@ class _NearbyCard extends StatelessWidget {
                     left: 0,
                     right: 0,
                     child: Center(
-                      child: MatchBadge(percent: listing.matchPercent),
+                      child: MatchBadge(
+                        percent: listing.matchPercent,
+                        isLocked: isGuest,
+                      ),
                     ),
                   ),
                 ],

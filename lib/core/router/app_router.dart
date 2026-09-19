@@ -118,7 +118,9 @@ class AppRouter {
         page = MatchingTransitionScreen(isOwner: isOwner);
 
       case tenantHome:
-        page = const MainShell();
+        final sessionRole =
+            (settings.arguments as UserRole?) ?? UserRole.tenant;
+        page = MainShell(sessionRole: sessionRole);
       case landlordHome:
         page = const LandlordShell();
 

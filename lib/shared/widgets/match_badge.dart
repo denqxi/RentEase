@@ -11,11 +11,15 @@ class MatchBadge extends StatelessWidget {
   const MatchBadge({
     required this.percent,
     this.showLabel = false,
+    this.isLocked = false,
     super.key,
   });
 
   final int percent;
   final bool showLabel;
+
+  /// When true, renders a locked "Match Score" pill for guest users.
+  final bool isLocked;
 
   /// Color psychology: green = strong match, amber = moderate, red = weak.
   static Color colorFor(int percent) => percent >= 80
@@ -28,6 +32,31 @@ class MatchBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (isLocked) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.60),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(Icons.lock_outline, color: Colors.white, size: 11),
+            SizedBox(width: 4),
+            Text(
+              showLabel ? 'Match Score' : 'Score',
+              style: AppTextStyles.label(context).copyWith(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(

@@ -36,6 +36,7 @@ class RegistrationCubit extends Cubit<RegistrationState> {
 
   /// Advances to the next step in the flow.
   void next() {
+    if (state.data.role == UserRole.guest) return;
     final index = _order.indexOf(state.step);
     if (index < _order.length - 1) {
       emit(state.copyWith(step: _order[index + 1]));

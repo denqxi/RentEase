@@ -5,19 +5,35 @@ import '../../../core/constants/mock_data.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/ci_score_pill.dart';
 import '../../../shared/widgets/constraint_check_row.dart';
+import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
+import '../../../shared/widgets/match_badge.dart';
 import '../../inquiry/view/phase1_tenant_screen.dart';
 
 class PropertyDetailScreen extends StatelessWidget {
-  const PropertyDetailScreen({required this.property, super.key});
+  const PropertyDetailScreen({
+    required this.property,
+    this.isGuest = false,
+    super.key,
+  });
 
   final Map<String, dynamic> property;
+  final bool isGuest;
+
+  void _guardGuestAction(BuildContext context, VoidCallback action) {
+    if (isGuest) {
+      GuestAccessSheet.show(context);
+      return;
+    }
+    action();
+  }
 
   @override
   Widget build(BuildContext context) {
     final bool isOutside = property['isOutsidePreference'] == true;
     final int bScore = (property['bScore'] as num).toInt();
     final int seed = (property['propertyId'] as String).hashCode % 5 + 1;
+    final tenantCi = property['tenantCi'] as num?;
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
@@ -118,7 +134,8 @@ class PropertyDetailScreen extends StatelessWidget {
                                 ? AppColors.amberText
                                 : context.appColors.textPrimary,
                           ),
-                          onPressed: () {},
+                          onPressed: () =>
+                              _guardGuestAction(context, () {}),
                         ),
                       ),
                     ],
@@ -251,33 +268,38 @@ class PropertyDetailScreen extends StatelessWidget {
                             value: MockData.formatCurfew(property['curfewHours'] as num?),
                           ),
                           SizedBox(height: 16),
-                          Row(
-                            children: [
-                              CiScorePill(
-                                score: (property['tenantCi'] as num)
-                                    .toDouble(),
-                              ),
-                              SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: context.appColors.fieldFill,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border:
-                                      Border.all(color: context.appColors.fieldBorder),
-                                ),
-                                child: Text(
-                                  '#${property['tenantRank']} Rank',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: context.appColors.textPrimary,
+                          if (isGuest)
+                            MatchBadge(
+                              percent: 0,
+                              showLabel: true,
+                              isLocked: true,
+                            )
+                          else if (tenantCi != null) ...[
+                            Row(
+                              children: [
+                                CiScorePill(score: tenantCi.toDouble()),
+                                SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: context.appColors.fieldFill,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                        color: context.appColors.fieldBorder),
+                                  ),
+                                  child: Text(
+                                    '#${property['tenantRank']} Rank',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: context.appColors.textPrimary,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                         ],
 
                         // Compatibility check (outside prefs)
@@ -333,7 +355,7 @@ class PropertyDetailScreen extends StatelessWidget {
                 AppButton(
                   label: 'Send Inquiry',
                   color: AppColors.ink,
-                  onPressed: () {
+                  onPressed: () => _guardGuestAction(context, () {
                     MockData.sendInquiry(property);
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -341,13 +363,13 @@ class PropertyDetailScreen extends StatelessWidget {
                             Phase1TenantScreen(property: property),
                       ),
                     );
-                  },
+                  }),
                 ),
               if (isOutside) ...[
                 AppButton(
                   label: 'Send Inquiry Anyway',
                   color: AppColors.ink,
-                  onPressed: () {
+                  onPressed: () => _guardGuestAction(context, () {
                     MockData.sendInquiry(property);
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -355,7 +377,7 @@ class PropertyDetailScreen extends StatelessWidget {
                             Phase1TenantScreen(property: property),
                       ),
                     );
-                  },
+                  }),
                 ),
                 SizedBox(height: 8),
                 AppButton(

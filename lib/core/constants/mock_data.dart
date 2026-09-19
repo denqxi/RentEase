@@ -12,6 +12,7 @@
 /// Keys that have no schema equivalent are presentation-only and marked
 /// `// UI-only` — they are derived or formatted server-side later.
 class MockData {
+  static const String guestDisplayName = 'Guest';
   static const String tenantName = 'Maria Santos';
   static const String tenantInitials = 'MS';
   static const String tenantSchool = 'USEP Matina Campus';
