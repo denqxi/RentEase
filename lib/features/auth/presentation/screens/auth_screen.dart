@@ -595,39 +595,71 @@ class _DemoModeRow extends StatelessWidget {
 
 // â”€â”€â”€ Painters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+/// Paints Google's official multi-color "G" mark, traced from Google's
+/// brand-guideline SVG (24x24 viewBox) rather than an approximated shape,
+/// so the sign-in button matches the real logo.
 class _GoogleLogoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
+    canvas.save();
+    canvas.scale(size.width / 24, size.height / 24);
 
-    for (final seg in [
-      {'color': const Color(0xFF4285F4), 'start': -0.1, 'sweep': 0.5},
-      {'color': const Color(0xFF34A853), 'start': 0.4, 'sweep': 0.25},
-      {'color': const Color(0xFFFBBC04), 'start': 0.65, 'sweep': 0.25},
-      {'color': const Color(0xFFEA4335), 'start': 0.9, 'sweep': 0.2},
-    ]) {
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius - 1.5),
-        (seg['start'] as double) * 3.1416 * 2,
-        (seg['sweep'] as double) * 3.1416 * 2,
-        false,
-        Paint()
-          ..color = seg['color'] as Color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3.5
-          ..strokeCap = StrokeCap.butt,
-      );
-    }
+    // Blue segment.
+    final blue = Path()
+      ..moveTo(22.56, 12.25)
+      ..relativeCubicTo(0, -0.78, -0.07, -1.53, -0.2, -2.25)
+      ..lineTo(12, 10)
+      ..relativeLineTo(0, 4.26)
+      ..relativeLineTo(5.92, 0)
+      ..relativeCubicTo(-0.26, 1.37, -1.04, 2.53, -2.21, 3.31)
+      ..relativeLineTo(0, 2.77)
+      ..relativeLineTo(3.57, 0)
+      ..relativeCubicTo(2.08, -1.92, 3.28, -4.74, 3.28, -8.09)
+      ..close();
 
-    canvas.drawLine(
-      Offset(center.dx, center.dy),
-      Offset(center.dx + radius - 1.5, center.dy),
-      Paint()
-        ..color = const Color(0xFF4285F4)
-        ..strokeWidth = 3.5
-        ..strokeCap = StrokeCap.round,
-    );
+    // Green segment.
+    final green = Path()
+      ..moveTo(12, 23)
+      ..relativeCubicTo(2.97, 0, 5.46, -0.98, 7.28, -2.66)
+      ..relativeLineTo(-3.57, -2.77)
+      ..relativeCubicTo(-0.98, 0.66, -2.23, 1.06, -3.71, 1.06)
+      ..relativeCubicTo(-2.86, 0, -5.29, -1.93, -6.16, -4.53)
+      ..lineTo(2.18, 14.09)
+      ..relativeLineTo(0, 2.84)
+      ..cubicTo(3.99, 20.53, 7.7, 23, 12, 23)
+      ..close();
+
+    // Yellow segment (includes one SVG smooth-cubic "s" reflected manually).
+    final yellow = Path()
+      ..moveTo(5.84, 14.09)
+      ..relativeCubicTo(-0.22, -0.66, -0.35, -1.36, -0.35, -2.09)
+      ..cubicTo(5.49, 11.27, 5.62, 10.57, 5.84, 9.91)
+      ..lineTo(5.84, 7.07)
+      ..lineTo(2.18, 7.07)
+      ..cubicTo(1.43, 8.55, 1, 10.22, 1, 12)
+      ..cubicTo(1, 13.78, 1.43, 15.45, 2.18, 16.93)
+      ..relativeLineTo(2.85, -2.22)
+      ..relativeLineTo(0.81, -0.62)
+      ..close();
+
+    // Red segment.
+    final red = Path()
+      ..moveTo(12, 5.38)
+      ..relativeCubicTo(1.62, 0, 3.06, 0.56, 4.21, 1.64)
+      ..relativeLineTo(3.15, -3.15)
+      ..cubicTo(17.45, 2.09, 14.97, 1, 12, 1)
+      ..cubicTo(7.7, 1, 3.99, 3.47, 2.18, 7.07)
+      ..relativeLineTo(3.66, 2.84)
+      ..relativeCubicTo(0.87, -2.6, 3.3, -4.53, 6.16, -4.53)
+      ..close();
+
+    final fill = Paint()..style = PaintingStyle.fill;
+    canvas.drawPath(blue, fill..color = const Color(0xFF4285F4));
+    canvas.drawPath(green, fill..color = const Color(0xFF34A853));
+    canvas.drawPath(yellow, fill..color = const Color(0xFFFBBC05));
+    canvas.drawPath(red, fill..color = const Color(0xFFEA4335));
+
+    canvas.restore();
   }
 
   @override

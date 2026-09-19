@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Android 12+ (API 31+) shows its own SplashScreen before LaunchTheme's
+      windowBackground ever gets a chance to draw — by default that means the
+      stock app icon (the Flutter logo mipmap) centered on white. Overriding
+      it here with a blank icon, zero animation duration, and the same white
+      background as the app's own splash screen makes the handoff to
+      splash_screen.dart feel instant instead of showing a separate intro.
+    -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">@android:color/white</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon_blank</item>
+        <item name="android:windowSplashScreenAnimationDuration">0</item>
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+
+    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
+</resources>
