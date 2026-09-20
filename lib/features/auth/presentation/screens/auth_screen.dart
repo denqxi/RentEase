@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
@@ -152,7 +152,7 @@ class _SignInCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.73,
+        maxHeight: MediaQuery.of(context).size.height * 0.78,
       ),
       decoration: BoxDecoration(
         color: context.appColors.surface,
@@ -172,7 +172,7 @@ class _SignInCard extends StatelessWidget {
           AppSpacing.lg,
           AppSpacing.lg,
           AppSpacing.lg,
-          0,
+          AppSpacing.lg,
         ),
         child: SafeArea(
           top: false,
@@ -182,12 +182,12 @@ class _SignInCard extends StatelessWidget {
               const _SignInLogoRow(),
               SizedBox(height: AppSpacing.md),
               Text('Sign in', style: AppTextStyles.title(context)),
-              SizedBox(height: 4),
+              SizedBox(height: 6),
               Text(
                 'Welcome back! continue your rental journey with RentEase.',
                 style: AppTextStyles.body(context),
               ),
-              SizedBox(height: AppSpacing.md),
+              SizedBox(height: AppSpacing.lg),
               _SignInFields(
                 emailController: emailController,
                 passwordController: passwordController,
@@ -196,15 +196,15 @@ class _SignInCard extends StatelessWidget {
                 onRememberMeChanged: onRememberMeChanged,
                 onTogglePassword: onTogglePassword,
               ),
-              SizedBox(height: AppSpacing.md),
+              SizedBox(height: AppSpacing.lg),
               AppPrimaryButton(label: 'Sign In', onPressed: onSignIn ?? () {}),
-              SizedBox(height: AppSpacing.sm),
+              SizedBox(height: AppSpacing.md),
               _CreateAccountRow(onCreateAccount: onCreateAccount),
               SizedBox(height: AppSpacing.md),
               const _OrDivider(),
               SizedBox(height: AppSpacing.md),
               const _GoogleButton(),
-              SizedBox(height: AppSpacing.md),
+              SizedBox(height: AppSpacing.sm),
             ],
           ),
         ),
@@ -213,7 +213,7 @@ class _SignInCard extends StatelessWidget {
   }
 }
 
-// â”€â”€â”€ Logo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Logo ───────────────────────────────────────────────────────────────────
 
 class _SignInLogoRow extends StatelessWidget {
   const _SignInLogoRow();
@@ -226,18 +226,18 @@ class _SignInLogoRow extends StatelessWidget {
             Navigator.of(context).pushNamed(AppRouter.adminLogin),
         child: Image.asset(
           'assets/images/logo.png',
-          height: 46,
+          height: 34,
           fit: BoxFit.contain,
           errorBuilder: (_, _, _) => Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.home_work_rounded, color: AppColors.primary, size: 26),
+              Icon(Icons.home_work_rounded, color: AppColors.primary, size: 22),
               SizedBox(width: 6),
               Text(
                 'RentEase',
                 style: TextStyle(
                   fontFamily: 'DM Sans',
-                  fontSize: 22,
+                  fontSize: 19,
                   fontWeight: FontWeight.w700,
                   color: context.appColors.textPrimary,
                 ),
@@ -506,27 +506,32 @@ class _CreateAccountRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: RichText(
-        text: TextSpan(
-          style: AppTextStyles.label(context).copyWith(
-            color: context.appColors.textSecondary,
-            fontWeight: FontWeight.w400,
-          ),
-          children: [
-            const TextSpan(text: 'New to RentEase? '),
-            WidgetSpan(
-              child: GestureDetector(
-                onTap: onCreateAccount,
-                child: Text(
-                  'Create an account',
-                  style: AppTextStyles.label(context).copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: RichText(
+          text: TextSpan(
+            style: AppTextStyles.label(context).copyWith(
+              color: context.appColors.textSecondary,
+              fontWeight: FontWeight.w400,
+            ),
+            children: [
+              const TextSpan(text: 'New to RentEase? '),
+              WidgetSpan(
+                alignment: PlaceholderAlignment.baseline,
+                baseline: TextBaseline.alphabetic,
+                child: GestureDetector(
+                  onTap: onCreateAccount,
+                  child: Text(
+                    'Create an account',
+                    style: AppTextStyles.label(context).copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

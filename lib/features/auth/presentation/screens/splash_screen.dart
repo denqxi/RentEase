@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({required this.onComplete, super.key});
@@ -9,41 +10,55 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _fadeAnimation;
-  late final Animation<double> _scaleAnimation;
-  late final Animation<double> _glowAnimation;
+class _SplashScreenState extends State<SplashScreen> {
+  late VideoPlayerController _controller;
+  bool _isInitialized = false;
+  bool _hasCompleted = false;
 
   @override
   void initState() {
     super.initState();
+    _initVideo();
+  }
 
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    );
-
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
-
-    _glowAnimation = Tween<double>(begin: 0.2, end: 0.7).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-
-    _controller.repeat(reverse: true);
-
-    Future.delayed(const Duration(seconds: 3), () {
+  Future<void> _initVideo() async {
+    _controller = VideoPlayerController.asset('assets/images/splash.mp4');
+    try {
+      await _controller.initialize();
       if (!mounted) return;
-      widget.onComplete();
-    });
+      
+      setState(() {
+        _isInitialized = true;
+      });
+
+      _controller.play();
+
+      _controller.addListener(() {
+        if (!mounted || _hasCompleted) return;
+        if (_controller.value.position >= _controller.value.duration &&
+            !_controller.value.isPlaying) {
+          _finishSplash();
+        }
+      });
+
+      // Fallback timer in case video duration is long or listener missed end
+      final duration = _controller.value.duration;
+      Future.delayed(duration + const Duration(milliseconds: 300), () {
+        _finishSplash();
+      });
+    } catch (e) {
+      debugPrint('Error loading splash video: $e');
+      // If video fails to load, proceed after a fallback delay
+      Future.delayed(const Duration(seconds: 2), () {
+        _finishSplash();
+      });
+    }
+  }
+
+  void _finishSplash() {
+    if (_hasCompleted || !mounted) return;
+    _hasCompleted = true;
+    widget.onComplete();
   }
 
   @override
@@ -56,73 +71,15 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          AnimatedBuilder(
-            animation: _controller,
-            builder: (_, __) {
-              return Stack(
-                children: [
-                  Positioned(
-                    top: 40,
-                    right: -30,
-                    child: Opacity(
-                      opacity: _glowAnimation.value,
-                      child: Container(
-                        width: 180,
-                        height: 180,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(90),
-                          gradient: const RadialGradient(
-                            colors: [Color(0x33A7D8FF), Color(0x00FFFFFF)],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 30,
-                    left: -40,
-                    child: Opacity(
-                      opacity: _glowAnimation.value,
-                      child: Container(
-                        width: 220,
-                        height: 220,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(110),
-                          gradient: const RadialGradient(
-                            colors: [Color(0x22A7D8FF), Color(0x00FFFFFF)],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-          Center(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: Image.asset(
-                  'assets/images/logo (2).png',
-                  width: 220,
-                  height: 220,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const Icon(
-                    Icons.home_work_rounded,
-                    size: 120,
-                    color: Color(0xFF0F3D63),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+      body: Center(
+        child: _isInitialized
+            ? AspectRatio(
+                aspectRatio: _controller.value.aspectRatio,
+                child: VideoPlayer(_controller),
+              )
+            : const SizedBox.shrink(),
       ),
     );
   }
 }
+

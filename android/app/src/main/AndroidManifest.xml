@@ -2,7 +2,7 @@
     <!-- Required for OpenStreetMap tile loading (flutter_map). -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="rentease"
+        android:label="Rentease"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
