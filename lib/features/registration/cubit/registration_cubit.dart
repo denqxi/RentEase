@@ -67,6 +67,9 @@ class RegistrationCubit extends Cubit<RegistrationState> {
   void updateLastName(String value) =>
       emit(state.copyWith(data: state.data.copyWith(lastName: value)));
 
+  void updateGender(String value) =>
+      emit(state.copyWith(data: state.data.copyWith(gender: value)));
+
   void updateEmail(String value) =>
       emit(state.copyWith(data: state.data.copyWith(email: value)));
 

@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// `matches/{matchId}` — bilateral filter + TOPSIS results.
-/// Written by Cloud Functions only; the app reads cached scores.
+/// Written by the tenant's own device (`FilteringService`/`TopsisService` —
+/// no Cloud Functions, see CLAUDE.md "Client-Side Matching Engine").
 class MatchDoc {
   const MatchDoc({
     required this.matchId,

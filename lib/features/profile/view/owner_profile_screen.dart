@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../../shared/widgets/topsis_weight_bar.dart';
 import '../../../shared/widgets/verified_badge.dart';
 
@@ -144,18 +146,13 @@ class OwnerProfileScreen extends StatelessWidget {
                 child: Column(
                   children: <Widget>[
                     TopsisWeightBar(
-                      label: 'Budget fit',
-                      weight: 0.50,
+                      label: 'Credibility score',
+                      weight: 0.60,
                       color: AppColors.accent,
                     ),
                     TopsisWeightBar(
-                      label: 'Stay duration',
-                      weight: 0.30,
-                      color: AppColors.accent,
-                    ),
-                    TopsisWeightBar(
-                      label: 'Tenant rating',
-                      weight: 0.20,
+                      label: 'Profile completeness',
+                      weight: 0.40,
                       color: AppColors.accent,
                     ),
                   ],
@@ -221,8 +218,11 @@ class OwnerProfileScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: _MenuCard(
-                  onLogout: () => Navigator.of(context)
-                      .pushNamedAndRemoveUntil(AppRouter.signIn, (_) => false),
+                  onLogout: () {
+                    context.read<AuthBloc>().add(const AuthSignOutRequested());
+                    Navigator.of(context)
+                        .pushNamedAndRemoveUntil(AppRouter.signIn, (_) => false);
+                  },
                 ),
               ),
 

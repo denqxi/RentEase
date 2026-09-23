@@ -78,8 +78,8 @@ class AppRouter {
       case signIn:
         page = Builder(
           builder: (ctx) => SignInScreen(
-            onSignIn: () => Navigator.of(ctx).pushNamedAndRemoveUntil(
-              roleSelection,
+            onSignIn: (user) => Navigator.of(ctx).pushNamedAndRemoveUntil(
+              user.isOwner ? landlordHome : tenantHome,
               (_) => false,
             ),
             onCreateAccount: () => Navigator.of(ctx).push(

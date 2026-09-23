@@ -157,7 +157,6 @@ class MockData {
       'occupation': 'USEP Student', // schema: tenantProfiles.occupation
       'school': 'University of Southeastern Philippines', // schema: tenantProfiles.school
       'maxBudget': 4500,
-      'intendedStay': 6,
       'isSmoker': false,
       'hasPet': false,
       'ownerCi': 0.91,
@@ -176,7 +175,6 @@ class MockData {
       'occupation': 'ADDU Student', // schema: tenantProfiles.occupation
       'school': 'Ateneo de Davao University', // schema: tenantProfiles.school
       'maxBudget': 4000,
-      'intendedStay': 12,
       'isSmoker': false,
       'hasPet': false,
       'ownerCi': 0.78,
@@ -195,7 +193,6 @@ class MockData {
       'occupation': 'UM Student', // schema: tenantProfiles.occupation
       'school': 'University of Mindanao', // schema: tenantProfiles.school
       'maxBudget': 3500,
-      'intendedStay': 3,
       'isSmoker': false,
       'hasPet': false,
       'ownerCi': 0.64,
@@ -244,7 +241,6 @@ class MockData {
       'gender': 'Female',
       'school': 'USEP', // UI-only
       'moveIn': 'Aug 1, 2026', // schema: tenantProfiles.moveInDate formatted
-      'stay': '6 months', // UI-only — tenantProfiles.intendedStay formatted
       'maxBudget': 4500,
       'isSmoker': false,
       'hasPet': false,
@@ -421,7 +417,6 @@ class MockData {
         'gender': 'Female',
         'school': 'USEP',
         'moveIn': 'Aug 1, 2026',
-        'stay': '6 months',
         'maxBudget': 4500,
         'isSmoker': false,
         'hasPet': false,

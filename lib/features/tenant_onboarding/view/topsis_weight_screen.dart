@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -7,6 +8,8 @@ import '../../../core/router/app_router.dart';
 import '../../../core/utils/weight_utils.dart';
 import '../../../features/registration/widgets/form_step_layout.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
+import '../../auth/presentation/bloc/auth_bloc.dart';
+import '../cubit/tenant_onboarding_cubit.dart';
 
 class TopsisWeightScreen extends StatefulWidget {
   const TopsisWeightScreen({
@@ -62,117 +65,182 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
     });
   }
 
+  /// The signed-in user's uid, whether or not their email is verified yet
+  /// (the verification gate runs before onboarding, but be defensive).
+  String? _currentUid(BuildContext context) {
+    final auth = context.read<AuthBloc>().state;
+    if (auth is AuthAuthenticated) return auth.user.uid;
+    if (auth is AuthEmailNotVerified) return auth.user.uid;
+    return null;
+  }
+
   void _continue() {
     if (widget.onSave != null) {
       widget.onSave!();
-    } else {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRouter.matchingTransition,
-        (_) => false,
-        arguments: false, // tenant
-      );
+      return;
     }
+
+    final uid = _currentUid(context);
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Your session has expired. Please sign in again.',
+          ),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
+      return;
+    }
+
+    // "Find My Matches" is the profile-save point: this single write is
+    // what triggers server-side matching (CLAUDE.md rule 7). Navigation
+    // happens in the BlocListener below, only once the save succeeds.
+    context.read<TenantOnboardingCubit>().submit(
+      uid: uid,
+      wRent: _rent,
+      wDistance: _distance,
+      wAmenities: _amenities,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.appColors.surface,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0,
+    final isSaving =
+        widget.onSave == null &&
+        context.select<TenantOnboardingCubit, bool>(
+          (c) => c.state.status == TenantOnboardingStatus.saving,
+        );
+
+    return BlocListener<TenantOnboardingCubit, TenantOnboardingState>(
+      listenWhen: (prev, curr) =>
+          widget.onSave == null && prev.status != curr.status,
+      listener: (context, state) {
+        if (state.status == TenantOnboardingStatus.saved) {
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            AppRouter.matchingTransition,
+            (_) => false,
+            arguments: false, // tenant
+          );
+        } else if (state.status == TenantOnboardingStatus.failure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                state.errorMessage ?? 'Could not save your profile.',
               ),
-              child: RegistrationAppBar(
-                onBack: widget.onSave != null
-                    ? () => Navigator.of(context).pop()
-                    : () => Navigator.of(context).pop(),
-                stepNumber: widget.onSave == null ? 5 : null,
-                stepCount: widget.onSave == null ? 5 : null,
-              ),
+              backgroundColor: AppColors.destructive,
             ),
-            Expanded(
-              child: FormStepLayout(
-                title: 'What matters most\nto you?',
-                subtitle: 'Drag a slider — the others adjust to keep the '
-                    'total at 100%.',
-                buttonLabel: widget.onSave != null
-                    ? 'Save Changes'
-                    : 'Find My Matches',
-                onContinue: _continue,
-                fields: [
-                  _WeightSlider(
-                    label: 'Monthly rent',
-                    value: _rent,
-                    onChanged: (v) => _setWeight(
-                      newValue: v,
-                      otherA: _distance,
-                      otherB: _amenities,
-                      setChanged: (nv) => _rent = nv,
-                      setOtherA: (nv) => _distance = nv,
-                      setOtherB: (nv) => _amenities = nv,
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: context.appColors.surface,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  0,
+                ),
+                child: RegistrationAppBar(
+                  onBack: widget.onSave != null
+                      ? () => Navigator.of(context).pop()
+                      : () => Navigator.of(context).pop(),
+                  stepNumber: widget.onSave == null ? 5 : null,
+                  stepCount: widget.onSave == null ? 5 : null,
+                ),
+              ),
+              Expanded(
+                child: FormStepLayout(
+                  title: 'What matters most\nto you?',
+                  subtitle:
+                      'Drag a slider — the others adjust to keep the '
+                      'total at 100%.',
+                  buttonLabel: widget.onSave != null
+                      ? 'Save Changes'
+                      : (isSaving ? 'Saving…' : 'Find My Matches'),
+                  onContinue: isSaving ? null : _continue,
+                  fields: [
+                    _WeightSlider(
+                      label: 'Monthly rent',
+                      value: _rent,
+                      onChanged: (v) => _setWeight(
+                        newValue: v,
+                        otherA: _distance,
+                        otherB: _amenities,
+                        setChanged: (nv) => _rent = nv,
+                        setOtherA: (nv) => _distance = nv,
+                        setOtherB: (nv) => _amenities = nv,
+                      ),
                     ),
-                  ),
-                  _WeightSlider(
-                    label: 'Distance from POI',
-                    value: _distance,
-                    onChanged: (v) => _setWeight(
-                      newValue: v,
-                      otherA: _rent,
-                      otherB: _amenities,
-                      setChanged: (nv) => _distance = nv,
-                      setOtherA: (nv) => _rent = nv,
-                      setOtherB: (nv) => _amenities = nv,
+                    _WeightSlider(
+                      label: 'Distance from POI',
+                      value: _distance,
+                      onChanged: (v) => _setWeight(
+                        newValue: v,
+                        otherA: _rent,
+                        otherB: _amenities,
+                        setChanged: (nv) => _distance = nv,
+                        setOtherA: (nv) => _rent = nv,
+                        setOtherB: (nv) => _amenities = nv,
+                      ),
                     ),
-                  ),
-                  _WeightSlider(
-                    label: 'Number of amenities',
-                    value: _amenities,
-                    onChanged: (v) => _setWeight(
-                      newValue: v,
-                      otherA: _rent,
-                      otherB: _distance,
-                      setChanged: (nv) => _amenities = nv,
-                      setOtherA: (nv) => _rent = nv,
-                      setOtherB: (nv) => _distance = nv,
+                    _WeightSlider(
+                      label: 'Number of amenities',
+                      value: _amenities,
+                      onChanged: (v) => _setWeight(
+                        newValue: v,
+                        otherA: _rent,
+                        otherB: _distance,
+                        setChanged: (nv) => _amenities = nv,
+                        setOtherA: (nv) => _rent = nv,
+                        setOtherB: (nv) => _distance = nv,
+                      ),
                     ),
-                  ),
-                  Divider(color: context.appColors.fieldBorder),
-                  Row(
-                    children: [
-                      Text('Total:',
-                          style: AppTextStyles.label(context)
-                              .copyWith(color: context.appColors.textSecondary)),
-                      const Spacer(),
-                      Icon(Icons.check_circle_rounded,
-                          color: AppColors.accent, size: 16),
-                      SizedBox(width: 4),
-                      Text(
-                        '100%',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                    Divider(color: context.appColors.fieldBorder),
+                    Row(
+                      children: [
+                        Text(
+                          'Total:',
+                          style: AppTextStyles.label(
+                            context,
+                          ).copyWith(color: context.appColors.textSecondary),
+                        ),
+                        const Spacer(),
+                        Icon(
+                          Icons.check_circle_rounded,
                           color: AppColors.accent,
+                          size: 16,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          '100%',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.accent,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (widget.onSave != null)
+                      Center(
+                        child: Text(
+                          'Saving will update your property ranking.',
+                          style: AppTextStyles.caption(context),
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                    ],
-                  ),
-                  if (widget.onSave != null)
-                    Center(
-                      child: Text(
-                        'Saving will update your property ranking.',
-                        style: AppTextStyles.caption(context),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -198,9 +266,13 @@ class _WeightSlider extends StatelessWidget {
         Row(
           children: [
             Expanded(
-                child: Text(label,
-                    style: AppTextStyles.label(context)
-                        .copyWith(color: context.appColors.textPrimary))),
+              child: Text(
+                label,
+                style: AppTextStyles.label(
+                  context,
+                ).copyWith(color: context.appColors.textPrimary),
+              ),
+            ),
             Text(
               '${(value * 100).round()}%',
               style: TextStyle(

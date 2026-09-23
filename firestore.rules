@@ -4,7 +4,11 @@ rules_version = '2';
 //  - role is permanent after signup
 //  - owner cannot write properties until verified (admin-controlled)
 //  - isVerified / verificationStatus writable by admin only
-//  - matches are written by Cloud Functions only (server-side TOPSIS)
+//  - matches are written by the tenant's own device (client-side matching
+//    engine, no Cloud Functions — see CLAUDE.md "Client-Side Matching
+//    Engine"); this is a known trade-off, not a substitute for server-side
+//    verification — the `inquiries` create rule below is the actual
+//    enforcement point for the compatibility gate
 //  - messages only inside inquiries where the user is a participant,
 //    and only after the owner accepts (stage 2)
 service cloud.firestore {
@@ -97,13 +101,30 @@ service cloud.firestore {
     }
 
     // ---------- matches ----------
-    // Computed by Cloud Functions (Admin SDK bypasses rules) — clients read only.
+    // Written by the tenant's own device (FilteringService/TopsisService —
+    // no Cloud Functions in this project). A tenant may only write rows for
+    // themselves, and only against a real property owned by the ownerId
+    // they claim — this stops a client from fabricating a match for an
+    // arbitrary owner, though it can't re-verify the score itself was
+    // computed correctly (see the rules-file header comment).
     match /matches/{matchId} {
       allow read: if signedIn()
         && (resource.data.tenantId == request.auth.uid
             || resource.data.ownerId == request.auth.uid
             || isAdmin());
-      allow write: if false;
+      allow create: if signedIn()
+        && request.resource.data.tenantId == request.auth.uid
+        && request.resource.data.ownerId ==
+             get(/databases/$(database)/documents/properties/$(request.resource.data.propertyId))
+               .data.ownerId;
+      // Only the same fields the tenant's engine ever recomputes may change;
+      // the pairing itself (who/what this match is between) is immutable.
+      allow update: if signedIn()
+        && resource.data.tenantId == request.auth.uid
+        && request.resource.data.tenantId == resource.data.tenantId
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.propertyId == resource.data.propertyId;
+      allow delete: if isAdmin();
     }
 
     // ---------- inquiries ----------
@@ -114,11 +135,20 @@ service cloud.firestore {
               || resource.data.ownerId == request.auth.uid);
       }
       allow read: if isParticipant() || isAdmin();
-      // Tenant may create an inquiry only for a match with bScore == 1.
+      // Tenant may create an inquiry only for a match with bScore == 1, and
+      // only for the exact tenant/owner/property that match was computed
+      // for — otherwise a tenant could reuse any bScore=1 matchId (even one
+      // belonging to a different pairing) to message an incompatible owner.
       allow create: if signedIn()
         && request.resource.data.tenantId == request.auth.uid
         && get(/databases/$(database)/documents/matches/$(request.resource.data.matchId))
              .data.bScore == 1
+        && get(/databases/$(database)/documents/matches/$(request.resource.data.matchId))
+             .data.tenantId == request.resource.data.tenantId
+        && get(/databases/$(database)/documents/matches/$(request.resource.data.matchId))
+             .data.ownerId == request.resource.data.ownerId
+        && get(/databases/$(database)/documents/matches/$(request.resource.data.matchId))
+             .data.propertyId == request.resource.data.propertyId
         && request.resource.data.stage == 1
         && request.resource.data.ownerDecision == 'pending';
       // Owner decides (accept unlocks stage 2); participants update status.

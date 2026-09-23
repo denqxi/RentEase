@@ -8,13 +8,14 @@ class TenantProfileDoc {
     required this.maxBudget,
     required this.requiredGender,
     required this.needsWifi,
-    required this.needsPrivateBath,
     required this.maxDistanceKm,
     required this.poiLatLng,
     required this.poiLabel,
+    this.poiType,
+    this.roomType,
+    this.preferredAmenities,
     required this.isSmoker,
     required this.hasPet,
-    required this.intendedStay,
     required this.groupSize,
     this.school,
     this.occupation,
@@ -36,15 +37,21 @@ class TenantProfileDoc {
   final num maxBudget;
   final String requiredGender;
   final bool needsWifi;
-  final bool needsPrivateBath;
   final num maxDistanceKm;
   final GeoPoint poiLatLng;
   final String poiLabel;
+
+  /// 'School' | 'Workplace' | 'Other' — chosen on the POI onboarding step.
+  final String? poiType;
+
+
+  // Soft preferences (onboarding Step 2). These never remove a property from
+  // the pool — they only refine ranking — and are editable from Profile.
+  final String? roomType;
+  final List<String>? preferredAmenities;
   final bool isSmoker;
   final bool hasPet;
 
-  /// Intended stay duration in months.
-  final num intendedStay;
   final num groupSize;
 
   // Optional profile details shown in Find Tenants cards and the Phase 1
@@ -73,13 +80,15 @@ class TenantProfileDoc {
         maxBudget: map['maxBudget'] as num? ?? 0,
         requiredGender: map['requiredGender'] as String? ?? '',
         needsWifi: map['needsWifi'] as bool? ?? false,
-        needsPrivateBath: map['needsPrivateBath'] as bool? ?? false,
         maxDistanceKm: map['maxDistanceKm'] as num? ?? 0,
         poiLatLng: map['poiLatLng'] as GeoPoint? ?? const GeoPoint(0, 0),
         poiLabel: map['poiLabel'] as String? ?? '',
+        poiType: map['poiType'] as String?,
+        roomType: map['roomType'] as String?,
+        preferredAmenities: (map['preferredAmenities'] as List?)
+            ?.cast<String>(),
         isSmoker: map['isSmoker'] as bool? ?? false,
         hasPet: map['hasPet'] as bool? ?? false,
-        intendedStay: map['intendedStay'] as num? ?? 0,
         groupSize: map['groupSize'] as num? ?? 1,
         school: map['school'] as String?,
         occupation: map['occupation'] as String?,
@@ -97,34 +106,34 @@ class TenantProfileDoc {
       );
 
   factory TenantProfileDoc.fromSnapshot(
-          DocumentSnapshot<Map<String, dynamic>> doc) =>
-      TenantProfileDoc.fromMap(doc.id, doc.data() ?? const {});
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) => TenantProfileDoc.fromMap(doc.id, doc.data() ?? const {});
 
   Map<String, dynamic> toMap() => {
-        'maxBudget': maxBudget,
-        'requiredGender': requiredGender,
-        'needsWifi': needsWifi,
-        'needsPrivateBath': needsPrivateBath,
-        'maxDistanceKm': maxDistanceKm,
-        'poiLatLng': poiLatLng,
-        'poiLabel': poiLabel,
-        'isSmoker': isSmoker,
-        'hasPet': hasPet,
-        'intendedStay': intendedStay,
-        'groupSize': groupSize,
-        if (school != null) 'school': school,
-        if (occupation != null) 'occupation': occupation,
-        if (moveInDate != null) 'moveInDate': moveInDate,
-        if (emergencyContact != null) 'emergencyContact': emergencyContact,
-        'isSeeking': isSeeking,
-        'wRent': wRent,
-        'wDistance': wDistance,
-        'wAmenities': wAmenities,
-        if (avgRating != null) 'avgRating': avgRating,
-        if (totalRatings != null) 'totalRatings': totalRatings,
-        if (profileCompleteness != null)
-          'profileCompleteness': profileCompleteness,
-        if (credibilityScore != null) 'credibilityScore': credibilityScore,
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+    'maxBudget': maxBudget,
+    'requiredGender': requiredGender,
+    'needsWifi': needsWifi,
+    'maxDistanceKm': maxDistanceKm,
+    'poiLatLng': poiLatLng,
+    'poiLabel': poiLabel,
+    if (poiType != null) 'poiType': poiType,
+    if (roomType != null) 'roomType': roomType,
+    if (preferredAmenities != null) 'preferredAmenities': preferredAmenities,
+    'isSmoker': isSmoker,
+    'hasPet': hasPet,
+    'groupSize': groupSize,
+    if (school != null) 'school': school,
+    if (occupation != null) 'occupation': occupation,
+    if (moveInDate != null) 'moveInDate': moveInDate,
+    if (emergencyContact != null) 'emergencyContact': emergencyContact,
+    'isSeeking': isSeeking,
+    'wRent': wRent,
+    'wDistance': wDistance,
+    'wAmenities': wAmenities,
+    if (avgRating != null) 'avgRating': avgRating,
+    if (totalRatings != null) 'totalRatings': totalRatings,
+    if (profileCompleteness != null) 'profileCompleteness': profileCompleteness,
+    if (credibilityScore != null) 'credibilityScore': credibilityScore,
+    'updatedAt': FieldValue.serverTimestamp(),
+  };
 }

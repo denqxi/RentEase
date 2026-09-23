@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
@@ -6,11 +7,67 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../features/registration/widgets/registration_app_bar.dart';
+import '../bloc/auth_bloc.dart';
 
-class EmailVerificationScreen extends StatelessWidget {
+class EmailVerificationScreen extends StatefulWidget {
   const EmailVerificationScreen({this.isOwner = false, super.key});
 
   final bool isOwner;
+
+  @override
+  State<EmailVerificationScreen> createState() =>
+      _EmailVerificationScreenState();
+}
+
+class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
+  void _showMessage(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? AppColors.destructive : null,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthAuthenticated) {
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            widget.isOwner ? AppRouter.documentUpload : AppRouter.hardConstraints,
+            (_) => false,
+          );
+        } else if (state is AuthOperationFailure) {
+          _showMessage(state.message, isError: true);
+        }
+      },
+      child: _EmailVerificationBody(
+        isOwner: widget.isOwner,
+        onResend: () {
+          context
+              .read<AuthBloc>()
+              .add(const AuthEmailVerificationResendRequested());
+          _showMessage('Verification email re-sent.');
+        },
+        onContinue: () => context
+            .read<AuthBloc>()
+            .add(const AuthEmailVerificationCheckRequested()),
+      ),
+    );
+  }
+}
+
+class _EmailVerificationBody extends StatelessWidget {
+  const _EmailVerificationBody({
+    required this.isOwner,
+    required this.onResend,
+    required this.onContinue,
+  });
+
+  final bool isOwner;
+  final VoidCallback onResend;
+  final VoidCallback onContinue;
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +124,7 @@ class EmailVerificationScreen extends StatelessWidget {
                     ),
                     SizedBox(height: AppSpacing.xl),
                     GestureDetector(
-                      onTap: () {},
+                      onTap: onResend,
                       child: Text(
                         'Resend email',
                         style: TextStyle(
@@ -91,10 +148,7 @@ class EmailVerificationScreen extends StatelessWidget {
               ),
               AppPrimaryButton(
                 label: 'Continue',
-                onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                  isOwner ? AppRouter.documentUpload : AppRouter.hardConstraints,
-                  (_) => false,
-                ),
+                onPressed: onContinue,
               ),
             ],
           ),

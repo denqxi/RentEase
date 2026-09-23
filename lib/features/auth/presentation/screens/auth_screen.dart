@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
-import '../../../../core/constants/mock_data.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../domain/entities/auth.dart';
+import '../bloc/auth_bloc.dart';
 
 /// Sign-in screen â€” hero building image behind a bottom-anchored white card.
 class SignInScreen extends StatefulWidget {
@@ -14,8 +17,8 @@ class SignInScreen extends StatefulWidget {
   /// Called when the user taps "Create an account".
   final VoidCallback? onCreateAccount;
 
-  /// Called when the user taps "Sign In".
-  final VoidCallback? onSignIn;
+  /// Called after a successful sign-in, once [AuthBloc] confirms the role.
+  final ValueChanged<AppUser>? onSignIn;
 
   @override
   State<SignInScreen> createState() => _SignInScreenState();
@@ -43,57 +46,81 @@ class _SignInScreenState extends State<SignInScreen> {
     );
   }
 
-  /// Authenticates against the in-memory account list (seeded demo accounts
-  /// plus any created via signup this session) and routes by role.
   void _handleSignIn() {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    if (email.isEmpty || password.isEmpty) {
-      _showError('Enter your email and password.');
+    final emailError = Validators.email(email);
+    if (emailError != null) {
+      _showError(emailError);
       return;
     }
-    final account = MockData.findAccount(email);
-    if (account == null) {
-      _showError('No account found for that email. '
-          'Create one or use Demo Mode.');
+    if (password.isEmpty) {
+      _showError('Enter your password.');
       return;
     }
-    if (account['password'] != password) {
-      _showError('Incorrect password. Please try again.');
+    context.read<AuthBloc>().add(
+          AuthSignInRequested(email: email, password: password),
+        );
+  }
+
+  void _handleForgotPassword() {
+    final email = _emailController.text.trim();
+    final emailError = Validators.email(email);
+    if (emailError != null) {
+      _showError('Enter your email above first, then tap "Forgot password?".');
       return;
     }
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      account['role'] == 'owner'
-          ? AppRouter.landlordHome
-          : AppRouter.tenantHome,
-      (_) => false,
-    );
+    context.read<AuthBloc>().add(AuthPasswordResetRequested(email: email));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primary,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const _SignInBackground(),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: _SignInCard(
-              emailController: _emailController,
-              passwordController: _passwordController,
-              rememberMe: _rememberMe,
-              obscurePassword: _obscurePassword,
-              onRememberMeChanged: (v) =>
-                  setState(() => _rememberMe = v ?? false),
-              onTogglePassword: () =>
-                  setState(() => _obscurePassword = !_obscurePassword),
-              onCreateAccount: widget.onCreateAccount,
-              onSignIn: _handleSignIn,
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        // AuthBloc is app-wide, so this screen also hears events fired by
+        // routes pushed on top of it (e.g. the registration flow). Only
+        // react while this screen is actually the one on screen.
+        if (!(ModalRoute.of(context)?.isCurrent ?? true)) return;
+
+        if (state is AuthAuthenticated) {
+          widget.onSignIn?.call(state.user);
+        } else if (state is AuthEmailNotVerified) {
+          _showError('Please verify your email before signing in.');
+        } else if (state is AuthOperationFailure) {
+          _showError(state.message);
+        } else if (state is AuthPasswordResetEmailSent) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Password reset link sent to ${state.email}.')),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.primary,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            const _SignInBackground(),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: BlocBuilder<AuthBloc, AuthState>(
+                builder: (context, state) => _SignInCard(
+                  emailController: _emailController,
+                  passwordController: _passwordController,
+                  rememberMe: _rememberMe,
+                  obscurePassword: _obscurePassword,
+                  isLoading: state is AuthLoading,
+                  onRememberMeChanged: (v) =>
+                      setState(() => _rememberMe = v ?? false),
+                  onTogglePassword: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                  onCreateAccount: widget.onCreateAccount,
+                  onSignIn: _handleSignIn,
+                  onForgotPassword: _handleForgotPassword,
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -133,18 +160,22 @@ class _SignInCard extends StatelessWidget {
     required this.obscurePassword,
     required this.onRememberMeChanged,
     required this.onTogglePassword,
+    this.isLoading = false,
     this.onCreateAccount,
     this.onSignIn,
+    this.onForgotPassword,
   });
 
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final bool rememberMe;
   final bool obscurePassword;
+  final bool isLoading;
   final ValueChanged<bool?> onRememberMeChanged;
   final VoidCallback onTogglePassword;
   final VoidCallback? onCreateAccount;
   final VoidCallback? onSignIn;
+  final VoidCallback? onForgotPassword;
 
   @override
   Widget build(BuildContext context) {
@@ -194,9 +225,13 @@ class _SignInCard extends StatelessWidget {
                 rememberMe: rememberMe,
                 onRememberMeChanged: onRememberMeChanged,
                 onTogglePassword: onTogglePassword,
+                onForgotPassword: onForgotPassword,
               ),
               SizedBox(height: AppSpacing.lg),
-              AppPrimaryButton(label: 'Sign In', onPressed: onSignIn ?? () {}),
+              AppPrimaryButton(
+                label: isLoading ? 'Signing in…' : 'Sign In',
+                onPressed: isLoading ? null : (onSignIn ?? () {}),
+              ),
               SizedBox(height: AppSpacing.lg),
               const _OrDivider(),
               SizedBox(height: AppSpacing.lg),
@@ -261,6 +296,7 @@ class _SignInFields extends StatelessWidget {
     required this.rememberMe,
     required this.onRememberMeChanged,
     required this.onTogglePassword,
+    this.onForgotPassword,
   });
 
   final TextEditingController emailController;
@@ -269,6 +305,7 @@ class _SignInFields extends StatelessWidget {
   final bool rememberMe;
   final ValueChanged<bool?> onRememberMeChanged;
   final VoidCallback onTogglePassword;
+  final VoidCallback? onForgotPassword;
 
   @override
   Widget build(BuildContext context) {
@@ -304,6 +341,7 @@ class _SignInFields extends StatelessWidget {
         _RememberForgotRow(
           rememberMe: rememberMe,
           onChanged: onRememberMeChanged,
+          onForgotPassword: onForgotPassword,
         ),
       ],
     );
@@ -380,10 +418,12 @@ class _RememberForgotRow extends StatelessWidget {
   const _RememberForgotRow({
     required this.rememberMe,
     required this.onChanged,
+    this.onForgotPassword,
   });
 
   final bool rememberMe;
   final ValueChanged<bool?> onChanged;
+  final VoidCallback? onForgotPassword;
 
   @override
   Widget build(BuildContext context) {
@@ -412,7 +452,7 @@ class _RememberForgotRow extends StatelessWidget {
         ),
         const Spacer(),
         GestureDetector(
-          onTap: () {},
+          onTap: onForgotPassword,
           child: Text(
             'Forgot password?',
             style: AppTextStyles.label(context).copyWith(color: AppColors.primary),

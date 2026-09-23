@@ -18,6 +18,7 @@ class LabeledTextField extends StatelessWidget {
     this.onToggleObscure,
     this.maxLines = 1,
     this.controller,
+    this.errorText,
     super.key,
   });
 
@@ -47,6 +48,9 @@ class LabeledTextField extends StatelessWidget {
 
   /// Number of lines the field grows to. Defaults to 1 (single-line).
   final int maxLines;
+
+  /// When set, renders a red border and this message below the field.
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -86,8 +90,12 @@ class LabeledTextField extends StatelessWidget {
               horizontal: AppSpacing.md,
               vertical: AppSpacing.md,
             ),
+            errorText: errorText,
+            errorStyle: TextStyle(color: AppColors.destructive, fontSize: 12),
             enabledBorder: _border(context.appColors.fieldBorder),
             focusedBorder: _border(AppColors.accent),
+            errorBorder: _border(AppColors.destructive),
+            focusedErrorBorder: _border(AppColors.destructive),
           ),
         ),
       ],

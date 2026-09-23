@@ -13,9 +13,9 @@ class EditTopsisScreen extends StatefulWidget {
 }
 
 class _EditTopsisScreenState extends State<EditTopsisScreen> {
-  double rentWeight = 0.40;
+  double rentWeight = 0.35;
   double distanceWeight = 0.35;
-  double amenitiesWeight = 0.25;
+  double amenitiesWeight = 0.30;
 
   double _round(double v) => (v * 20).round() / 20;
 

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/registration/widgets/form_step_layout.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
+import '../cubit/tenant_onboarding_cubit.dart';
 import 'topsis_weight_screen.dart';
 
 class DistancePreferenceScreen extends StatefulWidget {
@@ -17,14 +19,14 @@ class DistancePreferenceScreen extends StatefulWidget {
       _DistancePreferenceScreenState();
 }
 
-class _DistancePreferenceScreenState
-    extends State<DistancePreferenceScreen> {
+class _DistancePreferenceScreenState extends State<DistancePreferenceScreen> {
   double _maxKm = 3.0;
 
   void _continue() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const TopsisWeightScreen()),
-    );
+    context.read<TenantOnboardingCubit>().saveMaxDistance(_maxKm);
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const TopsisWeightScreen()));
   }
 
   @override
@@ -37,7 +39,10 @@ class _DistancePreferenceScreenState
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0,
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                0,
               ),
               child: RegistrationAppBar(
                 onBack: () => Navigator.of(context).pop(),
@@ -48,8 +53,7 @@ class _DistancePreferenceScreenState
             Expanded(
               child: FormStepLayout(
                 title: 'How far are you willing\nto travel?',
-                subtitle:
-                    "Set the maximum distance you're comfortable with.",
+                subtitle: "Set the maximum distance you're comfortable with.",
                 buttonLabel: 'Save and Continue',
                 onContinue: _continue,
                 fields: [
@@ -61,14 +65,18 @@ class _DistancePreferenceScreenState
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.location_on_rounded,
-                            color: AppColors.accent, size: 16),
+                        Icon(
+                          Icons.location_on_rounded,
+                          color: AppColors.accent,
+                          size: 16,
+                        ),
                         SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Text(
                             widget.poiName,
-                            style: AppTextStyles.caption(context)
-                                .copyWith(color: context.appColors.textPrimary),
+                            style: AppTextStyles.caption(
+                              context,
+                            ).copyWith(color: context.appColors.textPrimary),
                           ),
                         ),
                       ],
@@ -80,8 +88,10 @@ class _DistancePreferenceScreenState
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Maximum distance',
-                              style: AppTextStyles.label(context)),
+                          Text(
+                            'Maximum distance',
+                            style: AppTextStyles.label(context),
+                          ),
                           Text(
                             '${_maxKm.toStringAsFixed(1)} km',
                             style: TextStyle(
@@ -96,7 +106,8 @@ class _DistancePreferenceScreenState
                       SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           activeTrackColor: AppColors.accent,
-                          inactiveTrackColor: context.appColors.indicatorInactive,
+                          inactiveTrackColor:
+                              context.appColors.indicatorInactive,
                           thumbColor: AppColors.accent,
                         ),
                         child: Slider(
@@ -118,8 +129,9 @@ class _DistancePreferenceScreenState
                     ),
                     child: Text(
                       'Properties within ${_maxKm.toStringAsFixed(1)} km of ${widget.poiName} will appear in your results.',
-                      style: AppTextStyles.caption(context)
-                          .copyWith(color: context.appColors.textSecondary),
+                      style: AppTextStyles.caption(
+                        context,
+                      ).copyWith(color: context.appColors.textSecondary),
                     ),
                   ),
                 ],

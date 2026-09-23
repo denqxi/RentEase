@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -30,7 +30,10 @@ class FindTenantsScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.tune_rounded, color: context.appColors.textPrimary),
+            icon: Icon(
+              Icons.tune_rounded,
+              color: context.appColors.textPrimary,
+            ),
             onPressed: () {},
           ),
         ],
@@ -39,16 +42,33 @@ class FindTenantsScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.sm,
+            ),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  AppChip(label: 'Female only', variant: AppChipVariant.owner, isLocked: true),
+                  AppChip(
+                    label: 'Female only',
+                    variant: AppChipVariant.owner,
+                    isLocked: true,
+                  ),
                   SizedBox(width: AppSpacing.sm),
-                  AppChip(label: 'No smoking', variant: AppChipVariant.owner, isLocked: true),
+                  AppChip(
+                    label: 'No smoking',
+                    variant: AppChipVariant.owner,
+                    isLocked: true,
+                  ),
                   SizedBox(width: AppSpacing.sm),
-                  AppChip(label: 'No pets', variant: AppChipVariant.owner, isLocked: true),
+                  AppChip(
+                    label: 'No pets',
+                    variant: AppChipVariant.owner,
+                    isLocked: true,
+                  ),
                 ],
               ),
             ),
@@ -127,7 +147,10 @@ class _TenantCard extends StatelessWidget {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: context.appColors.ink,
                         borderRadius: BorderRadius.circular(8),
@@ -149,9 +172,12 @@ class _TenantCard extends StatelessWidget {
                   '${tenant['gender']} Â· ${tenant['occupation']}',
                   style: AppTextStyles.caption(context),
                 ),
-                Text(tenant['school'] as String, style: AppTextStyles.caption(context)),
                 Text(
-                  '₱${tenant['maxBudget']}/mo budget Â· ${tenant['intendedStay']} months',
+                  tenant['school'] as String,
+                  style: AppTextStyles.caption(context),
+                ),
+                Text(
+                  '₱${tenant['maxBudget']}/mo budget',
                   style: AppTextStyles.caption(context),
                 ),
                 SizedBox(height: AppSpacing.sm),

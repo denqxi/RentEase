@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
 import '../../../features/registration/widgets/form_step_layout.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
+import '../cubit/tenant_onboarding_cubit.dart';
 import 'poi_setup_screen.dart';
 
 /// Onboarding Step 2 — soft preferences (nice-to-haves).
@@ -24,9 +26,13 @@ class _SoftPreferencesStepScreenState extends State<SoftPreferencesStepScreen> {
   final Set<String> _preferredAmenities = <String>{};
 
   void _continue() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const PoiSetupScreen()),
+    context.read<TenantOnboardingCubit>().saveSoftPreferences(
+      roomType: _roomType,
+      preferredAmenities: _preferredAmenities.toList(),
     );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const PoiSetupScreen()));
   }
 
   @override
@@ -39,7 +45,10 @@ class _SoftPreferencesStepScreenState extends State<SoftPreferencesStepScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0,
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                0,
               ),
               child: RegistrationAppBar(
                 onBack: () => Navigator.of(context).pop(),
@@ -67,7 +76,11 @@ class _SoftPreferencesStepScreenState extends State<SoftPreferencesStepScreen> {
                   ),
                   Row(
                     children: [
-                      for (final type in const ['Solo', 'Shared', 'Either']) ...[
+                      for (final type in const [
+                        'Solo',
+                        'Shared',
+                        'Either',
+                      ]) ...[
                         Expanded(
                           child: _PrefChip(
                             label: type,
@@ -135,8 +148,9 @@ class _PrefChip extends StatelessWidget {
           color: isSelected ? AppColors.accent : context.appColors.fieldFill,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color:
-                isSelected ? AppColors.accent : context.appColors.fieldBorder,
+            color: isSelected
+                ? AppColors.accent
+                : context.appColors.fieldBorder,
           ),
         ),
         alignment: Alignment.center,
@@ -146,8 +160,9 @@ class _PrefChip extends StatelessWidget {
             fontFamily: 'DM Sans',
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color:
-                isSelected ? AppColors.onInk : context.appColors.textSecondary,
+            color: isSelected
+                ? AppColors.onInk
+                : context.appColors.textSecondary,
           ),
         ),
       ),

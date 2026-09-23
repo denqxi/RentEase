@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/validators.dart';
 
 /// Live password-requirements checklist shown under the password field on
 /// both the tenant and landlord account steps. Each rule flips to a green
@@ -10,8 +11,10 @@ class PasswordRequirements extends StatelessWidget {
 
   final String password;
 
+  /// Delegates to [Validators.password] so the checklist and the actual
+  /// submit-time gate can never drift apart.
   static bool isSatisfied(String password) =>
-      _rules.every((r) => r.test(password));
+      Validators.password(password) == null;
 
   static final List<_Rule> _rules = [
     _Rule('12–16 characters', (p) => p.length >= 12 && p.length <= 16),

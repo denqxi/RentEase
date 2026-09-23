@@ -14,6 +14,7 @@ class RegistrationData extends Equatable {
     // Tenant account step.
     this.firstName = '',
     this.lastName = '',
+    this.gender = '',
     this.email = '',
     this.phone = '',
     this.password = '',
@@ -64,6 +65,11 @@ class RegistrationData extends Equatable {
   // ── Tenant account step ──────────────────────────────────────────────────
   final String firstName;
   final String lastName;
+
+  /// 'Female' | 'Male' — the account holder's own gender (feeds Layer 1
+  /// GenderMatch); not to be confused with a tenant's `genderPreference`/
+  /// gender-policy requirement of a property.
+  final String gender;
   final String email;
   final String phone;
   final String password;
@@ -118,6 +124,7 @@ class RegistrationData extends Equatable {
     // Tenant account.
     String? firstName,
     String? lastName,
+    String? gender,
     String? email,
     String? phone,
     String? password,
@@ -165,6 +172,7 @@ class RegistrationData extends Equatable {
       role: role ?? this.role,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
+      gender: gender ?? this.gender,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       password: password ?? this.password,
@@ -209,6 +217,7 @@ class RegistrationData extends Equatable {
         role,
         firstName,
         lastName,
+        gender,
         email,
         phone,
         password,

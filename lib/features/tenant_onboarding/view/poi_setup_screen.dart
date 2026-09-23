@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -10,6 +11,7 @@ import '../../../features/registration/widgets/form_step_layout.dart';
 import '../../../features/registration/widgets/labeled_text_field.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../shared/widgets/map_zoom_controls.dart';
+import '../cubit/tenant_onboarding_cubit.dart';
 import 'distance_preference_screen.dart';
 
 class PoiSetupScreen extends StatefulWidget {
@@ -51,7 +53,8 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
         nearest = area;
       }
     }
-    final coords = '${pos.latitude.toStringAsFixed(4)}, '
+    final coords =
+        '${pos.latitude.toStringAsFixed(4)}, '
         '${pos.longitude.toStringAsFixed(4)}';
     return 'Near ${nearest!['name']}, Davao City ($coords)';
   }
@@ -69,8 +72,8 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
       _suggestions = q.length < 2
           ? const []
           : MockData.davaoPlaces
-              .where((p) => (p['name'] as String).toLowerCase().contains(q))
-              .toList();
+                .where((p) => (p['name'] as String).toLowerCase().contains(q))
+                .toList();
     });
   }
 
@@ -88,11 +91,17 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
   }
 
   void _continue() {
+    final pos = _markerPos!;
+    final label = _resolvedAddress ?? '$_poiType location';
+    context.read<TenantOnboardingCubit>().savePoi(
+      poiType: _poiType,
+      latitude: pos.latitude,
+      longitude: pos.longitude,
+      label: label,
+    );
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => DistancePreferenceScreen(
-          poiName: _resolvedAddress ?? '$_poiType location',
-        ),
+        builder: (_) => DistancePreferenceScreen(poiName: label),
       ),
     );
   }
@@ -107,7 +116,10 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0,
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                0,
               ),
               child: RegistrationAppBar(
                 onBack: () => Navigator.of(context).pop(),
@@ -137,16 +149,20 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                       decoration: BoxDecoration(
                         color: context.appColors.surface,
                         borderRadius: BorderRadius.circular(AppRadii.field),
-                        border:
-                            Border.all(color: context.appColors.fieldBorder),
+                        border: Border.all(
+                          color: context.appColors.fieldBorder,
+                        ),
                       ),
                       child: Column(
                         children: [
                           for (final place in _suggestions)
                             ListTile(
                               dense: true,
-                              leading: Icon(Icons.place_outlined,
-                                  color: AppColors.accent, size: 18),
+                              leading: Icon(
+                                Icons.place_outlined,
+                                color: AppColors.accent,
+                                size: 18,
+                              ),
                               title: Text(
                                 place['name'] as String,
                                 style: AppTextStyles.caption(context).copyWith(
@@ -184,14 +200,18 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.location_on_rounded,
-                              color: AppColors.accent, size: 16),
+                          Icon(
+                            Icons.location_on_rounded,
+                            color: AppColors.accent,
+                            size: 16,
+                          ),
                           SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: Text(
                               _resolvedAddress!,
-                              style: AppTextStyles.caption(context)
-                                  .copyWith(color: context.appColors.textPrimary),
+                              style: AppTextStyles.caption(
+                                context,
+                              ).copyWith(color: context.appColors.textPrimary),
                             ),
                           ),
                         ],
@@ -224,14 +244,16 @@ class _PoiTypeSelector extends StatelessWidget {
             onTap: () => onSelected(type),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.accent : context.appColors.fieldFill,
+                color: isSelected
+                    ? AppColors.accent
+                    : context.appColors.fieldFill,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color:
-                      isSelected ? AppColors.accent : context.appColors.fieldBorder,
+                  color: isSelected
+                      ? AppColors.accent
+                      : context.appColors.fieldBorder,
                 ),
               ),
               child: Text(
@@ -332,8 +354,11 @@ class _PoiMap extends StatelessWidget {
                       width: 40,
                       height: 40,
                       alignment: Alignment.topCenter,
-                      child: Icon(Icons.location_pin,
-                          color: AppColors.accent, size: 40),
+                      child: Icon(
+                        Icons.location_pin,
+                        color: AppColors.accent,
+                        size: 40,
+                      ),
                     ),
                 ],
               ),
@@ -346,7 +371,9 @@ class _PoiMap extends StatelessWidget {
               bottom: AppSpacing.sm,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 6),
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: context.appColors.surface,
                   borderRadius: BorderRadius.circular(AppRadii.field),
@@ -372,12 +399,14 @@ class _PoiMap extends StatelessWidget {
                 border: Border.all(color: context.appColors.fieldBorder),
               ),
               child: IconButton(
-                icon: Icon(Icons.my_location_rounded,
-                    color: AppColors.accent, size: 20),
+                icon: Icon(
+                  Icons.my_location_rounded,
+                  color: AppColors.accent,
+                  size: 20,
+                ),
                 onPressed: onLocate,
                 padding: const EdgeInsets.all(AppSpacing.sm),
-                constraints:
-                    const BoxConstraints(minWidth: 36, minHeight: 36),
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               ),
             ),
           ),

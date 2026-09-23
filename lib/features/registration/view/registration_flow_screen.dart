@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
+import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../cubit/registration_cubit.dart';
 import '../model/registration_step.dart';
 import '../model/user_role.dart';
@@ -38,24 +38,32 @@ class RegistrationFlowScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<RegistrationCubit>(
       create: (_) => RegistrationCubit(),
-      child: BlocListener<RegistrationCubit, RegistrationState>(
-        listenWhen: (prev, curr) =>
-            curr.step == RegistrationStep.success &&
-            prev.step != RegistrationStep.success,
+      child: BlocListener<AuthBloc, AuthState>(
+        // The account/landlordAccount step dispatches AuthSignUpRequested
+        // directly (see AccountStepView/LandlordAccountStepView) — once it
+        // resolves we either advance to the success step or surface the
+        // error and let the user retry from the same step.
         listener: (context, state) {
-          final data = state.data;
-          final role = data.role ?? UserRole.tenant;
-          // Persist a temporary in-memory account so the new user can sign
-          // back in during this session (resets on app restart).
-          MockData.registerAccount(
-            email: data.email,
-            password: data.password,
-            role: role == UserRole.landlord ? 'owner' : 'tenant',
-            name: role == UserRole.landlord
-                ? data.fullName
-                : '${data.firstName} ${data.lastName}'.trim(),
-          );
-          onComplete(role);
+          final cubit = context.read<RegistrationCubit>();
+          final currentStep = cubit.state.step;
+          final onAccountStep = currentStep == RegistrationStep.account ||
+              currentStep == RegistrationStep.landlordAccount;
+          if (!onAccountStep) return;
+
+          if (state is AuthEmailNotVerified) {
+            // Account created — hand off to email verification, which then
+            // leads into the role's onboarding (tenant hard constraints /
+            // owner document upload). The "You're all set" success step is
+            // not shown here: it belongs after onboarding, not before it.
+            onComplete(cubit.state.data.role ?? UserRole.tenant);
+          } else if (state is AuthOperationFailure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: AppColors.destructive,
+              ),
+            );
+          }
         },
         child: Scaffold(
           backgroundColor: context.appColors.surface,

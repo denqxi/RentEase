@@ -49,7 +49,15 @@ CLAUDE.md
 PROTOTYPE.md
 DATA_DICTIONARY.md
 RENTEASE_FIREBASE.md
+SPRINTPLAN.md
+
 
 #Ignore the following files for the purpose of this project
 .vscode/
 .claude/
+
+# Firestore rules test project + emulator debug output
+firestore-tests/node_modules/
+firestore-debug.log
+ui-debug.log
+firebase-debug.log

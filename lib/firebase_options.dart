@@ -50,19 +50,18 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCMWpVguM9F2fY6Kt9WvVraWhkc2i1_na4',
-    appId: '1:597137556319:android:68f287d1bb2c39169eacea',
-    messagingSenderId: '597137556319',
-    projectId: 'rentease-d0d2f',
-    storageBucket: 'rentease-d0d2f.firebasestorage.app',
+    apiKey: 'AIzaSyBfRl1uNhiXvY7KjlJagAQGEKVqAN6_LpE',
+    appId: '1:374112218940:android:d45b37ae01246e37903839',
+    messagingSenderId: '374112218940',
+    projectId: 'renteasedb-4abb9',
+    storageBucket: 'renteasedb-4abb9.firebasestorage.app',
   );
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBmiyhnRLB_n4wKASrzd_0iZn7Q61fymfo',
-    appId: '1:597137556319:web:0ce089d8929c912f9eacea',
-    messagingSenderId: '597137556319',
-    projectId: 'rentease-d0d2f',
-    authDomain: 'rentease-d0d2f.firebaseapp.com',
-    storageBucket: 'rentease-d0d2f.firebasestorage.app',
-    measurementId: 'G-5NYLRE1485',
+    apiKey: 'AIzaSyBBKN4NiHfHY__UG8YCGi-jL9X_RVbXQ60',
+    appId: '1:374112218940:web:4bb39de6189ccdf6903839',
+    messagingSenderId: '374112218940',
+    projectId: 'renteasedb-4abb9',
+    authDomain: 'renteasedb-4abb9.firebaseapp.com',
+    storageBucket: 'renteasedb-4abb9.firebasestorage.app',
   );
 }

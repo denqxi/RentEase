@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
 import '../../../core/router/app_router.dart';
+import '../../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../../features/home/cubit/home_cubit.dart';
 import '../cubit/profile_cubit.dart';
 import '../widgets/profile_menu_card.dart';
@@ -87,10 +88,13 @@ class ProfileScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: ProfileMenuCard(
-                  onLogout: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                    AppRouter.signIn,
-                    (_) => false,
-                  ),
+                  onLogout: () {
+                    context.read<AuthBloc>().add(const AuthSignOutRequested());
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      AppRouter.signIn,
+                      (_) => false,
+                    );
+                  },
                   onEditPreferences: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => const EditConstraintsScreen(),

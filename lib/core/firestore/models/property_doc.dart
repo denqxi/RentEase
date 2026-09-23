@@ -23,10 +23,8 @@ class PropertyDoc {
     required this.smokingAllowed,
     required this.petsAllowed,
     required this.maxOccupants,
-    required this.minStayMonths,
     this.curfewHours,
     required this.hasWifi,
-    required this.bathroomType,
     required this.amenityList,
     this.amenityScore,
   });
@@ -47,6 +45,7 @@ class PropertyDoc {
   final num monthlyRent;
   final num depositAmount;
   final num advanceMonths;
+
   /// Convenience flag: vacancyStatus == 'available'.
   final bool isAvailable;
 
@@ -61,12 +60,10 @@ class PropertyDoc {
   final bool smokingAllowed;
   final bool petsAllowed;
   final num maxOccupants;
-  final num minStayMonths;
   final num? curfewHours;
 
   // Layer 2 tenant-side attributes.
   final bool hasWifi;
-  final String bathroomType;
 
   /// Fixed 14-item checklist selections.
   final List<String> amenityList;
@@ -96,43 +93,39 @@ class PropertyDoc {
         smokingAllowed: map['smokingAllowed'] as bool? ?? false,
         petsAllowed: map['petsAllowed'] as bool? ?? false,
         maxOccupants: map['maxOccupants'] as num? ?? 1,
-        minStayMonths: map['minStayMonths'] as num? ?? 0,
         curfewHours: map['curfewHours'] as num?,
         hasWifi: map['hasWifi'] as bool? ?? false,
-        bathroomType: map['bathroomType'] as String? ?? '',
         amenityList: (map['amenityList'] as List?)?.cast<String>() ?? const [],
         amenityScore: map['amenityScore'] as num?,
       );
 
   factory PropertyDoc.fromSnapshot(
-          DocumentSnapshot<Map<String, dynamic>> doc) =>
-      PropertyDoc.fromMap(doc.id, doc.data() ?? const {});
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) => PropertyDoc.fromMap(doc.id, doc.data() ?? const {});
 
   Map<String, dynamic> toMap() => {
-        'ownerId': ownerId,
-        'title': title,
-        if (description != null) 'description': description,
-        'address': address,
-        'location': location,
-        'geoHash': geoHash,
-        'photos': photos,
-        'monthlyRent': monthlyRent,
-        'depositAmount': depositAmount,
-        'advanceMonths': advanceMonths,
-        'isAvailable': isAvailable,
-        'vacancyStatus': vacancyStatus,
-        'isVerified': isVerified,
-        'createdAt': createdAt ?? FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-        'allowedGender': allowedGender,
-        'smokingAllowed': smokingAllowed,
-        'petsAllowed': petsAllowed,
-        'maxOccupants': maxOccupants,
-        'minStayMonths': minStayMonths,
-        if (curfewHours != null) 'curfewHours': curfewHours,
-        'hasWifi': hasWifi,
-        'bathroomType': bathroomType,
-        'amenityList': amenityList,
-        'amenityScore': amenityScore ?? amenityList.length,
-      };
+    'ownerId': ownerId,
+    'title': title,
+    if (description != null) 'description': description,
+    'address': address,
+    'location': location,
+    'geoHash': geoHash,
+    'photos': photos,
+    'monthlyRent': monthlyRent,
+    'depositAmount': depositAmount,
+    'advanceMonths': advanceMonths,
+    'isAvailable': isAvailable,
+    'vacancyStatus': vacancyStatus,
+    'isVerified': isVerified,
+    'createdAt': createdAt ?? FieldValue.serverTimestamp(),
+    'updatedAt': FieldValue.serverTimestamp(),
+    'allowedGender': allowedGender,
+    'smokingAllowed': smokingAllowed,
+    'petsAllowed': petsAllowed,
+    'maxOccupants': maxOccupants,
+    if (curfewHours != null) 'curfewHours': curfewHours,
+    'hasWifi': hasWifi,
+    'amenityList': amenityList,
+    'amenityScore': amenityScore ?? amenityList.length,
+  };
 }

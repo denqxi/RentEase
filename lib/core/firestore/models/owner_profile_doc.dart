@@ -11,7 +11,6 @@ class OwnerProfileDoc {
     this.verifiedAt,
     this.rejectedAt,
     this.rejectionReason,
-    required this.wStayDuration,
     required this.wCredibility,
     required this.wCompleteness,
     this.avgRating,
@@ -31,8 +30,7 @@ class OwnerProfileDoc {
   final Timestamp? rejectedAt;
   final String? rejectionReason;
 
-  /// TOPSIS weights — wStayDuration + wCredibility + wCompleteness = 1.0.
-  final num wStayDuration;
+  /// TOPSIS weights — wCredibility + wCompleteness = 1.0.
   final num wCredibility;
   final num wCompleteness;
 
@@ -46,14 +44,14 @@ class OwnerProfileDoc {
       OwnerProfileDoc(
         userId: id,
         verificationStatus: map['verificationStatus'] as String? ?? 'none',
-        documentUrls: (map['documentUrls'] as List?)?.cast<String>() ?? const [],
+        documentUrls:
+            (map['documentUrls'] as List?)?.cast<String>() ?? const [],
         submittedAt: map['submittedAt'] as Timestamp?,
         verifiedAt: map['verifiedAt'] as Timestamp?,
         rejectedAt: map['rejectedAt'] as Timestamp?,
         rejectionReason: map['rejectionReason'] as String?,
-        wStayDuration: map['wStayDuration'] as num? ?? 0.4,
-        wCredibility: map['wCredibility'] as num? ?? 0.35,
-        wCompleteness: map['wCompleteness'] as num? ?? 0.25,
+        wCredibility: map['wCredibility'] as num? ?? 0.6,
+        wCompleteness: map['wCompleteness'] as num? ?? 0.4,
         avgRating: map['avgRating'] as num?,
         totalRatings: map['totalRatings'] as num?,
         propertyCount: map['propertyCount'] as num?,
@@ -61,22 +59,21 @@ class OwnerProfileDoc {
       );
 
   factory OwnerProfileDoc.fromSnapshot(
-          DocumentSnapshot<Map<String, dynamic>> doc) =>
-      OwnerProfileDoc.fromMap(doc.id, doc.data() ?? const {});
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) => OwnerProfileDoc.fromMap(doc.id, doc.data() ?? const {});
 
   Map<String, dynamic> toMap() => {
-        'verificationStatus': verificationStatus,
-        'documentUrls': documentUrls,
-        if (submittedAt != null) 'submittedAt': submittedAt,
-        if (verifiedAt != null) 'verifiedAt': verifiedAt,
-        if (rejectedAt != null) 'rejectedAt': rejectedAt,
-        if (rejectionReason != null) 'rejectionReason': rejectionReason,
-        'wStayDuration': wStayDuration,
-        'wCredibility': wCredibility,
-        'wCompleteness': wCompleteness,
-        if (avgRating != null) 'avgRating': avgRating,
-        if (totalRatings != null) 'totalRatings': totalRatings,
-        if (propertyCount != null) 'propertyCount': propertyCount,
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+    'verificationStatus': verificationStatus,
+    'documentUrls': documentUrls,
+    if (submittedAt != null) 'submittedAt': submittedAt,
+    if (verifiedAt != null) 'verifiedAt': verifiedAt,
+    if (rejectedAt != null) 'rejectedAt': rejectedAt,
+    if (rejectionReason != null) 'rejectionReason': rejectionReason,
+    'wCredibility': wCredibility,
+    'wCompleteness': wCompleteness,
+    if (avgRating != null) 'avgRating': avgRating,
+    if (totalRatings != null) 'totalRatings': totalRatings,
+    if (propertyCount != null) 'propertyCount': propertyCount,
+    'updatedAt': FieldValue.serverTimestamp(),
+  };
 }

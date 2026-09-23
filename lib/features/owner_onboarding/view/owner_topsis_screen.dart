@@ -5,7 +5,6 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/utils/weight_utils.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../features/registration/widgets/step_header.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -13,15 +12,13 @@ import '../model/property_draft.dart';
 
 class OwnerTopsisScreen extends StatefulWidget {
   const OwnerTopsisScreen({
-    this.initialStay = 0.50,
-    this.initialCredibility = 0.30,
-    this.initialProfile = 0.20,
+    this.initialCredibility = 0.60,
+    this.initialProfile = 0.40,
     this.stepNumber = 3,
     this.stepCount = 3,
     super.key,
   });
 
-  final double initialStay;
   final double initialCredibility;
   final double initialProfile;
   final int stepNumber;
@@ -32,38 +29,33 @@ class OwnerTopsisScreen extends StatefulWidget {
 }
 
 class _OwnerTopsisScreenState extends State<OwnerTopsisScreen> {
-  late double _stay;
   late double _credibility;
   late double _profile;
 
   @override
   void initState() {
     super.initState();
-    _stay = widget.initialStay;
     _credibility = widget.initialCredibility;
     _profile = widget.initialProfile;
   }
 
   double _round(double v) => (v * 20).round() / 20;
 
-  void _setWeight({
-    required double newValue,
-    required double otherA,
-    required double otherB,
-    required ValueChanged<double> setChanged,
-    required ValueChanged<double> setOtherA,
-    required ValueChanged<double> setOtherB,
-  }) {
-    final result = normalizeWeights(
-      newValue: newValue,
-      otherA: otherA,
-      otherB: otherB,
-      round: _round,
-    );
+  /// Two criteria: moving one slider sets the other to the remainder so the
+  /// pair always sums to exactly 1.0.
+  void _setCredibility(double v) {
+    final c = _round(v.clamp(0.05, 0.95));
     setState(() {
-      setChanged(result.changed);
-      setOtherA(result.otherA);
-      setOtherB(result.otherB);
+      _credibility = c;
+      _profile = _round(1 - c);
+    });
+  }
+
+  void _setProfile(double v) {
+    final p = _round(v.clamp(0.05, 0.95));
+    setState(() {
+      _profile = p;
+      _credibility = _round(1 - p);
     });
   }
 
@@ -137,7 +129,8 @@ class _OwnerTopsisScreenState extends State<OwnerTopsisScreen> {
                   children: [
                     const StepHeader(
                       title: 'What matters most\nin a tenant?',
-                      subtitle: 'Drag a slider — the others adjust to keep '
+                      subtitle:
+                          'Drag a slider — the other adjusts to keep '
                           'the total at 100%.',
                     ),
                     const SizedBox(height: AppSpacing.lg),
@@ -147,42 +140,15 @@ class _OwnerTopsisScreenState extends State<OwnerTopsisScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _WeightSlider(
-                              label: 'Stay duration',
-                              value: _stay,
-                              onChanged: (v) => _setWeight(
-                                newValue: v,
-                                otherA: _credibility,
-                                otherB: _profile,
-                                setChanged: (nv) => _stay = nv,
-                                setOtherA: (nv) => _credibility = nv,
-                                setOtherB: (nv) => _profile = nv,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            _WeightSlider(
                               label: 'Credibility score',
                               value: _credibility,
-                              onChanged: (v) => _setWeight(
-                                newValue: v,
-                                otherA: _stay,
-                                otherB: _profile,
-                                setChanged: (nv) => _credibility = nv,
-                                setOtherA: (nv) => _stay = nv,
-                                setOtherB: (nv) => _profile = nv,
-                              ),
+                              onChanged: _setCredibility,
                             ),
                             const SizedBox(height: AppSpacing.md),
                             _WeightSlider(
                               label: 'Profile completeness',
                               value: _profile,
-                              onChanged: (v) => _setWeight(
-                                newValue: v,
-                                otherA: _stay,
-                                otherB: _credibility,
-                                setChanged: (nv) => _profile = nv,
-                                setOtherA: (nv) => _stay = nv,
-                                setOtherB: (nv) => _credibility = nv,
-                              ),
+                              onChanged: _setProfile,
                             ),
                             const SizedBox(height: AppSpacing.md),
                             Divider(color: context.appColors.fieldBorder),
@@ -192,11 +158,15 @@ class _OwnerTopsisScreenState extends State<OwnerTopsisScreen> {
                                 Text(
                                   'Total:',
                                   style: AppTextStyles.label(context).copyWith(
-                                      color: context.appColors.textSecondary),
+                                    color: context.appColors.textSecondary,
+                                  ),
                                 ),
                                 const Spacer(),
-                                Icon(Icons.check_circle_rounded,
-                                    color: AppColors.accent, size: 16),
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  color: AppColors.accent,
+                                  size: 16,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '100%',
@@ -265,8 +235,9 @@ class _WeightSlider extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: AppTextStyles.label(context)
-                    .copyWith(color: context.appColors.textPrimary),
+                style: AppTextStyles.label(
+                  context,
+                ).copyWith(color: context.appColors.textPrimary),
               ),
             ),
             Text(

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -20,7 +20,10 @@ class Phase1OwnerScreen extends StatelessWidget {
         backgroundColor: context.appColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: context.appColors.textPrimary),
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: context.appColors.textPrimary,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -37,7 +40,10 @@ class Phase1OwnerScreen extends StatelessWidget {
             padding: const EdgeInsets.only(right: AppSpacing.md),
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.matchMedium.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
@@ -67,7 +73,11 @@ class Phase1OwnerScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.smart_toy_outlined, color: AppColors.accent, size: 12),
+                        Icon(
+                          Icons.smart_toy_outlined,
+                          color: AppColors.accent,
+                          size: 12,
+                        ),
                         SizedBox(width: 4),
                         Text(
                           'Tenant summary from RentEase',
@@ -93,13 +103,27 @@ class Phase1OwnerScreen extends StatelessWidget {
                           _SummaryRow('Name', inquiry['tenantName'] as String),
                           _SummaryRow('Gender', inquiry['gender'] as String),
                           _SummaryRow('School', inquiry['school'] as String),
-                          _SummaryRow('Move-in date', inquiry['moveIn'] as String),
-                          _SummaryRow('Length of stay', inquiry['stay'] as String),
-                          _SummaryRow('Group size', '${inquiry['groupSize']} person(s)'),
+                          _SummaryRow(
+                            'Move-in date',
+                            inquiry['moveIn'] as String,
+                          ),
+                          _SummaryRow(
+                            'Group size',
+                            '${inquiry['groupSize']} person(s)',
+                          ),
                           _SummaryRow('Budget', '₱${inquiry['maxBudget']}/mo'),
-                          _SummaryRow('Smoker', inquiry['isSmoker'] == true ? 'Yes' : 'No'),
-                          _SummaryRow('Has pet', inquiry['hasPet'] == true ? 'Yes' : 'No'),
-                          _SummaryRow('Emergency contact', inquiry['emergencyContact'] as String),
+                          _SummaryRow(
+                            'Smoker',
+                            inquiry['isSmoker'] == true ? 'Yes' : 'No',
+                          ),
+                          _SummaryRow(
+                            'Has pet',
+                            inquiry['hasPet'] == true ? 'Yes' : 'No',
+                          ),
+                          _SummaryRow(
+                            'Emergency contact',
+                            inquiry['emergencyContact'] as String,
+                          ),
                           if (inquiry['passesAllRules'] == true) ...[
                             SizedBox(height: AppSpacing.sm),
                             Container(
@@ -108,14 +132,25 @@ class Phase1OwnerScreen extends StatelessWidget {
                                 vertical: AppSpacing.xs,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.matchHigh.withValues(alpha: 0.10),
-                                borderRadius: BorderRadius.circular(AppRadii.chip),
-                                border: Border.all(color: AppColors.matchHigh, width: 0.5),
+                                color: AppColors.matchHigh.withValues(
+                                  alpha: 0.10,
+                                ),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.chip,
+                                ),
+                                border: Border.all(
+                                  color: AppColors.matchHigh,
+                                  width: 0.5,
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.check_circle_rounded, color: AppColors.matchHigh, size: 12),
+                                  Icon(
+                                    Icons.check_circle_rounded,
+                                    color: AppColors.matchHigh,
+                                    size: 12,
+                                  ),
                                   SizedBox(width: 4),
                                   Text(
                                     'Passes all your rules',
@@ -152,7 +187,8 @@ class Phase1OwnerScreen extends StatelessWidget {
                       MockData.acceptInquiry(inquiry);
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute<void>(
-                          builder: (_) => Phase2ChatOwnerScreen(inquiry: inquiry),
+                          builder: (_) =>
+                              Phase2ChatOwnerScreen(inquiry: inquiry),
                         ),
                       );
                     },
@@ -195,7 +231,9 @@ class Phase1OwnerScreen extends StatelessWidget {
                 hintText: 'Enter reason...',
                 filled: true,
                 fillColor: context.appColors.fieldFill,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.field)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.field),
+                ),
               ),
             ),
           ],
@@ -203,7 +241,10 @@ class Phase1OwnerScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Cancel', style: TextStyle(color: context.appColors.textSecondary)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: context.appColors.textSecondary),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -213,7 +254,10 @@ class Phase1OwnerScreen extends StatelessWidget {
             },
             child: Text(
               'Confirm',
-              style: TextStyle(color: AppColors.destructive, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                color: AppColors.destructive,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -237,7 +281,9 @@ class _SummaryRow extends StatelessWidget {
         children: [
           Text(
             '$label: ',
-            style: AppTextStyles.caption(context).copyWith(color: context.appColors.textSecondary),
+            style: AppTextStyles.caption(
+              context,
+            ).copyWith(color: context.appColors.textSecondary),
           ),
           Expanded(
             child: Text(

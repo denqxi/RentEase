@@ -14,28 +14,17 @@ class EditConstraintsScreen extends StatefulWidget {
 }
 
 class _EditConstraintsScreenState extends State<EditConstraintsScreen> {
-  final TextEditingController budgetController =
-      TextEditingController(text: '4500');
+  final TextEditingController budgetController = TextEditingController(
+    text: '4500',
+  );
   String? selectedGender = 'Female only';
   bool wifiRequired = true;
-  bool privateBath = false;
   double maxDistance = 3.0;
-  TimeOfDay curfewTime = const TimeOfDay(hour: 22, minute: 0);
 
   @override
   void dispose() {
     budgetController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickCurfewTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: curfewTime,
-    );
-    if (picked != null) {
-      setState(() => curfewTime = picked);
-    }
   }
 
   @override
@@ -45,8 +34,11 @@ class _EditConstraintsScreenState extends State<EditConstraintsScreen> {
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: AppColors.textPrimary, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: AppColors.textPrimary,
+            size: 20,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -132,13 +124,9 @@ class _EditConstraintsScreenState extends State<EditConstraintsScreen> {
                         value: 'Male only',
                         child: Text('Male only'),
                       ),
-                      DropdownMenuItem(
-                        value: 'Any',
-                        child: Text('Any'),
-                      ),
+                      DropdownMenuItem(value: 'Any', child: Text('Any')),
                     ],
-                    onChanged: (val) =>
-                        setState(() => selectedGender = val),
+                    onChanged: (val) => setState(() => selectedGender = val),
                   ),
                   const SizedBox(height: AppSpacing.md),
 
@@ -156,29 +144,7 @@ class _EditConstraintsScreenState extends State<EditConstraintsScreen> {
                       const Spacer(),
                       AppToggle(
                         value: wifiRequired,
-                        onChanged: (val) =>
-                            setState(() => wifiRequired = val),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-
-                  // 4. Private bathroom
-                  Row(
-                    children: [
-                      const Text(
-                        'Private bathroom',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const Spacer(),
-                      AppToggle(
-                        value: privateBath,
-                        onChanged: (val) =>
-                            setState(() => privateBath = val),
+                        onChanged: (val) => setState(() => wifiRequired = val),
                       ),
                     ],
                   ),
@@ -212,43 +178,9 @@ class _EditConstraintsScreenState extends State<EditConstraintsScreen> {
                     max: 10,
                     divisions: 20,
                     activeColor: AppColors.ink,
-                    onChanged: (val) =>
-                        setState(() => maxDistance = val),
+                    onChanged: (val) => setState(() => maxDistance = val),
                   ),
                   const SizedBox(height: AppSpacing.md),
-
-                  // 6. Curfew needed
-                  const Text(
-                    'Curfew needed',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  GestureDetector(
-                    onTap: _pickCurfewTime,
-                    child: Container(
-                      height: AppSizes.fieldHeight,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.fieldBg,
-                        borderRadius: BorderRadius.circular(AppRadii.field),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        curfewTime.format(context),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: AppSpacing.xl),
                 ],
               ),
@@ -269,10 +201,7 @@ class _EditConstraintsScreenState extends State<EditConstraintsScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 const Text(
                   'Saving will recompute your property matches.',
-                  style: TextStyle(
-                    color: AppColors.textHint,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: AppColors.textHint, fontSize: 12),
                   textAlign: TextAlign.center,
                 ),
               ],
