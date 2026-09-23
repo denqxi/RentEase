@@ -124,7 +124,16 @@ service cloud.firestore {
         && request.resource.data.tenantId == resource.data.tenantId
         && request.resource.data.ownerId == resource.data.ownerId
         && request.resource.data.propertyId == resource.data.propertyId;
-      allow delete: if isAdmin();
+      // A tenant deletes their own stale (now-ineligible) match rows as
+      // part of the same atomic batch FilteringService writes eligible
+      // ones in (admin-only here would abort that whole batch the moment
+      // any candidate property became ineligible). `resource == null` is
+      // the common case — deleting a match that was never eligible in the
+      // first place, so the doc never existed; that's a harmless no-op and
+      // must be allowed, not just a delete of something that already exists.
+      allow delete: if isAdmin()
+        || (signedIn()
+            && (resource == null || resource.data.tenantId == request.auth.uid));
     }
 
     // ---------- inquiries ----------
