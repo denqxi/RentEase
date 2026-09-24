@@ -20,7 +20,6 @@ class LandlordHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final tenants = context
         .select<LandlordHomeCubit, List<Tenant>>((c) => c.state.compatible);
-    final cubit = context.read<LandlordHomeCubit>();
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
@@ -33,7 +32,7 @@ class LandlordHomeScreen extends StatelessWidget {
             const SliverToBoxAdapter(child: _PropertyListingsSection()),
             const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
             SliverToBoxAdapter(
-              child: _TopMatchesSection(tenants: tenants, cubit: cubit),
+              child: _TopMatchesSection(tenants: tenants),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl)),
           ],
@@ -346,11 +345,9 @@ class _StatusBadge extends StatelessWidget {
 class _TopMatchesSection extends StatelessWidget {
   const _TopMatchesSection({
     required this.tenants,
-    required this.cubit,
   });
 
   final List<Tenant> tenants;
-  final LandlordHomeCubit cubit;
 
   @override
   Widget build(BuildContext context) {
@@ -370,7 +367,6 @@ class _TopMatchesSection extends StatelessWidget {
           separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
           itemBuilder: (ctx, i) => _TenantRowCard(
             tenant: tenants[i],
-            onSaveToggle: () => cubit.toggleSaved(tenants[i].id),
             onTap: () => Navigator.of(ctx).push(
               MaterialPageRoute<void>(
                 builder: (_) =>
@@ -387,12 +383,10 @@ class _TopMatchesSection extends StatelessWidget {
 class _TenantRowCard extends StatelessWidget {
   const _TenantRowCard({
     required this.tenant,
-    required this.onSaveToggle,
     this.onTap,
   });
 
   final Tenant tenant;
-  final VoidCallback onSaveToggle;
   final VoidCallback? onTap;
 
   @override
@@ -488,24 +482,10 @@ class _TenantRowCard extends StatelessWidget {
                 ],
               ),
             ),
-            // Save toggle
-            GestureDetector(
-              onTap: onSaveToggle,
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: context.appColors.fieldFill,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  tenant.isSaved ? Icons.favorite : Icons.favorite_border,
-                  color: tenant.isSaved
-                      ? AppColors.accent
-                      : context.appColors.textSecondary,
-                  size: 17,
-                ),
-              ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: context.appColors.textSecondary,
+              size: 20,
             ),
           ],
         ),

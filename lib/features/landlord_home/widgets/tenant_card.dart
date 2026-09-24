@@ -9,13 +9,11 @@ import '../model/tenant.dart';
 class TenantCard extends StatelessWidget {
   const TenantCard({
     required this.tenant,
-    required this.onSaveToggle,
     this.onTap,
     super.key,
   });
 
   final Tenant tenant;
-  final VoidCallback onSaveToggle;
   final VoidCallback? onTap;
 
   @override
