@@ -19,6 +19,7 @@ class RegistrationData extends Equatable {
     this.password = '',
     // Tenant about-you step.
     this.age = '',
+    this.gender = '',
     this.occupation = '',
     this.monthlyIncome = '',
     this.occupants = '',
@@ -70,6 +71,7 @@ class RegistrationData extends Equatable {
 
   // ── Tenant about-you step ────────────────────────────────────────────────
   final String age;
+  final String gender;
   final String occupation;
   final String monthlyIncome;
   final String occupants;
@@ -123,6 +125,7 @@ class RegistrationData extends Equatable {
     String? password,
     // Tenant about.
     String? age,
+    String? gender,
     String? occupation,
     String? monthlyIncome,
     String? occupants,
@@ -169,6 +172,7 @@ class RegistrationData extends Equatable {
       phone: phone ?? this.phone,
       password: password ?? this.password,
       age: age ?? this.age,
+      gender: gender ?? this.gender,
       occupation: occupation ?? this.occupation,
       monthlyIncome: monthlyIncome ?? this.monthlyIncome,
       occupants: occupants ?? this.occupants,
@@ -213,6 +217,7 @@ class RegistrationData extends Equatable {
         phone,
         password,
         age,
+        gender,
         occupation,
         monthlyIncome,
         occupants,

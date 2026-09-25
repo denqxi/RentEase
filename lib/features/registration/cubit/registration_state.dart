@@ -17,7 +17,7 @@ class RegistrationState extends Equatable {
   bool get canContinueFromRole => data.role != null;
 
   /// Total number of progress-tracked form steps for the selected role.
-  int get formStepCount => 1;
+  int get formStepCount => data.role == UserRole.landlord ? 4 : 3;
 
   RegistrationState copyWith({RegistrationStep? step, RegistrationData? data}) {
     return RegistrationState(

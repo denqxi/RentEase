@@ -6,7 +6,7 @@ import '../../../core/theme/app_text_styles.dart';
 
 /// Top bar for the registration flow: a circular back button plus an optional
 /// progress indicator ("1/3" with a fill bar) for the form steps.
-class RegistrationAppBar extends StatelessWidget {
+class RegistrationAppBar extends StatefulWidget {
   const RegistrationAppBar({
     required this.onBack,
     this.stepNumber,
@@ -24,19 +24,73 @@ class RegistrationAppBar extends StatelessWidget {
   final int? stepCount;
 
   @override
+  State<RegistrationAppBar> createState() => _RegistrationAppBarState();
+}
+
+class _RegistrationAppBarState extends State<RegistrationAppBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animCtrl;
+  late final Animation<double> _scaleAnimation;
+  late final Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    // 8-second scale-up entrance animation for back button
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 8000),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.65, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animCtrl,
+        curve: const Interval(0.0, 0.70, curve: Curves.easeOutBack),
+      ),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _animCtrl,
+      curve: const Interval(0.0, 0.50, curve: Curves.easeOut),
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _animCtrl.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        _BackButton(onTap: onBack),
-        if (stepNumber != null && stepCount != null) ...<Widget>[
-          SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: _ProgressBar(value: stepNumber! / stepCount!),
+        RepaintBoundary(
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: _BackButton(onTap: widget.onBack),
+            ),
           ),
-          SizedBox(width: AppSpacing.md),
+        ),
+        if (widget.stepNumber != null && widget.stepCount != null) ...<Widget>[
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: _ProgressBar(value: widget.stepNumber! / widget.stepCount!),
+          ),
+          const SizedBox(width: AppSpacing.md),
           Text(
-            '$stepNumber / $stepCount',
-            style: AppTextStyles.label(context).copyWith(color: context.appColors.textSecondary),
+            '${widget.stepNumber} / ${widget.stepCount}',
+            style: AppTextStyles.label(context).copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ],
@@ -53,10 +107,10 @@ class _BackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: context.appColors.surface,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.field),
         border: Border.all(
-          color: context.appColors.fieldBorder.withOpacity(0.4),
+          color: AppColors.fieldBorder.withValues(alpha: 0.4),
           width: 1,
         ),
         boxShadow: const [
@@ -73,10 +127,13 @@ class _BackButton extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadii.field),
           onTap: onTap,
-          child: SizedBox(
+          child: const SizedBox(
             width: 44,
             height: 44,
-            child: Icon(Icons.chevron_left, color: context.appColors.textPrimary),
+            child: Icon(
+              Icons.chevron_left,
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
       ),
@@ -139,7 +196,7 @@ class _ProgressBarState extends State<_ProgressBar>
         child: LinearProgressIndicator(
           value: _animation.value,
           minHeight: 6,
-          backgroundColor: context.appColors.fieldFill,
+          backgroundColor: AppColors.fieldFill,
           valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
         ),
       ),

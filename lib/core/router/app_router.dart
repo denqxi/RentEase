@@ -6,7 +6,7 @@ import '../../features/admin/view/pending_verifications_screen.dart';
 import '../../features/admin/view/property_management_screen.dart';
 import '../../features/admin/view/user_management_screen.dart';
 import '../../features/auth/presentation/screens/auth_screen.dart';
-import '../../features/auth/presentation/screens/email_verification_screen.dart';
+
 import '../../features/auth/presentation/screens/role_selection_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/owner/view/edit_owner_topsis_screen.dart';
@@ -35,11 +35,13 @@ import '../../features/tenant_onboarding/view/topsis_weight_screen.dart';
 class AppRouter {
   AppRouter._();
 
+  static final RouteObserver<ModalRoute<void>> routeObserver =
+      RouteObserver<ModalRoute<void>>();
+
   static const splash = '/';
   static const signIn = '/sign-in';
   static const roleSelection = '/role';
   static const signup = '/signup';
-  static const verifyEmail = '/verify-email';
 
   static const hardConstraints = '/onboarding/hard-constraints';
   static const poiSetup = '/onboarding/poi';
@@ -85,10 +87,8 @@ class AppRouter {
             onCreateAccount: () => Navigator.of(ctx).push(
               MaterialPageRoute<void>(
                 builder: (_) => RegistrationFlowScreen(
-                  onComplete: (role) => Navigator.of(ctx).pushNamedAndRemoveUntil(
-                    verifyEmail,
-                    (_) => false,
-                    arguments: role == UserRole.landlord,
+                  onComplete: (role) => Navigator.of(ctx).pushNamed(
+                    role == UserRole.landlord ? documentUpload : hardConstraints,
                   ),
                   onSignIn: () => Navigator.of(ctx).pop(),
                 ),
@@ -100,9 +100,6 @@ class AppRouter {
         page = const RoleSelectionScreen();
       case signup:
         page = const SignupScreen();
-      case verifyEmail:
-        final isOwner = (settings.arguments as bool?) ?? false;
-        page = EmailVerificationScreen(isOwner: isOwner);
 
       case hardConstraints:
         page = const HardConstraintsScreen();

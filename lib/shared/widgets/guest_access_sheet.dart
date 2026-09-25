@@ -6,6 +6,7 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../features/auth/presentation/screens/auth_screen.dart';
 import '../../features/registration/view/registration_flow_screen.dart';
+import '../../features/registration/model/user_role.dart';
 import 'app_button.dart';
 
 /// Reusable bottom sheet shown when a guest tries a restricted action.
@@ -89,11 +90,11 @@ class GuestAccessSheet extends StatelessWidget {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => RegistrationFlowScreen(
-                        onComplete: (_) => Navigator.of(context)
-                            .pushNamedAndRemoveUntil(
-                          AppRouter.verifyEmail,
-                          (_) => false,
-                          arguments: false,
+                        onComplete: (role) => Navigator.of(context)
+                            .pushNamed(
+                          role == UserRole.landlord
+                              ? AppRouter.documentUpload
+                              : AppRouter.hardConstraints,
                         ),
                         onSignIn: () => Navigator.of(context).pop(),
                       ),

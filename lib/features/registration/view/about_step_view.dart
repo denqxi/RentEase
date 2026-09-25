@@ -4,14 +4,21 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubit/registration_cubit.dart';
 import '../widgets/form_step_layout.dart';
 import '../widgets/labeled_text_field.dart';
+import '../widgets/preference_dropdown.dart';
 
 /// Step 2/3 — "About you".
 class AboutStepView extends StatelessWidget {
   const AboutStepView({super.key});
 
+  static const List<String> _genders = <String>[
+    'Male',
+    'Female',
+  ];
+
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<RegistrationCubit>();
+    final data = context.watch<RegistrationCubit>().state.data;
 
     return FormStepLayout(
       title: 'About you',
@@ -24,6 +31,13 @@ class AboutStepView extends StatelessWidget {
           hint: 'e.g. 24',
           keyboardType: TextInputType.number,
           onChanged: cubit.updateAge,
+        ),
+        PreferenceDropdown(
+          label: 'Gender',
+          value: data.gender,
+          hint: 'Select gender',
+          items: _genders,
+          onChanged: cubit.updateGender,
         ),
         LabeledTextField(
           label: 'Occupation',

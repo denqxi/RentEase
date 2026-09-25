@@ -10,7 +10,7 @@
 
 ## AUTH:REGISTER
 - [AUTH:REGISTER] `lib/features/auth/presentation/screens/signup_screen.dart` | User registration / account creation UI
-- [AUTH:REGISTER] `lib/features/auth/presentation/screens/email_verification_screen.dart` | Email verification step after sign‑up
+
 - [AUTH:REGISTER] `lib/features/auth/presentation/screens/role_selection_screen.dart` | Role selection (tenant vs. landlord) during registration
 - [AUTH:REGISTER] `lib/features/auth/presentation/screens/terms_and_conditions_screen.dart` | Terms & conditions acceptance screen
 
@@ -72,3 +72,20 @@
 ## SHARED:THEME
 - [SHARED:THEME] `lib/core/theme/app_theme.dart` | Central ThemeData (colors, typography, shapes)
 - [SHARED:THEME] `lib/core/theme/app_text_styles.dart` | Global TextStyle definitions
+## REGISTRATION FLOW: TENANT
+1. [FLOW:TENANT_REG] `lib/features/registration/view/role_selection_view.dart` | Role Selection
+2. [FLOW:TENANT_REG] `lib/features/registration/view/account_step_view.dart` | Account Input (Name, Email, Password, etc.)
+3. [FLOW:TENANT_REG] `lib/features/registration/view/check_email_view.dart` | Email Verification
+4. [FLOW:TENANT_REG] `lib/features/registration/view/about_step_view.dart` | Background Info (About)
+5. [FLOW:TENANT_REG] `lib/features/registration/view/preferences_step_view.dart` | Rental Preferences
+6. [FLOW:TENANT_REG] `lib/features/registration/view/success_view.dart` | Success Screen
+
+## REGISTRATION FLOW: OWNER
+1. [FLOW:OWNER_REG] `lib/features/registration/view/role_selection_view.dart` | Role Selection
+2. [FLOW:OWNER_REG] `lib/features/registration/view/landlord_account_step_view.dart` | Landlord Account Input (Name, Email, Password)
+3. [FLOW:OWNER_REG] `lib/features/registration/view/check_email_view.dart` | Email Verification
+4. [FLOW:OWNER_REG] `lib/features/registration/view/business_step_view.dart` | Business Profile
+5. [FLOW:OWNER_REG] `lib/features/registration/view/property_step_view.dart` | Property Details
+6. [FLOW:OWNER_REG] `lib/features/registration/view/ideal_tenant_step_view.dart` | Ideal Tenant Criteria
+7. [FLOW:OWNER_REG] `lib/features/registration/view/success_view.dart` | Success Screen
+

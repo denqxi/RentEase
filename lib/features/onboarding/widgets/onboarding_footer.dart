@@ -106,7 +106,7 @@ class _OnboardingFooterState extends State<OnboardingFooter>
                         ),
                       ),
 
-                      // Skip button with smooth 8.0s fade and size transition on last page
+                      // Skip button with smooth 8.0s fade and height transition on last page
                       AnimatedCrossFade(
                         duration: lastPageDuration,
                         firstCurve: Curves.easeInOutCubic,
@@ -115,20 +115,29 @@ class _OnboardingFooterState extends State<OnboardingFooter>
                         crossFadeState: widget.isLastPage
                             ? CrossFadeState.showSecond
                             : CrossFadeState.showFirst,
-                        firstChild: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            SizedBox(height: gap),
-                            TextButton(
-                              onPressed: widget.onSecondary,
-                              child: Text(
-                                'Skip',
-                                style: AppTextStyles.link(context),
+                        firstChild: SizedBox(
+                          width: double.infinity,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              SizedBox(height: gap),
+                              TextButton(
+                                onPressed: widget.onSecondary,
+                                child: Text(
+                                  'Skip',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.clip,
+                                  style: AppTextStyles.link(context),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                        secondChild: const SizedBox.shrink(),
+                        secondChild: const SizedBox(
+                          width: double.infinity,
+                          height: 0,
+                        ),
                       ),
                     ],
                   ),

@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/router/app_router.dart';
+
+import '../../registration/view/success_screen.dart';
 
 /// Shown once between the final onboarding step and the main app, for both
 /// roles. Narratively this is when Cloud Functions run the bilateral filter
@@ -47,9 +48,10 @@ class _MatchingTransitionScreenState extends State<MatchingTransitionScreen> {
         setState(() => _completedSteps++);
       } else {
         timer.cancel();
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          widget.isOwner ? AppRouter.landlordHome : AppRouter.tenantHome,
-          (_) => false,
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(
+            builder: (_) => SuccessScreen(isOwner: widget.isOwner),
+          ),
         );
       }
     });

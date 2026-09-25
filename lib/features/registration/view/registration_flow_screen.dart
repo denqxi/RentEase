@@ -3,26 +3,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../cubit/registration_cubit.dart';
 import '../model/registration_step.dart';
 import '../model/user_role.dart';
 import '../widgets/registration_app_bar.dart';
 import 'about_step_view.dart';
 import 'account_step_view.dart';
-import 'check_email_view.dart';
 import 'business_step_view.dart';
+import 'check_email_view.dart';
 import 'ideal_tenant_step_view.dart';
 import 'landlord_account_step_view.dart';
 import 'preferences_step_view.dart';
 import 'property_step_view.dart';
 import 'role_selection_view.dart';
-import 'success_view.dart';
 
 /// Host for the multi-step registration flow.
 ///
 /// Provides the [RegistrationCubit] and renders the view matching the current
-/// [RegistrationStep]. [onComplete] runs on "Explore RentEase"; [onSignIn]
+/// [RegistrationStep]. [onComplete] runs on completing the final step; [onSignIn]
 /// runs from the role screen's "Sign in" / back affordances.
 class RegistrationFlowScreen extends StatelessWidget {
   const RegistrationFlowScreen({
@@ -37,34 +35,22 @@ class RegistrationFlowScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<RegistrationCubit>(
-      create: (_) => RegistrationCubit(),
-      child: BlocListener<RegistrationCubit, RegistrationState>(
-        listenWhen: (prev, curr) =>
-            curr.step == RegistrationStep.success &&
-            prev.step != RegistrationStep.success,
-        listener: (context, state) {
-          final data = state.data;
-          final role = data.role ?? UserRole.tenant;
-          // Persist a temporary in-memory account so the new user can sign
-          // back in during this session (resets on app restart).
-          MockData.registerAccount(
-            email: data.email,
-            password: data.password,
-            role: role == UserRole.landlord ? 'owner' : 'tenant',
-            name: role == UserRole.landlord
-                ? data.fullName
-                : '${data.firstName} ${data.lastName}'.trim(),
-          );
-          onComplete(role);
-        },
-        child: Scaffold(
-          backgroundColor: context.appColors.surface,
-          body: SafeArea(
-            child: BlocBuilder<RegistrationCubit, RegistrationState>(
-              buildWhen: (previous, current) => previous.step != current.step,
-              builder: (context, state) {
-                final cubit = context.read<RegistrationCubit>();
-                return Column(
+      create: (_) => RegistrationCubit(onComplete: onComplete),
+      child: BlocBuilder<RegistrationCubit, RegistrationState>(
+        buildWhen: (previous, current) => previous.step != current.step,
+        builder: (context, state) {
+          return PopScope(
+            canPop: state.step == RegistrationStep.role,
+            onPopInvokedWithResult: (didPop, _) {
+              if (didPop) return;
+              if (state.step != RegistrationStep.role) {
+                context.read<RegistrationCubit>().back();
+              }
+            },
+            child: Scaffold(
+              backgroundColor: context.appColors.surface,
+              body: SafeArea(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Padding(
@@ -77,7 +63,7 @@ class RegistrationFlowScreen extends StatelessWidget {
                       child: RegistrationAppBar(
                         onBack: state.step == RegistrationStep.role
                             ? onSignIn
-                            : cubit.back,
+                            : context.read<RegistrationCubit>().back,
                         stepNumber: state.step.formStepNumber,
                         stepCount: state.formStepCount,
                       ),
@@ -92,11 +78,11 @@ class RegistrationFlowScreen extends StatelessWidget {
                       ),
                     ),
                   ],
-                );
-              },
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -112,12 +98,7 @@ class RegistrationFlowScreen extends StatelessWidget {
       RegistrationStep.business => const BusinessStepView(),
       RegistrationStep.property => const PropertyStepView(),
       RegistrationStep.idealTenant => const IdealTenantStepView(),
-      RegistrationStep.success => SuccessView(
-          onExplore: () => onComplete(
-            context.read<RegistrationCubit>().state.data.role ??
-                UserRole.tenant,
-          ),
-        ),
+      RegistrationStep.success => const SizedBox.shrink(),
     };
   }
 }

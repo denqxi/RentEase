@@ -211,17 +211,49 @@ class AppPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final inkColor = context.appColors.ink;
+
     return SizedBox(
       width: double.infinity,
       height: AppSizes.buttonHeight,
       child: ElevatedButton(
         onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: context.appColors.ink,
-          foregroundColor: AppColors.onInk,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadii.button),
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return context.appColors.indicatorInactive;
+            }
+            if (states.contains(WidgetState.pressed)) {
+              return Color.alphaBlend(
+                Colors.white.withValues(alpha: 0.20),
+                inkColor,
+              );
+            }
+            if (states.contains(WidgetState.hovered)) {
+              return Color.alphaBlend(
+                Colors.white.withValues(alpha: 0.12),
+                inkColor,
+              );
+            }
+            return inkColor;
+          }),
+          foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return context.appColors.textSecondary;
+            }
+            return AppColors.onInk;
+          }),
+          elevation: WidgetStateProperty.resolveWith<double>((states) {
+            if (states.contains(WidgetState.hovered)) return 2.0;
+            return 0.0;
+          }),
+          overlayColor: WidgetStateProperty.all(
+            Colors.white.withValues(alpha: 0.12),
+          ),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadii.button),
+            ),
           ),
         ),
         child: Text(label, style: AppTextStyles.buttonLabel),

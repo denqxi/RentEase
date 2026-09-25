@@ -5,9 +5,15 @@ import '../../../core/theme/app_text_styles.dart';
 
 /// Title + supporting subtitle shown at the top of each registration step.
 class StepHeader extends StatelessWidget {
-  const StepHeader({required this.title, required this.subtitle, super.key});
+  const StepHeader({
+    this.title,
+    this.titleSpans,
+    required this.subtitle,
+    super.key,
+  }) : assert(title != null || titleSpans != null);
 
-  final String title;
+  final String? title;
+  final List<InlineSpan>? titleSpans;
   final String subtitle;
 
   @override
@@ -15,8 +21,16 @@ class StepHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(title, style: AppTextStyles.title(context)),
-        SizedBox(height: AppSpacing.sm),
+        if (titleSpans != null)
+          Text.rich(
+            TextSpan(
+              style: AppTextStyles.title(context),
+              children: titleSpans,
+            ),
+          )
+        else
+          Text(title!, style: AppTextStyles.title(context)),
+        const SizedBox(height: AppSpacing.sm),
         Text(subtitle, style: AppTextStyles.body(context)),
       ],
     );

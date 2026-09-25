@@ -6,9 +6,14 @@ import '../../../../core/constants/mock_data.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../../registration/model/user_role.dart';
+import '../../../registration/view/registration_flow_screen.dart';
 
-
-/// Sign-in screen â€” hero building image behind a bottom-anchored white card.
+/// Sign-in screen — hero building image with 8-second scale-up and fade,
+/// behind a bottom-anchored white card with slide-up animations for all components.
+///
+/// Performance-optimized with asset pre-caching, [RepaintBoundary] isolation,
+/// and const widget instantiations for 60/120fps smooth rendering.
 class SignInScreen extends StatefulWidget {
   const SignInScreen({this.onCreateAccount, this.onSignIn, super.key});
 
@@ -22,17 +27,152 @@ class SignInScreen extends StatefulWidget {
   State<SignInScreen> createState() => _SignInScreenState();
 }
 
-class _SignInScreenState extends State<SignInScreen> {
+class _SignInScreenState extends State<SignInScreen>
+    with SingleTickerProviderStateMixin, RouteAware {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _rememberMe = false;
   bool _obscurePassword = true;
 
+  late final AnimationController _animCtrl;
+
+  // Background image: Scale up and Fade animation (8s)
+  late final Animation<double> _imageFade;
+  late final Animation<double> _imageScale;
+
+  // White container and components: Slide up and Fade animation (8s)
+  late final Animation<Offset> _cardSlide;
+  late final Animation<double> _cardFade;
+
+  // Staggered slide animations for components inside the white container
+  late final Animation<Offset> _headerSlide;
+  late final Animation<Offset> _fieldsSlide;
+  late final Animation<Offset> _buttonsSlide;
+  late final Animation<Offset> _socialSlide;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 8-second animation controller
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 8000),
+    );
+
+    // Image: Scale up (0.88 -> 1.0) and Fade in
+    _imageFade = CurvedAnimation(
+      parent: _animCtrl,
+      curve: const Interval(0.0, 0.70, curve: Curves.easeOut),
+    );
+    _imageScale = Tween<double>(begin: 0.88, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animCtrl,
+        curve: const Interval(0.0, 0.85, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    // White container slide-up & fade
+    _cardSlide = Tween<Offset>(
+      begin: const Offset(0, 0.35),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animCtrl,
+      curve: const Interval(0.05, 0.85, curve: Curves.easeOutCubic),
+    ));
+    _cardFade = CurvedAnimation(
+      parent: _animCtrl,
+      curve: const Interval(0.0, 0.75, curve: Curves.easeOut),
+    );
+
+    // Staggered component slide-ups inside the white container
+    _headerSlide = Tween<Offset>(
+      begin: const Offset(0, 0.30),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animCtrl,
+      curve: const Interval(0.10, 0.80, curve: Curves.easeOutCubic),
+    ));
+
+    _fieldsSlide = Tween<Offset>(
+      begin: const Offset(0, 0.35),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animCtrl,
+      curve: const Interval(0.20, 0.90, curve: Curves.easeOutCubic),
+    ));
+
+    _buttonsSlide = Tween<Offset>(
+      begin: const Offset(0, 0.40),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animCtrl,
+      curve: const Interval(0.30, 0.95, curve: Curves.easeOutCubic),
+    ));
+
+    _socialSlide = Tween<Offset>(
+      begin: const Offset(0, 0.45),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animCtrl,
+      curve: const Interval(0.38, 1.0, curve: Curves.easeOutCubic),
+    ));
+
+    // Wait for route transition to settle then start animation
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _animCtrl.forward();
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final modalRoute = ModalRoute.of(context);
+    if (modalRoute != null) {
+      AppRouter.routeObserver.subscribe(this, modalRoute);
+    }
+    // Warm up image assets in memory to eliminate decoding latency
+    precacheImage(const AssetImage('assets/images/building2.png'), context);
+    precacheImage(const AssetImage('assets/images/google.png'), context);
+    precacheImage(const AssetImage('assets/images/logo.png'), context);
+  }
+
+  @override
+  void didPopNext() {
+    // Replay full 8s animation when popping back from registration/signup
+    if (mounted) {
+      _animCtrl.forward(from: 0.0);
+    }
+  }
+
   @override
   void dispose() {
+    AppRouter.routeObserver.unsubscribe(this);
+    _animCtrl.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _handleCreateAccount() {
+    if (widget.onCreateAccount != null) {
+      widget.onCreateAccount!();
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => RegistrationFlowScreen(
+            onComplete: (role) => Navigator.of(context).pushNamed(
+              role == UserRole.landlord
+                  ? AppRouter.documentUpload
+                  : AppRouter.hardConstraints,
+            ),
+            onSignIn: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+    }
   }
 
   void _showError(String message) {
@@ -78,20 +218,43 @@ class _SignInScreenState extends State<SignInScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const _SignInBackground(),
+          // Background image with scale-up and fade animation
+          RepaintBoundary(
+            child: ScaleTransition(
+              scale: _imageScale,
+              child: FadeTransition(
+                opacity: _imageFade,
+                child: const _SignInBackground(),
+              ),
+            ),
+          ),
+
+          // Bottom-anchored white card with slide-up animations for all components
           Align(
             alignment: Alignment.bottomCenter,
-            child: _SignInCard(
-              emailController: _emailController,
-              passwordController: _passwordController,
-              rememberMe: _rememberMe,
-              obscurePassword: _obscurePassword,
-              onRememberMeChanged: (v) =>
-                  setState(() => _rememberMe = v ?? false),
-              onTogglePassword: () =>
-                  setState(() => _obscurePassword = !_obscurePassword),
-              onCreateAccount: widget.onCreateAccount,
-              onSignIn: _handleSignIn,
+            child: RepaintBoundary(
+              child: SlideTransition(
+                position: _cardSlide,
+                child: FadeTransition(
+                  opacity: _cardFade,
+                  child: _SignInCard(
+                    emailController: _emailController,
+                    passwordController: _passwordController,
+                    rememberMe: _rememberMe,
+                    obscurePassword: _obscurePassword,
+                    headerSlide: _headerSlide,
+                    fieldsSlide: _fieldsSlide,
+                    buttonsSlide: _buttonsSlide,
+                    socialSlide: _socialSlide,
+                    onRememberMeChanged: (v) =>
+                        setState(() => _rememberMe = v ?? false),
+                    onTogglePassword: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
+                    onCreateAccount: _handleCreateAccount,
+                    onSignIn: _handleSignIn,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -100,7 +263,7 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 }
 
-// â”€â”€â”€ Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Background ─────────────────────────────────────────────────────────────
 
 class _SignInBackground extends StatelessWidget {
   const _SignInBackground();
@@ -111,12 +274,18 @@ class _SignInBackground extends StatelessWidget {
       'assets/images/building2.png',
       fit: BoxFit.cover,
       alignment: Alignment.topCenter,
+      gaplessPlayback: true,
+      filterQuality: FilterQuality.medium,
       errorBuilder: (_, _, _) => Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.primary, Color(0xFF0E8FA0), context.appColors.ink],
+            colors: [
+              AppColors.primary,
+              const Color(0xFF0E8FA0),
+              context.appColors.ink,
+            ],
           ),
         ),
       ),
@@ -124,7 +293,7 @@ class _SignInBackground extends StatelessWidget {
   }
 }
 
-// â”€â”€â”€ Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Card ───────────────────────────────────────────────────────────────────
 
 class _SignInCard extends StatelessWidget {
   const _SignInCard({
@@ -132,6 +301,10 @@ class _SignInCard extends StatelessWidget {
     required this.passwordController,
     required this.rememberMe,
     required this.obscurePassword,
+    required this.headerSlide,
+    required this.fieldsSlide,
+    required this.buttonsSlide,
+    required this.socialSlide,
     required this.onRememberMeChanged,
     required this.onTogglePassword,
     this.onCreateAccount,
@@ -142,6 +315,10 @@ class _SignInCard extends StatelessWidget {
   final TextEditingController passwordController;
   final bool rememberMe;
   final bool obscurePassword;
+  final Animation<Offset> headerSlide;
+  final Animation<Offset> fieldsSlide;
+  final Animation<Offset> buttonsSlide;
+  final Animation<Offset> socialSlide;
   final ValueChanged<bool?> onRememberMeChanged;
   final VoidCallback onTogglePassword;
   final VoidCallback? onCreateAccount;
@@ -159,7 +336,7 @@ class _SignInCard extends StatelessWidget {
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppRadii.card),
         ),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Color(0x18000000),
             blurRadius: 24,
@@ -179,32 +356,67 @@ class _SignInCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SignInLogoRow(),
-              SizedBox(height: AppSpacing.md),
-              Text('Sign in', style: AppTextStyles.title(context)),
-              SizedBox(height: 6),
-              Text(
-                'Welcome back! continue your rental journey with RentEase.',
-                style: AppTextStyles.body(context),
+              // Header component (Logo, Title, Welcome text) with slide-up
+              SlideTransition(
+                position: headerSlide,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SignInLogoRow(),
+                    const SizedBox(height: AppSpacing.md),
+                    Text('Sign in', style: AppTextStyles.title(context)),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Welcome back! continue your rental journey with RentEase.',
+                      style: AppTextStyles.body(context),
+                    ),
+                  ],
+                ),
               ),
-              SizedBox(height: AppSpacing.lg),
-              _SignInFields(
-                emailController: emailController,
-                passwordController: passwordController,
-                obscurePassword: obscurePassword,
-                rememberMe: rememberMe,
-                onRememberMeChanged: onRememberMeChanged,
-                onTogglePassword: onTogglePassword,
+              const SizedBox(height: AppSpacing.lg),
+
+              // Form fields component (Email, Password, Remember me) with slide-up
+              SlideTransition(
+                position: fieldsSlide,
+                child: _SignInFields(
+                  emailController: emailController,
+                  passwordController: passwordController,
+                  obscurePassword: obscurePassword,
+                  rememberMe: rememberMe,
+                  onRememberMeChanged: onRememberMeChanged,
+                  onTogglePassword: onTogglePassword,
+                ),
               ),
-              SizedBox(height: AppSpacing.lg),
-              AppPrimaryButton(label: 'Sign In', onPressed: onSignIn ?? () {}),
-              SizedBox(height: AppSpacing.md),
-              _CreateAccountRow(onCreateAccount: onCreateAccount),
-              SizedBox(height: AppSpacing.md),
-              const _OrDivider(),
-              SizedBox(height: AppSpacing.md),
-              const _GoogleButton(),
-              SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Buttons component (Sign In, Create account) with slide-up
+              SlideTransition(
+                position: buttonsSlide,
+                child: Column(
+                  children: [
+                    AppPrimaryButton(
+                      label: 'Sign In',
+                      onPressed: onSignIn ?? () {},
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _CreateAccountRow(onCreateAccount: onCreateAccount),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Social divider and Google button with slide-up
+              SlideTransition(
+                position: socialSlide,
+                child: const Column(
+                  children: [
+                    _OrDivider(),
+                    SizedBox(height: AppSpacing.md),
+                    _GoogleButton(),
+                    SizedBox(height: AppSpacing.sm),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -228,11 +440,13 @@ class _SignInLogoRow extends StatelessWidget {
           'assets/images/logo.png',
           height: 34,
           fit: BoxFit.contain,
+          gaplessPlayback: true,
+          filterQuality: FilterQuality.medium,
           errorBuilder: (_, _, _) => Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.home_work_rounded, color: AppColors.primary, size: 22),
-              SizedBox(width: 6),
+              const Icon(Icons.home_work_rounded, color: AppColors.primary, size: 22),
+              const SizedBox(width: 6),
               Text(
                 'RentEase',
                 style: TextStyle(
@@ -250,7 +464,7 @@ class _SignInLogoRow extends StatelessWidget {
   }
 }
 
-// â”€â”€â”€ Form fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Form fields ────────────────────────────────────────────────────────────
 
 class _SignInFields extends StatelessWidget {
   const _SignInFields({
@@ -275,15 +489,15 @@ class _SignInFields extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _FieldLabel(label: 'Email'),
-        SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.sm),
         _AuthTextField(
           controller: emailController,
           hintText: 'you@email.com',
           keyboardType: TextInputType.emailAddress,
         ),
-        SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.md),
         const _FieldLabel(label: 'Password'),
-        SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.sm),
         _AuthTextField(
           controller: passwordController,
           hintText: 'Your password',
@@ -299,7 +513,7 @@ class _SignInFields extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.md),
         _RememberForgotRow(
           rememberMe: rememberMe,
           onChanged: onRememberMeChanged,
@@ -318,7 +532,9 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: AppTextStyles.label(context).copyWith(color: context.appColors.textSecondary),
+      style: AppTextStyles.label(context).copyWith(
+        color: context.appColors.textSecondary,
+      ),
     );
   }
 }
@@ -347,7 +563,9 @@ class _AuthTextField extends StatelessWidget {
       style: AppTextStyles.field(context),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: AppTextStyles.field(context).copyWith(color: context.appColors.hint),
+        hintStyle: AppTextStyles.field(context).copyWith(
+          color: context.appColors.hint,
+        ),
         suffixIcon: suffixIcon != null
             ? Padding(
                 padding: const EdgeInsets.only(right: AppSpacing.md),
@@ -368,7 +586,7 @@ class _AuthTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.field),
-          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
     );
@@ -401,7 +619,7 @@ class _RememberForgotRow extends StatelessWidget {
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ),
-        SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.sm),
         Text(
           'Remember me',
           style: AppTextStyles.label(context).copyWith(
@@ -414,7 +632,9 @@ class _RememberForgotRow extends StatelessWidget {
           onTap: () {},
           child: Text(
             'Forgot password?',
-            style: AppTextStyles.label(context).copyWith(color: AppColors.primary),
+            style: AppTextStyles.label(context).copyWith(
+              color: AppColors.primary,
+            ),
           ),
         ),
       ],
@@ -422,7 +642,7 @@ class _RememberForgotRow extends StatelessWidget {
   }
 }
 
-// â”€â”€â”€ Divider & Social â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Divider & Social ───────────────────────────────────────────────────────
 
 class _OrDivider extends StatelessWidget {
   const _OrDivider();
@@ -463,12 +683,41 @@ class _GoogleButton extends StatelessWidget {
       height: AppSizes.fieldHeight,
       child: OutlinedButton(
         onPressed: () {},
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: context.appColors.fieldBorder),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadii.button),
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+            if (states.contains(WidgetState.pressed)) {
+              return context.appColors.fieldFill;
+            }
+            if (states.contains(WidgetState.hovered)) {
+              return Color.alphaBlend(
+                context.appColors.fieldFill.withValues(alpha: 0.75),
+                context.appColors.surface,
+              );
+            }
+            return context.appColors.surface;
+          }),
+          side: WidgetStateProperty.resolveWith<BorderSide>((states) {
+            if (states.contains(WidgetState.hovered) ||
+                states.contains(WidgetState.pressed)) {
+              return BorderSide(
+                color: context.appColors.textSecondary.withValues(alpha: 0.45),
+                width: 1.2,
+              );
+            }
+            return BorderSide(color: context.appColors.fieldBorder);
+          }),
+          elevation: WidgetStateProperty.resolveWith<double>((states) {
+            if (states.contains(WidgetState.hovered)) return 1.5;
+            return 0.0;
+          }),
+          overlayColor: WidgetStateProperty.all(
+            context.appColors.fieldFill.withValues(alpha: 0.5),
           ),
-          backgroundColor: context.appColors.surface,
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadii.button),
+            ),
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -479,9 +728,11 @@ class _GoogleButton extends StatelessWidget {
               child: Image.asset(
                 'assets/images/google.png',
                 fit: BoxFit.contain,
+                gaplessPlayback: true,
+                filterQuality: FilterQuality.medium,
               ),
             ),
-            SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.sm),
             Text(
               'Continue with Google',
               style: AppTextStyles.body(context).copyWith(
@@ -496,7 +747,7 @@ class _GoogleButton extends StatelessWidget {
   }
 }
 
-// â”€â”€â”€ Footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Footer ─────────────────────────────────────────────────────────────────
 
 class _CreateAccountRow extends StatelessWidget {
   const _CreateAccountRow({this.onCreateAccount});
@@ -537,4 +788,3 @@ class _CreateAccountRow extends StatelessWidget {
     );
   }
 }
-

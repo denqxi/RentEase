@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/constants/mock_data.dart';
 import '../model/lifestyle_preference.dart';
 import '../model/property_type.dart';
 import '../model/registration_data.dart';
@@ -15,18 +17,25 @@ part 'registration_state.dart';
 /// Widgets push field updates here (no business logic lives in the UI) and the
 /// view renders the screen matching [RegistrationState.step].
 class RegistrationCubit extends Cubit<RegistrationState> {
-  RegistrationCubit() : super(const RegistrationState());
+  RegistrationCubit({this.onComplete}) : super(const RegistrationState());
+
+  final ValueChanged<UserRole>? onComplete;
 
   static const List<RegistrationStep> _tenantOrder = <RegistrationStep>[
     RegistrationStep.role,
     RegistrationStep.account,
-    RegistrationStep.success,
+    RegistrationStep.checkEmail,
+    RegistrationStep.about,
+    RegistrationStep.preferences,
   ];
 
   static const List<RegistrationStep> _landlordOrder = <RegistrationStep>[
     RegistrationStep.role,
     RegistrationStep.landlordAccount,
-    RegistrationStep.success,
+    RegistrationStep.checkEmail,
+    RegistrationStep.business,
+    RegistrationStep.property,
+    RegistrationStep.idealTenant,
   ];
 
   List<RegistrationStep> get _order =>
@@ -34,12 +43,23 @@ class RegistrationCubit extends Cubit<RegistrationState> {
 
   // ── Navigation ───────────────────────────────────────────────────────────
 
-  /// Advances to the next step in the flow.
+  /// Advances to the next step in the flow, or triggers onComplete on the final step.
   void next() {
     if (state.data.role == UserRole.guest) return;
     final index = _order.indexOf(state.step);
     if (index < _order.length - 1) {
       emit(state.copyWith(step: _order[index + 1]));
+    } else {
+      final role = state.data.role ?? UserRole.tenant;
+      MockData.registerAccount(
+        email: state.data.email,
+        password: state.data.password,
+        role: role == UserRole.landlord ? 'owner' : 'tenant',
+        name: role == UserRole.landlord
+            ? state.data.fullName
+            : '${state.data.firstName} ${state.data.lastName}'.trim(),
+      );
+      onComplete?.call(role);
     }
   }
 
@@ -82,6 +102,9 @@ class RegistrationCubit extends Cubit<RegistrationState> {
   void updateAge(String value) =>
       emit(state.copyWith(data: state.data.copyWith(age: value)));
 
+  void updateGender(String value) =>
+      emit(state.copyWith(data: state.data.copyWith(gender: value)));
+
   void updateOccupation(String value) =>
       emit(state.copyWith(data: state.data.copyWith(occupation: value)));
 
@@ -102,8 +125,8 @@ class RegistrationCubit extends Cubit<RegistrationState> {
   void updatePreferredLocation(String value) =>
       emit(state.copyWith(data: state.data.copyWith(preferredLocation: value)));
 
-  void selectPropertyType(PropertyType value) =>
-      emit(state.copyWith(data: state.data.copyWith(propertyType: value)));
+  void selectPropertyType(PropertyType type) =>
+      emit(state.copyWith(data: state.data.copyWith(propertyType: type)));
 
   void setFurnished(bool value) =>
       emit(state.copyWith(data: state.data.copyWith(furnished: value)));
@@ -123,19 +146,31 @@ class RegistrationCubit extends Cubit<RegistrationState> {
   void updateGenderPreference(String value) =>
       emit(state.copyWith(data: state.data.copyWith(genderPreference: value)));
 
-  /// Toggles a lifestyle preference on or off.
-  void toggleLifestyle(LifestylePreference value) {
-    final next = Set<LifestylePreference>.from(state.data.lifestyles);
-    if (!next.add(value)) next.remove(value);
-    emit(state.copyWith(data: state.data.copyWith(lifestyles: next)));
+  void toggleLifestyle(LifestylePreference pref) {
+    final current = Set<LifestylePreference>.from(state.data.lifestyles);
+    if (current.contains(pref)) {
+      current.remove(pref);
+    } else {
+      current.add(pref);
+    }
+    emit(state.copyWith(data: state.data.copyWith(lifestyles: current)));
   }
 
-  // ── Landlord account step ─────────────────────────────────────────────────
+  // ── Landlord account step ────────────────────────────────────────────────
 
   void updateFullName(String value) =>
       emit(state.copyWith(data: state.data.copyWith(fullName: value)));
 
-  // ── Landlord business step ────────────────────────────────────────────────
+  void updateLandlordEmail(String value) =>
+      emit(state.copyWith(data: state.data.copyWith(email: value)));
+
+  void updateLandlordPhone(String value) =>
+      emit(state.copyWith(data: state.data.copyWith(phone: value)));
+
+  void updateLandlordPassword(String value) =>
+      emit(state.copyWith(data: state.data.copyWith(password: value)));
+
+  // ── Business step ────────────────────────────────────────────────────────
 
   void updateBusinessName(String value) =>
       emit(state.copyWith(data: state.data.copyWith(businessName: value)));
@@ -146,7 +181,7 @@ class RegistrationCubit extends Cubit<RegistrationState> {
   void updateYearsOfExperience(String value) =>
       emit(state.copyWith(data: state.data.copyWith(yearsOfExperience: value)));
 
-  // ── Landlord property step ────────────────────────────────────────────────
+  // ── Property step ────────────────────────────────────────────────────────
 
   void updatePropertyName(String value) =>
       emit(state.copyWith(data: state.data.copyWith(propertyName: value)));
@@ -160,10 +195,13 @@ class RegistrationCubit extends Cubit<RegistrationState> {
   void updateNumberOfRooms(String value) =>
       emit(state.copyWith(data: state.data.copyWith(numberOfRooms: value)));
 
+  void selectLandlordPropertyType(PropertyType type) =>
+      emit(state.copyWith(data: state.data.copyWith(propertyType: type)));
+
   void updatePropertyDescription(String value) =>
       emit(state.copyWith(data: state.data.copyWith(propertyDescription: value)));
 
-  // ── Landlord ideal-tenant step ────────────────────────────────────────────
+  // ── Ideal tenant step ────────────────────────────────────────────────────
 
   void updateMinAge(String value) =>
       emit(state.copyWith(data: state.data.copyWith(minAge: value)));
@@ -171,14 +209,18 @@ class RegistrationCubit extends Cubit<RegistrationState> {
   void updateMaxAge(String value) =>
       emit(state.copyWith(data: state.data.copyWith(maxAge: value)));
 
-  void updatePreferredOccupation(String value) =>
-      emit(state.copyWith(data: state.data.copyWith(preferredOccupation: value)));
+  void updatePreferredOccupation(String value) => emit(
+        state.copyWith(data: state.data.copyWith(preferredOccupation: value)),
+      );
 
   void updateMaxOccupants(String value) =>
       emit(state.copyWith(data: state.data.copyWith(maxOccupants: value)));
 
   void updateIncomeRange(String value) =>
       emit(state.copyWith(data: state.data.copyWith(incomeRange: value)));
+
+  void setLandlordPetsAllowed(bool value) =>
+      emit(state.copyWith(data: state.data.copyWith(petsAllowed: value)));
 
   void setSmokingAllowed(bool value) =>
       emit(state.copyWith(data: state.data.copyWith(smokingAllowed: value)));
@@ -191,4 +233,7 @@ class RegistrationCubit extends Cubit<RegistrationState> {
 
   void setFamilyFriendly(bool value) =>
       emit(state.copyWith(data: state.data.copyWith(familyFriendly: value)));
+
+  void updateLandlordGenderPreference(String value) =>
+      emit(state.copyWith(data: state.data.copyWith(genderPreference: value)));
 }

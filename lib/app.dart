@@ -22,6 +22,7 @@ class RentEaseApp extends StatelessWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+        navigatorObservers: [AppRouter.routeObserver],
         onGenerateRoute: AppRouter.onGenerateRoute,
         home: Builder(
           builder: (ctx) => SplashScreen(
@@ -63,10 +64,10 @@ class _SignInEntry extends StatelessWidget {
   }
 
   void _pushOnboarding(BuildContext context, UserRole role) {
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      AppRouter.verifyEmail,
-      (_) => false,
-      arguments: role == UserRole.landlord,
+    Navigator.of(context).pushNamed(
+      role == UserRole.landlord
+          ? AppRouter.documentUpload
+          : AppRouter.hardConstraints,
     );
   }
 }
