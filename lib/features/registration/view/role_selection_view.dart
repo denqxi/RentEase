@@ -100,64 +100,73 @@ class _RoleSelectionViewState extends State<RoleSelectionView>
   Widget build(BuildContext context) {
     final cubit = context.read<RegistrationCubit>();
     final state = context.watch<RegistrationCubit>().state;
+    final mediaQuery = MediaQuery.of(context);
+    final isCompact = mediaQuery.size.width < 360;
+    final padding = isCompact ? AppSpacing.md : AppSpacing.lg;
 
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          // ── Header & Subheader (Scale up + fade) ────────────────────────
-          RepaintBoundary(
-            child: ScaleTransition(
-              scale: _headerScale,
-              alignment: Alignment.centerLeft,
-              child: FadeTransition(
-                opacity: _headerFade,
-                child: StepHeader(
-                  titleSpans: <InlineSpan>[
-                    const TextSpan(text: 'Join '),
-                    const TextSpan(
-                      text: 'RentEase',
-                      style: TextStyle(
-                        color: Color(0xFF1ABCCE), // Light blue highlight
-                        fontWeight: FontWeight.w800,
+    return SafeArea(
+      top: false,
+      bottom: true,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(padding, padding, padding, padding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            // ── Header & Subheader (Scale up + fade) ────────────────────────
+            RepaintBoundary(
+              child: ScaleTransition(
+                scale: _headerScale,
+                alignment: Alignment.centerLeft,
+                child: FadeTransition(
+                  opacity: _headerFade,
+                  child: StepHeader(
+                    titleSpans: <InlineSpan>[
+                      const TextSpan(text: 'Join '),
+                      const TextSpan(
+                        text: 'RentEase',
+                        style: TextStyle(
+                          color: Color(0xFF1ABCCE), // Light blue highlight
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                  ],
-                  subtitle:
-                      'Select how you want to use RentEase to personalize your experience.',
+                    ],
+                    subtitle:
+                        'Select how you want to use RentEase to personalize your experience.',
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
+            SizedBox(height: isCompact ? AppSpacing.md : AppSpacing.lg),
 
-          // ── Role Options (Scale up like back button + fade) ─────────────
-          Expanded(
-            child: RepaintBoundary(
-              child: ScaleTransition(
-                scale: _optionsScale,
-                alignment: Alignment.topCenter,
-                child: FadeTransition(
-                  opacity: _optionsFade,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: <Widget>[
-                        for (final role in UserRole.values) ...<Widget>[
-                          RoleOptionCard(
-                            role: role,
-                            selected: state.data.role == role,
-                            onTap: () => cubit.selectRole(role),
-                          ),
-                          const SizedBox(height: AppSpacing.md),
+            // ── Role Options (Scale up like back button + fade) ─────────────
+            Expanded(
+              child: RepaintBoundary(
+                child: ScaleTransition(
+                  scale: _optionsScale,
+                  alignment: Alignment.topCenter,
+                  child: FadeTransition(
+                    opacity: _optionsFade,
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
+                      child: Column(
+                        children: <Widget>[
+                          for (final role in UserRole.values) ...<Widget>[
+                            RoleOptionCard(
+                              role: role,
+                              selected: state.data.role == role,
+                              onTap: () => cubit.selectRole(role),
+                            ),
+                            SizedBox(height: isCompact ? AppSpacing.sm : AppSpacing.md),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
 
           // ── Footer & Continue Button (Scale up + fade) ──────────────────
           RepaintBoundary(
@@ -212,6 +221,7 @@ class _RoleSelectionViewState extends State<RoleSelectionView>
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -4,11 +4,11 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../shared/widgets/app_button.dart';
 import 'step_header.dart';
 
-/// Shared chrome for the three progress-tracked form steps: a scrollable body
-/// of [fields] and a pinned primary action button.
+/// Shared responsive chrome for all registration form steps:
+/// a scrollable body of [fields] and a pinned primary action button.
 ///
-/// The app bar (back button + progress bar) is rendered by the parent
-/// [RegistrationFlowScreen] so it persists across step transitions.
+/// Designed to be resilient to keyboard appearances, preventing RenderFlex
+/// overflow errors while maintaining consistent visual hierarchy across all phone sizes.
 class FormStepLayout extends StatelessWidget {
   const FormStepLayout({
     required this.title,
@@ -16,11 +16,13 @@ class FormStepLayout extends StatelessWidget {
     required this.buttonLabel,
     required this.onContinue,
     required this.fields,
+    this.titleSpans,
     this.footer,
     super.key,
   });
 
-  final String title;
+  final String? title;
+  final List<InlineSpan>? titleSpans;
   final String subtitle;
   final String buttonLabel;
   final VoidCallback? onContinue;
@@ -29,44 +31,63 @@ class FormStepLayout extends StatelessWidget {
   final List<Widget> fields;
 
   /// Optional content pinned above the primary button, outside the
-  /// scrollable field area — for gating content like a terms checkbox that
-  /// should stay attached to the action it gates rather than scroll away.
+  /// scrollable field area (e.g. Terms & conditions checkbox).
   final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.lg,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          StepHeader(title: title, subtitle: subtitle),
-          SizedBox(height: AppSpacing.lg),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  for (final Widget field in fields) ...<Widget>[
-                    field,
-                    SizedBox(height: AppSpacing.md),
-                  ],
-                ],
+    final mediaQuery = MediaQuery.of(context);
+    final isCompact = mediaQuery.size.width < 360;
+    final horizontalPadding = isCompact ? AppSpacing.md : AppSpacing.lg;
+    final verticalPadding = isCompact ? AppSpacing.md : AppSpacing.lg;
+
+    return SafeArea(
+      top: false,
+      bottom: true,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          horizontalPadding,
+          verticalPadding,
+          horizontalPadding,
+          verticalPadding,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            StepHeader(
+              title: title,
+              titleSpans: titleSpans,
+              subtitle: subtitle,
+            ),
+            SizedBox(height: isCompact ? AppSpacing.md : AppSpacing.lg),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      for (final Widget field in fields) ...<Widget>[
+                        field,
+                        SizedBox(height: isCompact ? AppSpacing.sm : AppSpacing.md),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-          if (footer != null) ...<Widget>[
-            footer!,
-            SizedBox(height: AppSpacing.md),
-          ] else
-            SizedBox(height: AppSpacing.sm),
-          AppPrimaryButton(label: buttonLabel, onPressed: onContinue),
-        ],
+            if (footer != null) ...<Widget>[
+              footer!,
+              SizedBox(height: isCompact ? AppSpacing.sm : AppSpacing.md),
+            ] else
+              SizedBox(height: AppSpacing.xs),
+            AppPrimaryButton(label: buttonLabel, onPressed: onContinue),
+          ],
+        ),
       ),
     );
   }

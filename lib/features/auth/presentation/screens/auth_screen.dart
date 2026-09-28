@@ -72,50 +72,50 @@ class _SignInScreenState extends State<SignInScreen>
       ),
     );
 
-    // White container slide-up & fade
+    // White container slide-up & fade (snappy entrance: ~500-600ms)
     _cardSlide = Tween<Offset>(
-      begin: const Offset(0, 0.35),
+      begin: const Offset(0, 0.15),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _animCtrl,
-      curve: const Interval(0.05, 0.85, curve: Curves.easeOutCubic),
+      curve: const Interval(0.0, 0.08, curve: Curves.easeOutCubic),
     ));
     _cardFade = CurvedAnimation(
       parent: _animCtrl,
-      curve: const Interval(0.0, 0.75, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.06, curve: Curves.easeOut),
     );
 
-    // Staggered component slide-ups inside the white container
+    // Staggered component slide-ups inside the white container (immediate solid rendering)
     _headerSlide = Tween<Offset>(
-      begin: const Offset(0, 0.30),
+      begin: const Offset(0, 0.10),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _animCtrl,
-      curve: const Interval(0.10, 0.80, curve: Curves.easeOutCubic),
+      curve: const Interval(0.01, 0.08, curve: Curves.easeOutCubic),
     ));
 
     _fieldsSlide = Tween<Offset>(
-      begin: const Offset(0, 0.35),
+      begin: const Offset(0, 0.12),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _animCtrl,
-      curve: const Interval(0.20, 0.90, curve: Curves.easeOutCubic),
+      curve: const Interval(0.02, 0.09, curve: Curves.easeOutCubic),
     ));
 
     _buttonsSlide = Tween<Offset>(
-      begin: const Offset(0, 0.40),
+      begin: const Offset(0, 0.14),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _animCtrl,
-      curve: const Interval(0.30, 0.95, curve: Curves.easeOutCubic),
+      curve: const Interval(0.03, 0.10, curve: Curves.easeOutCubic),
     ));
 
     _socialSlide = Tween<Offset>(
-      begin: const Offset(0, 0.45),
+      begin: const Offset(0, 0.16),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _animCtrl,
-      curve: const Interval(0.38, 1.0, curve: Curves.easeOutCubic),
+      curve: const Interval(0.04, 0.11, curve: Curves.easeOutCubic),
     ));
 
     // Wait for route transition to settle then start animation

@@ -43,16 +43,16 @@ class _SignupScreenState extends State<SignupScreen>
     );
 
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.0, 0.35),
+      begin: const Offset(0.0, 0.15),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _animCtrl,
-      curve: const Interval(0.05, 0.85, curve: Curves.easeOutCubic),
+      curve: const Interval(0.0, 0.08, curve: Curves.easeOutCubic),
     ));
 
     _fadeAnimation = CurvedAnimation(
       parent: _animCtrl,
-      curve: const Interval(0.0, 0.70, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.06, curve: Curves.easeOut),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {

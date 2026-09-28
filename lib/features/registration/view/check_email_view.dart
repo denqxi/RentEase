@@ -132,138 +132,157 @@ class _CheckEmailViewState extends State<CheckEmailView>
   Widget build(BuildContext context) {
     final email = context.watch<RegistrationCubit>().state.data.email;
     final displayEmail = email.isNotEmpty ? email : 'email@gmail.com';
+    final mediaQuery = MediaQuery.of(context);
+    final isCompact = mediaQuery.size.width < 360;
+    final padding = isCompact ? AppSpacing.md : AppSpacing.lg;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.lg,
-      ),
-      child: Column(
-        children: [
-          const Spacer(),
+    return SafeArea(
+      top: false,
+      bottom: true,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final lottieSize = constraints.maxHeight < 550 ? 150.0 : (isCompact ? 180.0 : 210.0);
 
-          // Animated looping Lottie animation with Scale-up & Fade
-          RepaintBoundary(
-            child: ScaleTransition(
-              scale: _lottieScale,
-              child: FadeTransition(
-                opacity: _lottieFade,
-                child: SizedBox(
-                  width: 210,
-                  height: 210,
-                  child: Lottie.asset(
-                    'assets/images/email.json',
-                    width: 210,
-                    height: 210,
-                    fit: BoxFit.contain,
-                    repeat: true,
-                    animate: true,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(
-                        Icons.mark_email_unread_rounded,
-                        color: AppColors.accent,
-                        size: 96,
-                      );
-                    },
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(padding, padding, padding, padding),
+                  child: Column(
+                    children: [
+                      const Spacer(),
+
+                      // Animated looping Lottie animation with Scale-up & Fade
+                      RepaintBoundary(
+                        child: ScaleTransition(
+                          scale: _lottieScale,
+                          child: FadeTransition(
+                            opacity: _lottieFade,
+                            child: SizedBox(
+                              width: lottieSize,
+                              height: lottieSize,
+                              child: Lottie.asset(
+                                'assets/images/email.json',
+                                width: lottieSize,
+                                height: lottieSize,
+                                fit: BoxFit.contain,
+                                repeat: true,
+                                animate: true,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(
+                                    Icons.mark_email_unread_rounded,
+                                    color: AppColors.accent,
+                                    size: lottieSize * 0.45,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: isCompact ? AppSpacing.lg : AppSpacing.xl),
+
+                      // Animated Headers and Subtitles (Slide Up + Fade)
+                      RepaintBoundary(
+                        child: SlideTransition(
+                          position: _textSlide,
+                          child: FadeTransition(
+                            opacity: _textFade,
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Verify your email',
+                                  style: AppTextStyles.heading(context),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: isCompact ? AppSpacing.sm : AppSpacing.md),
+                                Text.rich(
+                                  TextSpan(
+                                    text: 'We sent a verification link to ',
+                                    style: AppTextStyles.body(context).copyWith(
+                                      color: context.appColors.textSecondary,
+                                      height: 1.5,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: displayEmail,
+                                        style: AppTextStyles.body(context).copyWith(
+                                          color: context.appColors.textPrimary,
+                                          fontWeight: FontWeight.w700,
+                                          height: 1.5,
+                                        ),
+                                      ),
+                                      const TextSpan(
+                                        text: '.\nPlease tap the link inside the email to verify.',
+                                      ),
+                                    ],
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const Spacer(),
+                      SizedBox(height: isCompact ? AppSpacing.md : AppSpacing.lg),
+
+                      // Animated Button and Resend Link (Slide Up + Fade)
+                      RepaintBoundary(
+                        child: SlideTransition(
+                          position: _buttonSlide,
+                          child: FadeTransition(
+                            opacity: _buttonFade,
+                            child: Column(
+                              children: [
+                                AppPrimaryButton(
+                                  label: 'Open email app',
+                                  onPressed: () => context.read<RegistrationCubit>().next(),
+                                ),
+                                SizedBox(height: isCompact ? AppSpacing.sm : AppSpacing.md),
+                                GestureDetector(
+                                  onTap: _resendCountdown == 0 ? _startResendTimer : null,
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: AppSpacing.xs,
+                                      horizontal: AppSpacing.sm,
+                                    ),
+                                    child: Text(
+                                      _resendCountdown > 0
+                                          ? 'Resend Email [${_resendCountdown}s]'
+                                          : 'Resend Email',
+                                      style: _resendCountdown > 0
+                                          ? AppTextStyles.body(context).copyWith(
+                                              color: context.appColors.hint,
+                                              fontWeight: FontWeight.w600,
+                                            )
+                                          : AppTextStyles.link(context).copyWith(
+                                              color: AppColors.ink,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.xs),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-          ),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          // Animated Headers and Subtitles (Slide Up + Fade)
-          RepaintBoundary(
-            child: SlideTransition(
-              position: _textSlide,
-              child: FadeTransition(
-                opacity: _textFade,
-                child: Column(
-                  children: [
-                    Text(
-                      'Verify your email',
-                      style: AppTextStyles.heading(context),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text.rich(
-                      TextSpan(
-                        text: 'We sent a verification link to ',
-                        style: AppTextStyles.body(context).copyWith(
-                          color: context.appColors.textSecondary,
-                          height: 1.5,
-                        ),
-                        children: [
-                          TextSpan(
-                            text: displayEmail,
-                            style: AppTextStyles.body(context).copyWith(
-                              color: context.appColors.textPrimary,
-                              fontWeight: FontWeight.w700,
-                              height: 1.5,
-                            ),
-                          ),
-                          const TextSpan(
-                            text: '.\nPlease tap the link inside the email to verify.',
-                          ),
-                        ],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          const Spacer(),
-
-          // Animated Button and Resend Link (Slide Up + Fade)
-          RepaintBoundary(
-            child: SlideTransition(
-              position: _buttonSlide,
-              child: FadeTransition(
-                opacity: _buttonFade,
-                child: Column(
-                  children: [
-                    AppPrimaryButton(
-                      label: 'Open email app',
-                      onPressed: () => context.read<RegistrationCubit>().next(),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    GestureDetector(
-                      onTap: _resendCountdown == 0 ? _startResendTimer : null,
-                      behavior: HitTestBehavior.opaque,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.xs,
-                          horizontal: AppSpacing.sm,
-                        ),
-                        child: Text(
-                          _resendCountdown > 0
-                              ? 'Resend Email [${_resendCountdown}s]'
-                              : 'Resend Email',
-                          style: _resendCountdown > 0
-                              ? AppTextStyles.body(context).copyWith(
-                                  color: context.appColors.hint,
-                                  fontWeight: FontWeight.w600,
-                                )
-                              : AppTextStyles.link(context).copyWith(
-                                  color: AppColors.ink,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
