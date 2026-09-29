@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// `ownerProfiles/{userId}` — owner verification and TOPSIS weights.
-/// Document ID references `users/{userId}`.
+/// `ownerProfiles/{userId}` — owner verification. Document ID references
+/// `users/{userId}`.
+///
+/// No TOPSIS weight fields here — owner-side tenant discovery is
+/// filtering-only, there is no owner-side TOPSIS instance (CLAUDE.md).
 class OwnerProfileDoc {
   const OwnerProfileDoc({
     required this.userId,
@@ -11,8 +14,6 @@ class OwnerProfileDoc {
     this.verifiedAt,
     this.rejectedAt,
     this.rejectionReason,
-    required this.wCredibility,
-    required this.wCompleteness,
     this.avgRating,
     this.totalRatings,
     this.propertyCount,
@@ -30,10 +31,6 @@ class OwnerProfileDoc {
   final Timestamp? rejectedAt;
   final String? rejectionReason;
 
-  /// TOPSIS weights — wCredibility + wCompleteness = 1.0.
-  final num wCredibility;
-  final num wCompleteness;
-
   // Computed server-side.
   final num? avgRating;
   final num? totalRatings;
@@ -50,8 +47,6 @@ class OwnerProfileDoc {
         verifiedAt: map['verifiedAt'] as Timestamp?,
         rejectedAt: map['rejectedAt'] as Timestamp?,
         rejectionReason: map['rejectionReason'] as String?,
-        wCredibility: map['wCredibility'] as num? ?? 0.6,
-        wCompleteness: map['wCompleteness'] as num? ?? 0.4,
         avgRating: map['avgRating'] as num?,
         totalRatings: map['totalRatings'] as num?,
         propertyCount: map['propertyCount'] as num?,
@@ -69,8 +64,6 @@ class OwnerProfileDoc {
     if (verifiedAt != null) 'verifiedAt': verifiedAt,
     if (rejectedAt != null) 'rejectedAt': rejectedAt,
     if (rejectionReason != null) 'rejectionReason': rejectionReason,
-    'wCredibility': wCredibility,
-    'wCompleteness': wCompleteness,
     if (avgRating != null) 'avgRating': avgRating,
     if (totalRatings != null) 'totalRatings': totalRatings,
     if (propertyCount != null) 'propertyCount': propertyCount,

@@ -14,9 +14,7 @@ class MatchDoc {
     required this.bScore,
     this.distanceKm,
     this.tenantCi,
-    this.ownerCi,
     this.tenantRank,
-    this.ownerRank,
     this.computedAt,
     this.version,
   });
@@ -40,13 +38,11 @@ class MatchDoc {
   /// computed server-side at match time. Shown as "X km" in the UI.
   final num? distanceKm;
 
-  /// TOPSIS Ci for tenant-side ranking (0.00–1.00).
+  /// TOPSIS Ci for tenant-side ranking (0.00–1.00). There is no owner-side
+  /// TOPSIS — owner-side tenant discovery is filtering-only (CLAUDE.md
+  /// "TOPSIS (Tenant-Side Ranking)").
   final num? tenantCi;
-
-  /// TOPSIS Ci for owner-side ranking (0.00–1.00).
-  final num? ownerCi;
   final num? tenantRank;
-  final num? ownerRank;
   final Timestamp? computedAt;
   final num? version;
 
@@ -60,9 +56,7 @@ class MatchDoc {
         bScore: map['bScore'] as num? ?? 0,
         distanceKm: map['distanceKm'] as num?,
         tenantCi: map['tenantCi'] as num?,
-        ownerCi: map['ownerCi'] as num?,
         tenantRank: map['tenantRank'] as num?,
-        ownerRank: map['ownerRank'] as num?,
         computedAt: map['computedAt'] as Timestamp?,
         version: map['version'] as num?,
       );
@@ -79,9 +73,7 @@ class MatchDoc {
         'bScore': bScore,
         if (distanceKm != null) 'distanceKm': distanceKm,
         if (tenantCi != null) 'tenantCi': tenantCi,
-        if (ownerCi != null) 'ownerCi': ownerCi,
         if (tenantRank != null) 'tenantRank': tenantRank,
-        if (ownerRank != null) 'ownerRank': ownerRank,
         'computedAt': FieldValue.serverTimestamp(),
         if (version != null) 'version': version,
       };

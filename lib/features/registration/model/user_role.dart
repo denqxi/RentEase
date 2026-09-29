@@ -11,6 +11,11 @@ enum UserRole {
     label: 'Landlord',
     description: 'Looking for compatible tenants for your property.',
     icon: Icons.vpn_key_outlined,
+  ),
+  guest(
+    label: 'Guest',
+    description: 'Browse listings without creating an account.',
+    icon: Icons.explore_outlined,
   );
 
   const UserRole({

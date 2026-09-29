@@ -109,35 +109,19 @@ class OwnerProfileScreen extends StatelessWidget {
 
               const SizedBox(height: AppSpacing.lg),
 
-              // TOPSIS weights
+              // TOPSIS weights — fixed (CLAUDE.md "Two TOPSIS Instances":
+              // unlike the tenant side, owner-side weights are not
+              // owner-adjustable), so this is a read-only summary.
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Row(
-                  children: <Widget>[
-                    Text(
-                      'My tenant ranking',
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface,
-                      ),
-                    ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => Navigator.of(context)
-                          .pushNamed(AppRouter.editOwnerTopsis),
-                      child: Text(
-                        'Edit',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'My tenant ranking',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),

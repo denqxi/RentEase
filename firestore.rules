@@ -80,13 +80,24 @@ service cloud.firestore {
 
     // ---------- properties ----------
     match /properties/{propertyId} {
+      // amenityScore is the TOPSIS Amenities criterion; it must be the count
+      // of the fixed 14-item checklist, not a number the client picks.
+      function validAmenities() {
+        return request.resource.data.amenityList is list
+          && request.resource.data.amenityList.size() <= 14
+          && request.resource.data.amenityScore
+               == request.resource.data.amenityList.size();
+      }
+
       allow read: if true; // public browse
       // Owner must be admin-verified before ANY property write.
       allow create: if isVerifiedOwner()
-        && request.resource.data.ownerId == request.auth.uid;
+        && request.resource.data.ownerId == request.auth.uid
+        && validAmenities();
       allow update: if (isVerifiedOwner()
           && resource.data.ownerId == request.auth.uid
-          && request.resource.data.ownerId == resource.data.ownerId)
+          && request.resource.data.ownerId == resource.data.ownerId
+          && validAmenities())
         || isAdmin();
       allow delete: if (isVerifiedOwner() && resource.data.ownerId == request.auth.uid)
         || isAdmin();
@@ -107,6 +118,10 @@ service cloud.firestore {
     // they claim — this stops a client from fabricating a match for an
     // arbitrary owner, though it can't re-verify the score itself was
     // computed correctly (see the rules-file header comment).
+    //
+    // Owner-side tenant discovery is filtering-only — there is no owner-side
+    // TOPSIS instance (CLAUDE.md), so the owner never writes to a match row;
+    // they only read it (below).
     match /matches/{matchId} {
       allow read: if signedIn()
         && (resource.data.tenantId == request.auth.uid

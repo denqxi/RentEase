@@ -13,7 +13,28 @@ import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
 import '../view/property_detail_screen.dart';
 
-/// "Nearby homes" vertical list section on the home screen.
+/// Fetches the real detail map (owner info included) before navigating —
+/// shared by both the "Recommended" and "Compatible properties" sections.
+Future<void> openPropertyDetail(
+  BuildContext context,
+  HomeCubit cubit,
+  String propertyId,
+) async {
+  final detail = await cubit.loadPropertyDetail(propertyId);
+  if (!context.mounted) return;
+  if (detail == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('This listing is no longer available.')),
+    );
+    return;
+  }
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(builder: (_) => PropertyDetailScreen(property: detail)),
+  );
+}
+
+/// "Compatible properties" vertical list section on the home screen — sorted
+/// by TOPSIS Ci score, never by distance alone (CLAUDE.md rule 9).
 class NearbySection extends StatelessWidget {
   const NearbySection({super.key});
 
@@ -75,16 +96,22 @@ class NearbySection extends StatelessWidget {
               }
               cubit.toggleSaved(listings[i].id);
             },
-            onTap: () => Navigator.of(ctx).push(
-              MaterialPageRoute<void>(
-                builder: (_) => PropertyDetailScreen(
-                  property: MockData.properties.firstWhere(
-                    (p) => p['propertyId'] == listings[i].id,
-                  ),
-                  isGuest: isGuest,
-                ),
-              ),
-            ),
+            // Guests have no real matches/tenantProfiles to fetch a live
+            // detail map for — their listings are MockData-only, so the
+            // detail screen is built straight from that, gated instead of
+            // fetched.
+            onTap: isGuest
+                ? () => Navigator.of(ctx).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => PropertyDetailScreen(
+                        property: MockData.properties.firstWhere(
+                          (p) => p['propertyId'] == listings[i].id,
+                        ),
+                        isGuest: true,
+                      ),
+                    ),
+                  )
+                : () => openPropertyDetail(ctx, cubit, listings[i].id),
           ),
         ),
       ],

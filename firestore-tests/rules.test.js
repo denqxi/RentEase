@@ -63,6 +63,8 @@ const OWNER_B = 'ownerB';
 const ADMIN = 'admin1';
 const PROPERTY = 'prop1';
 const MATCH_ID = `${TENANT_A}_${PROPERTY}`;
+// A valid 14-item-checklist selection: amenityScore must equal its length.
+const AMENITIES = { amenityList: ['WiFi', 'CCTV'], amenityScore: 2 };
 
 async function seedUsersAndProfiles() {
   await seed(async (db) => {
@@ -114,13 +116,17 @@ describe('ownerProfiles / properties — owners can only read/write their own', 
 
   it('a verified owner can write their own property', async () => {
     await assertSucceeds(
-      asOwner(OWNER_A).doc(`properties/${PROPERTY}`).set({ ownerId: OWNER_A, monthlyRent: 4000 }),
+      asOwner(OWNER_A)
+        .doc(`properties/${PROPERTY}`)
+        .set({ ownerId: OWNER_A, monthlyRent: 4000, ...AMENITIES }),
     );
   });
 
   it('an owner cannot write another owner\'s property', async () => {
     await assertFails(
-      asOwner(OWNER_B).doc(`properties/${PROPERTY}`).set({ ownerId: OWNER_A, monthlyRent: 1 }),
+      asOwner(OWNER_B)
+        .doc(`properties/${PROPERTY}`)
+        .set({ ownerId: OWNER_A, monthlyRent: 1, ...AMENITIES }),
     );
   });
 
@@ -129,7 +135,45 @@ describe('ownerProfiles / properties — owners can only read/write their own', 
       db.doc(`ownerProfiles/${OWNER_B}`).set({ verificationStatus: 'pending' }),
     );
     await assertFails(
-      asOwner(OWNER_B).doc('properties/prop2').set({ ownerId: OWNER_B, monthlyRent: 1000 }),
+      asOwner(OWNER_B)
+        .doc('properties/prop2')
+        .set({ ownerId: OWNER_B, monthlyRent: 1000, ...AMENITIES }),
+    );
+  });
+
+  it('a property whose amenityScore does not match its amenityList is rejected', async () => {
+    await assertFails(
+      asOwner(OWNER_A)
+        .doc('properties/prop3')
+        .set({ ownerId: OWNER_A, amenityList: ['WiFi'], amenityScore: 14 }),
+    );
+  });
+
+  it('a new owner can submit for verification (create as pending)', async () => {
+    await assertSucceeds(
+      asOwner(OWNER_B).doc(`ownerProfiles/${OWNER_B}`).set({
+        verificationStatus: 'pending',
+        documentUrls: [],
+      }),
+    );
+  });
+
+  it('a new owner cannot create their profile as already verified', async () => {
+    await assertFails(
+      asOwner(OWNER_B)
+        .doc(`ownerProfiles/${OWNER_B}`)
+        .set({ verificationStatus: 'verified' }),
+    );
+  });
+
+  it('a rejected owner cannot move themselves back to pending', async () => {
+    await seed((db) =>
+      db.doc(`ownerProfiles/${OWNER_B}`).set({ verificationStatus: 'rejected' }),
+    );
+    await assertFails(
+      asOwner(OWNER_B)
+        .doc(`ownerProfiles/${OWNER_B}`)
+        .update({ verificationStatus: 'pending' }),
     );
   });
 });
@@ -171,6 +215,47 @@ describe('matches — client-side engine writes, gated to the tenant\'s own rows
     await assertSucceeds(asOwner(OWNER_A).doc(`matches/${MATCH_ID}`).get());
     await assertSucceeds(asAdmin(ADMIN).doc(`matches/${MATCH_ID}`).get());
     await assertFails(asTenant(TENANT_B).doc(`matches/${MATCH_ID}`).get());
+  });
+
+});
+
+describe('matches — owner-side tenant discovery is read-only (no owner-side TOPSIS)', () => {
+  beforeEach(async () => {
+    await seedUsersAndProfiles();
+    await seed((db) =>
+      db.doc(`matches/${MATCH_ID}`).set({
+        tenantId: TENANT_A,
+        ownerId: OWNER_A,
+        propertyId: PROPERTY,
+        bScore: 1,
+        tenantCi: 0.8,
+        tenantRank: 1,
+      }),
+    );
+  });
+
+  it('the match\'s own owner still cannot update it — owners never write to matches', async () => {
+    await assertFails(
+      asOwner(OWNER_A).doc(`matches/${MATCH_ID}`).update({ tenantCi: 0.99 }),
+    );
+  });
+
+  it('the tenant can still refresh their own fields', async () => {
+    await assertSucceeds(
+      asTenant(TENANT_A).doc(`matches/${MATCH_ID}`).set(
+        {
+          tenantId: TENANT_A,
+          ownerId: OWNER_A,
+          propertyId: PROPERTY,
+          bScore: 1,
+          distanceKm: 2.5,
+        },
+        { merge: true },
+      ),
+    );
+    await assertSucceeds(
+      asTenant(TENANT_A).doc(`matches/${MATCH_ID}`).update({ tenantCi: 0.9, tenantRank: 1 }),
+    );
   });
 });
 

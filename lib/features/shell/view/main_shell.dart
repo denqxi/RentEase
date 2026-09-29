@@ -6,10 +6,16 @@ import '../../../features/registration/model/user_role.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../activity/cubit/activity_cubit.dart';
 import '../../activity/view/activity_screen.dart';
+import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../../home/cubit/home_cubit.dart';
+import '../../home/data/repositories/home_repository_impl.dart';
 import '../../home/view/home_screen.dart';
 import '../../home/view/search_screen.dart';
 import '../../inquiry/view/tenant_inquiries_screen.dart';
+import '../../matching/data/repositories/filtering_repository_impl.dart';
+import '../../matching/data/repositories/topsis_repository_impl.dart';
+import '../../matching/domain/services/filtering_service.dart';
+import '../../matching/domain/services/topsis_service.dart';
 import '../../profile/cubit/profile_cubit.dart';
 import '../../profile/view/profile_screen.dart';
 import '../cubit/shell_cubit.dart';
@@ -26,7 +32,26 @@ class MainShell extends StatelessWidget {
 
     return MultiBlocProvider(
       providers: <BlocProvider>[
-        BlocProvider<HomeCubit>(create: (_) => HomeCubit(isGuest: isGuest)),
+        BlocProvider<HomeCubit>(
+          create: (_) {
+            if (isGuest) return HomeCubit.guest();
+            // MainShell is only ever reached once AuthBloc has confirmed a
+            // signed-in tenant (see AppRouter/app.dart routing) for the
+            // non-guest path, so this is always available.
+            final authState = context.read<AuthBloc>().state;
+            final tenantId = switch (authState) {
+              AuthAuthenticated(:final user) => user.uid,
+              AuthEmailNotVerified(:final user) => user.uid,
+              _ => '',
+            };
+            return HomeCubit(
+              tenantId: tenantId,
+              repository: HomeRepositoryImpl(),
+              filteringService: FilteringService(repository: FilteringRepositoryImpl()),
+              topsisService: TopsisService(repository: TopsisRepositoryImpl()),
+            );
+          },
+        ),
         BlocProvider<ActivityCubit>(
           create: (_) => ActivityCubit(initialItems: ActivityItem.samples),
         ),

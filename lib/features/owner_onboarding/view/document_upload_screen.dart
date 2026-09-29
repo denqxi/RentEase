@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -6,6 +7,8 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../features/registration/widgets/step_header.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../auth/presentation/current_uid.dart';
+import '../cubit/owner_onboarding_cubit.dart';
 import 'verification_pending_screen.dart';
 
 class DocumentUploadScreen extends StatefulWidget {
@@ -19,6 +22,43 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
   final List<bool> _uploaded = [false, false, false];
 
   bool get _allUploaded => _uploaded.every((v) => v);
+
+  bool _submitting = false;
+
+  // File upload needs Firebase Storage (Blaze plan) — not enabled on this
+  // project yet. The toggles stand in for picking files; submitting records
+  // the verification request itself so an admin can approve the owner.
+  Future<void> _submit() async {
+    final uid = currentUidOrNull(context);
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Your session has expired. Please sign in again.'),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
+      return;
+    }
+    final cubit = context.read<OwnerOnboardingCubit>();
+    setState(() => _submitting = true);
+    await cubit.submitForVerification(uid);
+    if (!mounted) return;
+    setState(() => _submitting = false);
+
+    final state = cubit.state;
+    if (state.status == OwnerOnboardingStatus.failure) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(state.errorMessage ?? 'Could not submit. Try again.'),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const VerificationPendingScreen()),
+    );
+  }
 
   static const List<String> _docLabels = [
     'Valid government ID',
@@ -125,14 +165,10 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
                     ),
                     SizedBox(height: AppSpacing.sm),
                     AppPrimaryButton(
-                      label: 'Submit for verification',
-                      onPressed: _allUploaded
-                          ? () => Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => const VerificationPendingScreen(),
-                                ),
-                              )
-                          : null,
+                      label: _submitting
+                          ? 'Submitting...'
+                          : 'Submit for verification',
+                      onPressed: _allUploaded && !_submitting ? _submit : null,
                     ),
                     SizedBox(height: AppSpacing.sm),
                     Center(

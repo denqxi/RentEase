@@ -7,7 +7,15 @@ import 'package:latlong2/latlong.dart';
 class DistanceUtils {
   DistanceUtils._();
 
-  static const Distance _distance = Distance();
+  // `Distance()`'s defaults are wrong for this use case: `roundResult: true`
+  // rounds to the nearest whole *requested unit* (km here — turning e.g.
+  // 5.556 km into 6.0, degrading LocationMatch's <= comparison to
+  // kilometer-level precision), and the default calculator is Vincenty, not
+  // Haversine, despite CLAUDE.md documenting Haversine specifically.
+  static const Distance _distance = Distance(
+    roundResult: false,
+    calculator: Haversine(),
+  );
 
   /// Distance in kilometers between two Firestore [GeoPoint]s.
   static double kmBetween(GeoPoint a, GeoPoint b) {

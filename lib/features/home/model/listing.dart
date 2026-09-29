@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/mock_data.dart';
+import '../../../core/firestore/models/models.dart';
 
 /// A rental property listing displayed across home, matches, and saved screens.
 class Listing extends Equatable {
@@ -51,6 +52,30 @@ class Listing extends Equatable {
       amenityScore: amenityScore,
       sqft: sqft,
       isSaved: isSaved ?? this.isSaved,
+      imageSeed: imageSeed,
+    );
+  }
+
+  /// Built from a real `matches`/`properties` pair — [ci] is the tenant-side
+  /// TOPSIS closeness coefficient (0.00–1.00), shown as a rounded percent
+  /// per CLAUDE.md's "match display should be consistent" note (percent on
+  /// carousels, raw Ci on the search/comparison screens).
+  factory Listing.fromMatch({
+    required MatchDoc match,
+    required PropertyDoc property,
+    required int imageSeed,
+  }) {
+    return Listing(
+      id: property.propertyId,
+      title: property.title,
+      location: property.address,
+      pricePerMonth: property.monthlyRent.toInt(),
+      // Boarding-house listings aren't modeled with bedroom/bathroom counts
+      // (CLAUDE.md's schema has no such fields) — same placeholder the
+      // prototype data already used.
+      beds: 1,
+      baths: 1,
+      matchPercent: (((match.tenantCi ?? 0) * 100).round()),
       imageSeed: imageSeed,
     );
   }

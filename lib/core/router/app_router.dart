@@ -9,7 +9,6 @@ import '../../features/auth/presentation/screens/auth_screen.dart';
 
 import '../../features/auth/presentation/screens/role_selection_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
-import '../../features/owner/view/edit_owner_topsis_screen.dart';
 import '../../features/owner/view/find_tenants_screen.dart';
 import '../../features/owner/view/owner_inquiries_screen.dart';
 import '../../features/owner/view/owner_properties_screen.dart';
@@ -18,7 +17,6 @@ import '../../features/owner/view/phase2_chat_owner_screen.dart';
 import '../../features/owner_onboarding/view/add_property_screen.dart';
 import '../../features/owner_onboarding/view/document_upload_screen.dart';
 import '../../features/shell/view/landlord_shell.dart';
-import '../../features/owner_onboarding/view/owner_topsis_screen.dart';
 import '../../features/owner_onboarding/view/pricing_amenities_screen.dart';
 import '../../features/owner_onboarding/view/property_rules_screen.dart';
 import '../../features/owner_onboarding/view/verification_pending_screen.dart';
@@ -57,7 +55,6 @@ class AppRouter {
   static const addProperty = '/owner-onboarding/add-property';
   static const propertyRules = '/owner-onboarding/rules';
   static const pricingAmenities = '/owner-onboarding/pricing';
-  static const ownerTopsis = '/owner-onboarding/topsis';
 
   static const ownerProperties = '/owner/properties';
   static const findTenants = '/owner/find-tenants';
@@ -65,7 +62,6 @@ class AppRouter {
   static const ownerPhase2 = '/owner/inquiry/phase2';
   static const ownerInquiries = '/owner/inquiries';
   static const ownerProfile = '/owner/profile';
-  static const editOwnerTopsis = '/owner/profile/edit-topsis';
 
   static const adminLogin = '/admin/login';
   static const adminVerifications = '/admin/verifications';
@@ -131,8 +127,6 @@ class AppRouter {
         page = const PropertyRulesScreen();
       case pricingAmenities:
         page = const PricingAmenitiesScreen();
-      case ownerTopsis:
-        page = const OwnerTopsisScreen();
 
       case ownerProperties:
         page = const OwnerPropertiesScreen();
@@ -148,8 +142,6 @@ class AppRouter {
         page = const OwnerInquiriesScreen();
       case ownerProfile:
         page = const OwnerProfileScreen();
-      case editOwnerTopsis:
-        page = const EditOwnerTopsisScreen();
 
       case adminLogin:
         page = const AdminLoginScreen();

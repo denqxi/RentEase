@@ -5,6 +5,7 @@ import '../../core/constants/app_dimensions.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../features/auth/presentation/screens/auth_screen.dart';
+import '../../features/auth/presentation/screens/email_verification_screen.dart';
 import '../../features/registration/view/registration_flow_screen.dart';
 import '../../features/registration/model/user_role.dart';
 import 'app_button.dart';
@@ -90,11 +91,17 @@ class GuestAccessSheet extends StatelessWidget {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => RegistrationFlowScreen(
+                        // Matches app.dart's _SignInEntry._pushOnboarding —
+                        // account creation always goes through email
+                        // verification before onboarding.
                         onComplete: (role) => Navigator.of(context)
-                            .pushNamed(
-                          role == UserRole.landlord
-                              ? AppRouter.documentUpload
-                              : AppRouter.hardConstraints,
+                            .pushAndRemoveUntil(
+                          MaterialPageRoute<void>(
+                            builder: (_) => EmailVerificationScreen(
+                              isOwner: role == UserRole.landlord,
+                            ),
+                          ),
+                          (_) => false,
                         ),
                         onSignIn: () => Navigator.of(context).pop(),
                       ),
@@ -111,9 +118,11 @@ class GuestAccessSheet extends StatelessWidget {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => SignInScreen(
-                        onSignIn: () => Navigator.of(context)
+                        onSignIn: (user) => Navigator.of(context)
                             .pushNamedAndRemoveUntil(
-                          AppRouter.roleSelection,
+                          user.isOwner
+                              ? AppRouter.landlordHome
+                              : AppRouter.tenantHome,
                           (_) => false,
                         ),
                         onCreateAccount: () => Navigator.of(context).pop(),

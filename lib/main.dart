@@ -10,6 +10,8 @@ import 'features/matching/data/repositories/filtering_repository_impl.dart';
 import 'features/matching/data/repositories/topsis_repository_impl.dart';
 import 'features/matching/domain/services/filtering_service.dart';
 import 'features/matching/domain/services/topsis_service.dart';
+import 'features/owner_onboarding/cubit/owner_onboarding_cubit.dart';
+import 'features/owner_onboarding/data/repositories/owner_onboarding_repository_impl.dart';
 import 'features/tenant_onboarding/cubit/tenant_onboarding_cubit.dart';
 import 'features/tenant_onboarding/data/repositories/tenant_profile_repository_impl.dart';
 import 'firebase_options.dart';
@@ -37,6 +39,12 @@ void main() async {
             topsisService: TopsisService(
               repository: TopsisRepositoryImpl(),
             ),
+          ),
+        ),
+        // Same reasoning for the owner's verification + "Add property" flow.
+        BlocProvider(
+          create: (_) => OwnerOnboardingCubit(
+            repository: OwnerOnboardingRepositoryImpl(),
           ),
         ),
       ],

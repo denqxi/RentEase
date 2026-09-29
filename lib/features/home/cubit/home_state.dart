@@ -5,12 +5,18 @@ class HomeState extends Equatable {
   HomeState({
     List<Listing>? listings,
     this.searchQuery = '',
+    this.isLoading = false,
+    this.errorMessage,
     this.isGuest = false,
-  }) : listings = listings ??
-            (isGuest ? Listing.guestSamples : Listing.samples);
+  }) : listings = listings ?? const <Listing>[];
 
   final List<Listing> listings;
   final String searchQuery;
+  final bool isLoading;
+  final String? errorMessage;
+
+  /// True for the unauthenticated browse mode — no tenantProfiles/matches to
+  /// read, so listings are [Listing.guestSamples] and unranked.
   final bool isGuest;
 
   /// Top matches for the "Recommended for you" horizontal scroll.
@@ -25,7 +31,9 @@ class HomeState extends Equatable {
     return sorted;
   }
 
-  /// All listings for the "Nearby homes" vertical list.
+  /// All listings for the "Compatible properties" vertical list — sorted by
+  /// TOPSIS Ci score, never by distance alone (CLAUDE.md rule 9). Guests
+  /// have no Ci score at all, so they fall back to amenity score.
   List<Listing> get nearby {
     if (isGuest) {
       return [...listings]
@@ -50,15 +58,21 @@ class HomeState extends Equatable {
   HomeState copyWith({
     List<Listing>? listings,
     String? searchQuery,
+    bool? isLoading,
+    String? errorMessage,
+    bool clearError = false,
     bool? isGuest,
   }) {
     return HomeState(
       listings: listings ?? this.listings,
       searchQuery: searchQuery ?? this.searchQuery,
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       isGuest: isGuest ?? this.isGuest,
     );
   }
 
   @override
-  List<Object?> get props => <Object?>[listings, searchQuery, isGuest];
+  List<Object?> get props =>
+      <Object?>[listings, searchQuery, isLoading, errorMessage, isGuest];
 }

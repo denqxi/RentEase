@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -11,7 +12,7 @@ import '../../../features/registration/widgets/step_header.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/map_zoom_controls.dart';
-import '../model/property_draft.dart';
+import '../cubit/owner_onboarding_cubit.dart';
 import 'property_rules_screen.dart';
 
 class AddPropertyScreen extends StatefulWidget {
@@ -28,8 +29,12 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
   LatLng? _pinnedLocation;
   final List<bool> _photoSlots = [false, false, false];
 
+  // The pin is required: tenants' LocationMatch and distance ranking are
+  // computed from these coordinates.
   bool get _canContinue =>
-      _nameController.text.isNotEmpty && _addressController.text.isNotEmpty;
+      _nameController.text.trim().isNotEmpty &&
+      _addressController.text.trim().isNotEmpty &&
+      _pinnedLocation != null;
 
   @override
   void dispose() {
@@ -57,7 +62,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
               child: RegistrationAppBar(
                 onBack: () => Navigator.of(context).maybePop(),
                 stepNumber: 1,
-                stepCount: 4,
+                stepCount: 3,
               ),
             ),
             Expanded(
@@ -172,7 +177,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                                       ),
                                       child: Text(
                                         _pinnedLocation == null
-                                            ? 'Tap to pin your property'
+                                            ? 'Tap to pin your property (required)'
                                             : 'Pinned '
                                                 '${_pinnedLocation!.latitude.toStringAsFixed(4)}, '
                                                 '${_pinnedLocation!.longitude.toStringAsFixed(4)}',
@@ -249,13 +254,12 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                       label: 'Continue',
                       onPressed: _canContinue
                           ? () {
-                              NewPropertyDraft.name = _nameController.text.trim();
-                              NewPropertyDraft.address =
-                                  _addressController.text.trim();
-                              NewPropertyDraft.latitude =
-                                  _pinnedLocation?.latitude;
-                              NewPropertyDraft.longitude =
-                                  _pinnedLocation?.longitude;
+                              context.read<OwnerOnboardingCubit>().saveBasics(
+                                title: _nameController.text.trim(),
+                                address: _addressController.text.trim(),
+                                latitude: _pinnedLocation!.latitude,
+                                longitude: _pinnedLocation!.longitude,
+                              );
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
                                   builder: (_) => const PropertyRulesScreen(),

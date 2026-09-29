@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -10,7 +11,7 @@ import '../../../features/registration/widgets/step_header.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/app_toggle.dart';
-import '../model/property_draft.dart';
+import '../cubit/owner_onboarding_cubit.dart';
 import 'pricing_amenities_screen.dart';
 
 class PropertyRulesScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class PropertyRulesScreen extends StatefulWidget {
 class _PropertyRulesScreenState extends State<PropertyRulesScreen> {
   final _depositController = TextEditingController();
   final _advanceController = TextEditingController();
+  final _maxOccupantsController = TextEditingController();
   String? _genderPolicy;
   bool _smokingAllowed = false;
   bool _petsAllowed = false;
@@ -44,6 +46,7 @@ class _PropertyRulesScreenState extends State<PropertyRulesScreen> {
   void dispose() {
     _depositController.dispose();
     _advanceController.dispose();
+    _maxOccupantsController.dispose();
     super.dispose();
   }
 
@@ -65,7 +68,7 @@ class _PropertyRulesScreenState extends State<PropertyRulesScreen> {
               child: RegistrationAppBar(
                 onBack: () => Navigator.of(context).maybePop(),
                 stepNumber: 2,
-                stepCount: 4,
+                stepCount: 3,
               ),
             ),
             Expanded(
@@ -106,6 +109,20 @@ class _PropertyRulesScreenState extends State<PropertyRulesScreen> {
                               label: 'Advance months',
                               child: AppTextField(
                                 controller: _advanceController,
+                                hintText: '1',
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            // Layer 1 OccupancyMatch: a tenant's group size
+                            // must not exceed this.
+                            LabelledField(
+                              label: 'Max occupants per room',
+                              child: AppTextField(
+                                controller: _maxOccupantsController,
                                 hintText: '1',
                                 keyboardType: TextInputType.number,
                                 inputFormatters: [
@@ -202,15 +219,19 @@ class _PropertyRulesScreenState extends State<PropertyRulesScreen> {
                     AppPrimaryButton(
                       label: 'Continue',
                       onPressed: () {
-                        NewPropertyDraft.deposit =
-                            int.tryParse(_depositController.text) ?? 0;
-                        NewPropertyDraft.advanceMonths =
-                            int.tryParse(_advanceController.text) ?? 1;
-                        NewPropertyDraft.genderPolicy =
-                            _genderPolicy ?? 'Mixed / Any';
-                        NewPropertyDraft.smokingAllowed = _smokingAllowed;
-                        NewPropertyDraft.petsAllowed = _petsAllowed;
-                        NewPropertyDraft.curfewHours = _curfewHours;
+                        final maxOccupants =
+                            int.tryParse(_maxOccupantsController.text) ?? 1;
+                        context.read<OwnerOnboardingCubit>().saveRules(
+                          depositAmount:
+                              int.tryParse(_depositController.text) ?? 0,
+                          advanceMonths:
+                              int.tryParse(_advanceController.text) ?? 1,
+                          allowedGender: _genderPolicy ?? 'Mixed / Any',
+                          smokingAllowed: _smokingAllowed,
+                          petsAllowed: _petsAllowed,
+                          curfewHours: _curfewHours,
+                          maxOccupants: maxOccupants < 1 ? 1 : maxOccupants,
+                        );
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (_) => const PricingAmenitiesScreen(),

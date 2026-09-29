@@ -27,12 +27,17 @@ import 'package:rentease/features/auth/presentation/screens/role_selection_scree
 import 'package:rentease/features/auth/presentation/screens/signup_screen.dart';
 import 'package:rentease/features/auth/presentation/screens/splash_screen.dart';
 import 'package:rentease/features/home/cubit/home_cubit.dart';
+import 'package:rentease/features/home/data/repositories/home_repository_impl.dart';
 import 'package:rentease/features/home/model/listing_detail.dart';
 import 'package:rentease/features/home/view/home_screen.dart';
 import 'package:rentease/features/home/view/listing_detail_screen.dart';
 import 'package:rentease/features/home/view/map_view_screen.dart';
 import 'package:rentease/features/home/view/property_detail_screen.dart';
 import 'package:rentease/features/home/view/search_screen.dart';
+import 'package:rentease/features/matching/data/repositories/filtering_repository_impl.dart';
+import 'package:rentease/features/matching/data/repositories/topsis_repository_impl.dart';
+import 'package:rentease/features/matching/domain/services/filtering_service.dart';
+import 'package:rentease/features/matching/domain/services/topsis_service.dart';
 import 'package:rentease/features/inquiry/view/phase1_tenant_screen.dart';
 import 'package:rentease/features/inquiry/view/phase2_tenant_screen.dart';
 import 'package:rentease/features/inquiry/view/tenant_inquiries_screen.dart';
@@ -42,7 +47,6 @@ import 'package:rentease/features/landlord_home/view/landlord_home_screen.dart';
 import 'package:rentease/features/landlord_home/view/tenant_detail_screen.dart';
 import 'package:rentease/features/landlord_matches/view/landlord_matches_screen.dart';
 import 'package:rentease/features/onboarding/view/onboarding_screen.dart';
-import 'package:rentease/features/owner/view/edit_owner_topsis_screen.dart';
 import 'package:rentease/features/owner/view/edit_property_screen.dart';
 import 'package:rentease/features/owner/view/find_tenants_screen.dart';
 import 'package:rentease/features/owner/view/owner_inquiries_screen.dart';
@@ -51,7 +55,6 @@ import 'package:rentease/features/owner/view/phase1_owner_screen.dart';
 import 'package:rentease/features/owner/view/phase2_chat_owner_screen.dart';
 import 'package:rentease/features/owner_onboarding/view/add_property_screen.dart';
 import 'package:rentease/features/owner_onboarding/view/document_upload_screen.dart';
-import 'package:rentease/features/owner_onboarding/view/owner_topsis_screen.dart';
 import 'package:rentease/features/owner_onboarding/view/pricing_amenities_screen.dart';
 import 'package:rentease/features/owner_onboarding/view/property_rules_screen.dart';
 import 'package:rentease/features/owner_onboarding/view/verification_pending_screen.dart';
@@ -73,6 +76,16 @@ import 'package:rentease/features/tenant_onboarding/view/topsis_weight_screen.da
 
 late IntegrationTestWidgetsFlutterBinding _binding;
 final List<String> _failures = <String>[];
+
+/// Same rationale as the offline screenshot harness: no real backend is
+/// needed for a static visual capture, so `HomeCubit.refresh()`'s Firestore
+/// calls simply erroring out (caught internally) is fine here.
+HomeCubit _previewHomeCubit() => HomeCubit(
+      tenantId: 'preview',
+      repository: HomeRepositoryImpl(),
+      filteringService: FilteringService(repository: FilteringRepositoryImpl()),
+      topsisService: TopsisService(repository: TopsisRepositoryImpl()),
+    );
 
 Future<void> _capture(
   WidgetTester tester,
@@ -157,15 +170,13 @@ void main() {
         const PropertyRulesScreen());
     await _capture(tester, '24_owner_onboarding_4_pricing_amenities',
         const PricingAmenitiesScreen());
-    await _capture(tester, '25_owner_onboarding_5_topsis_weight',
-        const OwnerTopsisScreen());
 
     // ── Tenant app ───────────────────────────────────────────────
     await _capture(
       tester,
       '30_tenant_home',
       BlocProvider<HomeCubit>(
-          create: (_) => HomeCubit(), child: const HomeScreen()),
+          create: (_) => _previewHomeCubit(), child: const HomeScreen()),
     );
     await _capture(tester, '31_tenant_search', const SearchScreen());
     await _capture(
@@ -199,7 +210,7 @@ void main() {
       '39_tenant_profile',
       MultiBlocProvider(
         providers: [
-          BlocProvider<HomeCubit>(create: (_) => HomeCubit()),
+          BlocProvider<HomeCubit>(create: (_) => _previewHomeCubit()),
           BlocProvider<ProfileCubit>(
               create: (_) => ProfileCubit(userRole: UserRole.tenant)),
         ],
@@ -210,7 +221,7 @@ void main() {
       tester,
       '40_tenant_saved',
       BlocProvider<HomeCubit>(
-          create: (_) => HomeCubit(), child: const SavedScreen()),
+          create: (_) => _previewHomeCubit(), child: const SavedScreen()),
     );
     await _capture(
         tester, '41_tenant_edit_constraints', const EditConstraintsScreen());
@@ -262,8 +273,6 @@ void main() {
       ),
     );
     await _capture(tester, '61_owner_profile', const OwnerProfileScreen());
-    await _capture(
-        tester, '62_owner_edit_topsis', const EditOwnerTopsisScreen());
 
     // ── Admin ────────────────────────────────────────────────────
     await _capture(tester, '70_admin_login', const AdminLoginScreen());

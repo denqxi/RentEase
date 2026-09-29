@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../features/registration/widgets/step_header.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
-import '../model/property_draft.dart';
-import 'owner_topsis_screen.dart';
+import '../../auth/presentation/current_uid.dart';
+import '../cubit/owner_onboarding_cubit.dart';
 
 class PricingAmenitiesScreen extends StatefulWidget {
   const PricingAmenitiesScreen({super.key});
@@ -22,11 +24,52 @@ class PricingAmenitiesScreen extends StatefulWidget {
 class _PricingAmenitiesScreenState extends State<PricingAmenitiesScreen> {
   final _rentController = TextEditingController();
   final Set<String> _selected = {};
+  bool _saving = false;
 
   @override
   void dispose() {
     _rentController.dispose();
     super.dispose();
+  }
+
+  // Final step: the owner-side TOPSIS weights are fixed (CLAUDE.md — no
+  // longer owner-adjustable, unlike the tenant side), so there's no separate
+  // weight-slider step here — saving pricing creates the listing directly.
+  Future<void> _submit() async {
+    final uid = currentUidOrNull(context);
+    if (uid == null) {
+      _showError('Your session has expired. Please sign in again.');
+      return;
+    }
+    final cubit = context.read<OwnerOnboardingCubit>();
+    cubit.savePricing(
+      monthlyRent: int.tryParse(_rentController.text) ?? 0,
+      // Checklist order, not tap order.
+      amenities: MockData.amenities.where(_selected.contains).toList(),
+    );
+
+    setState(() => _saving = true);
+    await cubit.submitProperty(uid: uid);
+    if (!mounted) return;
+    setState(() => _saving = false);
+
+    final state = cubit.state;
+    if (state.status != OwnerOnboardingStatus.saved) {
+      _showError(state.errorMessage ?? 'Could not save your property.');
+      return;
+    }
+    cubit.reset();
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      AppRouter.matchingTransition,
+      (_) => false,
+      arguments: true, // owner
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppColors.destructive),
+    );
   }
 
   @override
@@ -47,7 +90,7 @@ class _PricingAmenitiesScreenState extends State<PricingAmenitiesScreen> {
               child: RegistrationAppBar(
                 onBack: () => Navigator.of(context).maybePop(),
                 stepNumber: 3,
-                stepCount: 4,
+                stepCount: 3,
               ),
             ),
             Expanded(
@@ -157,21 +200,11 @@ class _PricingAmenitiesScreenState extends State<PricingAmenitiesScreen> {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     AppPrimaryButton(
-                      label: 'Continue',
-                      onPressed: _rentController.text.isNotEmpty
-                          ? () {
-                              NewPropertyDraft.rent =
-                                  int.tryParse(_rentController.text) ?? 0;
-                              NewPropertyDraft.amenities = Set.of(_selected);
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => const OwnerTopsisScreen(
-                                    stepNumber: 4,
-                                    stepCount: 4,
-                                  ),
-                                ),
-                              );
-                            }
+                      label: _saving ? 'Saving...' : 'Find Tenants',
+                      onPressed:
+                          (int.tryParse(_rentController.text) ?? 0) > 0 &&
+                              !_saving
+                          ? _submit
                           : null,
                     ),
                   ],

@@ -5,8 +5,8 @@
 /// renaming keys:
 ///   properties  → `properties` collection (+ tenant-side `matches` fields:
 ///                 bScore, tenantCi, tenantRank)
-///   tenants     → `users` + `tenantProfiles` (+ owner-side `matches` fields:
-///                 ownerCi, ownerRank)
+///   tenants     → `users` + `tenantProfiles` (owner-side tenant discovery
+///                 is filtering-only — no TOPSIS ranking, see CLAUDE.md)
 ///   inquiries   → `inquiries` collection (stage, status)
 ///   tenantRatings → `ratings` collection (stars, review)
 /// Keys that have no schema equivalent are presentation-only and marked
@@ -160,8 +160,6 @@ class MockData {
       'maxBudget': 4500,
       'isSmoker': false,
       'hasPet': false,
-      'ownerCi': 0.91,
-      'ownerRank': 1,
       'bScore': 1,
       'moveIn': 'Aug 1, 2026', // schema: tenantProfiles.moveInDate formatted
       'emergencyContact': 'Rosa Santos — 09171234567', // schema: tenantProfiles.emergencyContact
@@ -178,8 +176,6 @@ class MockData {
       'maxBudget': 4000,
       'isSmoker': false,
       'hasPet': false,
-      'ownerCi': 0.78,
-      'ownerRank': 2,
       'bScore': 1,
       'moveIn': 'Jul 15, 2026', // schema: tenantProfiles.moveInDate formatted
       'emergencyContact': 'Pedro Ramos — 09189876543', // schema: tenantProfiles.emergencyContact
@@ -196,8 +192,6 @@ class MockData {
       'maxBudget': 3500,
       'isSmoker': false,
       'hasPet': false,
-      'ownerCi': 0.64,
-      'ownerRank': 3,
       'bScore': 1,
       'moveIn': 'Sep 1, 2026', // schema: tenantProfiles.moveInDate formatted
       'emergencyContact': 'Linda Lim — 09201112233', // schema: tenantProfiles.emergencyContact

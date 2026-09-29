@@ -10,15 +10,6 @@
       ]
     },
     {
-      "collectionGroup": "matches",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "ownerId", "order": "ASCENDING" },
-        { "fieldPath": "bScore", "order": "ASCENDING" },
-        { "fieldPath": "ownerCi", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "properties",
       "queryScope": "COLLECTION",
       "fields": [

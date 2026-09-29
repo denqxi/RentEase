@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../../../debug/debug_screen_viewer.dart';
 import '../../../../features/onboarding/model/onboarding_page_data.dart';
 
 /// Splash screen that plays the introductory video and pre-caches
@@ -19,6 +21,12 @@ class _SplashScreenState extends State<SplashScreen> {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
   bool _hasCompleted = false;
+
+  // Debug-only: set once the debug screen viewer has been opened, so a late
+  // video-completion callback doesn't also call widget.onComplete() out from
+  // under it. See lib/debug/debug_screen_viewer.dart — remove this,
+  // _openDebugViewer and the button in build() when no longer needed.
+  bool _navigatedToDebugViewer = false;
 
   @override
   void initState() {
@@ -80,10 +88,22 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _finishSplash() {
-    if (_hasCompleted || !mounted) return;
+    if (_hasCompleted || !mounted || _navigatedToDebugViewer) return;
     _hasCompleted = true;
     _controller?.pause();
     widget.onComplete();
+  }
+
+  // Debug-only: stop the real app from navigating out from under the debug
+  // screen viewer while it's open. See lib/debug/debug_screen_viewer.dart —
+  // remove this, _openDebugViewer and the button in build() when no longer
+  // needed.
+  void _openDebugViewer() {
+    _navigatedToDebugViewer = true;
+    _controller?.pause();
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const DebugScreenViewer()));
   }
 
   @override
@@ -98,15 +118,37 @@ class _SplashScreenState extends State<SplashScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
-        child: _isInitialized && controller != null
-            ? RepaintBoundary(
-                child: AspectRatio(
-                  aspectRatio: controller.value.aspectRatio,
-                  child: VideoPlayer(controller),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Center(
+            child: _isInitialized && controller != null
+                ? RepaintBoundary(
+                    child: AspectRatio(
+                      aspectRatio: controller.value.aspectRatio,
+                      child: VideoPlayer(controller),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+          // Debug-only entry point into lib/debug/debug_screen_viewer.dart —
+          // jump straight to any screen instead of walking the real
+          // sign-in/onboarding flow. Remove this button, _openDebugViewer
+          // and _navigatedToDebugViewer above when no longer needed.
+          if (kDebugMode)
+            Positioned(
+              top: 48,
+              right: 16,
+              child: SafeArea(
+                child: FloatingActionButton.small(
+                  heroTag: 'debugScreenViewer',
+                  onPressed: _openDebugViewer,
+                  tooltip: 'Debug: screen viewer',
+                  child: const Icon(Icons.bug_report_outlined),
                 ),
-              )
-            : const SizedBox.shrink(),
+              ),
+            ),
+        ],
       ),
     );
   }

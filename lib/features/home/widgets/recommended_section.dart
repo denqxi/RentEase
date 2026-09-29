@@ -4,13 +4,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
+import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../profile/cubit/profile_cubit.dart';
 import '../../registration/model/user_role.dart';
-import '../../../shared/widgets/guest_access_sheet.dart';
 import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
 import '../view/property_detail_screen.dart';
 import 'listing_card_large.dart';
+import 'nearby_section.dart' show openPropertyDetail;
 
 /// "Recommended for you" horizontal scroll section.
 class RecommendedSection extends StatelessWidget {
@@ -50,16 +51,20 @@ class RecommendedSection extends StatelessWidget {
                 }
                 cubit.toggleSaved(listings[i].id);
               },
-              onTap: () => Navigator.of(ctx).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => PropertyDetailScreen(
-                    property: MockData.properties.firstWhere(
-                      (p) => p['propertyId'] == listings[i].id,
-                    ),
-                    isGuest: isGuest,
-                  ),
-                ),
-              ),
+              // See NearbySection.onTap — guests have no real match/detail
+              // to fetch, so their tap goes straight to MockData.
+              onTap: isGuest
+                  ? () => Navigator.of(ctx).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => PropertyDetailScreen(
+                          property: MockData.properties.firstWhere(
+                            (p) => p['propertyId'] == listings[i].id,
+                          ),
+                          isGuest: true,
+                        ),
+                      ),
+                    )
+                  : () => openPropertyDetail(ctx, cubit, listings[i].id),
             ),
           ),
         ),
