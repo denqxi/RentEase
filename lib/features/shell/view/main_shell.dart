@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../features/activity/model/activity_item.dart';
 import '../../../features/registration/model/user_role.dart';
+import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../activity/cubit/activity_cubit.dart';
 import '../../activity/view/activity_screen.dart';
 import '../../home/cubit/home_cubit.dart';
@@ -15,18 +16,22 @@ import '../cubit/shell_cubit.dart';
 import '../widgets/floating_nav_bar.dart';
 
 class MainShell extends StatelessWidget {
-  const MainShell({super.key});
+  const MainShell({this.sessionRole = UserRole.tenant, super.key});
+
+  final UserRole sessionRole;
 
   @override
   Widget build(BuildContext context) {
+    final isGuest = sessionRole == UserRole.guest;
+
     return MultiBlocProvider(
       providers: <BlocProvider>[
-        BlocProvider<HomeCubit>(create: (_) => HomeCubit()),
+        BlocProvider<HomeCubit>(create: (_) => HomeCubit(isGuest: isGuest)),
         BlocProvider<ActivityCubit>(
           create: (_) => ActivityCubit(initialItems: ActivityItem.samples),
         ),
         BlocProvider<ProfileCubit>(
-          create: (_) => ProfileCubit(userRole: UserRole.tenant),
+          create: (_) => ProfileCubit(userRole: sessionRole),
         ),
         BlocProvider<ShellCubit>(create: (_) => ShellCubit()),
       ],
@@ -67,7 +72,16 @@ class _ShellView extends StatelessWidget {
       bottomNavigationBar: FloatingNavBar(
         items: _items,
         selectedIndex: tab.index,
-        onTap: (i) => context.read<ShellCubit>().selectTab(ShellTab.values[i]),
+        onTap: (i) {
+          final isGuest =
+              context.read<ProfileCubit>().state.userRole == UserRole.guest;
+          // Inquiries (2), Alerts (3), Profile (4) require an account.
+          if (isGuest && i >= 2) {
+            GuestAccessSheet.show(context);
+            return;
+          }
+          context.read<ShellCubit>().selectTab(ShellTab.values[i]);
+        },
       ),
     );
   }

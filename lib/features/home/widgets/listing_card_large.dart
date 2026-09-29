@@ -12,12 +12,14 @@ class ListingCardLarge extends StatelessWidget {
   const ListingCardLarge({
     required this.listing,
     required this.onSavedToggle,
+    this.isGuest = false,
     this.onTap,
     super.key,
   });
 
   final Listing listing;
   final VoidCallback onSavedToggle;
+  final bool isGuest;
   final VoidCallback? onTap;
 
   @override
@@ -41,7 +43,11 @@ class ListingCardLarge extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            _Photo(listing: listing, onSavedToggle: onSavedToggle),
+            _Photo(
+              listing: listing,
+              isGuest: isGuest,
+              onSavedToggle: onSavedToggle,
+            ),
             _Details(listing: listing),
           ],
         ),
@@ -51,10 +57,15 @@ class ListingCardLarge extends StatelessWidget {
 }
 
 class _Photo extends StatelessWidget {
-  const _Photo({required this.listing, required this.onSavedToggle});
+  const _Photo({
+    required this.listing,
+    required this.onSavedToggle,
+    this.isGuest = false,
+  });
 
   final Listing listing;
   final VoidCallback onSavedToggle;
+  final bool isGuest;
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +108,7 @@ class _Photo extends StatelessWidget {
             child: MatchBadge(
               percent: listing.matchPercent,
               showLabel: true,
+              isLocked: isGuest,
             ),
           ),
           // Heart top-right

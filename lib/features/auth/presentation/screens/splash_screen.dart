@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 
+import '../../../../features/onboarding/model/onboarding_page_data.dart';
+
+/// Splash screen that plays the introductory video and pre-caches
+/// the onboarding hero assets in the background to ensure zero jank and
+/// instantaneous 60/120fps rendering on real devices.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({required this.onComplete, super.key});
 
@@ -9,119 +15,98 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _fadeAnimation;
-  late final Animation<double> _scaleAnimation;
-  late final Animation<double> _glowAnimation;
+class _SplashScreenState extends State<SplashScreen> {
+  VideoPlayerController? _controller;
+  bool _isInitialized = false;
+  bool _hasCompleted = false;
 
   @override
   void initState() {
     super.initState();
+    _initVideo();
+  }
 
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    );
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Warm up and pre-cache all onboarding images into GPU memory
+    // during the splash video so there is zero frame drop when swiping.
+    _precacheOnboardingImages();
+  }
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+  void _precacheOnboardingImages() {
+    for (final page in OnboardingPageData.pages) {
+      precacheImage(AssetImage(page.imageAsset), context);
+    }
+  }
 
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+  Future<void> _initVideo() async {
+    final controller = VideoPlayerController.asset('assets/images/splash.mp4');
+    _controller = controller;
 
-    _glowAnimation = Tween<double>(begin: 0.2, end: 0.7).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    try {
+      await controller.initialize();
+      if (!mounted) {
+        controller.dispose();
+        return;
+      }
 
-    _controller.repeat(reverse: true);
+      setState(() {
+        _isInitialized = true;
+      });
 
-    Future.delayed(const Duration(seconds: 3), () {
-      if (!mounted) return;
-      widget.onComplete();
-    });
+      controller.play();
+
+      controller.addListener(() {
+        if (!mounted || _hasCompleted) return;
+        if (controller.value.position >= controller.value.duration &&
+            !controller.value.isPlaying) {
+          _finishSplash();
+        }
+      });
+
+      // Fallback timer in case video duration is long or listener missed end
+      final duration = controller.value.duration;
+      Future.delayed(duration + const Duration(milliseconds: 300), () {
+        _finishSplash();
+      });
+    } catch (e) {
+      debugPrint('Error loading splash video: $e');
+      // If video fails to load, proceed after a fallback delay
+      Future.delayed(const Duration(seconds: 2), () {
+        _finishSplash();
+      });
+    }
+  }
+
+  void _finishSplash() {
+    if (_hasCompleted || !mounted) return;
+    _hasCompleted = true;
+    _controller?.pause();
+    widget.onComplete();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final controller = _controller;
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          AnimatedBuilder(
-            animation: _controller,
-            builder: (_, __) {
-              return Stack(
-                children: [
-                  Positioned(
-                    top: 40,
-                    right: -30,
-                    child: Opacity(
-                      opacity: _glowAnimation.value,
-                      child: Container(
-                        width: 180,
-                        height: 180,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(90),
-                          gradient: const RadialGradient(
-                            colors: [Color(0x33A7D8FF), Color(0x00FFFFFF)],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 30,
-                    left: -40,
-                    child: Opacity(
-                      opacity: _glowAnimation.value,
-                      child: Container(
-                        width: 220,
-                        height: 220,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(110),
-                          gradient: const RadialGradient(
-                            colors: [Color(0x22A7D8FF), Color(0x00FFFFFF)],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-          Center(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: Image.asset(
-                  'assets/images/logo (2).png',
-                  width: 220,
-                  height: 220,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const Icon(
-                    Icons.home_work_rounded,
-                    size: 120,
-                    color: Color(0xFF0F3D63),
-                  ),
+      body: Center(
+        child: _isInitialized && controller != null
+            ? RepaintBoundary(
+                child: AspectRatio(
+                  aspectRatio: controller.value.aspectRatio,
+                  child: VideoPlayer(controller),
                 ),
-              ),
-            ),
-          ),
-        ],
+              )
+            : const SizedBox.shrink(),
       ),
     );
   }

@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/router/app_router.dart';
+
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../registration/view/success_screen.dart';
 
 class VerificationPendingScreen extends StatelessWidget {
   const VerificationPendingScreen({super.key});
@@ -56,9 +57,10 @@ class VerificationPendingScreen extends StatelessWidget {
                     const Spacer(),
                     AppPrimaryButton(
                       label: 'Continue to Dashboard',
-                      onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                        AppRouter.landlordHome,
-                        (_) => false,
+                      onPressed: () => Navigator.of(context).pushReplacement(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SuccessScreen(isOwner: true),
+                        ),
                       ),
                     ),
                     SizedBox(height: AppSpacing.sm),

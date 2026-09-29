@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 
-/// Animated row of dots showing progress through the onboarding pages.
+/// Animated row of capsule bars showing progress through the onboarding pages.
 ///
-/// The active page is rendered as a wider pill; inactive pages are small dots.
-/// All size, width, and colour changes animate with a slight spring curve so
-/// the indicator feels alive rather than instant.
+/// The active page is a wider, sky-blue pill; inactive pages are short grey
+/// capsules. All transitions animate with a spring-like easing curve.
 class OnboardingPageIndicator extends StatelessWidget {
   const OnboardingPageIndicator({
     required this.count,
@@ -24,35 +22,39 @@ class OnboardingPageIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: <Widget>[
         for (int i = 0; i < count; i++)
-          _Dot(active: i == currentIndex, key: ValueKey<int>(i)),
+          _CapsuleBar(active: i == currentIndex, key: ValueKey<int>(i)),
       ],
     );
   }
 }
 
-class _Dot extends StatelessWidget {
-  const _Dot({required this.active, super.key});
+class _CapsuleBar extends StatelessWidget {
+  const _CapsuleBar({required this.active, super.key});
 
   final bool active;
 
-  // Active pill is wider and taller than inactive dots.
-  static const double _activeWidth = 28;
-  static const double _inactiveWidth = 8;
-  static const double _height = 8;
+  // Active bar is significantly wider and more prominent.
+  static const double _activeWidth = 36;
+  static const double _inactiveWidth = 16;
+  static const double _height = 6;
+
+  // Sky-blue for active, light grey for inactive.
+  static const Color _activeColor = Color(0xFF1A7BBF);
+  static const Color _inactiveColor = Color(0xFFCBDFED);
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 380),
+      duration: const Duration(milliseconds: 350),
       curve: Curves.easeInOutCubic,
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+      margin: const EdgeInsets.only(right: AppSpacing.sm),
       height: _height,
       width: active ? _activeWidth : _inactiveWidth,
       decoration: BoxDecoration(
-        color: active ? AppColors.primary : context.appColors.indicatorInactive,
+        color: active ? _activeColor : _inactiveColor,
         borderRadius: BorderRadius.circular(_height / 2),
       ),
     );

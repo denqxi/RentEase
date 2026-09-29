@@ -7,8 +7,8 @@ import '../../activity/view/activity_screen.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
 import '../../landlord_home/view/landlord_home_screen.dart';
 import '../../landlord_matches/view/landlord_matches_screen.dart';
-import '../../landlord_saved/view/landlord_saved_screen.dart';
 import '../../profile/view/owner_profile_screen.dart';
+import '../../../core/router/app_router.dart';
 import '../cubit/shell_cubit.dart';
 import '../widgets/floating_nav_bar.dart';
 
@@ -38,7 +38,8 @@ class _LandlordShellView extends StatelessWidget {
   static const List<Widget> _screens = <Widget>[
     LandlordHomeScreen(),
     LandlordMatchesScreen(),
-    LandlordSavedScreen(),
+    // index 2 is the Add shortcut — no persistent screen needed
+    SizedBox.shrink(),
     ActivityScreen(),
     OwnerProfileScreen(),
   ];
@@ -46,7 +47,7 @@ class _LandlordShellView extends StatelessWidget {
   static const List<FloatingNavBarItem> _items = <FloatingNavBarItem>[
     FloatingNavBarItem(icon: Icons.home_rounded,          label: 'Home'),
     FloatingNavBarItem(icon: Icons.favorite_rounded,      label: 'Matches'),
-    FloatingNavBarItem(icon: Icons.bookmark_rounded,      label: 'Saved'),
+    FloatingNavBarItem(icon: Icons.add_circle_rounded,    label: 'Add'),
     FloatingNavBarItem(icon: Icons.notifications_rounded, label: 'Alerts'),
     FloatingNavBarItem(icon: Icons.person_rounded,        label: 'Profile'),
   ];
@@ -64,7 +65,14 @@ class _LandlordShellView extends StatelessWidget {
       bottomNavigationBar: FloatingNavBar(
         items: _items,
         selectedIndex: tab.index,
-        onTap: (i) => context.read<ShellCubit>().selectTab(ShellTab.values[i]),
+        onTap: (i) {
+          if (i == 2) {
+            // "Add" shortcut — navigate to Add Property without changing tab
+            Navigator.of(context).pushNamed(AppRouter.addProperty);
+          } else {
+            context.read<ShellCubit>().selectTab(ShellTab.values[i]);
+          }
+        },
       ),
     );
   }

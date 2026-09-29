@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/match_score_card.dart';
-import '../cubit/tenant_detail_cubit.dart';
 import '../model/tenant_detail.dart';
 
 /// Full-screen detail view for a tenant applicant (landlord perspective).
@@ -17,22 +15,17 @@ class TenantDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<TenantDetailCubit>(
-      create: (_) => TenantDetailCubit(detail: detail),
-      child: const _TenantDetailView(),
-    );
+    return _TenantDetailView(detail: detail);
   }
 }
 
 class _TenantDetailView extends StatelessWidget {
-  const _TenantDetailView();
+  const _TenantDetailView({required this.detail});
+
+  final TenantDetail detail;
 
   @override
   Widget build(BuildContext context) {
-    final detail = context
-        .select<TenantDetailCubit, TenantDetail>((c) => c.state.detail);
-    final cubit = context.read<TenantDetailCubit>();
-
     return Scaffold(
       backgroundColor: context.appColors.surface,
       body: Stack(
@@ -94,11 +87,7 @@ class _TenantDetailView extends StatelessWidget {
             left: 0,
             right: 0,
             bottom: 0,
-            child: _BottomBar(
-              isSaved: detail.isSaved,
-              onSaveToggle: cubit.toggleSaved,
-              tenantName: detail.name,
-            ),
+            child: _BottomBar(tenantName: detail.name),
           ),
         ],
       ),
@@ -324,14 +313,8 @@ class _TenantRatingsSection extends StatelessWidget {
 }
 
 class _BottomBar extends StatelessWidget {
-  const _BottomBar({
-    required this.isSaved,
-    required this.onSaveToggle,
-    required this.tenantName,
-  });
+  const _BottomBar({required this.tenantName});
 
-  final bool isSaved;
-  final VoidCallback onSaveToggle;
   final String tenantName;
 
   @override
@@ -347,48 +330,25 @@ class _BottomBar extends StatelessWidget {
         color: context.appColors.surface,
         border: Border(top: BorderSide(color: context.appColors.fieldBorder)),
       ),
-      child: Row(
-        children: <Widget>[
-          GestureDetector(
-            onTap: onSaveToggle,
-            child: Container(
-              width: AppSizes.buttonHeight,
-              height: AppSizes.buttonHeight,
-              decoration: BoxDecoration(
-                color: context.appColors.surface,
-                borderRadius: BorderRadius.circular(AppRadii.button),
-                border: Border.all(color: context.appColors.fieldBorder),
-              ),
-              child: Icon(
-                isSaved ? Icons.favorite_rounded : Icons.favorite_border,
-                color: isSaved ? AppColors.destructive : context.appColors.textSecondary,
-                size: 22,
-              ),
+      child: SizedBox(
+        height: AppSizes.buttonHeight,
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Invitation sent to $tenantName!'),
+              backgroundColor: context.appColors.ink,
             ),
           ),
-          SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: SizedBox(
-              height: AppSizes.buttonHeight,
-              child: ElevatedButton(
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Invitation sent to $tenantName!'),
-                    backgroundColor: context.appColors.ink,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.appColors.ink,
-                  foregroundColor: AppColors.onInk,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadii.button),
-                  ),
-                ),
-                child: Text('Contact tenant', style: AppTextStyles.buttonLabel),
-              ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: context.appColors.ink,
+            foregroundColor: AppColors.onInk,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadii.button),
             ),
           ),
-        ],
+          child: Text('Contact tenant', style: AppTextStyles.buttonLabel),
+        ),
       ),
     );
   }

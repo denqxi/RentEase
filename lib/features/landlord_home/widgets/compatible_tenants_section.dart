@@ -19,7 +19,6 @@ class CompatibleTenantsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final tenants = context
         .select<LandlordHomeCubit, List<Tenant>>((c) => c.state.compatible);
-    final cubit = context.read<LandlordHomeCubit>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,7 +47,6 @@ class CompatibleTenantsSection extends StatelessWidget {
           separatorBuilder: (_, _) => SizedBox(height: AppSpacing.sm),
           itemBuilder: (ctx, i) => TenantCard(
             tenant: tenants[i],
-            onSaveToggle: () => cubit.toggleSaved(tenants[i].id),
             onTap: () => Navigator.of(ctx).push(
               MaterialPageRoute<void>(
                 builder: (_) =>

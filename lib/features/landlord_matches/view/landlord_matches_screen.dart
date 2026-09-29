@@ -18,7 +18,6 @@ class LandlordMatchesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final tenants = context
         .select<LandlordHomeCubit, List<Tenant>>((c) => c.state.allByMatch);
-    final cubit = context.read<LandlordHomeCubit>();
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
@@ -58,7 +57,6 @@ class LandlordMatchesScreen extends StatelessWidget {
                 separatorBuilder: (_, _) => SizedBox(height: AppSpacing.sm),
                 itemBuilder: (ctx, i) => TenantCard(
                   tenant: tenants[i],
-                  onSaveToggle: () => cubit.toggleSaved(tenants[i].id),
                   onTap: () => Navigator.of(ctx).push(
                     MaterialPageRoute<void>(
                       builder: (_) =>

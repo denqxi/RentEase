@@ -4,6 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
+import '../../profile/cubit/profile_cubit.dart';
+import '../../registration/model/user_role.dart';
+import '../../../shared/widgets/guest_access_sheet.dart';
 import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
 import '../view/property_detail_screen.dart';
@@ -18,11 +21,17 @@ class RecommendedSection extends StatelessWidget {
     final listings =
         context.select<HomeCubit, List<Listing>>((c) => c.state.recommended);
     final cubit = context.read<HomeCubit>();
+    final isGuest = context.select<ProfileCubit, bool>(
+      (c) => c.state.userRole == UserRole.guest,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _SectionHeader(title: 'Recommended for you', onSeeAll: () {}),
+        _SectionHeader(
+          title: isGuest ? 'Popular listings' : 'Recommended for you',
+          onSeeAll: () {},
+        ),
         SizedBox(height: AppSpacing.sm),
         SizedBox(
           height: 270,
@@ -33,13 +42,21 @@ class RecommendedSection extends StatelessWidget {
             separatorBuilder: (_, _) => SizedBox(width: AppSpacing.md),
             itemBuilder: (ctx, i) => ListingCardLarge(
               listing: listings[i],
-              onSavedToggle: () => cubit.toggleSaved(listings[i].id),
+              isGuest: isGuest,
+              onSavedToggle: () {
+                if (isGuest) {
+                  GuestAccessSheet.show(ctx);
+                  return;
+                }
+                cubit.toggleSaved(listings[i].id);
+              },
               onTap: () => Navigator.of(ctx).push(
                 MaterialPageRoute<void>(
                   builder: (_) => PropertyDetailScreen(
                     property: MockData.properties.firstWhere(
                       (p) => p['propertyId'] == listings[i].id,
                     ),
+                    isGuest: isGuest,
                   ),
                 ),
               ),

@@ -14,6 +14,7 @@ class Listing extends Equatable {
     required this.beds,
     required this.baths,
     required this.matchPercent,
+    this.amenityScore = 0,
     this.sqft,
     this.isSaved = false,
     this.imageSeed = 1,
@@ -26,6 +27,7 @@ class Listing extends Equatable {
   final int beds;
   final int baths;
   final int matchPercent;
+  final int amenityScore;
   final int? sqft;
   final bool isSaved;
 
@@ -46,6 +48,7 @@ class Listing extends Equatable {
       beds: beds,
       baths: baths,
       matchPercent: matchPercent,
+      amenityScore: amenityScore,
       sqft: sqft,
       isSaved: isSaved ?? this.isSaved,
       imageSeed: imageSeed,
@@ -66,8 +69,25 @@ class Listing extends Equatable {
         beds: 1,
         baths: 1,
         matchPercent: ((p['tenantCi'] as num) * 100).round(),
+        amenityScore: (p['amenityScore'] as num?)?.toInt() ?? 0,
         imageSeed: i % 5 + 1,
         isSaved: p['propertyId'] == 'bh002',
+      ),
+  ];
+
+  /// Guest browse pool — all listed properties, no TOPSIS filtering.
+  static final List<Listing> guestSamples = [
+    for (final (i, p) in MockData.properties.indexed)
+      Listing(
+        id: p['propertyId'] as String,
+        title: p['title'] as String,
+        location: p['address'] as String,
+        pricePerMonth: (p['monthlyRent'] as num).toInt(),
+        beds: 1,
+        baths: 1,
+        matchPercent: 0,
+        amenityScore: (p['amenityScore'] as num?)?.toInt() ?? 0,
+        imageSeed: i % 5 + 1,
       ),
   ];
 
@@ -80,6 +100,7 @@ class Listing extends Equatable {
         beds,
         baths,
         matchPercent,
+        amenityScore,
         sqft,
         isSaved,
         imageSeed,

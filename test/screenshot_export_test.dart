@@ -43,7 +43,6 @@ import 'package:rentease/features/landlord_home/model/tenant_detail.dart';
 import 'package:rentease/features/landlord_home/view/landlord_home_screen.dart';
 import 'package:rentease/features/landlord_home/view/tenant_detail_screen.dart';
 import 'package:rentease/features/landlord_matches/view/landlord_matches_screen.dart';
-import 'package:rentease/features/landlord_saved/view/landlord_saved_screen.dart';
 import 'package:rentease/features/onboarding/view/onboarding_screen.dart';
 import 'package:rentease/features/owner/view/edit_owner_topsis_screen.dart';
 import 'package:rentease/features/owner/view/find_tenants_screen.dart';
@@ -230,9 +229,8 @@ void main() {
     );
     await _capture(
       tester,
-      '52_owner_saved',
-      BlocProvider<LandlordHomeCubit>(
-          create: (_) => LandlordHomeCubit(), child: const LandlordSavedScreen()),
+      '52_owner_add_property',
+      const AddPropertyScreen(),
     );
     await _capture(
         tester, '53_owner_tenant_detail', const TenantDetailScreen(detail: TenantDetail.sample));

@@ -19,9 +19,6 @@ class LandlordHomeState extends Equatable {
   /// Top matches shown on the home screen compatible-tenants section.
   List<Tenant> get compatible => allByMatch;
 
-  /// Only saved tenants.
-  List<Tenant> get saved => tenants.where((t) => t.isSaved).toList();
-
   LandlordHomeState copyWith({
     List<Tenant>? tenants,
     LandlordProperty? property,
