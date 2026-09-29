@@ -1,20 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
-import '../../../shared/widgets/ci_score_pill.dart';
 import '../../../shared/widgets/phase_badge.dart';
-import 'phase1_owner_screen.dart';
-import 'phase2_chat_owner_screen.dart';
+import '../../auth/presentation/current_uid.dart';
+import '../../inquiry/cubit/inquiry_list_cubit.dart';
+import '../../inquiry/data/repositories/inquiry_repository_impl.dart';
+import '../../inquiry/model/inquiry_summary.dart';
+import '../../inquiry/view/inquiry_thread_screen.dart';
 
+/// Owner inbox — inquiries tenants sent to this owner's properties, live.
+/// Sorted by latest activity; owner-side discovery is filtering-only
+/// (CLAUDE.md), so tenants carry no ranking score here.
 class OwnerInquiriesScreen extends StatelessWidget {
   const OwnerInquiriesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final uid = currentUidOrNull(context);
+    final body = uid == null
+        ? const _InboxMessage('Sign in to see your inquiries.')
+        : BlocProvider(
+            create: (_) => InquiryListCubit(
+              uid: uid,
+              isOwner: true,
+              repository: InquiryRepositoryImpl(),
+            ),
+            child: const _OwnerInquiryTabs(),
+          );
+
     return DefaultTabController(
       length: 3,
       child: Scaffold(
@@ -35,178 +52,111 @@ class OwnerInquiriesScreen extends StatelessWidget {
             indicatorColor: AppColors.accent,
             labelColor: AppColors.accent,
             unselectedLabelColor: context.appColors.textSecondary,
-            tabs: [
+            tabs: const [
               Tab(text: 'Incoming'),
               Tab(text: 'Sent'),
               Tab(text: 'History'),
             ],
           ),
         ),
-        body: TabBarView(
-          children: [
-            _IncomingTab(),
-            _SentTab(),
-            _HistoryTab(),
-          ],
+        body: body,
+      ),
+    );
+  }
+}
+
+class _OwnerInquiryTabs extends StatelessWidget {
+  const _OwnerInquiryTabs();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<InquiryListCubit>().state;
+    if (state.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (state.errorMessage != null && state.items.isEmpty) {
+      return _InboxMessage(state.errorMessage!);
+    }
+    return TabBarView(
+      children: [
+        _InquiryList(
+          items: state.active,
+          emptyText: 'No incoming inquiries yet.',
+        ),
+        // Owner-initiated invitations ("Invite" on Find Tenants) aren't
+        // built yet — every inquiry today is tenant-initiated.
+        const _InboxMessage('No sent invitations yet.'),
+        _InquiryList(items: state.resolved, emptyText: 'No past inquiries yet.'),
+      ],
+    );
+  }
+}
+
+class _InboxMessage extends StatelessWidget {
+  const _InboxMessage(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Text(
+          text,
+          style: AppTextStyles.body(context),
+          textAlign: TextAlign.center,
         ),
       ),
     );
   }
 }
 
-class _IncomingTab extends StatefulWidget {
-  @override
-  State<_IncomingTab> createState() => _IncomingTabState();
-}
+class _InquiryList extends StatelessWidget {
+  const _InquiryList({required this.items, required this.emptyText});
 
-class _IncomingTabState extends State<_IncomingTab> {
-  void _decline(Map<String, dynamic> inquiry) {
-    setState(() => MockData.declineInquiry(inquiry));
-  }
+  final List<InquirySummary> items;
+  final String emptyText;
 
   @override
   Widget build(BuildContext context) {
-    final sorted = [...MockData.ownerInquiries]
-      ..sort((a, b) => (b['tenantCiSnapshot'] as double)
-          .compareTo(a['tenantCiSnapshot'] as double));
-
-    if (sorted.isEmpty) {
-      return Center(
-        child: Text('No incoming inquiries.', style: AppTextStyles.body(context)),
-      );
-    }
-
+    if (items.isEmpty) return _InboxMessage(emptyText);
     return ListView.separated(
       padding: const EdgeInsets.all(AppSpacing.md),
-      itemCount: sorted.length,
+      itemCount: items.length,
       separatorBuilder: (_, _) => SizedBox(height: AppSpacing.sm),
-      itemBuilder: (ctx, i) => _OwnerInquiryCard(
-        inquiry: sorted[i],
-        onDecline: () => _decline(sorted[i]),
-        // Re-read MockData after Accept flips the phase or a chat books it.
-        onReturned: () => setState(() {}),
-      ),
-    );
-  }
-}
-
-class _SentTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text('No sent invitations yet.', style: AppTextStyles.body(context)),
-    );
-  }
-}
-
-class _HistoryTab extends StatelessWidget {
-  Color _statusColor(BuildContext context, String status) => switch (status) {
-        'Booked' => AppColors.accent,
-        'Accepted' => AppColors.matchHigh,
-        'Declined' => AppColors.destructive,
-        _ => context.appColors.textSecondary,
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    final history = MockData.ownerInquiryHistory;
-
-    if (history.isEmpty) {
-      return Center(
-        child: Text('No past inquiries yet.', style: AppTextStyles.body(context)),
-      );
-    }
-
-    return ListView.separated(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      itemCount: history.length,
-      separatorBuilder: (_, _) => SizedBox(height: AppSpacing.sm),
-      itemBuilder: (ctx, i) {
-        final entry = history[i];
-        final status = entry['status'] as String;
-        final color = _statusColor(context, status);
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: context.appColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: context.appColors.fieldBorder, width: 0.5),
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: AppColors.accentSoft,
-                child: Text(
-                  entry['tenantInitials'] as String,
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: context.appColors.ink,
-                  ),
-                ),
-              ),
-              SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      entry['tenantName'] as String,
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: context.appColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      '${entry['propertyName']} · ${entry['date']}',
-                      style: AppTextStyles.caption(context),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+      itemBuilder: (_, i) => _OwnerInquiryCard(summary: items[i]),
     );
   }
 }
 
 class _OwnerInquiryCard extends StatelessWidget {
-  const _OwnerInquiryCard({
-    required this.inquiry,
-    required this.onDecline,
-    required this.onReturned,
-  });
+  const _OwnerInquiryCard({required this.summary});
 
-  final Map<String, dynamic> inquiry;
-  final VoidCallback onDecline;
-  final VoidCallback onReturned;
+  final InquirySummary summary;
 
   @override
   Widget build(BuildContext context) {
-    final int phase = inquiry['stage'] as int;
+    final inquiry = summary.inquiry;
+    final phase = inquiry.stage.toInt();
+    final resolvedLabel = switch (inquiry.status) {
+      'booked' => 'Booked',
+      'declined' => 'Declined',
+      'closed' => 'Closed',
+      _ => null,
+    };
+    final statusColor = switch (inquiry.status) {
+      'booked' => AppColors.accent,
+      'declined' => AppColors.destructive,
+      _ => context.appColors.textSecondary,
+    };
+
+    void open() => Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            InquiryThreadScreen(inquiryId: inquiry.inquiryId, isOwner: true),
+      ),
+    );
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -224,7 +174,7 @@ class _OwnerInquiryCard extends StatelessWidget {
                 radius: 20,
                 backgroundColor: AppColors.accentSoft,
                 child: Text(
-                  inquiry['tenantInitials'] as String,
+                  summary.counterpartInitials,
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,
@@ -238,87 +188,83 @@ class _OwnerInquiryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            inquiry['tenantName'] as String,
-                            style: TextStyle(
-                              fontFamily: 'DM Sans',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: context.appColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                        CiScorePill(
-                          score: (inquiry['tenantCiSnapshot'] as num).toDouble(),
-                          isOwner: true,
-                        ),
-                      ],
+                    Text(
+                      summary.counterpartName,
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: context.appColors.textPrimary,
+                      ),
                     ),
-                    Text(inquiry['propertyName'] as String, style: AppTextStyles.caption(context)),
+                    Text(
+                      '${summary.propertyTitle} · '
+                      '${inquiryDateLabel(inquiry.updatedAt?.toDate())}',
+                      style: AppTextStyles.caption(context),
+                    ),
                   ],
                 ),
               ),
               SizedBox(width: AppSpacing.sm),
-              PhaseBadge(phase: phase),
+              if (resolvedLabel != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    resolvedLabel,
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: statusColor,
+                    ),
+                  ),
+                )
+              else
+                PhaseBadge(phase: phase),
             ],
           ),
           SizedBox(height: AppSpacing.sm),
-          if (phase == 1)
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    label: 'Accept',
-                    isSmall: true,
-                    onPressed: () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => Phase1OwnerScreen(inquiry: inquiry),
-                        ),
-                      );
-                      onReturned();
-                    },
-                  ),
-                ),
-                SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: AppButton(
-                    label: 'Decline',
-                    variant: AppButtonVariant.destructiveOutline,
-                    isSmall: true,
-                    onPressed: onDecline,
-                  ),
-                ),
-              ],
+          if (resolvedLabel != null)
+            _LinkButton(
+              label: inquiry.status == 'booked' ? 'View & rate' : 'View',
+              onTap: open,
             )
+          else if (phase == 1)
+            AppButton(label: 'Review inquiry', isSmall: true, onPressed: open)
           else
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton(
-                onPressed: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => Phase2ChatOwnerScreen(inquiry: inquiry),
-                    ),
-                  );
-                  onReturned();
-                },
-                style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                child: Text(
-                  'Open chat',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 14,
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
+            _LinkButton(label: 'Open chat', onTap: open),
         ],
+      ),
+    );
+  }
+}
+
+class _LinkButton extends StatelessWidget {
+  const _LinkButton({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton(
+        onPressed: onTap,
+        style: TextButton.styleFrom(padding: EdgeInsets.zero),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'DM Sans',
+            fontSize: 14,
+            color: AppColors.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

@@ -174,7 +174,11 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/matches/$(request.resource.data.matchId))
              .data.propertyId == request.resource.data.propertyId
         && request.resource.data.stage == 1
-        && request.resource.data.ownerDecision == 'pending';
+        && request.resource.data.ownerDecision == 'pending'
+        // No new inquiries on a fully booked / unlisted property — a match
+        // row can outlive a booking until the tenant's next filtering pass.
+        && get(/databases/$(database)/documents/properties/$(request.resource.data.propertyId))
+             .data.isAvailable == true;
       // Owner decides (accept unlocks stage 2); participants update status.
       allow update: if isParticipant()
         && request.resource.data.tenantId == resource.data.tenantId

@@ -1,46 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
+import '../../../core/firestore/models/models.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
+import '../../auth/presentation/current_uid.dart';
 import '../../owner_onboarding/view/add_property_screen.dart';
+import '../cubit/owner_properties_cubit.dart';
+import '../data/repositories/owner_property_repository_impl.dart';
 import 'edit_property_screen.dart';
 
-class OwnerPropertiesScreen extends StatefulWidget {
+/// "My properties" — the owner's real listings, live from Firestore, with
+/// availability (list / pause / mark booked / relist) and editing.
+class OwnerPropertiesScreen extends StatelessWidget {
   const OwnerPropertiesScreen({super.key});
 
   @override
-  State<OwnerPropertiesScreen> createState() => _OwnerPropertiesScreenState();
+  Widget build(BuildContext context) {
+    final uid = currentUidOrNull(context);
+    if (uid == null) {
+      return const _PropertiesScaffold(
+        body: Center(child: Text('Sign in to manage your properties.')),
+      );
+    }
+    return BlocProvider(
+      create: (_) => OwnerPropertiesCubit(
+        ownerId: uid,
+        repository: OwnerPropertyRepositoryImpl(),
+      ),
+      child: const _OwnerPropertiesView(),
+    );
+  }
 }
 
-class _OwnerPropertiesScreenState extends State<OwnerPropertiesScreen> {
-  void _setStatus(Map<String, dynamic> property, String status) {
-    setState(() {
-      property['vacancyStatus'] = status;
-      // Keep the schema field in sync with the 3-state UI status.
-      property['isAvailable'] = status == 'available';
-    });
-  }
+class _PropertiesScaffold extends StatelessWidget {
+  const _PropertiesScaffold({required this.body});
 
-  Future<void> _editProperty(Map<String, dynamic> property) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => EditPropertyScreen(property: property),
-      ),
-    );
-    if (mounted) setState(() {});
-  }
+  final Widget body;
 
   @override
   Widget build(BuildContext context) {
-    final properties = MockData.properties;
-    final availableCount = properties
-        .where((p) => p['vacancyStatus'] == 'available')
-        .length;
-
     return Scaffold(
       backgroundColor: context.appColors.surface,
       appBar: AppBar(
@@ -60,8 +62,8 @@ class _OwnerPropertiesScreenState extends State<OwnerPropertiesScreen> {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const AddPropertyScreen()),
             ),
-            icon: Icon(Icons.add_rounded, color: AppColors.primary, size: 18),
-            label: Text(
+            icon: const Icon(Icons.add_rounded, color: AppColors.primary, size: 18),
+            label: const Text(
               'Add',
               style: TextStyle(
                 fontFamily: 'DM Sans',
@@ -73,64 +75,117 @@ class _OwnerPropertiesScreenState extends State<OwnerPropertiesScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Metrics ──────────────────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: _MetricCard(
-                    label: 'Listings',
-                    value: '${properties.length}',
-                    color: AppColors.accent,
-                  ),
-                ),
-                SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: _MetricCard(
-                    label: 'Available',
-                    value: '$availableCount',
-                    color: AppColors.matchHigh,
-                  ),
-                ),
-                SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: _MetricCard(
-                    label: 'Inquiries',
-                    value: '${MockData.ownerInquiries.length}',
-                    color: AppColors.matchMedium,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: AppSpacing.lg),
+      body: body,
+    );
+  }
+}
 
-            Text(
-              'Your properties',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: context.appColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: AppSpacing.sm),
-            ...properties.map(
-              (p) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                child: _PropertyCard(
-                  property: p,
-                  onStatusChange: (status) => _setStatus(p, status),
-                  onEdit: () => _editProperty(p),
-                ),
-              ),
-            ),
-          ],
+class _OwnerPropertiesView extends StatelessWidget {
+  const _OwnerPropertiesView();
+
+  Future<void> _edit(BuildContext context, PropertyDoc property) async {
+    final cubit = context.read<OwnerPropertiesCubit>();
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => EditPropertyScreen(
+          property: property,
+          onSave: (fields) =>
+              cubit.updateProperty(property.propertyId, fields),
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<OwnerPropertiesCubit, OwnerPropertiesState>(
+      listenWhen: (prev, curr) =>
+          curr.errorMessage != null && prev.errorMessage != curr.errorMessage,
+      listener: (context, state) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.errorMessage!),
+            backgroundColor: AppColors.destructive,
+          ),
+        );
+        context.read<OwnerPropertiesCubit>().clearError();
+      },
+      builder: (context, state) {
+        if (state.isLoading) {
+          return const _PropertiesScaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final cubit = context.read<OwnerPropertiesCubit>();
+        return _PropertiesScaffold(
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Metrics ────────────────────────────────────────────
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MetricCard(
+                        label: 'Listings',
+                        value: '${state.properties.length}',
+                        color: AppColors.accent,
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _MetricCard(
+                        label: 'Available',
+                        value: '${state.availableCount}',
+                        color: AppColors.matchHigh,
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _MetricCard(
+                        label: 'Open inquiries',
+                        value: '${state.openInquiries}',
+                        color: AppColors.matchMedium,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: AppSpacing.lg),
+                Text(
+                  'Your properties',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: context.appColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: AppSpacing.sm),
+                if (state.properties.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                    child: Text(
+                      'No listings yet. Tap "Add" to publish your first '
+                      'property.',
+                      style: AppTextStyles.body(context),
+                    ),
+                  ),
+                for (final p in state.properties)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: _PropertyCard(
+                      property: p,
+                      onStatusChange: (status) =>
+                          cubit.setVacancy(p.propertyId, status),
+                      onEdit: () => _edit(context, p),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -183,14 +238,14 @@ class _PropertyCard extends StatelessWidget {
     required this.onEdit,
   });
 
-  final Map<String, dynamic> property;
+  final PropertyDoc property;
   final ValueChanged<String> onStatusChange;
   final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
-    final int seed = (property['propertyId'] as String).hashCode % 5 + 1;
-    final String status = property['vacancyStatus'] as String;
+    final int seed = property.propertyId.hashCode % 5 + 1;
+    final String status = property.vacancyStatus;
 
     return Container(
       decoration: BoxDecoration(
@@ -215,7 +270,7 @@ class _PropertyCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  property['title'] as String,
+                  property.title,
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 15,
@@ -225,8 +280,8 @@ class _PropertyCard extends StatelessWidget {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  '${property['address']} · ₱${property['monthlyRent']}/mo · '
-                  '${property['amenityScore']} amenities',
+                  '${property.address} · ₱${property.monthlyRent}/mo · '
+                  '${property.amenityScore ?? property.amenityList.length} amenities',
                   style: AppTextStyles.caption(context),
                 ),
                 SizedBox(height: AppSpacing.sm + 2),

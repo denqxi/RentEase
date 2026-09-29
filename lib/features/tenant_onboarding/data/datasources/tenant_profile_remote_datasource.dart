@@ -19,6 +19,15 @@ class TenantProfileRemoteDataSource {
     return _doc(profile.userId).set(profile.toMap(), SetOptions(merge: true));
   }
 
+  /// Partial update — touches only [fields] (plus updatedAt), so an edit
+  /// screen can never clobber anything it doesn't own.
+  Future<void> updateFields(String uid, Map<String, dynamic> fields) {
+    return _doc(uid).update({
+      ...fields,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<TenantProfileDoc?> getProfile(String uid) async {
     final snap = await _doc(uid).get();
     if (!snap.exists) return null;

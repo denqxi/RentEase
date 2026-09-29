@@ -19,7 +19,7 @@ class HomeRepositoryImpl implements HomeRepository {
       // A match can outlive its property (delisted since filtering last
       // ran) — skip rather than show a broken card; the next
       // FilteringService.runFiltering() pass will clean the stale match up.
-      if (property == null) continue;
+      if (property == null || !property.isAvailable) continue;
       listings.add(
         Listing.fromMatch(match: match, property: property, imageSeed: i % 5 + 1),
       );
@@ -43,9 +43,60 @@ class HomeRepositoryImpl implements HomeRepository {
     final property = await _remote.fetchProperty(propertyId);
     if (property == null) return null;
 
-    final owner = await _remote.fetchUser(property.ownerId);
-    final ownerProfile = await _remote.fetchOwnerProfile(property.ownerId);
+    final (owner, ownerProfile) = await (
+      _remote.fetchUser(property.ownerId),
+      _remote.fetchOwnerProfile(property.ownerId),
+    ).wait;
+    return _propertyMap(property, match, owner, ownerProfile);
+  }
 
+  @override
+  Future<List<Map<String, dynamic>>> fetchSearchResults(String tenantId) async {
+    // Already ordered by tenantCi desc (see HomeRemoteDataSource).
+    final matches = await _remote.fetchEligibleMatches(tenantId);
+    final properties = await Future.wait(
+      matches.map((m) => _remote.fetchProperty(m.propertyId)),
+    );
+
+    // One owner can list several properties — fetch each owner once.
+    final ownerIds = {
+      for (final p in properties)
+        if (p != null) p.ownerId,
+    };
+    final owners = <String, (UserDoc?, OwnerProfileDoc?)>{};
+    await Future.wait(
+      ownerIds.map((id) async {
+        owners[id] = await (
+          _remote.fetchUser(id),
+          _remote.fetchOwnerProfile(id),
+        ).wait;
+      }),
+    );
+
+    return [
+      for (var i = 0; i < matches.length; i++)
+        if (properties[i] case final property? when property.isAvailable)
+          _propertyMap(
+            property,
+            matches[i],
+            owners[property.ownerId]?.$1,
+            owners[property.ownerId]?.$2,
+          ),
+    ];
+  }
+
+  @override
+  Future<TenantProfileDoc?> fetchTenantProfile(String tenantId) =>
+      _remote.fetchTenantProfile(tenantId);
+
+  /// The one property-map shape shared by the detail screen, Search and
+  /// Search's map view.
+  Map<String, dynamic> _propertyMap(
+    PropertyDoc property,
+    MatchDoc? match,
+    UserDoc? owner,
+    OwnerProfileDoc? ownerProfile,
+  ) {
     final ownerName = owner != null
         ? '${owner.firstName} ${owner.lastName}'.trim()
         : 'Property owner';
@@ -53,10 +104,13 @@ class HomeRepositoryImpl implements HomeRepository {
 
     return {
       'propertyId': property.propertyId,
+      'ownerId': property.ownerId,
+      // Needed to open an inquiry for this exact pairing (InquiryService).
+      'matchId': match?.matchId,
       'title': property.title,
       'address': property.address,
       'monthlyRent': property.monthlyRent,
-      'distance': match?.distanceKm ?? 0,
+      'distance': _roundKm(match?.distanceKm ?? 0),
       'amenityScore': property.amenityScore ?? property.amenityList.length,
       'tenantCi': match?.tenantCi ?? 0,
       'tenantRank': match?.tenantRank ?? 0,
@@ -72,10 +126,13 @@ class HomeRepositoryImpl implements HomeRepository {
       'memberSince': _formatMemberSince(owner?.createdAt?.toDate()),
       'propertyCount': ownerProfile?.propertyCount ?? 1,
       'amenityList': property.amenityList,
-      // Only eligible (bScore = 1) properties reach this screen from the
-      // home feed — CLAUDE.md rule 2/8: Send Inquiry is absent, never
-      // disabled, so there is no "outside preference" variant to render here.
-      'bScore': 1,
+      // From the real match: 0 if there is no eligible match (e.g. it went
+      // stale since the feed loaded), which hides Send Inquiry entirely —
+      // CLAUDE.md rule 2: absent, never disabled. A fully booked listing
+      // takes no new inquiries either.
+      'bScore': property.isAvailable ? (match?.bScore ?? 0) : 0,
+      // Set by Search's session filter only (local state, never saved —
+      // CLAUDE.md rule 3); false everywhere else.
       'isOutsidePreference': false,
       'vacancyStatus': property.vacancyStatus,
       'isAvailable': property.isAvailable,
@@ -83,6 +140,10 @@ class HomeRepositoryImpl implements HomeRepository {
       'longitude': property.location.longitude,
     };
   }
+
+  /// One decimal for display ("2.4 km") — the unrounded value is only needed
+  /// by FilteringService's LocationMatch, which reads the match doc directly.
+  static double _roundKm(num km) => (km * 10).round() / 10;
 
   String _initialsFor(String? first, String? last) {
     final f = (first?.isNotEmpty ?? false) ? first![0] : '';

@@ -15,9 +15,16 @@ import 'property_detail_screen.dart';
 /// the match-tier color psychology (green = strong, amber = moderate,
 /// red = weak). Tap a pin to preview, tap the preview for full details.
 class MapViewScreen extends StatefulWidget {
-  const MapViewScreen({required this.properties, super.key});
+  const MapViewScreen({
+    required this.properties,
+    this.isGuest = false,
+    super.key,
+  });
 
   final List<Map<String, dynamic>> properties;
+
+  /// Opens pins' detail screens in the gated guest mode.
+  final bool isGuest;
 
   @override
   State<MapViewScreen> createState() => _MapViewScreenState();
@@ -159,6 +166,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                                 MaterialPageRoute<void>(
                                   builder: (_) => PropertyDetailScreen(
                                     property: properties[_selectedIndex!],
+                                    isGuest: widget.isGuest,
                                   ),
                                 ),
                               ),

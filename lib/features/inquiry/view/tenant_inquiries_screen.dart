@@ -1,26 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../shared/widgets/phase_badge.dart';
-import '../../resolution/view/rating_screen.dart';
-import 'phase1_tenant_screen.dart';
-import 'phase2_tenant_screen.dart';
+import '../../auth/presentation/current_uid.dart';
+import '../cubit/inquiry_list_cubit.dart';
+import '../data/repositories/inquiry_repository_impl.dart';
+import '../model/inquiry_summary.dart';
+import 'inquiry_thread_screen.dart';
 
-class TenantInquiriesScreen extends StatefulWidget {
+/// Tenant inbox — the tenant's own inquiries, live from Firestore.
+class TenantInquiriesScreen extends StatelessWidget {
   const TenantInquiriesScreen({super.key});
 
   @override
-  State<TenantInquiriesScreen> createState() => _TenantInquiriesScreenState();
+  Widget build(BuildContext context) {
+    final uid = currentUidOrNull(context);
+    if (uid == null) {
+      // Guests never reach this tab (MainShell gates it), and the offline
+      // screenshot harness has no signed-in user.
+      return const _InboxMessage('Sign in to see your inquiries.');
+    }
+    return BlocProvider(
+      create: (_) => InquiryListCubit(
+        uid: uid,
+        isOwner: false,
+        repository: InquiryRepositoryImpl(),
+      ),
+      child: const _TenantInquiriesView(),
+    );
+  }
 }
 
-class _TenantInquiriesScreenState extends State<TenantInquiriesScreen> {
+class _TenantInquiriesView extends StatefulWidget {
+  const _TenantInquiriesView();
+
+  @override
+  State<_TenantInquiriesView> createState() => _TenantInquiriesViewState();
+}
+
+class _TenantInquiriesViewState extends State<_TenantInquiriesView> {
   int _selectedTab = 0; // 0 = Active, 1 = Resolved
 
   @override
   Widget build(BuildContext context) {
-    final int activeCount = MockData.inquiries.length;
+    final state = context.watch<InquiryListCubit>().state;
+    final int activeCount = state.active.length;
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
@@ -28,7 +54,6 @@ class _TenantInquiriesScreenState extends State<TenantInquiriesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
@@ -50,30 +75,28 @@ class _TenantInquiriesScreenState extends State<TenantInquiriesScreen> {
                     ),
                   ),
                   const Spacer(),
-                  // Active count badge
-                  Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '$activeCount',
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                  if (activeCount > 0)
+                    Container(
+                      width: 22,
+                      height: 22,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '$activeCount',
+                        style: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onInk,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
-
-            // â”€â”€ Segmented control â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: _SegmentedControl(
@@ -81,18 +104,91 @@ class _TenantInquiriesScreenState extends State<TenantInquiriesScreen> {
                 onChanged: (i) => setState(() => _selectedTab = i),
               ),
             ),
-
             SizedBox(height: AppSpacing.md),
-
-            // â”€â”€ Tab content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Expanded(
-              child: _selectedTab == 0
-                  ? _ActiveTab(onReturned: () => setState(() {}))
-                  : const _ResolvedTab(),
+              child: state.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : state.errorMessage != null && state.items.isEmpty
+                  ? _InboxMessage(state.errorMessage!)
+                  : _InquiryList(
+                      items: _selectedTab == 0 ? state.active : state.resolved,
+                      emptyText: _selectedTab == 0
+                          ? 'No active inquiries yet. Send one from a '
+                                'compatible property.'
+                          : 'No resolved inquiries yet.',
+                    ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _InboxMessage extends StatelessWidget {
+  const _InboxMessage(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'DM Sans',
+            fontSize: 14,
+            color: context.appColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InquiryList extends StatelessWidget {
+  const _InquiryList({required this.items, required this.emptyText});
+
+  final List<InquirySummary> items;
+  final String emptyText;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) return _InboxMessage(emptyText);
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      itemCount: items.length + 1,
+      itemBuilder: (ctx, i) {
+        if (i == items.length) return SizedBox(height: AppSpacing.lg);
+        final item = items[i];
+        final inquiry = item.inquiry;
+        return GestureDetector(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => InquiryThreadScreen(
+                inquiryId: inquiry.inquiryId,
+                isOwner: false,
+              ),
+            ),
+          ),
+          child: _InquiryCard(
+            propertyInitials: item.propertyInitials,
+            propertyName: item.propertyTitle,
+            ownerName: item.counterpartName,
+            phase: inquiry.stage.toInt(),
+            date: inquiryDateLabel(inquiry.updatedAt?.toDate()),
+            resolvedStatus: switch (inquiry.status) {
+              'booked' => 'Booked',
+              'declined' => 'Declined',
+              'closed' => 'Closed',
+              _ => null,
+            },
+          ),
+        );
+      },
     );
   }
 }
@@ -185,123 +281,6 @@ class _SegTab extends StatelessWidget {
   }
 }
 
-// â”€â”€ Active tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-class _ActiveTab extends StatelessWidget {
-  const _ActiveTab({required this.onReturned});
-
-  /// Called when a pushed inquiry screen pops, so stage changes made
-  /// elsewhere (e.g. an owner acceptance) re-render this list.
-  final VoidCallback onReturned;
-
-  @override
-  Widget build(BuildContext context) {
-    if (MockData.inquiries.isEmpty) {
-      return Center(
-        child: Text(
-          'No active inquiries yet.',
-          style: TextStyle(
-            fontFamily: 'DM Sans',
-            fontSize: 14,
-            color: context.appColors.textSecondary,
-          ),
-        ),
-      );
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      itemCount: MockData.inquiries.length + 1,
-      itemBuilder: (ctx, i) {
-        if (i == MockData.inquiries.length) {
-          return SizedBox(height: AppSpacing.lg);
-        }
-        final inquiry = MockData.inquiries[i];
-        final int phase = inquiry['stage'] as int;
-        final bool isPhase1 = phase == 1;
-        final property = MockData.properties.firstWhere(
-          (p) => p['title'] == inquiry['propertyName'],
-          orElse: () => MockData.properties[0],
-        );
-
-        return GestureDetector(
-          onTap: () {
-            Navigator.of(context)
-                .push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => isPhase1
-                        ? Phase1TenantScreen(property: property)
-                        : Phase2TenantScreen(property: property),
-                  ),
-                )
-                .then((_) => onReturned());
-          },
-          child: _InquiryCard(
-            propertyInitials: inquiry['propertyInitials'] as String,
-            propertyName: inquiry['propertyName'] as String,
-            ownerName: inquiry['ownerName'] as String,
-            phase: phase,
-            date: inquiry['date'] as String,
-            isResolved: false,
-          ),
-        );
-      },
-    );
-  }
-}
-
-// â”€â”€ Resolved tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-class _ResolvedTab extends StatelessWidget {
-  const _ResolvedTab();
-
-  @override
-  Widget build(BuildContext context) {
-    final resolved = MockData.tenantResolvedInquiries;
-    if (resolved.isEmpty) {
-      return Center(
-        child: Text(
-          'No resolved inquiries yet.',
-          style: TextStyle(
-            fontFamily: 'DM Sans',
-            fontSize: 14,
-            color: context.appColors.textSecondary,
-          ),
-        ),
-      );
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      itemCount: resolved.length + 1,
-      itemBuilder: (_, i) {
-        if (i == resolved.length) return SizedBox(height: AppSpacing.lg);
-        final item = resolved[i];
-        final bool isBooked = item['status'] == 'Booked';
-        return GestureDetector(
-          // Only booked stays can be rated.
-          onTap: isBooked
-              ? () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => RatingScreen(
-                        subjectName: item['propertyName'] as String,
-                        moveInLabel: 'Booked: ${item['date']}',
-                      ),
-                    ),
-                  )
-              : null,
-          child: _InquiryCard(
-            propertyInitials: item['propertyInitials'] as String,
-            propertyName: item['propertyName'] as String,
-            ownerName: item['ownerName'] as String,
-            phase: 0,
-            date: item['date'] as String? ?? '',
-            isResolved: true,
-          ),
-        );
-      },
-    );
-  }
-}
-
 // â”€â”€ Shared inquiry card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _InquiryCard extends StatelessWidget {
@@ -311,7 +290,7 @@ class _InquiryCard extends StatelessWidget {
     required this.ownerName,
     required this.phase,
     required this.date,
-    required this.isResolved,
+    this.resolvedStatus,
   });
 
   final String propertyInitials;
@@ -319,7 +298,11 @@ class _InquiryCard extends StatelessWidget {
   final String ownerName;
   final int phase;
   final String date;
-  final bool isResolved;
+
+  /// 'Booked' | 'Declined' | 'Closed' for resolved inquiries, else null.
+  final String? resolvedStatus;
+
+  bool get isResolved => resolvedStatus != null;
 
   @override
   Widget build(BuildContext context) {
@@ -391,7 +374,9 @@ class _InquiryCard extends StatelessWidget {
                 SizedBox(height: 3),
                 if (isResolved)
                   Text(
-                    'Completed',
+                    resolvedStatus == 'Booked'
+                        ? 'Tap to rate your stay'
+                        : 'Completed',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
@@ -429,7 +414,7 @@ class _InquiryCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    'Booked',
+                    resolvedStatus!,
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 11,

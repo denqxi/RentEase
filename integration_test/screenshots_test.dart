@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:rentease/core/firestore/models/models.dart';
 import 'package:integration_test/integration_test.dart';
 
 import 'package:rentease/core/constants/mock_data.dart';
@@ -38,8 +39,6 @@ import 'package:rentease/features/matching/data/repositories/filtering_repositor
 import 'package:rentease/features/matching/data/repositories/topsis_repository_impl.dart';
 import 'package:rentease/features/matching/domain/services/filtering_service.dart';
 import 'package:rentease/features/matching/domain/services/topsis_service.dart';
-import 'package:rentease/features/inquiry/view/phase1_tenant_screen.dart';
-import 'package:rentease/features/inquiry/view/phase2_tenant_screen.dart';
 import 'package:rentease/features/inquiry/view/tenant_inquiries_screen.dart';
 import 'package:rentease/features/landlord_home/cubit/landlord_home_cubit.dart';
 import 'package:rentease/features/landlord_home/model/tenant_detail.dart';
@@ -51,8 +50,6 @@ import 'package:rentease/features/owner/view/edit_property_screen.dart';
 import 'package:rentease/features/owner/view/find_tenants_screen.dart';
 import 'package:rentease/features/owner/view/owner_inquiries_screen.dart';
 import 'package:rentease/features/owner/view/owner_properties_screen.dart';
-import 'package:rentease/features/owner/view/phase1_owner_screen.dart';
-import 'package:rentease/features/owner/view/phase2_chat_owner_screen.dart';
 import 'package:rentease/features/owner_onboarding/view/add_property_screen.dart';
 import 'package:rentease/features/owner_onboarding/view/document_upload_screen.dart';
 import 'package:rentease/features/owner_onboarding/view/pricing_amenities_screen.dart';
@@ -121,7 +118,6 @@ void main() {
 
   testWidgets('capture all screens on device', (tester) async {
     final property = MockData.properties[0];
-    final ownerInquiry = MockData.ownerInquiries[0];
 
     // Required once on Android before takeScreenshot can work.
     if (Platform.isAndroid) {
@@ -178,7 +174,14 @@ void main() {
       BlocProvider<HomeCubit>(
           create: (_) => _previewHomeCubit(), child: const HomeScreen()),
     );
-    await _capture(tester, '31_tenant_search', const SearchScreen());
+    await _capture(
+      tester,
+      '31_tenant_search',
+      BlocProvider<ProfileCubit>(
+        create: (_) => ProfileCubit(userRole: UserRole.tenant),
+        child: const SearchScreen(),
+      ),
+    );
     await _capture(
         tester,
         '32_tenant_map_view',
@@ -193,10 +196,6 @@ void main() {
         const ListingDetailScreen(detail: ListingDetail.sample));
     await _capture(
         tester, '35_tenant_inquiries', const TenantInquiriesScreen());
-    await _capture(tester, '36_tenant_phase1_inquiry',
-        Phase1TenantScreen(property: property));
-    await _capture(tester, '37_tenant_phase2_chat',
-        Phase2TenantScreen(property: property));
     await _capture(
       tester,
       '38_tenant_activity_alerts',
@@ -256,13 +255,18 @@ void main() {
     await _capture(tester, '54_owner_find_tenants', const FindTenantsScreen());
     await _capture(
         tester, '55_owner_properties', const OwnerPropertiesScreen());
-    await _capture(tester, '56_owner_edit_property',
-        EditPropertyScreen(property: property));
+    await _capture(
+      tester,
+      '56_owner_edit_property',
+      EditPropertyScreen(
+        property: PropertyDoc.fromMap(
+          property['propertyId'] as String,
+          property,
+        ),
+        onSave: (_) async {},
+      ),
+    );
     await _capture(tester, '57_owner_inquiries', const OwnerInquiriesScreen());
-    await _capture(tester, '58_owner_phase1_inquiry',
-        Phase1OwnerScreen(inquiry: ownerInquiry));
-    await _capture(tester, '59_owner_phase2_chat',
-        Phase2ChatOwnerScreen(inquiry: ownerInquiry));
     await _capture(
       tester,
       '60_owner_activity_alerts',

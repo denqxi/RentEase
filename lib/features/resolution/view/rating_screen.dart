@@ -8,6 +8,7 @@ class RatingScreen extends StatefulWidget {
   const RatingScreen({
     this.subjectName = 'Sunshine Boarding House',
     this.moveInLabel = 'Move-in: August 1, 2026',
+    this.onSubmit,
     super.key,
   })  : isOwnerView = false,
         subjectInitials = null;
@@ -17,8 +18,13 @@ class RatingScreen extends StatefulWidget {
     required this.subjectName,
     required String this.subjectInitials,
     this.moveInLabel = 'Move-in: August 1, 2026',
+    this.onSubmit,
     super.key,
   }) : isOwnerView = true;
+
+  /// Persists the rating; resolves to whether it succeeded (failures are
+  /// surfaced by the caller). Null only in preview/screenshot contexts.
+  final Future<bool> Function(int stars, String review)? onSubmit;
 
   /// Who or what is being rated — the property name on the tenant side,
   /// the tenant name on the owner side.
@@ -54,7 +60,22 @@ class _RatingScreenState extends State<RatingScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  bool _submitting = false;
+
+  Future<void> _submit() async {
+    final onSubmit = widget.onSubmit;
+    if (onSubmit == null) {
+      Navigator.of(context).pop();
+      return;
+    }
+    setState(() => _submitting = true);
+    final ok = await onSubmit(_starRating, _reviewController.text);
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    if (!ok) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Thanks — your rating was submitted.')),
+    );
     Navigator.of(context).pop();
   }
 
@@ -175,9 +196,9 @@ class _RatingScreenState extends State<RatingScreen> {
               ),
               const SizedBox(height: 24),
               AppButton(
-                label: 'Submit Rating',
+                label: _submitting ? 'Submitting...' : 'Submit Rating',
                 color: AppColors.ink,
-                onPressed: _starRating > 0 ? _submit : null,
+                onPressed: _starRating > 0 && !_submitting ? _submit : null,
               ),
               const SizedBox(height: 24),
             ],

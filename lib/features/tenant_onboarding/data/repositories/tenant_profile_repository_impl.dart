@@ -28,6 +28,15 @@ class TenantProfileRepositoryImpl implements TenantProfileRepository {
     }
   }
 
+  @override
+  Future<void> updateFields(String uid, Map<String, dynamic> fields) async {
+    try {
+      await _remote.updateFields(uid, fields);
+    } on FirebaseException catch (e) {
+      throw Exception(_messageFor(e));
+    }
+  }
+
   String _messageFor(FirebaseException e) {
     switch (e.code) {
       case 'permission-denied':

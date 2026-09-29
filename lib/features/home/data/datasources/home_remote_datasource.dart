@@ -39,6 +39,15 @@ class HomeRemoteDataSource {
     return UserDoc.fromSnapshot(snap);
   }
 
+  Future<TenantProfileDoc?> fetchTenantProfile(String tenantId) async {
+    final snap = await _firestore
+        .collection(FirestoreCollections.tenantProfiles)
+        .doc(tenantId)
+        .get();
+    if (!snap.exists) return null;
+    return TenantProfileDoc.fromSnapshot(snap);
+  }
+
   Future<OwnerProfileDoc?> fetchOwnerProfile(String ownerId) async {
     final snap = await _firestore
         .collection(FirestoreCollections.ownerProfiles)

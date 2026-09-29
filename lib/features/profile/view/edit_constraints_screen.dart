@@ -1,213 +1,381 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/app_toggle.dart';
+import '../../auth/presentation/current_uid.dart';
+import '../../matching/data/repositories/filtering_repository_impl.dart';
+import '../../matching/data/repositories/topsis_repository_impl.dart';
+import '../../matching/domain/services/filtering_service.dart';
+import '../../matching/domain/services/topsis_service.dart';
+import '../../tenant_onboarding/data/repositories/tenant_profile_repository_impl.dart';
+import '../cubit/edit_preferences_cubit.dart';
 
-class EditConstraintsScreen extends StatefulWidget {
+/// Shared by both Profile edit screens: an [EditPreferencesCubit] for the
+/// signed-in tenant, or a sign-in prompt.
+Widget withEditPreferencesCubit(BuildContext context, Widget child) {
+  final uid = currentUidOrNull(context);
+  if (uid == null) {
+    return const _EditScaffold(
+      title: 'Edit preferences',
+      body: Center(child: Text('Sign in to edit your preferences.')),
+    );
+  }
+  return BlocProvider(
+    create: (_) => EditPreferencesCubit(
+      uid: uid,
+      repository: TenantProfileRepositoryImpl(),
+      filteringService: FilteringService(repository: FilteringRepositoryImpl()),
+      topsisService: TopsisService(repository: TopsisRepositoryImpl()),
+    ),
+    child: child,
+  );
+}
+
+/// Edits the tenant's hard constraints (tenantProfiles). Pops `true` once
+/// saved and re-matched, so the caller can refresh Home/Search.
+class EditConstraintsScreen extends StatelessWidget {
   const EditConstraintsScreen({super.key});
 
   @override
-  State<EditConstraintsScreen> createState() => _EditConstraintsScreenState();
+  Widget build(BuildContext context) =>
+      withEditPreferencesCubit(context, const _EditConstraintsView());
 }
 
-class _EditConstraintsScreenState extends State<EditConstraintsScreen> {
-  final TextEditingController budgetController = TextEditingController(
-    text: '4500',
-  );
-  String? selectedGender = 'Female only';
-  bool wifiRequired = true;
-  double maxDistance = 3.0;
+class _EditConstraintsView extends StatefulWidget {
+  const _EditConstraintsView();
+
+  @override
+  State<_EditConstraintsView> createState() => _EditConstraintsViewState();
+}
+
+class _EditConstraintsViewState extends State<_EditConstraintsView> {
+  static const _genderOptions = ['Female only', 'Male only', 'Mixed / Any'];
+
+  final _budgetController = TextEditingController();
+  String _gender = 'Mixed / Any';
+  bool _wifiRequired = false;
+  double _maxDistance = 3.0;
+  bool _initialized = false;
 
   @override
   void dispose() {
-    budgetController.dispose();
+    _budgetController.dispose();
     super.dispose();
+  }
+
+  void _initFrom(EditPreferencesState state) {
+    final profile = state.profile;
+    if (_initialized || profile == null) return;
+    _initialized = true;
+    _budgetController.text = '${profile.maxBudget.round()}';
+    _gender = _genderOptions.contains(profile.requiredGender)
+        ? profile.requiredGender
+        : 'Mixed / Any'; // any other wildcard ('Any', 'All', …)
+    _wifiRequired = profile.needsWifi;
+    _maxDistance = profile.maxDistanceKm.toDouble().clamp(0.5, 10.0);
+  }
+
+  void _save() {
+    context.read<EditPreferencesCubit>().saveConstraints(
+      maxBudget: int.tryParse(_budgetController.text.trim()) ?? 0,
+      requiredGender: _gender,
+      needsWifi: _wifiRequired,
+      maxDistanceKm: _maxDistance,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    return BlocConsumer<EditPreferencesCubit, EditPreferencesState>(
+      listener: (context, state) {
+        if (state.status == EditPreferencesStatus.saved) {
+          Navigator.of(context).pop(true);
+        } else if (state.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage!),
+              backgroundColor: AppColors.destructive,
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        _initFrom(state);
+        final saving = state.status == EditPreferencesStatus.saving;
+
+        if (state.status == EditPreferencesStatus.loading) {
+          return const _EditScaffold(
+            title: 'Edit preferences',
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (state.profile == null) {
+          return _EditScaffold(
+            title: 'Edit preferences',
+            body: _Message(state.errorMessage ?? 'Could not load preferences.'),
+          );
+        }
+
+        return _EditScaffold(
+          title: 'Edit preferences',
+          body: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: AppSpacing.md),
+                      LabelledField(
+                        label: 'Max monthly budget',
+                        child: AppTextField(
+                          controller: _budgetController,
+                          prefixText: '₱ ',
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          hintText: '4500',
+                        ),
+                      ),
+                      SizedBox(height: AppSpacing.md),
+                      LabelledField(
+                        label: 'Gender policy',
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _gender,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: context.appColors.fieldFill,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                              vertical: 14,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppRadii.field,
+                              ),
+                              borderSide: BorderSide(
+                                color: context.appColors.fieldBorder,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppRadii.field,
+                              ),
+                              borderSide: const BorderSide(
+                                color: AppColors.accent,
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                          items: [
+                            for (final option in _genderOptions)
+                              DropdownMenuItem(
+                                value: option,
+                                child: Text(option),
+                              ),
+                          ],
+                          onChanged: (v) =>
+                              setState(() => _gender = v ?? _gender),
+                        ),
+                      ),
+                      SizedBox(height: AppSpacing.md),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'WiFi required',
+                              style: AppTextStyles.label(
+                                context,
+                              ).copyWith(color: context.appColors.textPrimary),
+                            ),
+                          ),
+                          AppToggle(
+                            value: _wifiRequired,
+                            onChanged: (v) => setState(() => _wifiRequired = v),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: AppSpacing.md),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Max distance from your POI',
+                              style: AppTextStyles.label(
+                                context,
+                              ).copyWith(color: context.appColors.textPrimary),
+                            ),
+                          ),
+                          Text(
+                            '${_maxDistance.toStringAsFixed(1)} km',
+                            style: const TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.accent,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Slider(
+                        value: _maxDistance,
+                        min: 0.5,
+                        max: 10,
+                        divisions: 19,
+                        activeColor: AppColors.accent,
+                        inactiveColor: context.appColors.indicatorInactive,
+                        onChanged: (v) => setState(() => _maxDistance = v),
+                      ),
+                      SizedBox(height: AppSpacing.xl),
+                    ],
+                  ),
+                ),
+              ),
+              _SaveBar(
+                saving: saving,
+                note: 'Saving will recompute your property matches.',
+                onSave: _save,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ── Shared pieces for the Profile edit screens ────────────────────────────
+
+class EditScaffold extends StatelessWidget {
+  const EditScaffold({required this.title, required this.body, super.key});
+
+  final String title;
+  final Widget body;
+
+  @override
+  Widget build(BuildContext context) => _EditScaffold(title: title, body: body);
+}
+
+class _EditScaffold extends StatelessWidget {
+  const _EditScaffold({required this.title, required this.body});
+
+  final String title;
+  final Widget body;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: context.appColors.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.appColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new,
-            color: AppColors.textPrimary,
+            color: context.appColors.textPrimary,
             size: 20,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Edit preferences',
+        title: Text(
+          title,
           style: TextStyle(
+            fontFamily: 'DM Sans',
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: context.appColors.textPrimary,
           ),
         ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: AppSpacing.md),
+      body: body,
+    );
+  }
+}
 
-                  // 1. Max monthly budget
-                  const Text(
-                    'Max monthly budget',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  AppTextField(
-                    controller: budgetController,
-                    prefixText: 'PHP',
-                    keyboardType: TextInputType.number,
-                    hintText: '0',
-                  ),
-                  const SizedBox(height: AppSpacing.md),
+class SaveBar extends StatelessWidget {
+  const SaveBar({
+    required this.saving,
+    required this.note,
+    required this.onSave,
+    this.enabled = true,
+    super.key,
+  });
 
-                  // 2. Gender policy
-                  const Text(
-                    'Gender policy',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedGender,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: AppColors.fieldBg,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                        vertical: AppSpacing.sm,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.field),
-                        borderSide: const BorderSide(
-                          color: AppColors.border,
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.field),
-                        borderSide: const BorderSide(
-                          color: AppColors.ink,
-                          width: 1,
-                        ),
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.field),
-                      ),
-                    ),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'Female only',
-                        child: Text('Female only'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Male only',
-                        child: Text('Male only'),
-                      ),
-                      DropdownMenuItem(value: 'Any', child: Text('Any')),
-                    ],
-                    onChanged: (val) => setState(() => selectedGender = val),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
+  final bool saving;
+  final bool enabled;
+  final String note;
+  final VoidCallback onSave;
 
-                  // 3. WiFi required
-                  Row(
-                    children: [
-                      const Text(
-                        'WiFi required',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const Spacer(),
-                      AppToggle(
-                        value: wifiRequired,
-                        onChanged: (val) => setState(() => wifiRequired = val),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.md),
+  @override
+  Widget build(BuildContext context) => _SaveBar(
+    saving: saving,
+    enabled: enabled,
+    note: note,
+    onSave: onSave,
+  );
+}
 
-                  // 5. Max distance
-                  Row(
-                    children: [
-                      const Text(
-                        'Max distance',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${maxDistance.toStringAsFixed(1)} km',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Slider(
-                    value: maxDistance,
-                    min: 0,
-                    max: 10,
-                    divisions: 20,
-                    activeColor: AppColors.ink,
-                    onChanged: (val) => setState(() => maxDistance = val),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  const SizedBox(height: AppSpacing.xl),
-                ],
-              ),
+class _SaveBar extends StatelessWidget {
+  const _SaveBar({
+    required this.saving,
+    required this.note,
+    required this.onSave,
+    this.enabled = true,
+  });
+
+  final bool saving;
+  final bool enabled;
+  final String note;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            AppPrimaryButton(
+              label: saving ? 'Saving & re-matching...' : 'Save changes',
+              onPressed: saving || !enabled ? null : onSave,
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
+            SizedBox(height: AppSpacing.sm),
+            Text(
+              note,
+              style: AppTextStyles.caption(context),
+              textAlign: TextAlign.center,
             ),
-            child: Column(
-              children: [
-                AppButton(
-                  label: 'Save changes',
-                  color: AppColors.ink,
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                const Text(
-                  'Saving will recompute your property matches.',
-                  style: TextStyle(color: AppColors.textHint, fontSize: 12),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Message extends StatelessWidget {
+  const _Message(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Text(
+          text,
+          style: AppTextStyles.body(context),
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }

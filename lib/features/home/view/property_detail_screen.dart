@@ -8,17 +8,30 @@ import '../../../shared/widgets/constraint_check_row.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/match_badge.dart';
-import '../../inquiry/view/phase1_tenant_screen.dart';
+import '../../inquiry/view/start_inquiry.dart';
+import '../../profile/view/edit_constraints_screen.dart';
 
 class PropertyDetailScreen extends StatelessWidget {
   const PropertyDetailScreen({
     required this.property,
     this.isGuest = false,
+    this.onPreferencesSaved,
     super.key,
   });
 
   final Map<String, dynamic> property;
   final bool isGuest;
+
+  /// Called after the tenant saves new preferences from this screen (which
+  /// re-runs matching), so the opener can refresh its feed.
+  final VoidCallback? onPreferencesSaved;
+
+  Future<void> _editPreferences(BuildContext context) async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(builder: (_) => const EditConstraintsScreen()),
+    );
+    if (saved == true) onPreferencesSaved?.call();
+  }
 
   void _guardGuestAction(BuildContext context, VoidCallback action) {
     if (isGuest) {
@@ -60,7 +73,7 @@ class PropertyDetailScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Outside your saved preferences',
+                          'Outside your session filter',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -355,36 +368,40 @@ class PropertyDetailScreen extends StatelessWidget {
                 AppButton(
                   label: 'Send Inquiry',
                   color: AppColors.ink,
-                  onPressed: () => _guardGuestAction(context, () {
-                    MockData.sendInquiry(property);
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            Phase1TenantScreen(property: property),
-                      ),
-                    );
-                  }),
+                  onPressed: () => _guardGuestAction(
+                    context,
+                    () => startInquiry(
+                      context,
+                      propertyId: property['propertyId'] as String,
+                      matchId: property['matchId'] as String?,
+                    ),
+                  ),
                 ),
               if (isOutside) ...[
                 AppButton(
                   label: 'Send Inquiry Anyway',
                   color: AppColors.ink,
-                  onPressed: () => _guardGuestAction(context, () {
-                    MockData.sendInquiry(property);
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            Phase1TenantScreen(property: property),
-                      ),
-                    );
-                  }),
+                  onPressed: () => _guardGuestAction(
+                    context,
+                    () => startInquiry(
+                      context,
+                      propertyId: property['propertyId'] as String,
+                      matchId: property['matchId'] as String?,
+                    ),
+                  ),
                 ),
                 SizedBox(height: 8),
+                // Flagged listings already pass the *saved* preferences (the
+                // flag comes from Search's session filter), so this opens
+                // the saved preferences rather than implying they're exceeded.
                 AppButton(
-                  label: 'Update My Saved Budget',
+                  label: 'Edit My Saved Preferences',
                   color: AppColors.ink,
                   isOutlined: true,
-                  onPressed: () {},
+                  onPressed: () => _guardGuestAction(
+                    context,
+                    () => _editPreferences(context),
+                  ),
                 ),
               ],
             ],

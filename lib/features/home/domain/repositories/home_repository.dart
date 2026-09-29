@@ -1,3 +1,4 @@
+import '../../../../core/firestore/models/models.dart';
 import '../../model/listing.dart';
 
 /// Reads the tenant's already-computed matching results for display —
@@ -16,4 +17,14 @@ abstract class HomeRepository {
     required String tenantId,
     required String propertyId,
   });
+
+  /// Every eligible, still-available property as a full detail map (same
+  /// shape as [fetchPropertyDetail], so Search, its map view and the detail
+  /// screen all read one format), best TOPSIS Ci first — never by distance
+  /// alone (CLAUDE.md rule 9). Reads cached matches only; never re-runs
+  /// matching (CLAUDE.md rule 7).
+  Future<List<Map<String, dynamic>>> fetchSearchResults(String tenantId);
+
+  /// The tenant's saved hard constraints — shown as Search's filter chips.
+  Future<TenantProfileDoc?> fetchTenantProfile(String tenantId);
 }

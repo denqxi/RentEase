@@ -1,29 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/mock_data.dart';
+import '../../../core/firestore/models/models.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_toggle.dart';
 
-/// Edit an existing property listing — details, rules, pricing, amenities.
-/// Writes back into the property map (MockData) on save; production swaps
-/// this for a Firestore update guarded by the owner's security rules.
+/// Edit an existing listing — details, pricing, house rules, amenities.
+/// [onSave] persists the changed fields (Firestore, via the caller's cubit);
+/// tenants see the changes on their next matching pass, since their device
+/// re-scores the listing then.
 class EditPropertyScreen extends StatefulWidget {
-  const EditPropertyScreen({required this.property, super.key});
+  const EditPropertyScreen({
+    required this.property,
+    required this.onSave,
+    super.key,
+  });
 
-  final Map<String, dynamic> property;
+  final PropertyDoc property;
+  final Future<void> Function(Map<String, dynamic> fields) onSave;
 
   @override
   State<EditPropertyScreen> createState() => _EditPropertyScreenState();
 }
 
 class _EditPropertyScreenState extends State<EditPropertyScreen> {
+  // Same values as onboarding's property rules step, which FilteringService
+  // matches against.
+  static const _genderPolicies = ['Female only', 'Male only', 'Mixed / Any'];
+
   late final TextEditingController _nameController;
   late final TextEditingController _addressController;
   late final TextEditingController _rentController;
   late final TextEditingController _depositController;
+  late final TextEditingController _occupantsController;
 
   late String _genderPolicy;
   late bool _smokingAllowed;
@@ -31,23 +44,29 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
   late int _advanceMonths;
   int? _curfewHours;
   late Set<String> _selectedAmenities;
+  bool _saving = false;
 
   @override
   void initState() {
     super.initState();
     final p = widget.property;
-    _nameController = TextEditingController(text: p['title'] as String);
-    _addressController = TextEditingController(text: p['address'] as String);
-    _rentController = TextEditingController(text: '${p['monthlyRent']}');
-    _depositController = TextEditingController(text: '${p['depositAmount']}');
-    _curfewHours = (p['curfewHours'] as num?)?.toInt();
-    _genderPolicy = p['allowedGender'] as String? ?? 'Any';
-    _smokingAllowed = p['smokingAllowed'] as bool? ?? false;
-    _petsAllowed = p['petsAllowed'] as bool? ?? false;
-    _advanceMonths = p['advanceMonths'] as int? ?? 1;
-    _selectedAmenities = Set<String>.from(
-      (p['amenityList'] as List<dynamic>? ?? const <dynamic>[]).cast<String>(),
+    _nameController = TextEditingController(text: p.title);
+    _addressController = TextEditingController(text: p.address);
+    _rentController = TextEditingController(text: '${p.monthlyRent.round()}');
+    _depositController = TextEditingController(
+      text: '${p.depositAmount.round()}',
     );
+    _occupantsController = TextEditingController(
+      text: '${p.maxOccupants.round()}',
+    );
+    _curfewHours = p.curfewHours?.toInt();
+    _genderPolicy = _genderPolicies.contains(p.allowedGender)
+        ? p.allowedGender
+        : 'Mixed / Any';
+    _smokingAllowed = p.smokingAllowed;
+    _petsAllowed = p.petsAllowed;
+    _advanceMonths = p.advanceMonths.toInt().clamp(1, 3);
+    _selectedAmenities = Set<String>.from(p.amenityList);
   }
 
   @override
@@ -56,6 +75,7 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
     _addressController.dispose();
     _rentController.dispose();
     _depositController.dispose();
+    _occupantsController.dispose();
     super.dispose();
   }
 
@@ -69,29 +89,67 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
     }
   }
 
-  void _save() {
-    final p = widget.property;
-    p['title'] = _nameController.text.trim();
-    p['address'] = _addressController.text.trim();
-    p['monthlyRent'] =
-        int.tryParse(_rentController.text.trim()) ?? p['monthlyRent'];
-    p['depositAmount'] =
-        int.tryParse(_depositController.text.trim()) ?? p['depositAmount'];
-    p['curfewHours'] = _curfewHours;
-    p['allowedGender'] = _genderPolicy;
-    p['smokingAllowed'] = _smokingAllowed;
-    p['petsAllowed'] = _petsAllowed;
-    p['advanceMonths'] = _advanceMonths;
-    p['amenityList'] = _selectedAmenities.toList();
-    p['amenityScore'] = _selectedAmenities.length;
-
-    Navigator.of(context).pop(true);
+  void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${p['title']} updated.'),
-        backgroundColor: context.appColors.ink,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.destructive),
     );
+  }
+
+  Future<void> _save() async {
+    final title = _nameController.text.trim();
+    final address = _addressController.text.trim();
+    final rent = int.tryParse(_rentController.text.trim()) ?? 0;
+    final deposit = int.tryParse(_depositController.text.trim()) ?? 0;
+    final occupants = int.tryParse(_occupantsController.text.trim()) ?? 0;
+    if (title.isEmpty || address.isEmpty) {
+      _showError('Enter the property name and address.');
+      return;
+    }
+    if (rent <= 0) {
+      _showError('Enter a monthly rent above ₱0.');
+      return;
+    }
+    if (occupants < 1) {
+      _showError('Max occupants must be at least 1.');
+      return;
+    }
+
+    // Checklist order (not tap order); amenityScore must equal its length —
+    // firestore.rules rejects the write otherwise.
+    final amenities = MockData.amenities
+        .where(_selectedAmenities.contains)
+        .toList();
+
+    setState(() => _saving = true);
+    try {
+      await widget.onSave({
+        'title': title,
+        'address': address,
+        'monthlyRent': rent,
+        'depositAmount': deposit,
+        'advanceMonths': _advanceMonths,
+        'allowedGender': _genderPolicy,
+        'smokingAllowed': _smokingAllowed,
+        'petsAllowed': _petsAllowed,
+        'maxOccupants': occupants,
+        'curfewHours': _curfewHours,
+        'amenityList': amenities,
+        'amenityScore': amenities.length,
+        'hasWifi': amenities.contains('WiFi'),
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$title updated.'),
+          backgroundColor: context.appColors.ink,
+        ),
+      );
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      _showError(e.toString().replaceFirst('Exception: ', ''));
+    }
   }
 
   @override
@@ -181,11 +239,7 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
             _FieldLabel('Gender policy'),
             Row(
               children: [
-                for (final policy in const [
-                  'Female only',
-                  'Male only',
-                  'Any',
-                ]) ...[
+                for (final policy in _genderPolicies) ...[
                   _ChoiceChip(
                     label: policy,
                     isSelected: _genderPolicy == policy,
@@ -205,6 +259,14 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
               label: 'Pets allowed',
               value: _petsAllowed,
               onChanged: (v) => setState(() => _petsAllowed = v),
+            ),
+            SizedBox(height: AppSpacing.md),
+            // Layer 1 OccupancyMatch: a tenant's group size must fit.
+            _FieldLabel('Max occupants per room'),
+            _TextInput(
+              controller: _occupantsController,
+              hint: '1',
+              keyboardType: TextInputType.number,
             ),
             SizedBox(height: AppSpacing.md),
             _FieldLabel('Curfew'),
@@ -262,7 +324,10 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
             ),
             SizedBox(height: AppSpacing.xl),
 
-            AppButton(label: 'Save changes', onPressed: _save),
+            AppButton(
+              label: _saving ? 'Saving...' : 'Save changes',
+              onPressed: _saving ? null : _save,
+            ),
             SizedBox(height: AppSpacing.lg),
           ],
         ),
@@ -330,6 +395,9 @@ class _TextInput extends StatelessWidget {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
+      inputFormatters: keyboardType == TextInputType.number
+          ? [FilteringTextInputFormatter.digitsOnly]
+          : null,
       style: TextStyle(
         fontFamily: 'DM Sans',
         fontSize: 14,

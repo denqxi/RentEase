@@ -139,6 +139,14 @@ class FilteringService {
       }
     }
 
+    // A property that left the candidate pool entirely — fully booked,
+    // unlisted, or no longer verified — is never scored above, so its old
+    // bScore = 1 row would otherwise survive and keep showing on Home and
+    // accepting inquiries. Remove those too.
+    final poolIds = properties.map((p) => p.propertyId).toSet();
+    final existing = await _repository.fetchMatchedPropertyIds(tenantId);
+    ineligiblePropertyIds.addAll(existing.difference(poolIds));
+
     await _repository.writeFilterResults(
       tenantId: tenantId,
       eligibleMatches: eligible,

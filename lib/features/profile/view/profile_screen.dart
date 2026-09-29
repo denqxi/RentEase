@@ -10,11 +10,22 @@ import '../../../features/home/cubit/home_cubit.dart';
 import '../cubit/profile_cubit.dart';
 import '../widgets/profile_menu_card.dart';
 import 'edit_constraints_screen.dart';
+import 'edit_topsis_screen.dart';
 import 'saved_screen.dart';
 import 'soft_preferences_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
+
+  /// Opens a preferences editor; if it saved (and so re-matched), refreshes
+  /// Home so the feed reflects the new constraints or weights.
+  static Future<void> _openEditor(BuildContext context, Widget editor) async {
+    final homeCubit = context.read<HomeCubit>();
+    final saved = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute<bool>(builder: (_) => editor));
+    if (saved == true) await homeCubit.refresh();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,10 +106,15 @@ class ProfileScreen extends StatelessWidget {
                       (_) => false,
                     );
                   },
-                  onEditPreferences: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const EditConstraintsScreen(),
-                    ),
+                  // Both edits re-run matching on save; Home (and Search,
+                  // which follows Home) then re-reads the new results.
+                  onEditPreferences: () => _openEditor(
+                    context,
+                    const EditConstraintsScreen(),
+                  ),
+                  onEditPriorities: () => _openEditor(
+                    context,
+                    const EditTopsisScreen(),
                   ),
                   onSoftPreferences: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(

@@ -14,6 +14,11 @@ abstract class FilteringRepository {
   /// pool `runFiltering` scores against.
   Future<List<PropertyDoc>> fetchAvailableProperties();
 
+  /// Property IDs the tenant currently has an eligible match row for — so
+  /// rows for properties that left the pool (booked, unlisted, unverified)
+  /// can be removed, not just rows for properties that newly fail scoring.
+  Future<Set<String>> fetchMatchedPropertyIds(String tenantId);
+
   /// Writes one `matches/{tenantId}_{propertyId}` doc per bScore = 1 result,
   /// and removes any existing match doc for a pair that is now bScore = 0
   /// (so a preference change that makes a previously-eligible property

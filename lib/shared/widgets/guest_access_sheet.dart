@@ -24,6 +24,57 @@ class GuestAccessSheet extends StatelessWidget {
     );
   }
 
+  // Navigation below deliberately uses the [NavigatorState] captured before
+  // the sheet closes, plus each pushed route's own builder context — never
+  // the sheet's context, which is dead once the sheet is popped (callbacks
+  // fired later from it, e.g. registration's back/"Sign in", silently fail).
+
+  /// Pushes the sign-in screen over the guest shell and, for "Create an
+  /// account", the registration flow on top of that — the same stack
+  /// app.dart builds — so registration's back arrow and "Already have an
+  /// account? Sign in" both land on sign-in, and backing out of sign-in
+  /// returns to guest browsing.
+  static void _openSignIn(
+    NavigatorState navigator, {
+    bool thenCreateAccount = false,
+  }) {
+    navigator.push(
+      MaterialPageRoute<void>(
+        builder: (signInContext) => SignInScreen(
+          onSignIn: (user) =>
+              Navigator.of(signInContext).pushNamedAndRemoveUntil(
+                user.isOwner ? AppRouter.landlordHome : AppRouter.tenantHome,
+                (_) => false,
+              ),
+          onCreateAccount: () => _openRegistration(Navigator.of(signInContext)),
+        ),
+      ),
+    );
+    if (thenCreateAccount) _openRegistration(navigator);
+  }
+
+  static void _openRegistration(NavigatorState navigator) {
+    navigator.push(
+      MaterialPageRoute<void>(
+        builder: (registrationContext) => RegistrationFlowScreen(
+          // Matches app.dart's _SignInEntry._pushOnboarding — account
+          // creation always goes through email verification before
+          // onboarding.
+          onComplete: (role) =>
+              Navigator.of(registrationContext).pushAndRemoveUntil(
+                MaterialPageRoute<void>(
+                  builder: (_) => EmailVerificationScreen(
+                    isOwner: role == UserRole.landlord,
+                  ),
+                ),
+                (_) => false,
+              ),
+          onSignIn: () => Navigator.of(registrationContext).pop(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -87,26 +138,9 @@ class GuestAccessSheet extends StatelessWidget {
               AppPrimaryButton(
                 label: 'Create an account',
                 onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => RegistrationFlowScreen(
-                        // Matches app.dart's _SignInEntry._pushOnboarding —
-                        // account creation always goes through email
-                        // verification before onboarding.
-                        onComplete: (role) => Navigator.of(context)
-                            .pushAndRemoveUntil(
-                          MaterialPageRoute<void>(
-                            builder: (_) => EmailVerificationScreen(
-                              isOwner: role == UserRole.landlord,
-                            ),
-                          ),
-                          (_) => false,
-                        ),
-                        onSignIn: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                  );
+                  final navigator = Navigator.of(context);
+                  navigator.pop();
+                  _openSignIn(navigator, thenCreateAccount: true);
                 },
               ),
               SizedBox(height: AppSpacing.sm),
@@ -114,21 +148,9 @@ class GuestAccessSheet extends StatelessWidget {
                 label: 'Sign in',
                 isOutlined: true,
                 onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => SignInScreen(
-                        onSignIn: (user) => Navigator.of(context)
-                            .pushNamedAndRemoveUntil(
-                          user.isOwner
-                              ? AppRouter.landlordHome
-                              : AppRouter.tenantHome,
-                          (_) => false,
-                        ),
-                        onCreateAccount: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                  );
+                  final navigator = Navigator.of(context);
+                  navigator.pop();
+                  _openSignIn(navigator);
                 },
               ),
               SizedBox(height: AppSpacing.sm),

@@ -7,6 +7,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../../registration/model/user_role.dart';
 import '../../domain/entities/auth.dart';
 import '../bloc/auth_bloc.dart';
 
@@ -236,10 +237,10 @@ class _SignInCard extends StatelessWidget {
               const _OrDivider(),
               SizedBox(height: AppSpacing.lg),
               const _GoogleButton(),
-              SizedBox(height: AppSpacing.md),
+              SizedBox(height: AppSpacing.sm),
+              const _GuestButton(),
+              SizedBox(height: AppSpacing.lg),
               _CreateAccountRow(onCreateAccount: onCreateAccount),
-              SizedBox(height: AppSpacing.md),
-              const _DemoModeRow(),
               SizedBox(height: AppSpacing.lg),
             ],
           ),
@@ -571,62 +572,48 @@ class _CreateAccountRow extends StatelessWidget {
   }
 }
 
-class _DemoModeRow extends StatelessWidget {
-  const _DemoModeRow();
+/// Browse without an account — no Firebase sign-in, so MainShell runs
+/// HomeCubit.guest() and gates saving/inquiries/profile behind
+/// GuestAccessSheet. Styled as a sibling of [_GoogleButton] under
+/// "or continue with".
+class _GuestButton extends StatelessWidget {
+  const _GuestButton();
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: GestureDetector(
-        onTap: () => _showDemoModeSheet(context),
-        child: Text(
-          'Try Demo Mode',
-          style: AppTextStyles.label(context).copyWith(
-            color: context.appColors.textSecondary,
-            fontWeight: FontWeight.w600,
-            decoration: TextDecoration.underline,
-          ),
+    return SizedBox(
+      width: double.infinity,
+      height: AppSizes.fieldHeight,
+      child: OutlinedButton(
+        onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRouter.tenantHome,
+          (_) => false,
+          arguments: UserRole.guest,
         ),
-      ),
-    );
-  }
-
-  void _showDemoModeSheet(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: context.appColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.card)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Try Demo Mode', style: AppTextStyles.title(sheetContext)),
-              SizedBox(height: AppSpacing.sm),
-              Text(
-                'Jump straight into the app with sample data. '
-                'Nothing you do here is saved permanently.',
-                style: AppTextStyles.body(sheetContext),
-              ),
-              SizedBox(height: AppSpacing.lg),
-              AppPrimaryButton(
-                label: 'Continue as Demo Tenant',
-                onPressed: () => Navigator.of(sheetContext)
-                    .pushNamedAndRemoveUntil(AppRouter.tenantHome, (_) => false),
-              ),
-              SizedBox(height: AppSpacing.sm),
-              AppButton(
-                label: 'Continue as Demo Owner',
-                variant: AppButtonVariant.outline,
-                onPressed: () => Navigator.of(sheetContext)
-                    .pushNamedAndRemoveUntil(AppRouter.landlordHome, (_) => false),
-              ),
-            ],
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: context.appColors.fieldBorder),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.button),
           ),
+          backgroundColor: context.appColors.surface,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.person_outline_rounded,
+              size: 20,
+              color: context.appColors.textPrimary,
+            ),
+            SizedBox(width: AppSpacing.sm),
+            Text(
+              'Continue as guest',
+              style: AppTextStyles.body(context).copyWith(
+                color: context.appColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );

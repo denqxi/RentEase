@@ -12,8 +12,6 @@ import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/owner/view/find_tenants_screen.dart';
 import '../../features/owner/view/owner_inquiries_screen.dart';
 import '../../features/owner/view/owner_properties_screen.dart';
-import '../../features/owner/view/phase1_owner_screen.dart';
-import '../../features/owner/view/phase2_chat_owner_screen.dart';
 import '../../features/owner_onboarding/view/add_property_screen.dart';
 import '../../features/owner_onboarding/view/document_upload_screen.dart';
 import '../../features/shell/view/landlord_shell.dart';
@@ -58,8 +56,6 @@ class AppRouter {
 
   static const ownerProperties = '/owner/properties';
   static const findTenants = '/owner/find-tenants';
-  static const ownerPhase1 = '/owner/inquiry/phase1';
-  static const ownerPhase2 = '/owner/inquiry/phase2';
   static const ownerInquiries = '/owner/inquiries';
   static const ownerProfile = '/owner/profile';
 
@@ -132,12 +128,6 @@ class AppRouter {
         page = const OwnerPropertiesScreen();
       case findTenants:
         page = const FindTenantsScreen();
-      case ownerPhase1:
-        final inquiry = settings.arguments as Map<String, dynamic>;
-        page = Phase1OwnerScreen(inquiry: inquiry);
-      case ownerPhase2:
-        final inquiry = settings.arguments as Map<String, dynamic>;
-        page = Phase2ChatOwnerScreen(inquiry: inquiry);
       case ownerInquiries:
         page = const OwnerInquiriesScreen();
       case ownerProfile:

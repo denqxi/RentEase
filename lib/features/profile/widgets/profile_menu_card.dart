@@ -10,12 +10,16 @@ class ProfileMenuCard extends StatelessWidget {
   const ProfileMenuCard({
     required this.onLogout,
     required this.onEditPreferences,
+    this.onEditPriorities,
     this.onSoftPreferences,
     super.key,
   });
 
   final VoidCallback onLogout;
   final VoidCallback onEditPreferences;
+
+  /// Tenant-only row (TOPSIS weights); hidden when null.
+  final VoidCallback? onEditPriorities;
 
   /// Tenant-only row; hidden when null (owner profile).
   final VoidCallback? onSoftPreferences;
@@ -40,6 +44,14 @@ class ProfileMenuCard extends StatelessWidget {
         children: <Widget>[
           _MenuRow(icon: Icons.tune_rounded,         label: 'My preferences', onTap: onEditPreferences),
           const _Divider(),
+          if (onEditPriorities != null) ...[
+            _MenuRow(
+              icon: Icons.leaderboard_outlined,
+              label: 'Ranking priorities',
+              onTap: onEditPriorities!,
+            ),
+            const _Divider(),
+          ],
           if (onSoftPreferences != null) ...[
             _MenuRow(
               icon: Icons.star_border_rounded,

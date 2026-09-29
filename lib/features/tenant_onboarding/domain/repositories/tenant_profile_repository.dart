@@ -12,4 +12,7 @@ abstract class TenantProfileRepository {
   Future<void> saveProfile(TenantProfileDoc profile);
 
   Future<TenantProfileDoc?> fetchProfile(String uid);
+
+  /// Updates only the given profile fields (Profile's edit screens).
+  Future<void> updateFields(String uid, Map<String, dynamic> fields);
 }

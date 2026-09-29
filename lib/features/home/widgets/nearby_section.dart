@@ -29,7 +29,12 @@ Future<void> openPropertyDetail(
     return;
   }
   Navigator.of(context).push(
-    MaterialPageRoute<void>(builder: (_) => PropertyDetailScreen(property: detail)),
+    MaterialPageRoute<void>(
+      builder: (_) => PropertyDetailScreen(
+        property: detail,
+        onPreferencesSaved: cubit.refresh,
+      ),
+    ),
   );
 }
 

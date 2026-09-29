@@ -26,8 +26,6 @@ import '../features/home/view/home_screen.dart';
 import '../features/home/view/listing_detail_screen.dart';
 import '../features/home/view/property_detail_screen.dart';
 import '../features/home/view/search_screen.dart';
-import '../features/inquiry/view/phase1_tenant_screen.dart';
-import '../features/inquiry/view/phase2_tenant_screen.dart';
 import '../features/inquiry/view/tenant_inquiries_screen.dart';
 import '../features/landlord_home/cubit/landlord_home_cubit.dart';
 import '../features/landlord_home/model/tenant_detail.dart';
@@ -42,8 +40,6 @@ import '../features/onboarding/view/onboarding_screen.dart';
 import '../features/owner/view/find_tenants_screen.dart';
 import '../features/owner/view/owner_inquiries_screen.dart';
 import '../features/owner/view/owner_properties_screen.dart';
-import '../features/owner/view/phase1_owner_screen.dart';
-import '../features/owner/view/phase2_chat_owner_screen.dart';
 import '../features/owner_onboarding/view/add_property_screen.dart';
 import '../features/owner_onboarding/view/document_upload_screen.dart';
 import '../features/owner_onboarding/view/pricing_amenities_screen.dart';
@@ -87,7 +83,6 @@ class DebugScreenViewer extends StatelessWidget {
 
   static List<_Section> _sections() {
     final property = MockData.properties[0];
-    final ownerInquiry = MockData.ownerInquiries[0];
 
     return [
       _Section('Auth / onboarding (shared)', [
@@ -134,7 +129,18 @@ class DebugScreenViewer extends StatelessWidget {
             child: const HomeScreen(),
           ),
         ),
-        _Entry('Search', (_) => const SearchScreen()),
+        _Entry(
+          'Search',
+          (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider<HomeCubit>(create: (_) => _previewHomeCubit()),
+              BlocProvider<ProfileCubit>(
+                create: (_) => ProfileCubit(userRole: UserRole.tenant),
+              ),
+            ],
+            child: const SearchScreen(),
+          ),
+        ),
         _Entry(
           'Property detail',
           (_) => PropertyDetailScreen(property: property),
@@ -144,11 +150,6 @@ class DebugScreenViewer extends StatelessWidget {
           (_) => const ListingDetailScreen(detail: ListingDetail.sample),
         ),
         _Entry('Inquiries', (_) => const TenantInquiriesScreen()),
-        _Entry(
-          'Phase 1 inquiry',
-          (_) => Phase1TenantScreen(property: property),
-        ),
-        _Entry('Phase 2 chat', (_) => Phase2TenantScreen(property: property)),
         _Entry(
           'Activity / alerts',
           (_) => BlocProvider<ActivityCubit>(
@@ -201,14 +202,6 @@ class DebugScreenViewer extends StatelessWidget {
         _Entry('Find tenants', (_) => const FindTenantsScreen()),
         _Entry('Properties', (_) => const OwnerPropertiesScreen()),
         _Entry('Inquiries', (_) => const OwnerInquiriesScreen()),
-        _Entry(
-          'Phase 1 inquiry',
-          (_) => Phase1OwnerScreen(inquiry: ownerInquiry),
-        ),
-        _Entry(
-          'Phase 2 chat',
-          (_) => Phase2ChatOwnerScreen(inquiry: ownerInquiry),
-        ),
         _Entry(
           'Activity / alerts',
           (_) => BlocProvider<ActivityCubit>(

@@ -33,7 +33,9 @@ class RoleSelectionView extends StatelessWidget {
                 'later.',
           ),
           SizedBox(height: AppSpacing.lg),
-          for (final role in UserRole.values) ...<Widget>[
+          // Guest isn't a role you sign up as — it's the no-account browse
+          // mode reached from the sign-in screen, so it's excluded here.
+          for (final role in const [UserRole.tenant, UserRole.landlord]) ...<Widget>[
             RoleOptionCard(
               role: role,
               selected: state.data.role == role,

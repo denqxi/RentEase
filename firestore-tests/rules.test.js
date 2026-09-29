@@ -76,7 +76,13 @@ async function seedUsersAndProfiles() {
     await db
       .doc(`ownerProfiles/${OWNER_A}`)
       .set({ verificationStatus: 'verified' });
-    await db.doc(`properties/${PROPERTY}`).set({ ownerId: OWNER_A });
+    await db.doc(`properties/${PROPERTY}`).set({
+      ownerId: OWNER_A,
+      isAvailable: true,
+      vacancyStatus: 'available',
+      amenityList: ['WiFi'],
+      amenityScore: 1,
+    });
   });
 }
 
@@ -174,6 +180,56 @@ describe('ownerProfiles / properties — owners can only read/write their own', 
       asOwner(OWNER_B)
         .doc(`ownerProfiles/${OWNER_B}`)
         .update({ verificationStatus: 'pending' }),
+    );
+  });
+});
+
+describe('profile edit screens: the exact partial updates they make', () => {
+  beforeEach(seedUsersAndProfiles);
+
+  it('a tenant can update just their constraints or weights', async () => {
+    await seed((db) =>
+      db.doc(`tenantProfiles/${TENANT_A}`).set({ maxBudget: 4500, wRent: 0.35, avgRating: 4 }),
+    );
+    const db = asTenant(TENANT_A);
+    await assertSucceeds(
+      db.doc(`tenantProfiles/${TENANT_A}`).update({
+        maxBudget: 5000, requiredGender: 'Mixed / Any', needsWifi: true, maxDistanceKm: 4,
+      }),
+    );
+    await assertSucceeds(
+      db.doc(`tenantProfiles/${TENANT_A}`).update({ wRent: 0.5, wDistance: 0.3, wAmenities: 0.2 }),
+    );
+  });
+
+  it('a tenant still cannot touch computed rating fields', async () => {
+    await seed((db) => db.doc(`tenantProfiles/${TENANT_A}`).set({ maxBudget: 4500 }));
+    await assertFails(
+      asTenant(TENANT_A).doc(`tenantProfiles/${TENANT_A}`).update({ avgRating: 5 }),
+    );
+  });
+
+  it('the owner can edit their listing and relist it', async () => {
+    const db = asOwner(OWNER_A);
+    await assertSucceeds(
+      db.doc(`properties/${PROPERTY}`).update({
+        title: 'Renamed', monthlyRent: 4200, maxOccupants: 2, curfewHours: null,
+        amenityList: ['WiFi', 'CCTV'], amenityScore: 2, hasWifi: true,
+      }),
+    );
+    await assertSucceeds(
+      db.doc(`properties/${PROPERTY}`).update({ vacancyStatus: 'booked', isAvailable: false }),
+    );
+    await assertSucceeds(
+      db.doc(`properties/${PROPERTY}`).update({ vacancyStatus: 'available', isAvailable: true }),
+    );
+  });
+
+  it('an edit with a mismatched amenityScore is rejected', async () => {
+    await assertFails(
+      asOwner(OWNER_A)
+        .doc(`properties/${PROPERTY}`)
+        .update({ amenityList: ['WiFi'], amenityScore: 14 }),
     );
   });
 });
@@ -333,6 +389,178 @@ describe('inquiries — only for a real bScore=1 match belonging to the exact pa
     await assertSucceeds(asOwner(OWNER_A).doc('inquiries/inq1').get());
     await assertSucceeds(asAdmin(ADMIN).doc('inquiries/inq1').get());
     await assertFails(asTenant(TENANT_B).doc('inquiries/inq1').get());
+  });
+});
+
+describe('inquiries — the exact writes and queries InquiryService makes', () => {
+  const INQ = MATCH_ID; // InquiryService keys each inquiry by its match ID
+
+  async function seedInquiry(fields = {}) {
+    await seed(async (db) => {
+      await db
+        .doc(`matches/${MATCH_ID}`)
+        .set({ tenantId: TENANT_A, ownerId: OWNER_A, propertyId: PROPERTY, bScore: 1 });
+      await db.doc(`inquiries/${INQ}`).set({
+        matchId: MATCH_ID,
+        tenantId: TENANT_A,
+        ownerId: OWNER_A,
+        propertyId: PROPERTY,
+        stage: 1,
+        status: 'pending',
+        ownerDecision: 'pending',
+        ...fields,
+      });
+    });
+  }
+
+  beforeEach(seedUsersAndProfiles);
+
+  it('the tenant can list their inquiries (tenantId query) and look one up by matchId', async () => {
+    await seedInquiry();
+    const db = asTenant(TENANT_A);
+    await assertSucceeds(db.collection('inquiries').where('tenantId', '==', TENANT_A).get());
+    await assertSucceeds(
+      db
+        .collection('inquiries')
+        .where('tenantId', '==', TENANT_A)
+        .where('matchId', '==', MATCH_ID)
+        .limit(1)
+        .get(),
+    );
+  });
+
+  it('the owner can list inquiries sent to them (ownerId query)', async () => {
+    await seedInquiry();
+    await assertSucceeds(
+      asOwner(OWNER_A).collection('inquiries').where('ownerId', '==', OWNER_A).get(),
+    );
+  });
+
+  it("an unfiltered or other-user query is rejected", async () => {
+    await seedInquiry();
+    await assertFails(asTenant(TENANT_B).collection('inquiries').get());
+    await assertFails(
+      asTenant(TENANT_B).collection('inquiries').where('tenantId', '==', TENANT_A).get(),
+    );
+  });
+
+  it('the owner can accept (stage 2, accepted, active)', async () => {
+    await seedInquiry();
+    await assertSucceeds(
+      asOwner(OWNER_A)
+        .doc(`inquiries/${INQ}`)
+        .update({ stage: 2, ownerDecision: 'accepted', status: 'active' }),
+    );
+  });
+
+  it('the tenant cannot accept their own inquiry', async () => {
+    await seedInquiry();
+    await assertFails(
+      asTenant(TENANT_A)
+        .doc(`inquiries/${INQ}`)
+        .update({ stage: 2, ownerDecision: 'accepted', status: 'active' }),
+    );
+  });
+
+  it('the owner can decline with a reason, and mark an accepted inquiry booked', async () => {
+    await seedInquiry();
+    await assertSucceeds(
+      asOwner(OWNER_A)
+        .doc(`inquiries/${INQ}`)
+        .update({ ownerDecision: 'declined', status: 'declined', declineReason: 'Full' }),
+    );
+    await seedInquiry({ stage: 2, ownerDecision: 'accepted', status: 'active' });
+    await assertSucceeds(
+      asOwner(OWNER_A).doc(`inquiries/${INQ}`).update({ status: 'booked' }),
+    );
+  });
+
+  it('no new inquiry can be opened on a fully booked property', async () => {
+    await seed(async (db) => {
+      await db
+        .doc(`matches/${MATCH_ID}`)
+        .set({ tenantId: TENANT_A, ownerId: OWNER_A, propertyId: PROPERTY, bScore: 1 });
+      await db.doc(`properties/${PROPERTY}`).update({ isAvailable: false, vacancyStatus: 'booked' });
+    });
+    await assertFails(
+      asTenant(TENANT_A).doc(`inquiries/${INQ}`).set({
+        matchId: MATCH_ID,
+        tenantId: TENANT_A,
+        ownerId: OWNER_A,
+        propertyId: PROPERTY,
+        stage: 1,
+        status: 'pending',
+        ownerDecision: 'pending',
+      }),
+    );
+  });
+
+  it('the owner can book, take the listing off the market, and close other inquiries atomically', async () => {
+    await seedInquiry({ stage: 2, ownerDecision: 'accepted', status: 'active' });
+    await seed((db) =>
+      db.doc('inquiries/other').set({
+        matchId: 'tenantB_prop1',
+        tenantId: TENANT_B,
+        ownerId: OWNER_A,
+        propertyId: PROPERTY,
+        stage: 1,
+        status: 'pending',
+        ownerDecision: 'pending',
+      }),
+    );
+    const db = asOwner(OWNER_A);
+    await assertSucceeds(
+      db.collection('inquiries').where('ownerId', '==', OWNER_A).where('propertyId', '==', PROPERTY).get(),
+    );
+    const batch = db.batch();
+    batch.update(db.doc(`inquiries/${INQ}`), { status: 'booked' });
+    batch.update(db.doc(`properties/${PROPERTY}`), { vacancyStatus: 'booked', isAvailable: false });
+    batch.update(db.doc('inquiries/other'), { status: 'closed' });
+    await assertSucceeds(batch.commit());
+  });
+
+  it('a tenant cannot take a property off the market', async () => {
+    await assertFails(
+      asTenant(TENANT_A).doc(`properties/${PROPERTY}`).update({ isAvailable: false }),
+    );
+  });
+
+  it('both sides can rate once booked — never before', async () => {
+    await seedInquiry({ stage: 2, ownerDecision: 'accepted', status: 'active' });
+    await assertFails(
+      asTenant(TENANT_A).collection('ratings').add({
+        inquiryId: INQ, raterId: TENANT_A, ratedId: OWNER_A, raterRole: 'tenant', stars: 5,
+      }),
+    );
+    await seedInquiry({ stage: 2, ownerDecision: 'accepted', status: 'booked' });
+    await assertSucceeds(
+      asTenant(TENANT_A).collection('ratings').add({
+        inquiryId: INQ, raterId: TENANT_A, ratedId: OWNER_A, raterRole: 'tenant', stars: 5,
+      }),
+    );
+    await assertSucceeds(
+      asOwner(OWNER_A).collection('ratings').add({
+        inquiryId: INQ, raterId: OWNER_A, ratedId: TENANT_A, raterRole: 'owner', stars: 4,
+      }),
+    );
+    await assertSucceeds(
+      asTenant(TENANT_A)
+        .collection('ratings')
+        .where('inquiryId', '==', INQ)
+        .where('raterId', '==', TENANT_A)
+        .get(),
+    );
+  });
+
+  it('the chat thread is streamable by both participants once open', async () => {
+    await seedInquiry({ stage: 2, ownerDecision: 'accepted', status: 'active' });
+    await assertSucceeds(
+      asTenant(TENANT_A).collection(`inquiries/${INQ}/messages`).add({
+        senderId: TENANT_A, senderRole: 'tenant', content: 'hi', isAutoGenerated: false,
+      }),
+    );
+    await assertSucceeds(asOwner(OWNER_A).collection(`inquiries/${INQ}/messages`).get());
+    await assertFails(asTenant(TENANT_B).collection(`inquiries/${INQ}/messages`).get());
   });
 });
 

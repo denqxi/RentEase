@@ -21,6 +21,12 @@ class FilteringRepositoryImpl implements FilteringRepository {
       _remote.fetchAvailableVerifiedProperties();
 
   @override
+  Future<Set<String>> fetchMatchedPropertyIds(String tenantId) async {
+    final matches = await _remote.fetchEligibleMatches(tenantId);
+    return matches.map((m) => m.propertyId).toSet();
+  }
+
+  @override
   Future<void> writeFilterResults({
     required String tenantId,
     required List<MatchDoc> eligibleMatches,
