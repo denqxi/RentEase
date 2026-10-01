@@ -32,13 +32,13 @@ void main() {
       build: RegistrationCubit.new,
       act: (cubit) => cubit
         ..next() // role -> account
-        ..next() // account -> about
-        ..back(), // about -> account
+        ..next() // account -> success
+        ..back(), // success -> account
       expect: () => <Matcher>[
         isA<RegistrationState>().having((s) => s.step, 'step',
             RegistrationStep.account),
         isA<RegistrationState>().having((s) => s.step, 'step',
-            RegistrationStep.about),
+            RegistrationStep.success),
         isA<RegistrationState>().having((s) => s.step, 'step',
             RegistrationStep.account),
       ],

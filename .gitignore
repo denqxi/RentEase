@@ -62,3 +62,6 @@ firestore-tests/node_modules/
 firestore-debug.log
 ui-debug.log
 firebase-debug.log
+
+# Local screenshots, not tracked
+/screenshots/

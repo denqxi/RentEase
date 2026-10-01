@@ -159,10 +159,10 @@ class _ProfileAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: Theme.of(context).colorScheme.surfaceContainer,
-        border: Border.all(color: Colors.white, width: 3),
+        border: Border.all(color: AppColors.surface, width: 3),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.10),
+            color: AppColors.ink.withValues(alpha: 0.10),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -175,12 +175,12 @@ class _ProfileAvatar extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: <Color>[Color(0xFFDBC59C), Color(0xFF8B6914)],
+              colors: <Color>[AppColors.primary, AppColors.accent],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
-          child: Icon(Icons.person, color: Colors.white, size: 44),
+          child: Icon(Icons.person, color: AppColors.onInk, size: 44),
         ),
       ),
     );
@@ -267,7 +267,7 @@ class _StatsRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: AppColors.ink.withValues(alpha: 0.06),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
