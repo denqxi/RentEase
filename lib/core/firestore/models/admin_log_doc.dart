@@ -18,7 +18,8 @@ class AdminLogDoc {
   /// References users.
   final String adminId;
 
-  /// e.g. 'approve_owner' | 'reject_owner' | 'suspend_user'.
+  /// 'approve_owner' | 'reject_owner' | 'suspend_user' | 'reactivate_user' |
+  /// 'unlist_property' | 'relist_property'.
   final String action;
   final String targetId;
   final String targetType;

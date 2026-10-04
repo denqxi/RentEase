@@ -20,7 +20,7 @@ class ActivityTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.field),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: AppColors.ink.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 1),
           ),
@@ -69,7 +69,7 @@ class _IconBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (icon, bg) = switch (type) {
       ActivityType.match => (Icons.favorite, AppColors.accent),
-      ActivityType.message => (Icons.chat_bubble_outline, const Color(0xFFF59E0B)),
+      ActivityType.message => (Icons.chat_bubble_outline, AppColors.matchMedium),
       ActivityType.update => (Icons.sync_rounded, AppColors.accent),
     };
 

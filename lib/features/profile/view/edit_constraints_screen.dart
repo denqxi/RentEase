@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../registration/widgets/preference_dropdown.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -146,45 +147,12 @@ class _EditConstraintsViewState extends State<_EditConstraintsView> {
                         ),
                       ),
                       SizedBox(height: AppSpacing.md),
-                      LabelledField(
+                      PreferenceDropdown(
                         label: 'Gender policy',
-                        child: DropdownButtonFormField<String>(
-                          initialValue: _gender,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: context.appColors.fieldFill,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md,
-                              vertical: 14,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppRadii.field,
-                              ),
-                              borderSide: BorderSide(
-                                color: context.appColors.fieldBorder,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppRadii.field,
-                              ),
-                              borderSide: const BorderSide(
-                                color: AppColors.accent,
-                                width: 1.5,
-                              ),
-                            ),
-                          ),
-                          items: [
-                            for (final option in _genderOptions)
-                              DropdownMenuItem(
-                                value: option,
-                                child: Text(option),
-                              ),
-                          ],
-                          onChanged: (v) =>
-                              setState(() => _gender = v ?? _gender),
-                        ),
+                        value: _gender,
+                        hint: 'Select gender policy',
+                        items: _genderOptions,
+                        onChanged: (v) => setState(() => _gender = v),
                       ),
                       SizedBox(height: AppSpacing.md),
                       Row(

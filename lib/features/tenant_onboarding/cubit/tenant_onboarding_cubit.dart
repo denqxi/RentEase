@@ -18,13 +18,10 @@ part 'tenant_onboarding_state.dart';
 /// see CLAUDE.md rule 7 ("matching runs at profile-save time").
 class TenantOnboardingCubit extends Cubit<TenantOnboardingState> {
   TenantOnboardingCubit({
-    required TenantProfileRepository repository,
-    required FilteringService filteringService,
-    required TopsisService topsisService,
-  }) : _repository = repository,
-       _filteringService = filteringService,
-       _topsisService = topsisService,
-       super(const TenantOnboardingState());
+    required this._repository,
+    required this._filteringService,
+    required this._topsisService,
+  }) : super(const TenantOnboardingState());
 
   final TenantProfileRepository _repository;
   final FilteringService _filteringService;

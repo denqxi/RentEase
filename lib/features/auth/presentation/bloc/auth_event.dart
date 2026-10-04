@@ -71,3 +71,9 @@ class AuthPasswordResetRequested extends AuthEvent {
   @override
   List<Object?> get props => [email];
 }
+
+/// Internal: the signed-in user's users doc turned `suspended` while the app
+/// was open (see [AuthRepository.watchSuspended]).
+class AuthSuspensionDetected extends AuthEvent {
+  const AuthSuspensionDetected();
+}

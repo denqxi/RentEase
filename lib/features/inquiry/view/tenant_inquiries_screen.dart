@@ -7,6 +7,7 @@ import '../../../shared/widgets/phase_badge.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../cubit/inquiry_list_cubit.dart';
 import '../data/repositories/inquiry_repository_impl.dart';
+import '../domain/services/inquiry_service.dart';
 import '../model/inquiry_summary.dart';
 import 'inquiry_thread_screen.dart';
 
@@ -179,6 +180,7 @@ class _InquiryList extends StatelessWidget {
             propertyName: item.propertyTitle,
             ownerName: item.counterpartName,
             phase: inquiry.stage.toInt(),
+            isInvitation: InquiryService.isInvite(inquiry),
             date: inquiryDateLabel(inquiry.updatedAt?.toDate()),
             resolvedStatus: switch (inquiry.status) {
               'booked' => 'Booked',
@@ -255,7 +257,7 @@ class _SegTab extends StatelessWidget {
             boxShadow: isSelected
                 ? <BoxShadow>[
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
+                      color: AppColors.scrim.withValues(alpha: 0.08),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -290,8 +292,12 @@ class _InquiryCard extends StatelessWidget {
     required this.ownerName,
     required this.phase,
     required this.date,
+    this.isInvitation = false,
     this.resolvedStatus,
   });
+
+  /// Owner-initiated: the tenant is the one who has to answer.
+  final bool isInvitation;
 
   final String propertyInitials;
   final String propertyName;
@@ -316,7 +322,7 @@ class _InquiryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: AppColors.scrim.withValues(alpha: 0.06),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -386,7 +392,11 @@ class _InquiryCard extends StatelessWidget {
                   )
                 else
                   Text(
-                    isPhase1 ? 'Awaiting response' : 'Chat open',
+                    isPhase1
+                        ? (isInvitation
+                              ? 'Invitation - respond'
+                              : 'Awaiting response')
+                        : 'Chat open',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,

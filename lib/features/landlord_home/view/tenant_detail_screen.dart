@@ -2,352 +2,128 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../shared/widgets/match_score_card.dart';
-import '../model/tenant_detail.dart';
+import '../../../shared/widgets/compatible_badge.dart';
+import '../../inquiry/widgets/invite_button.dart';
+import '../../owner/model/compatible_tenant.dart';
 
-/// Full-screen detail view for a tenant applicant (landlord perspective).
+/// Detail view for a compatible tenant (owner perspective). Compatibility is
+/// shown as a plain "Compatible" badge, never a score or percentage.
 class TenantDetailScreen extends StatelessWidget {
-  const TenantDetailScreen({required this.detail, super.key});
+  const TenantDetailScreen({required this.tenant, super.key});
 
-  final TenantDetail detail;
-
-  @override
-  Widget build(BuildContext context) {
-    return _TenantDetailView(detail: detail);
-  }
-}
-
-class _TenantDetailView extends StatelessWidget {
-  const _TenantDetailView({required this.detail});
-
-  final TenantDetail detail;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.appColors.surface,
-      body: Stack(
-        children: <Widget>[
-          CustomScrollView(
-            slivers: <Widget>[
-              SliverToBoxAdapter(
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: _CircleButton(
-                        onTap: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  0,
-                  AppSpacing.lg,
-                  100,
-                ),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate(<Widget>[
-                    _AvatarSection(detail: detail),
-                    SizedBox(height: AppSpacing.md),
-                    MatchScoreCard(
-                      matchPercent: detail.matchPercent,
-                      label: detail.matchLabel,
-                      summary: detail.matchSummary,
-                      reasons: detail.matchReasons
-                          .map((r) => (r.label, r.met))
-                          .toList(),
-                    ),
-                    SizedBox(height: AppSpacing.lg),
-                    Text(
-                      'Applicant details',
-                      style: AppTextStyles.title(context).copyWith(fontSize: 18),
-                    ),
-                    SizedBox(height: AppSpacing.sm),
-                    _ApplicantDetailsTable(detail: detail),
-                    SizedBox(height: AppSpacing.lg),
-                    Text(
-                      'Ratings from previous landlords',
-                      style: AppTextStyles.title(context).copyWith(fontSize: 18),
-                    ),
-                    SizedBox(height: AppSpacing.sm),
-                    const _TenantRatingsSection(),
-                  ]),
-                ),
-              ),
-            ],
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _BottomBar(tenantName: detail.name),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CircleButton extends StatelessWidget {
-  const _CircleButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: context.appColors.fieldFill,
-          shape: BoxShape.circle,
-          border: Border.all(color: context.appColors.fieldBorder),
-        ),
-        child: Icon(Icons.arrow_back, size: 18, color: context.appColors.textPrimary),
-      ),
-    );
-  }
-}
-
-class _AvatarSection extends StatelessWidget {
-  const _AvatarSection({required this.detail});
-
-  final TenantDetail detail;
-
-  static const List<List<Color>> _palettes = <List<Color>>[
-    <Color>[Color(0xFFDBC59C), Color(0xFF8B6914)],
-    <Color>[Color(0xFF2C3E6B), Color(0xFF0D1B3A)],
-    <Color>[Color(0xFFB0D4E0), Color(0xFF5A9AB0)],
-    <Color>[Color(0xFFCDAA8C), Color(0xFF8B6250)],
-    <Color>[Color(0xFF4AA8D8), Color(0xFF1E5C8A)],
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _palettes[(detail.imageSeed - 1) % _palettes.length];
-    return Column(
-      children: <Widget>[
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: colors,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Icon(Icons.person, color: AppColors.onInk, size: 40),
-        ),
-        SizedBox(height: AppSpacing.sm),
-        Text(
-          detail.name,
-          style: AppTextStyles.title(context).copyWith(fontSize: 20),
-        ),
-        SizedBox(height: 2),
-        Text(
-          '${detail.occupation} · ${detail.incomeRange}',
-          style: AppTextStyles.caption(context).copyWith(fontSize: 13),
-        ),
-      ],
-    );
-  }
-}
-
-class _ApplicantDetailsTable extends StatelessWidget {
-  const _ApplicantDetailsTable({required this.detail});
-
-  final TenantDetail detail;
+  final CompatibleTenant tenant;
 
   @override
   Widget build(BuildContext context) {
     final rows = <(String, String)>[
-      ('Occupation', detail.occupation),
-      ('Monthly income', detail.monthlyIncome),
-      ('Occupants', detail.occupants),
-      ('Smoking', detail.smoking),
-      ('Pets', detail.pets),
-      ('Move-in', detail.moveIn),
+      if (tenant.gender.isNotEmpty) ('Gender', tenant.gender),
+      if (tenant.occupation?.isNotEmpty ?? false)
+        ('Occupation', tenant.occupation!),
+      if (tenant.school?.isNotEmpty ?? false) ('School', tenant.school!),
+      ('Max budget', '₱${tenant.maxBudget}/mo'),
     ];
 
-    return Container(
-      decoration: BoxDecoration(
-        color: context.appColors.fieldFill,
-        borderRadius: BorderRadius.circular(AppRadii.card),
+    return Scaffold(
+      backgroundColor: context.appColors.surface,
+      appBar: AppBar(
+        backgroundColor: context.appColors.surface,
+        elevation: 0,
+        title: Text(
+          'Tenant',
+          style: AppTextStyles.title(context).copyWith(fontSize: 16),
+        ),
       ),
-      child: Column(
-        children: List<Widget>.generate(rows.length, (i) {
-          final isLast = i == rows.length - 1;
-          return Column(
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: 14,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          children: [
+            Center(
+              child: CircleAvatar(
+                radius: 40,
+                backgroundColor: AppColors.accentSoft,
+                child: Text(
+                  tenant.initials,
+                  style: AppTextStyles.title(context).copyWith(fontSize: 24),
                 ),
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        rows[i].$1,
-                        style: AppTextStyles.caption(context).copyWith(fontSize: 13),
-                      ),
-                    ),
-                    Text(
-                      rows[i].$2,
-                      style: AppTextStyles.label(context).copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (!isLast)
-                Divider(height: 1, color: context.appColors.fieldBorder),
-            ],
-          );
-        }),
-      ),
-    );
-  }
-}
-
-class _TenantRatingsSection extends StatelessWidget {
-  const _TenantRatingsSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final ratings = MockData.tenantRatings;
-    final double avg = ratings.isEmpty
-        ? 0
-        : ratings.fold<int>(0, (sum, r) => sum + (r['stars'] as int)) /
-            ratings.length;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            Icon(Icons.star_rounded, color: AppColors.matchMedium, size: 20),
-            SizedBox(width: 4),
-            Text(
-              avg.toStringAsFixed(1),
-              style: AppTextStyles.label(context).copyWith(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
               ),
             ),
-            SizedBox(width: 6),
+            const SizedBox(height: AppSpacing.sm),
             Text(
-              '(${ratings.length} ratings)',
-              style: AppTextStyles.caption(context),
+              tenant.name,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.title(context).copyWith(fontSize: 20),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            const Center(child: CompatibleBadge()),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'This tenant passes all of your property rules and your '
+              'property fits their requirements.',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.caption(context).copyWith(fontSize: 13),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Tenant details',
+              style: AppTextStyles.title(context).copyWith(fontSize: 18),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              decoration: BoxDecoration(
+                color: context.appColors.fieldFill,
+                borderRadius: BorderRadius.circular(AppRadii.card),
+              ),
+              child: Column(
+                children: [
+                  for (var i = 0; i < rows.length; i++) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: 14,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              rows[i].$1,
+                              style: AppTextStyles.caption(context)
+                                  .copyWith(fontSize: 13),
+                            ),
+                          ),
+                          Flexible(
+                            child: Text(
+                              rows[i].$2,
+                              textAlign: TextAlign.end,
+                              style: AppTextStyles.label(context).copyWith(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (i != rows.length - 1)
+                      Divider(height: 1, color: context.appColors.fieldBorder),
+                  ],
+                ],
+              ),
             ),
           ],
         ),
-        SizedBox(height: AppSpacing.sm),
-        ...ratings.map(
-          (r) => Container(
-            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: context.appColors.surface,
-              borderRadius: BorderRadius.circular(AppRadii.card),
-              border:
-                  Border.all(color: context.appColors.fieldBorder, width: 0.5),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        r['landlordName'] as String,
-                        style: AppTextStyles.label(context).copyWith(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    ...List<Widget>.generate(
-                      5,
-                      (i) => Icon(
-                        i < (r['stars'] as int)
-                            ? Icons.star_rounded
-                            : Icons.star_border_rounded,
-                        color: AppColors.matchMedium,
-                        size: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 2),
-                Text(
-                  r['date'] as String,
-                  style: AppTextStyles.caption(context).copyWith(fontSize: 11),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  r['review'] as String,
-                  style: AppTextStyles.caption(context)
-                      .copyWith(fontSize: 12.5, height: 1.4),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.tenantName});
-
-  final String tenantName;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.sm,
-        AppSpacing.lg,
-        AppSpacing.sm + MediaQuery.of(context).padding.bottom,
       ),
-      decoration: BoxDecoration(
-        color: context.appColors.surface,
-        border: Border(top: BorderSide(color: context.appColors.fieldBorder)),
-      ),
-      child: SizedBox(
-        height: AppSizes.buttonHeight,
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Invitation sent to $tenantName!'),
-              backgroundColor: context.appColors.ink,
-            ),
+      // CLAUDE.md rule 2: Invite is absent, never disabled, unless the owner
+      // can really invite; an owner with several compatible properties picks
+      // which one. InviteButton decides and renders nothing otherwise.
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: InviteButton(
+            tenantId: tenant.tenantId,
+            tenantName: tenant.name,
+            bScore: tenant.bScore,
           ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.appColors.ink,
-            foregroundColor: AppColors.onInk,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.button),
-            ),
-          ),
-          child: Text('Contact tenant', style: AppTextStyles.buttonLabel),
         ),
       ),
     );

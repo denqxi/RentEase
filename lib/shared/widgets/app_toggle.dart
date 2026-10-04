@@ -5,11 +5,7 @@ import '../../core/constants/app_colors.dart';
 /// Styled toggle matching RentEase design: accent track when active,
 /// indicatorInactive track when off, white thumb always.
 class AppToggle extends StatelessWidget {
-  const AppToggle({
-    required this.value,
-    required this.onChanged,
-    super.key,
-  });
+  const AppToggle({required this.value, required this.onChanged, super.key});
 
   final bool value;
   final ValueChanged<bool> onChanged;

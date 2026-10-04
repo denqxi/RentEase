@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -6,13 +7,19 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/card_over_hero_layout.dart';
+import '../../auth/presentation/bloc/auth_bloc.dart';import '../cubit/admin_login_cubit.dart';
+import '../data/repositories/admin_repository_impl.dart';
+import '../domain/repositories/admin_repository.dart';
 import 'admin_shell.dart';
 
 /// Admin sign-in — card-over-hero like the tenant/owner auth screens, but
 /// with a dark ink hero to signal the elevated role. No create-account link:
 /// admin accounts are provisioned manually (see CLAUDE.md rule 8).
 class AdminLoginScreen extends StatefulWidget {
-  const AdminLoginScreen({super.key});
+  const AdminLoginScreen({this.repository, super.key});
+
+  /// Injected in tests / previews; defaults to the Firebase implementation.
+  final AdminRepository? repository;
 
   static const routeName = '/admin/login';
 
@@ -24,7 +31,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
-  bool _loading = false;
+  late final AdminRepository _repo = widget.repository ?? AdminRepositoryImpl();
+  late final AdminLoginCubit _cubit = AdminLoginCubit(_repo);
 
   bool get _canSubmit =>
       _emailController.text.isNotEmpty && _passwordController.text.isNotEmpty;
@@ -33,21 +41,42 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _cubit.close();
     super.dispose();
   }
 
-  Future<void> _login() async {
-    setState(() => _loading = true);
-    await Future<void>.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-    setState(() => _loading = false);
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const AdminShell()),
-    );
+  void _login() =>
+      _cubit.signIn(_emailController.text, _passwordController.text);
+
+  void _onState(BuildContext context, AdminLoginState state) {
+    if (state.isSignedIn) {
+      // Re-resolve AuthBloc so it reflects the admin session.
+      context.read<AuthBloc>().add(const AuthCheckRequested());
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => AdminShell(repository: _repo)),
+      );
+    } else if (state.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(state.errorMessage!),
+          backgroundColor: context.appColors.ink,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    return BlocProvider<AdminLoginCubit>.value(
+      value: _cubit,
+      child: BlocConsumer<AdminLoginCubit, AdminLoginState>(
+        listener: _onState,
+        builder: _buildForm,
+      ),
+    );
+  }
+
+  Widget _buildForm(BuildContext context, AdminLoginState login) {
     return CardOverHeroLayout(
       cardHeightFraction: 0.62,
       hero: const _AdminHero(),
@@ -58,8 +87,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           SizedBox(height: 4),
           Text(
             'Authorized personnel only.',
-            style: AppTextStyles.body(context)
-                .copyWith(color: context.appColors.textSecondary),
+            style: AppTextStyles.body(
+              context,
+            ).copyWith(color: context.appColors.textSecondary),
           ),
           SizedBox(height: AppSpacing.lg),
           LabelledField(
@@ -102,7 +132,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             ),
           ),
           SizedBox(height: AppSpacing.lg),
-          _loading
+          login.isLoading
               ? const Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),

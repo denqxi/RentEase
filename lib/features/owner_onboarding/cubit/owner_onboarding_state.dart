@@ -16,6 +16,7 @@ class OwnerOnboardingState extends Equatable {
     this.address = '',
     this.latitude,
     this.longitude,
+    this.photos = const <UploadedImage>[],
     // Step 2 — house rules (Layer 1 property-side constraints).
     this.depositAmount = 0,
     this.advanceMonths = 1,
@@ -24,8 +25,8 @@ class OwnerOnboardingState extends Equatable {
     this.petsAllowed = false,
     this.curfewHours = 22,
     this.maxOccupants = 1,
-    // Step 3 — pricing and amenities (final step; owner-side TOPSIS weights
-    // are fixed at 0.60/0.40 — CLAUDE.md — so there's no weight step here).
+    // Step 3 — pricing and amenities (final step; there is no owner-side
+    // TOPSIS, so no weight step).
     this.monthlyRent = 0,
     this.amenities = const <String>[],
   });
@@ -41,6 +42,9 @@ class OwnerOnboardingState extends Equatable {
   final String address;
   final double? latitude;
   final double? longitude;
+
+  /// Uploaded listing photos (1–5), first is the cover.
+  final List<UploadedImage> photos;
 
   final int depositAmount;
   final int advanceMonths;
@@ -59,6 +63,7 @@ class OwnerOnboardingState extends Equatable {
       address.isNotEmpty &&
       latitude != null &&
       longitude != null &&
+      photos.isNotEmpty &&
       monthlyRent > 0;
 
   OwnerOnboardingState copyWith({
@@ -70,6 +75,7 @@ class OwnerOnboardingState extends Equatable {
     String? address,
     double? latitude,
     double? longitude,
+    List<UploadedImage>? photos,
     int? depositAmount,
     int? advanceMonths,
     String? allowedGender,
@@ -89,6 +95,7 @@ class OwnerOnboardingState extends Equatable {
       address: address ?? this.address,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      photos: photos ?? this.photos,
       depositAmount: depositAmount ?? this.depositAmount,
       advanceMonths: advanceMonths ?? this.advanceMonths,
       allowedGender: allowedGender ?? this.allowedGender,
@@ -111,6 +118,7 @@ class OwnerOnboardingState extends Equatable {
     address,
     latitude,
     longitude,
+    photos,
     depositAmount,
     advanceMonths,
     allowedGender,

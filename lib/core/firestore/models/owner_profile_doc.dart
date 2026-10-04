@@ -5,11 +5,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 ///
 /// No TOPSIS weight fields here — owner-side tenant discovery is
 /// filtering-only, there is no owner-side TOPSIS instance (CLAUDE.md).
+///
+/// Verification document links are NOT here (this doc is world-readable); they
+/// live in `ownerProfiles/{uid}/private/documents`.
 class OwnerProfileDoc {
   const OwnerProfileDoc({
     required this.userId,
     required this.verificationStatus,
-    required this.documentUrls,
     this.submittedAt,
     this.verifiedAt,
     this.rejectedAt,
@@ -25,7 +27,6 @@ class OwnerProfileDoc {
 
   /// 'verified' | 'pending' | 'none' | 'rejected' — admin-controlled only.
   final String verificationStatus;
-  final List<String> documentUrls;
   final Timestamp? submittedAt;
   final Timestamp? verifiedAt;
   final Timestamp? rejectedAt;
@@ -41,8 +42,6 @@ class OwnerProfileDoc {
       OwnerProfileDoc(
         userId: id,
         verificationStatus: map['verificationStatus'] as String? ?? 'none',
-        documentUrls:
-            (map['documentUrls'] as List?)?.cast<String>() ?? const [],
         submittedAt: map['submittedAt'] as Timestamp?,
         verifiedAt: map['verifiedAt'] as Timestamp?,
         rejectedAt: map['rejectedAt'] as Timestamp?,
@@ -59,7 +58,6 @@ class OwnerProfileDoc {
 
   Map<String, dynamic> toMap() => {
     'verificationStatus': verificationStatus,
-    'documentUrls': documentUrls,
     if (submittedAt != null) 'submittedAt': submittedAt,
     if (verifiedAt != null) 'verifiedAt': verifiedAt,
     if (rejectedAt != null) 'rejectedAt': rejectedAt,

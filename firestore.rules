@@ -2,13 +2,27 @@ rules_version = '2';
 
 // RentEase Firestore security rules — enforce the CLAUDE.md invariants:
 //  - role is permanent after signup
-//  - owner cannot write properties until verified (admin-controlled)
+//  - owners (none/pending/verified) may write their own properties and
+//    those listings are visible to signed-in users and enter the matching
+//    pool immediately (Oct 2026 reversal); properties.isVerified is only
+//    the "Verified" badge flag and may be true only for a verified owner.
+//    Inquiries and invitations do NOT require a verified owner (Oct 2026:
+//    verification is a badge / trust signal only)
+//    EXCEPT a REJECTED owner (ownerNotRejected): no invites, answers, chat or
+//    contact share. The tenant's map pin + TOPSIS weights live in
+//    tenantProfiles/{uid}/private/prefs (tenant + admin only), not in the
+//    owner-readable tenantProfiles doc.
 //  - isVerified / verificationStatus writable by admin only
 //  - matches are written by the tenant's own device (client-side matching
-//    engine, no Cloud Functions — see CLAUDE.md "Client-Side Matching
-//    Engine"); this is a known trade-off, not a substitute for server-side
-//    verification — the `inquiries` create rule below is the actual
-//    enforcement point for the compatibility gate
+//    engine, no Cloud Functions - permanently out of scope). The rules do NOT
+//    trust the client's bScore: `inquiries` creates (tenant inquiry and owner
+//    invite) and bScore = 1 `matches` writes re-derive the non-distance
+//    P/T checks from stored tenantProfiles + properties + users.gender
+//    (see pairEligible). Distance is not re-derived (latitude bound only).
+//  - contact privacy: users/{uid} (world-readable) holds no email/phone; they
+//    live in users/{uid}/private/contact (self + admin). After an inquiry is
+//    accepted each participant may share their PHONE ONLY via
+//    inquiries/{id}/contact/{tenant|owner} (own doc, {phone, sharedAt})
 //  - messages only inside inquiries where the user is a participant,
 //    and only after the owner accepts (stage 2)
 service cloud.firestore {
@@ -26,6 +40,16 @@ service cloud.firestore {
       return signedIn() && userDoc(request.auth.uid).role == 'admin';
     }
 
+    // Admin-suspended accounts (users.status == 'suspended') keep read access
+    // to their own users doc (so the app can tell them) but every write to
+    // the collections below is denied. A missing users doc counts as active
+    // so the signup batch (users + profile written together) still passes.
+    function notSuspended() {
+      return signedIn()
+        && (!exists(/databases/$(database)/documents/users/$(request.auth.uid))
+            || userDoc(request.auth.uid).get('status', 'active') != 'suspended');
+    }
+
     function isSelf(uid) {
       return signedIn() && request.auth.uid == uid;
     }
@@ -37,36 +61,197 @@ service cloud.firestore {
              .data.verificationStatus == 'verified';
     }
 
+    // A REJECTED owner (ownerProfiles.verificationStatus == 'rejected') may not
+    // invite, answer/close/book inquiries, chat or share contact. A missing
+    // profile or none / pending / verified is allowed (verification is
+    // otherwise a badge only). Reads one ownerProfiles doc.
+    function ownerNotRejected(ownerId) {
+      return !exists(/databases/$(database)/documents/ownerProfiles/$(ownerId))
+        || get(/databases/$(database)/documents/ownerProfiles/$(ownerId))
+             .data.get('verificationStatus', 'none') != 'rejected';
+    }
+
+    // ---------- bilateral eligibility re-derivation ----------
+    // Matching runs client-side (no Cloud Functions, permanently), so a
+    // modified app could forge matches.bScore = 1. These helpers port the
+    // NON-distance checks of FilteringService (lib/features/matching/domain/
+    // services/filtering_service.dart) so inquiries / matches writes re-derive
+    // eligibility from the stored tenantProfiles + properties + users.gender
+    // instead of trusting the client-written bScore. Keep in sync with the
+    // Dart code; test/features/matching/rules_parity_test.dart and the
+    // "parity table" in firestore-tests/rules.test.js guard against drift.
+    // NOT re-derived: LocationMatch (haversine needs trig; only a latitude
+    // lower bound that can never reject a Dart-accepted pair is applied) and
+    // the truthfulness of the stored profile/user fields themselves.
+    function bStr(v) {
+      return v is string ? v : '';
+    }
+    function bNum(v, d) {
+      return v is number ? v : d;
+    }
+    function bWild(v) {
+      let s = bStr(v).trim().lower();
+      return s == '' || s == 'all' || s == 'any' || s == 'mixed / any' || s == 'mixed';
+    }
+    // Dart: allowed.trim().toLowerCase().startsWith(candidate.trim().toLowerCase())
+    // (candidate restricted to plain letters/spaces so it is safe in a regex).
+    function bGenderAllows(allowed, candidate) {
+      let c = bStr(candidate).trim().lower();
+      return bWild(allowed)
+        || (c != '' && c.matches('[a-z ]+')
+            && bStr(allowed).trim().lower().matches(c + '.*'));
+    }
+    function bGenderPoliciesCompatible(allowed, required) {
+      return bWild(allowed) || bWild(required)
+        || bStr(allowed).trim().lower() == bStr(required).trim().lower();
+    }
+    // Latitude-only sanity bound: 1 degree of latitude is >= 111 km on a
+    // Haversine sphere, 110 is used so it can never reject a pair Dart accepts.
+    // The tenant's POI lives in tenantProfiles/{t}/private/prefs (hidden from
+    // owners); a not-yet-migrated legacy poiLatLng on tenantProfiles is the
+    // fallback. prefs is {} when that doc does not exist.
+    function bLatBoundOk(tp, prop, prefs) {
+      let a = prefs.get('poiLatLng', tp.get('poiLatLng', null));
+      let b = prop.get('location', null);
+      let r = bNum(tp.get('maxDistanceKm', 0), 0) + 0.001;
+      return !(a is latlng && b is latlng)
+        || ((a.latitude() - b.latitude()) * 110 <= r
+            && (b.latitude() - a.latitude()) * 110 <= r);
+    }
+    // P_score x T_score without LocationMatch. tp = tenantProfiles data,
+    // prop = properties data, gender = users/{tenant}.gender.
+    function bEligible(tp, prop, gender, prefs) {
+      return bGenderAllows(prop.get('allowedGender', ''), gender)
+        && (tp.get('isSmoker', false) != true || prop.get('smokingAllowed', false) == true)
+        && (tp.get('hasPet', false) != true || prop.get('petsAllowed', false) == true)
+        && bNum(tp.get('groupSize', 1), 1) <= bNum(prop.get('maxOccupants', 1), 1)
+        && bNum(prop.get('monthlyRent', 0), 0) <= bNum(tp.get('maxBudget', 0), 0)
+        && bGenderPoliciesCompatible(prop.get('allowedGender', ''),
+                                     tp.get('requiredGender', ''))
+        && (tp.get('needsWifi', false) != true || prop.get('hasWifi', false) == true)
+        && bLatBoundOk(tp, prop, prefs);
+    }
+    // rules' get() is not subject to the read rules, so the owner-hidden prefs
+    // doc can still feed the bound. Missing doc -> {}.
+    function tenantPrefs(tenantId) {
+      return exists(/databases/$(database)/documents/tenantProfiles/$(tenantId)/private/prefs)
+        ? get(/databases/$(database)/documents/tenantProfiles/$(tenantId)/private/prefs).data
+        : {};
+    }
+    // Reads: tenantProfiles/{t}, properties/{p}, users/{t}, tenantProfiles/{t}/
+    // private/prefs (4 docs; with the callers' users/{me}, matches/{m} and
+    // ownerProfiles/{me} the worst case, an owner invite, is 7 distinct docs).
+    function pairEligible(tenantId, propertyId) {
+      return bEligible(
+        get(/databases/$(database)/documents/tenantProfiles/$(tenantId)).data,
+        get(/databases/$(database)/documents/properties/$(propertyId)).data,
+        userDoc(tenantId).get('gender', ''),
+        tenantPrefs(tenantId));
+    }
+
     // ---------- users ----------
+    // The public users doc is readable by every signed-in user, so it holds
+    // NO contact details: email and phone live in users/{uid}/private/contact
+    // (below). A self write may not add or change phone/email on this doc, but
+    // may delete them (self-migration of pre-privacy accounts).
     match /users/{userId} {
+      function noPublicContact() {
+        return !request.resource.data.keys().hasAny(['phone', 'email']);
+      }
       allow read: if signedIn();
       allow create: if isSelf(userId)
-        && request.resource.data.role in ['tenant', 'owner']; // no admin self-registration
+        && request.resource.data.role in ['tenant', 'owner'] // no admin self-registration
+        && noPublicContact();
       allow update: if (isSelf(userId)
           && request.resource.data.role == resource.data.role      // role is permanent
-          && request.resource.data.status == resource.data.status) // status is admin-controlled
-        || isAdmin();
+          && request.resource.data.status == resource.data.status  // status is admin-controlled
+          && (noPublicContact()
+              || !request.resource.data.diff(resource.data).affectedKeys()
+                    .hasAny(['phone', 'email'])))
+        // Admin may only suspend / reactivate: never edit role or profile.
+        || (isAdmin()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status'])
+            && request.resource.data.status in ['active', 'suspended']);
       allow delete: if isAdmin();
+
+      // Email + phone: that user and admins only. Suspended users cannot write.
+      match /private/{docId} {
+        allow read: if isSelf(userId) || isAdmin();
+        allow create, update: if (isSelf(userId) && notSuspended()
+            && docId == 'contact'
+            && request.resource.data.keys().hasOnly(
+                 ['phone', 'email', 'emergencyContact', 'updatedAt'])
+            && (!('emergencyContact' in request.resource.data)
+                || request.resource.data.emergencyContact is string)
+            && (!('phone' in request.resource.data) || request.resource.data.phone is string)
+            && (!('email' in request.resource.data) || request.resource.data.email is string))
+          || (isAdmin() && docId == 'contact');
+        allow delete: if isAdmin();
+      }
     }
 
     // ---------- tenantProfiles ----------
     match /tenantProfiles/{userId} {
-      allow read: if signedIn();
-      allow create, update: if isSelf(userId)
+      // Self, owners (Find Tenants / Phase 1 summary) and admin only; tenants
+      // cannot read other tenants' profiles. Rules' own get() calls
+      // (pairEligible) are not subject to this read rule.
+      allow read: if isSelf(userId) || isAdmin()
+        || (signedIn() && userDoc(request.auth.uid).role == 'owner');
+      // emergencyContact is private (users/{uid}/private/contact): it may not
+      // be written to or kept on this doc (a self update that drops it is ok).
+      // The map pin (poiLatLng/poiLabel/poiType) and TOPSIS weights live in
+      // tenantProfiles/{uid}/private/prefs, never here: they may not be added
+      // or changed on this owner-readable doc (a self update may delete them,
+      // and an untouched pre-migration leftover does not block other edits).
+      function noPrivatePrefs() {
+        return !request.resource.data.keys().hasAny(['poiLatLng', 'poiLabel',
+                 'poiType', 'poiLatitude', 'poiLongitude', 'poiAddress',
+                 'wRent', 'wDistance', 'wAmenities'])
+          || (resource != null
+              && !request.resource.data.diff(resource.data).affectedKeys()
+                    .hasAny(['poiLatLng', 'poiLabel', 'poiType', 'poiLatitude',
+                             'poiLongitude', 'poiAddress', 'wRent',
+                             'wDistance', 'wAmenities']));
+      }
+      allow create, update: if isSelf(userId) && notSuspended()
+        && !('emergencyContact' in request.resource.data)
+        && noPrivatePrefs()
         // computed fields are server-side only
         && !request.resource.data.diff(resource == null ? {} : resource.data)
               .affectedKeys().hasAny(['avgRating', 'totalRatings',
                                       'profileCompleteness', 'credibilityScore']);
-      allow delete: if isSelf(userId) || isAdmin();
+      allow delete: if (isSelf(userId) && notSuspended()) || isAdmin();
+
+      // Map pin + TOPSIS weights: that tenant and admins only (owners cannot
+      // read them). Suspended tenants cannot write.
+      match /private/{docId} {
+        function validPrefs() {
+          let d = request.resource.data;
+          return d.keys().hasOnly(['poiLatLng', 'poiLabel', 'poiType', 'wRent',
+                                   'wDistance', 'wAmenities', 'updatedAt'])
+            && (!('poiLatLng' in d) || d.poiLatLng is latlng)
+            && (!('poiLabel' in d) || d.poiLabel is string)
+            && (!('poiType' in d) || d.poiType is string)
+            && (!('wRent' in d) || (d.wRent is number && d.wRent >= 0 && d.wRent <= 1))
+            && (!('wDistance' in d) || (d.wDistance is number && d.wDistance >= 0 && d.wDistance <= 1))
+            && (!('wAmenities' in d) || (d.wAmenities is number && d.wAmenities >= 0 && d.wAmenities <= 1));
+        }
+        allow read: if isSelf(userId) || isAdmin();
+        allow create, update: if isSelf(userId) && notSuspended()
+          && docId == 'prefs'
+          && validPrefs();
+        allow delete: if (isSelf(userId) && notSuspended()) || isAdmin();
+      }
     }
 
     // ---------- ownerProfiles ----------
     match /ownerProfiles/{userId} {
       allow read: if signedIn();
       // Owner may create/update their profile but NEVER set verification fields.
-      allow create: if isSelf(userId)
+      allow create: if isSelf(userId) && notSuspended()
         && request.resource.data.verificationStatus in ['none', 'pending'];
-      allow update: if (isSelf(userId)
+      allow update: if (isSelf(userId) && notSuspended()
           // owner can only move none -> pending (document submission)
           && (request.resource.data.verificationStatus == resource.data.verificationStatus
               || (resource.data.verificationStatus == 'none'
@@ -76,6 +261,29 @@ service cloud.firestore {
                          'totalRatings', 'totalListings']))
         || isAdmin(); // admin approves/rejects
       allow delete: if isAdmin();
+
+      // Verification document links: owner + admin only. Owner may write
+      // only while not yet verified/rejected (no profile yet, none, pending).
+      // get() sees pre-batch state, so the none->pending batch passes.
+      match /private/{docId} {
+        function ownerCanSubmit() {
+          return !exists(/databases/$(database)/documents/ownerProfiles/$(userId))
+            || get(/databases/$(database)/documents/ownerProfiles/$(userId))
+                 .data.verificationStatus in ['none', 'pending'];
+        }
+        allow read: if isSelf(userId) || isAdmin();
+        allow create, update: if (isSelf(userId) && notSuspended()
+            && docId == 'documents'
+            && ownerCanSubmit()
+            && request.resource.data.keys().hasOnly(
+                 ['documentUrls', 'documentPublicIds', 'submittedAt'])
+            && request.resource.data.documentUrls is list
+            // Two required documents (ID, ownership); business permit optional.
+            && request.resource.data.documentUrls.size() >= 2
+            && request.resource.data.documentUrls.size() <= 10)
+          || isAdmin();
+        allow delete: if isAdmin();
+      }
     }
 
     // ---------- properties ----------
@@ -89,23 +297,59 @@ service cloud.firestore {
                == request.resource.data.amenityList.size();
       }
 
-      allow read: if true; // public browse
-      // Owner must be admin-verified before ANY property write.
-      allow create: if isVerifiedOwner()
+      // October 2026: an owner who is none / pending / verified may create and
+      // edit their own listings, and they are visible to every signed-in user
+      // (and in the matching pool) regardless of verification. `isVerified`
+      // on the property only drives the "Verified" badge, so only a verified
+      // owner (or admin) may set it to true. Rejected owners cannot write.
+      function ownerMayWrite() {
+        return signedIn()
+          && notSuspended()
+          && userDoc(request.auth.uid).role == 'owner'
+          && (!exists(/databases/$(database)/documents/ownerProfiles/$(request.auth.uid))
+              || get(/databases/$(database)/documents/ownerProfiles/$(request.auth.uid))
+                   .data.verificationStatus in ['none', 'pending', 'verified']);
+      }
+      // Only a verified owner may set the badge flag (isVerified == true).
+      function publishOk() {
+        return request.resource.data.get('isVerified', false) == false
+          || isVerifiedOwner();
+      }
+
+      // Guests (no auth) may browse AVAILABLE listings only. This is a
+      // deliberately public view of listing data (title, address, rent,
+      // photos, coordinates, house rules); users, ownerProfiles, matches,
+      // tenantProfiles and inquiries stay private.
+      allow read: if signedIn()
+        || resource.data.get('isAvailable', false) == true;
+      allow create: if ownerMayWrite()
         && request.resource.data.ownerId == request.auth.uid
+        && publishOk()
         && validAmenities();
-      allow update: if (isVerifiedOwner()
+      allow update: if (ownerMayWrite()
           && resource.data.ownerId == request.auth.uid
           && request.resource.data.ownerId == resource.data.ownerId
-          && validAmenities())
-        || isAdmin();
-      allow delete: if (isVerifiedOwner() && resource.data.ownerId == request.auth.uid)
+          && publishOk()
+          && validAmenities()
+          // Admin unlisting (adminUnlisted) cannot be undone by the owner.
+          && request.resource.data.get('adminUnlisted', false)
+               == resource.data.get('adminUnlisted', false)
+          && (request.resource.data.get('adminUnlisted', false) == false
+              || request.resource.data.isAvailable == false))
+        // Admin moderation: unlist / relist and the badge flag only.
+        || (isAdmin()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['isAvailable', 'adminUnlisted', 'isVerified',
+                           'updatedAt']));
+      allow delete: if (ownerMayWrite() && resource.data.ownerId == request.auth.uid)
         || isAdmin();
 
       // ---------- rooms (subcollection) ----------
       match /rooms/{roomId} {
-        allow read: if true;
-        allow write: if isVerifiedOwner()
+        allow read: if signedIn()
+          || get(/databases/$(database)/documents/properties/$(propertyId))
+               .data.get('isAvailable', false) == true;
+        allow write: if ownerMayWrite()
           && get(/databases/$(database)/documents/properties/$(propertyId))
                .data.ownerId == request.auth.uid;
       }
@@ -127,18 +371,29 @@ service cloud.firestore {
         && (resource.data.tenantId == request.auth.uid
             || resource.data.ownerId == request.auth.uid
             || isAdmin());
-      allow create: if signedIn()
+      allow create: if notSuspended()
         && request.resource.data.tenantId == request.auth.uid
         && request.resource.data.ownerId ==
              get(/databases/$(database)/documents/properties/$(request.resource.data.propertyId))
-               .data.ownerId;
+               .data.ownerId
+        // Unverified owners' listings are in the matching pool (Oct 2026),
+        // but the listing must still be available.
+        && get(/databases/$(database)/documents/properties/$(request.resource.data.propertyId))
+             .data.isAvailable == true
+        // A forged bScore = 1 is only accepted when the stored profile and
+        // listing really pass the non-distance checks (distance is not
+        // re-derived — see pairEligible).
+        && (request.resource.data.get('bScore', 0) != 1
+            || pairEligible(request.auth.uid, request.resource.data.propertyId));
       // Only the same fields the tenant's engine ever recomputes may change;
       // the pairing itself (who/what this match is between) is immutable.
-      allow update: if signedIn()
+      allow update: if notSuspended()
         && resource.data.tenantId == request.auth.uid
         && request.resource.data.tenantId == resource.data.tenantId
         && request.resource.data.ownerId == resource.data.ownerId
-        && request.resource.data.propertyId == resource.data.propertyId;
+        && request.resource.data.propertyId == resource.data.propertyId
+        && (request.resource.data.get('bScore', 0) != 1
+            || pairEligible(request.auth.uid, resource.data.propertyId));
       // A tenant deletes their own stale (now-ineligible) match rows as
       // part of the same atomic batch FilteringService writes eligible
       // ones in (admin-only here would abort that whole batch the moment
@@ -147,7 +402,7 @@ service cloud.firestore {
       // first place, so the doc never existed; that's a harmless no-op and
       // must be allowed, not just a delete of something that already exists.
       allow delete: if isAdmin()
-        || (signedIn()
+        || (notSuspended()
             && (resource == null || resource.data.tenantId == request.auth.uid));
     }
 
@@ -159,12 +414,34 @@ service cloud.firestore {
               || resource.data.ownerId == request.auth.uid);
       }
       allow read: if isParticipant() || isAdmin();
+      // Two origins. Tenant-initiated (initiatedBy absent or 'tenant'): the
+      // tenant sends an inquiry and the OWNER decides. Owner-initiated
+      // invitation (initiatedBy 'owner'): an owner invites a
+      // compatible tenant and the TENANT decides. In both, `ownerDecision`
+      // holds the recipient's decision ('pending' | 'accepted' | 'declined')
+      // and accepting moves the thread to stage 2 (open chat).
+      function inviteMatch() {
+        return get(/databases/$(database)/documents/matches/$(request.resource.data.matchId)).data;
+      }
+      function isInvite() {
+        return resource.data.get('initiatedBy', 'tenant') == 'owner';
+      }
+      function sameIdentity() {
+        return request.resource.data.tenantId == resource.data.tenantId
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.matchId == resource.data.matchId
+          && request.resource.data.propertyId == resource.data.propertyId
+          && request.resource.data.get('initiatedBy', 'tenant')
+               == resource.data.get('initiatedBy', 'tenant');
+      }
+
       // Tenant may create an inquiry only for a match with bScore == 1, and
       // only for the exact tenant/owner/property that match was computed
       // for — otherwise a tenant could reuse any bScore=1 matchId (even one
       // belonging to a different pairing) to message an incompatible owner.
-      allow create: if signedIn()
+      allow create: if notSuspended()
         && request.resource.data.tenantId == request.auth.uid
+        && request.resource.data.get('initiatedBy', 'tenant') == 'tenant'
         && get(/databases/$(database)/documents/matches/$(request.resource.data.matchId))
              .data.bScore == 1
         && get(/databases/$(database)/documents/matches/$(request.resource.data.matchId))
@@ -178,17 +455,104 @@ service cloud.firestore {
         // No new inquiries on a fully booked / unlisted property — a match
         // row can outlive a booking until the tenant's next filtering pass.
         && get(/databases/$(database)/documents/properties/$(request.resource.data.propertyId))
-             .data.isAvailable == true;
-      // Owner decides (accept unlocks stage 2); participants update status.
-      allow update: if isParticipant()
-        && request.resource.data.tenantId == resource.data.tenantId
-        && request.resource.data.ownerId == resource.data.ownerId
-        && request.resource.data.matchId == resource.data.matchId
-        // only the owner can change ownerDecision / unlock stage 2
-        && (request.resource.data.ownerDecision == resource.data.ownerDecision
-            || resource.data.ownerId == request.auth.uid)
-        && (request.resource.data.stage == resource.data.stage
-            || resource.data.ownerId == request.auth.uid);
+             .data.isAvailable == true
+        // Re-derive non-distance eligibility from stored data: a forged or
+        // stale bScore = 1 match row is not enough.
+        && pairEligible(request.auth.uid, request.resource.data.propertyId);
+
+      // Owner invitation: any owner (verification is a badge only), existing bScore == 1 match for
+      // exactly this tenant + this owner's available property. The doc ID is
+      // the match ID (one thread per tenant-property pairing, no duplicates).
+      allow create: if notSuspended()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.get('initiatedBy', '') == 'owner'
+        && inquiryId == request.resource.data.matchId
+        && userDoc(request.auth.uid).role == 'owner'
+        && ownerNotRejected(request.auth.uid)
+        && inviteMatch().bScore == 1
+        && inviteMatch().tenantId == request.resource.data.tenantId
+        && inviteMatch().ownerId == request.auth.uid
+        && inviteMatch().propertyId == request.resource.data.propertyId
+        && get(/databases/$(database)/documents/properties/$(request.resource.data.propertyId))
+             .data.ownerId == request.auth.uid
+        && get(/databases/$(database)/documents/properties/$(request.resource.data.propertyId))
+             .data.isAvailable == true
+        && request.resource.data.stage == 1
+        && request.resource.data.ownerDecision == 'pending'
+        && request.resource.data.status == 'pending'
+        && pairEligible(request.resource.data.tenantId,
+                        request.resource.data.propertyId);
+
+      // Tenant-initiated: owner decides (accept unlocks stage 2); participants
+      // update status. Owner-initiated: the tenant alone accepts / declines a
+      // pending invite; the owner may only mark it booked or closed.
+      allow update: if notSuspended() && isParticipant() && sameIdentity() && (
+        (!isInvite()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['stage', 'ownerDecision', 'status', 'declineReason',
+                         'updatedAt'])
+          && (
+            // no state change (e.g. updatedAt touch) by either participant
+            (request.resource.data.stage == resource.data.stage
+              && request.resource.data.ownerDecision == resource.data.ownerDecision
+              && request.resource.data.status == resource.data.status)
+            // owner-only transitions below
+            || (resource.data.ownerId == request.auth.uid
+              && ownerNotRejected(request.auth.uid) && (
+              // accept -> open chat
+              (resource.data.stage == 1
+                && resource.data.ownerDecision == 'pending'
+                && resource.data.status == 'pending'
+                && request.resource.data.stage == 2
+                && request.resource.data.ownerDecision == 'accepted'
+                && request.resource.data.status == 'active')
+              // decline
+              || (resource.data.stage == 1
+                && resource.data.ownerDecision == 'pending'
+                && resource.data.status == 'pending'
+                && request.resource.data.stage == 1
+                && request.resource.data.ownerDecision == 'declined'
+                && request.resource.data.status == 'declined')
+              // mark booked (only from an active chat)
+              || (resource.data.status == 'active'
+                && request.resource.data.stage == resource.data.stage
+                && request.resource.data.ownerDecision == resource.data.ownerDecision
+                && request.resource.data.status == 'booked')
+              // close (other open inquiries when the last vacancy is booked)
+              || (resource.data.status in ['pending', 'active']
+                && request.resource.data.stage == resource.data.stage
+                && request.resource.data.ownerDecision == resource.data.ownerDecision
+                && request.resource.data.status == 'closed')
+            ))))
+        || (isInvite() && resource.data.tenantId == request.auth.uid
+            && resource.data.stage == 1
+            && resource.data.ownerDecision == 'pending'
+            && resource.data.status == 'pending'
+            && (
+              // accept -> open chat
+              (request.resource.data.stage == 2
+                && request.resource.data.ownerDecision == 'accepted'
+                && request.resource.data.status == 'active'
+                && request.resource.data.diff(resource.data).affectedKeys()
+                     .hasOnly(['stage', 'ownerDecision', 'status', 'updatedAt']))
+              // decline -> closed thread
+              || (request.resource.data.stage == 1
+                && request.resource.data.ownerDecision == 'declined'
+                && request.resource.data.status == 'declined'
+                && request.resource.data.diff(resource.data).affectedKeys()
+                     .hasOnly(['ownerDecision', 'status', 'declineReason',
+                               'updatedAt']))
+            ))
+        || (isInvite() && resource.data.ownerId == request.auth.uid
+            && ownerNotRejected(request.auth.uid)
+            && request.resource.data.stage == resource.data.stage
+            && request.resource.data.ownerDecision == resource.data.ownerDecision
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status', 'updatedAt'])
+            && ((request.resource.data.status == 'booked'
+                  && resource.data.status == 'active')
+                || request.resource.data.status == 'closed'))
+      );
       allow delete: if isAdmin();
 
       // ---------- messages (subcollection) ----------
@@ -201,27 +565,64 @@ service cloud.firestore {
               || inquiry().ownerId == request.auth.uid
               || isAdmin());
         // Free chat only after owner accepts (stage 2).
-        allow create: if signedIn()
+        allow create: if notSuspended()
           && request.resource.data.senderId == request.auth.uid
           && (inquiry().tenantId == request.auth.uid
               || inquiry().ownerId == request.auth.uid)
+          && ownerNotRejected(inquiry().ownerId)
           && inquiry().stage == 2
           && inquiry().ownerDecision == 'accepted'
+          && inquiry().get('status', 'active') == 'active'
           && request.resource.data.isAutoGenerated == false;
         // readAt receipt update by the counterpart only.
-        allow update: if signedIn()
+        allow update: if notSuspended()
           && (inquiry().tenantId == request.auth.uid
               || inquiry().ownerId == request.auth.uid)
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['readAt']);
         allow delete: if false;
       }
+
+      // ---------- contact shares (subcollection) ----------
+      // inquiries/{id}/contact/{tenant|owner}: each participant's PHONE ONLY,
+      // written by that participant themselves after the inquiry is accepted
+      // (stage 2, accepted, active or booked). Never at inquiry time, never
+      // the email. Readable by the two participants and admins.
+      match /contact/{shareRole} {
+        function inq() {
+          return get(/databases/$(database)/documents/inquiries/$(inquiryId)).data;
+        }
+        function isMyShare() {
+          return (shareRole == 'tenant' && inq().tenantId == request.auth.uid)
+            || (shareRole == 'owner' && inq().ownerId == request.auth.uid);
+        }
+        function inquiryAccepted() {
+          return inq().stage == 2
+            && inq().ownerDecision == 'accepted'
+            && inq().get('status', 'active') in ['active', 'booked'];
+        }
+        allow read: if signedIn()
+          && (inq().tenantId == request.auth.uid
+              || inq().ownerId == request.auth.uid
+              || isAdmin());
+        allow create, update: if notSuspended()
+          && isMyShare()
+          && (shareRole != 'owner' || ownerNotRejected(inq().ownerId))
+          && inquiryAccepted()
+          && request.resource.data.keys().hasOnly(['phone', 'sharedAt'])
+          && request.resource.data.keys().hasAll(['phone', 'sharedAt'])
+          && request.resource.data.phone is string
+          && request.resource.data.phone.size() > 0
+          && request.resource.data.phone.size() <= 32
+          && request.resource.data.sharedAt == request.time;
+        allow delete: if isAdmin();
+      }
     }
 
     // ---------- ratings ----------
     match /ratings/{ratingId} {
       allow read: if signedIn();
-      allow create: if signedIn()
+      allow create: if notSuspended()
         && request.resource.data.raterId == request.auth.uid
         && request.resource.data.stars >= 1
         && request.resource.data.stars <= 5
@@ -238,17 +639,63 @@ service cloud.firestore {
     // ---------- notifications ----------
     match /notifications/{notifId} {
       allow read: if signedIn() && resource.data.recipientId == request.auth.uid;
-      allow create: if false; // Cloud Functions only
-      allow update: if signedIn()
-        && resource.data.recipientId == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['isRead']);
+      // No Cloud Functions: an inquiry participant may notify the OTHER
+      // participant about that inquiry, nothing else.
+      allow create: if notSuspended()
+        && request.resource.data.isRead == false
+        && request.resource.data.type in
+             ['inquiry', 'inquiry_accepted', 'inquiry_declined', 'message',
+              'invitation', 'invitation_accepted', 'invitation_declined']
+        && request.resource.data.relatedType == 'inquiry'
+        && request.resource.data.recipientId != request.auth.uid
+        // Chat alerts are one rolling doc per inquiry+recipient (no message text).
+        && (request.resource.data.type != 'message'
+            || notifId == 'msg_' + request.resource.data.relatedId + '_' + request.resource.data.recipientId)
+        && exists(/databases/$(database)/documents/inquiries/$(request.resource.data.relatedId))
+        && (
+          (get(/databases/$(database)/documents/inquiries/$(request.resource.data.relatedId)).data.tenantId == request.auth.uid
+            && get(/databases/$(database)/documents/inquiries/$(request.resource.data.relatedId)).data.ownerId == request.resource.data.recipientId)
+          ||
+          (get(/databases/$(database)/documents/inquiries/$(request.resource.data.relatedId)).data.ownerId == request.auth.uid
+            && get(/databases/$(database)/documents/inquiries/$(request.resource.data.relatedId)).data.tenantId == request.resource.data.recipientId)
+        );
+      allow update: if notSuspended() && (
+        (resource.data.recipientId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['isRead']))
+        // The sender refreshes the rolling chat alert: same recipient/type/
+        // inquiry, back to unread, new text-free title/body/createdAt.
+        || (resource.data.type == 'message'
+          && resource.data.relatedType == 'inquiry'
+          && notifId == 'msg_' + resource.data.relatedId + '_' + resource.data.recipientId
+          && request.resource.data.recipientId == resource.data.recipientId
+          && request.resource.data.type == 'message'
+          && request.resource.data.relatedType == 'inquiry'
+          && request.resource.data.relatedId == resource.data.relatedId
+          && request.resource.data.isRead == false
+          && request.resource.data.recipientId != request.auth.uid
+          && exists(/databases/$(database)/documents/inquiries/$(resource.data.relatedId))
+          && (
+            (get(/databases/$(database)/documents/inquiries/$(resource.data.relatedId)).data.tenantId == request.auth.uid
+              && get(/databases/$(database)/documents/inquiries/$(resource.data.relatedId)).data.ownerId == resource.data.recipientId)
+            ||
+            (get(/databases/$(database)/documents/inquiries/$(resource.data.relatedId)).data.ownerId == request.auth.uid
+              && get(/databases/$(database)/documents/inquiries/$(resource.data.relatedId)).data.tenantId == resource.data.recipientId)
+          ))
+      );
       allow delete: if signedIn() && resource.data.recipientId == request.auth.uid;
     }
 
     // ---------- adminLogs ----------
     match /adminLogs/{logId} {
-      allow read, create: if isAdmin();
+      allow read: if isAdmin();
+      // Entries must be attributed to the acting admin, server-timestamped.
+      allow create: if isAdmin()
+        && request.resource.data.adminId == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.action is string
+        && request.resource.data.targetId is string
+        && request.resource.data.targetType is string;
       allow update, delete: if false; // immutable audit trail
     }
 
@@ -256,7 +703,7 @@ service cloud.firestore {
     match /reports/{reportId} {
       allow read: if isAdmin()
         || (signedIn() && resource.data.reporterId == request.auth.uid);
-      allow create: if signedIn()
+      allow create: if notSuspended()
         && request.resource.data.reporterId == request.auth.uid
         && request.resource.data.status == 'open';
       allow update, delete: if isAdmin();

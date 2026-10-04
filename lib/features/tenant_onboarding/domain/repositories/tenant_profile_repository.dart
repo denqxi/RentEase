@@ -11,7 +11,12 @@ abstract class TenantProfileRepository {
   /// the security rules reject them anyway.
   Future<void> saveProfile(TenantProfileDoc profile);
 
+  /// The signed-in tenant's profile merged with their private prefs.
   Future<TenantProfileDoc?> fetchProfile(String uid);
+
+  /// Updates only the given private prefs (map pin / TOPSIS weights) in
+  /// `tenantProfiles/{uid}/private/prefs`.
+  Future<void> updatePrefs(String uid, Map<String, dynamic> fields);
 
   /// Updates only the given profile fields (Profile's edit screens).
   Future<void> updateFields(String uid, Map<String, dynamic> fields);

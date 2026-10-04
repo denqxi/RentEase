@@ -29,9 +29,7 @@ class AdminPageHeader extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: context.appColors.ink,
-        borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(24),
-        ),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
       ),
       child: SafeArea(
         bottom: false,
@@ -78,10 +76,7 @@ class AdminPageHeader extends StatelessWidget {
                   ?trailing,
                 ],
               ),
-              if (bottom != null) ...[
-                SizedBox(height: AppSpacing.md),
-                bottom!,
-              ],
+              if (bottom != null) ...[SizedBox(height: AppSpacing.md), bottom!],
             ],
           ),
         ),
@@ -168,7 +163,11 @@ class AdminAvatarMenu extends StatelessWidget {
           value: 'logout',
           child: Row(
             children: [
-              Icon(Icons.logout_rounded, size: 16, color: AppColors.destructive),
+              Icon(
+                Icons.logout_rounded,
+                size: 16,
+                color: AppColors.destructive,
+              ),
               SizedBox(width: AppSpacing.sm),
               Text(
                 'Log out',
@@ -189,9 +188,7 @@ class AdminAvatarMenu extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.accent,
           shape: BoxShape.circle,
-          border: Border.all(
-            color: AppColors.onInk.withValues(alpha: 0.25),
-          ),
+          border: Border.all(color: AppColors.onInk.withValues(alpha: 0.25)),
         ),
         child: Center(
           child: Text(

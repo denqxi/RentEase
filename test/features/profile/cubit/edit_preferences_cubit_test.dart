@@ -31,6 +31,7 @@ final _calls = <String>[];
 
 class _FakeProfileRepo implements TenantProfileRepository {
   Map<String, dynamic>? lastUpdate;
+  Map<String, dynamic>? lastPrefsUpdate;
 
   @override
   Future<TenantProfileDoc?> fetchProfile(String uid) async => _profile;
@@ -39,6 +40,12 @@ class _FakeProfileRepo implements TenantProfileRepository {
   Future<void> updateFields(String uid, Map<String, dynamic> fields) async {
     lastUpdate = fields;
     _calls.add('update');
+  }
+
+  @override
+  Future<void> updatePrefs(String uid, Map<String, dynamic> fields) async {
+    lastPrefsUpdate = fields;
+    _calls.add('updatePrefs');
   }
 
   @override
@@ -105,11 +112,15 @@ void main() {
   });
 
   test('saving weights re-runs TOPSIS only (eligibility is unchanged)', () async {
-    final cubit = await _loadedCubit(_FakeProfileRepo());
+    final repo = _FakeProfileRepo();
+    final cubit = await _loadedCubit(repo);
 
     await cubit.saveWeights(wRent: 0.5, wDistance: 0.3, wAmenities: 0.2);
 
-    expect(_calls, ['update', 'topsis']);
+    // Weights go to the private prefs doc, never the owner-readable profile.
+    expect(_calls, ['updatePrefs', 'topsis']);
+    expect(repo.lastUpdate, isNull);
+    expect(repo.lastPrefsUpdate, {'wRent': 0.5, 'wDistance': 0.3, 'wAmenities': 0.2});
     expect(cubit.state.status, EditPreferencesStatus.saved);
   });
 

@@ -61,12 +61,19 @@ class AppTextField extends StatelessWidget {
       style: AppTextStyles.field(context),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: AppTextStyles.field(context).copyWith(color: context.appColors.hint),
+        hintStyle: AppTextStyles.field(
+          context,
+        ).copyWith(color: context.appColors.hint),
         prefixText: prefixText,
-        prefixStyle: AppTextStyles.field(context).copyWith(color: context.appColors.textSecondary),
+        prefixStyle: AppTextStyles.field(
+          context,
+        ).copyWith(color: context.appColors.textSecondary),
         prefixIcon: prefixIcon != null
             ? Padding(
-                padding: const EdgeInsets.only(left: AppSpacing.md, right: AppSpacing.sm),
+                padding: const EdgeInsets.only(
+                  left: AppSpacing.md,
+                  right: AppSpacing.sm,
+                ),
                 child: prefixIcon,
               )
             : null,
@@ -79,14 +86,18 @@ class AppTextField extends StatelessWidget {
                 child: suffixIcon,
               )
             : null,
-        suffixIconConstraints:
-            const BoxConstraints(minWidth: 40, minHeight: 40),
+        suffixIconConstraints: const BoxConstraints(
+          minWidth: 40,
+          minHeight: 40,
+        ),
         contentPadding: EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: maxLines > 1 ? AppSpacing.md : 14,
         ),
         filled: true,
-        fillColor: enabled ? context.appColors.fieldFill : context.appColors.fieldFill.withValues(alpha: 0.6),
+        fillColor: enabled
+            ? context.appColors.fieldFill
+            : context.appColors.fieldFill.withValues(alpha: 0.6),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.field),
           borderSide: BorderSide(color: context.appColors.fieldBorder),
@@ -106,11 +117,7 @@ class AppTextField extends StatelessWidget {
 
 /// Labelled wrapper that renders [AppTextField] with a section label above it.
 class LabelledField extends StatelessWidget {
-  const LabelledField({
-    required this.label,
-    required this.child,
-    super.key,
-  });
+  const LabelledField({required this.label, required this.child, super.key});
 
   final String label;
   final Widget child;
@@ -122,7 +129,9 @@ class LabelledField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: AppTextStyles.label(context).copyWith(color: context.appColors.textSecondary),
+          style: AppTextStyles.label(
+            context,
+          ).copyWith(color: context.appColors.textSecondary),
         ),
         SizedBox(height: AppSpacing.sm),
         child,

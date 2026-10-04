@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../shell/widgets/floating_nav_bar.dart';
+import '../domain/repositories/admin_repository.dart';
+import '../widgets/admin_providers.dart';
 import 'analytics_screen.dart';
 import 'pending_verifications_screen.dart';
 import 'property_management_screen.dart';
@@ -10,7 +12,10 @@ import 'user_management_screen.dart';
 /// screens. The dashboard's pending-review card can jump straight to the
 /// Verify tab via [AnalyticsScreen.onGoToVerify].
 class AdminShell extends StatefulWidget {
-  const AdminShell({super.key});
+  const AdminShell({this.repository, super.key});
+
+  /// Injected in tests; defaults to the Firebase implementation.
+  final AdminRepository? repository;
 
   @override
   State<AdminShell> createState() => _AdminShellState();
@@ -28,21 +33,24 @@ class _AdminShellState extends State<AdminShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      body: IndexedStack(
-        index: _index,
-        children: <Widget>[
-          AnalyticsScreen(onGoToVerify: () => setState(() => _index = 1)),
-          const PendingVerificationsScreen(),
-          const UserManagementScreen(),
-          const PropertyManagementScreen(),
-        ],
-      ),
-      bottomNavigationBar: FloatingNavBar(
-        items: _items,
-        selectedIndex: _index,
-        onTap: (i) => setState(() => _index = i),
+    return AdminProviders(
+      repository: widget.repository,
+      child: Scaffold(
+        extendBody: true,
+        body: IndexedStack(
+          index: _index,
+          children: <Widget>[
+            AnalyticsScreen(onGoToVerify: () => setState(() => _index = 1)),
+            const PendingVerificationsScreen(),
+            const UserManagementScreen(),
+            const PropertyManagementScreen(),
+          ],
+        ),
+        bottomNavigationBar: FloatingNavBar(
+          items: _items,
+          selectedIndex: _index,
+          onTap: (i) => setState(() => _index = i),
+        ),
       ),
     );
   }

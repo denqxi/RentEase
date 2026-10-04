@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -25,7 +25,10 @@ class SavedScreen extends StatelessWidget {
             // â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.md,
               ),
               child: Row(
                 children: <Widget>[
@@ -77,7 +80,10 @@ class SavedScreen extends StatelessWidget {
                   ? const _EmptyState()
                   : ListView.builder(
                       padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg,
+                        AppSpacing.lg,
+                        0,
+                        AppSpacing.lg,
+                        AppSpacing.lg,
                       ),
                       itemCount: saved.length,
                       itemBuilder: (ctx, i) => _SavedCard(
@@ -152,9 +158,10 @@ class _SavedCard extends StatelessWidget {
   final Listing listing;
   final VoidCallback onUnsave;
 
-  String _fmt(int v) => v
-      .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+  String _fmt(int v) => v.toString().replaceAllMapped(
+    RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+    (m) => '${m[1]},',
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +172,7 @@ class _SavedCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: AppColors.scrim.withValues(alpha: 0.06),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -183,7 +190,10 @@ class _SavedCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: <Widget>[
-                  ListingImagePlaceholder(seed: listing.imageSeed),
+                  ListingImagePlaceholder(
+                    seed: listing.imageSeed,
+                    photoUrl: listing.photoUrl,
+                  ),
                   // Match badge â€” top left
                   Positioned(
                     top: 10,
@@ -203,7 +213,7 @@ class _SavedCard extends StatelessWidget {
                         width: 34,
                         height: 34,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.92),
+                          color: AppColors.onInk.withValues(alpha: 0.92),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(

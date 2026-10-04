@@ -3,37 +3,58 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../features/registration/widgets/step_header.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../auth/presentation/current_uid.dart';
+import '../../../core/constants/cloudinary_config.dart';
+import '../../uploads/data/repositories/cloudinary_image_upload_repository.dart';
+import '../../uploads/domain/entities/uploaded_image.dart';
+import '../../uploads/domain/repositories/image_upload_repository.dart';
+import '../../uploads/presentation/cubit/image_upload_cubit.dart';
+import '../../uploads/presentation/widgets/image_upload_slot.dart';
 import '../cubit/owner_onboarding_cubit.dart';
-import 'verification_pending_screen.dart';
 
 class DocumentUploadScreen extends StatefulWidget {
-  const DocumentUploadScreen({super.key});
+  const DocumentUploadScreen({this.repository, super.key});
+
+  /// Override for tests; defaults to the Cloudinary implementation.
+  final ImageUploadRepository? repository;
 
   @override
   State<DocumentUploadScreen> createState() => _DocumentUploadScreenState();
 }
 
 class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
-  final List<bool> _uploaded = [false, false, false];
+  late final ImageUploadCubit _uploads = ImageUploadCubit(
+    repository: widget.repository ?? CloudinaryImageUploadRepository(),
+    kind: ImageKind.verificationDocument,
+    slotCount: CloudinaryConfig.documentCount,
+    minRequired: CloudinaryConfig.requiredDocumentCount,
+    // Slots 0 and 1 are required; slot 2 (business permit) is optional.
+    requiredSlots: {0, 1},
+  );
 
-  bool get _allUploaded => _uploaded.every((v) => v);
+  @override
+  void dispose() {
+    _uploads.close();
+    super.dispose();
+  }
 
   bool _submitting = false;
 
-  // File upload needs Firebase Storage (Blaze plan) — not enabled on this
-  // project yet. The toggles stand in for picking files; submitting records
-  // the verification request itself so an admin can approve the owner.
+  // Documents are uploaded to Cloudinary as they are picked; submitting stores
+  // their URLs and records the verification request for admin review.
   Future<void> _submit() async {
     final uid = currentUidOrNull(context);
     if (uid == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Your session has expired. Please sign in again.'),
+          content: const Text(
+            'Your session has expired. Please sign in again.',
+          ),
           backgroundColor: AppColors.destructive,
         ),
       );
@@ -41,7 +62,7 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
     }
     final cubit = context.read<OwnerOnboardingCubit>();
     setState(() => _submitting = true);
-    await cubit.submitForVerification(uid);
+    await cubit.submitForVerification(uid, documents: _uploads.state.images);
     if (!mounted) return;
     setState(() => _submitting = false);
 
@@ -55,9 +76,12 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
       );
       return;
     }
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const VerificationPendingScreen()),
-    );
+    // The pending screen follows the live status and offers "Continue to
+    // Dashboard"; listings, Find Tenants and inquiries all work meanwhile
+    // (verification only adds the Verified badge).
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil(AppRouter.verificationPending, (_) => false);
   }
 
   static const List<String> _docLabels = [
@@ -65,6 +89,8 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
     'Property ownership document',
     'Business permit (if applicable)',
   ];
+
+  static bool _isOptional(int i) => i >= CloudinaryConfig.requiredDocumentCount;
 
   @override
   Widget build(BuildContext context) {
@@ -101,74 +127,78 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
                     const StepHeader(
                       title: 'Verify your account',
                       subtitle:
-                          'Upload the required documents to get verified as a property owner.',
+                          'Upload your ID and ownership document to get verified as a property owner. A business permit is optional.',
                     ),
                     SizedBox(height: AppSpacing.lg),
                     Expanded(
                       child: SingleChildScrollView(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: List.generate(3, (i) => Padding(
-                            padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                            child: GestureDetector(
-                              onTap: () => setState(() => _uploaded[i] = !_uploaded[i]),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  color: _uploaded[i]
-                                      ? AppColors.accentSoft
-                                      : context.appColors.fieldFill,
-                                  borderRadius: BorderRadius.circular(AppRadii.field),
-                                  border: Border.all(
-                                    color: _uploaded[i]
-                                        ? AppColors.accent
-                                        : context.appColors.fieldBorder,
-                                    width: _uploaded[i] ? 1.5 : 1,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
+                          children: List.generate(
+                            CloudinaryConfig.documentCount,
+                            (i) => Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppSpacing.md,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
                                     children: [
-                                      Icon(
-                                        _uploaded[i]
-                                            ? Icons.check_circle_rounded
-                                            : Icons.upload_rounded,
-                                        color: _uploaded[i]
-                                            ? AppColors.accent
-                                            : context.appColors.hint,
-                                        size: 24,
-                                      ),
-                                      SizedBox(width: AppSpacing.sm),
-                                      Text(
-                                        _docLabels[i],
-                                        style: TextStyle(
-                                          fontFamily: 'DM Sans',
-                                          fontSize: 13,
-                                          color: _uploaded[i]
-                                              ? AppColors.accent
-                                              : context.appColors.textSecondary,
-                                          fontWeight: _uploaded[i]
-                                              ? FontWeight.w600
-                                              : FontWeight.w400,
+                                      Flexible(
+                                        child: Text(
+                                          _docLabels[i],
+                                          style: AppTextStyles.label(context),
                                         ),
                                       ),
+                                      if (_isOptional(i)) ...[
+                                        const SizedBox(width: AppSpacing.sm),
+                                        Text(
+                                          'Optional',
+                                          style: AppTextStyles.caption(context),
+                                        ),
+                                      ],
                                     ],
                                   ),
-                                ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  BlocBuilder<
+                                    ImageUploadCubit,
+                                    ImageUploadState
+                                  >(
+                                    bloc: _uploads,
+                                    buildWhen: (p, c) =>
+                                        p.slots[i] != c.slots[i],
+                                    builder: (context, state) =>
+                                        ImageUploadSlot(
+                                          slot: state.slots[i],
+                                          height: 110,
+                                          showPreview: false,
+                                          emptyIcon: Icons.upload_rounded,
+                                          emptyLabel: 'Tap to upload',
+                                          onPick: (src) =>
+                                              _uploads.pickAndUpload(i, src),
+                                          onRetry: () => _uploads.retry(i),
+                                          onRemove: () => _uploads.remove(i),
+                                        ),
+                                  ),
+                                ],
                               ),
                             ),
-                          )),
+                          ),
                         ),
                       ),
                     ),
                     SizedBox(height: AppSpacing.sm),
-                    AppPrimaryButton(
-                      label: _submitting
-                          ? 'Submitting...'
-                          : 'Submit for verification',
-                      onPressed: _allUploaded && !_submitting ? _submit : null,
+                    BlocBuilder<ImageUploadCubit, ImageUploadState>(
+                      bloc: _uploads,
+                      builder: (context, state) => AppPrimaryButton(
+                        label: _submitting
+                            ? 'Submitting...'
+                            : 'Submit for verification',
+                        onPressed: state.isReady && !_submitting
+                            ? _submit
+                            : null,
+                      ),
                     ),
                     SizedBox(height: AppSpacing.sm),
                     Center(

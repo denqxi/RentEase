@@ -12,6 +12,8 @@ class InquiryThreadState extends Equatable {
     this.tenantProfile,
     this.owner,
     this.ownerVerified = false,
+    this.ownerRejected = false,
+    this.counterpartPhone,
   });
 
   final bool isLoading;
@@ -29,6 +31,13 @@ class InquiryThreadState extends Equatable {
   final UserDoc? owner;
   final bool ownerVerified;
 
+  /// The owner's verification was rejected: they cannot invite, answer or
+  /// chat (firestore.rules), so the thread shows a notice instead.
+  final bool ownerRejected;
+
+  /// The other party's phone, once they shared it (accepted threads only).
+  final String? counterpartPhone;
+
   InquiryThreadState copyWith({
     bool? isLoading,
     bool? isBusy,
@@ -41,6 +50,9 @@ class InquiryThreadState extends Equatable {
     TenantProfileDoc? tenantProfile,
     UserDoc? owner,
     bool? ownerVerified,
+    bool? ownerRejected,
+    String? counterpartPhone,
+    bool clearPhone = false,
   }) {
     return InquiryThreadState(
       isLoading: isLoading ?? this.isLoading,
@@ -53,6 +65,10 @@ class InquiryThreadState extends Equatable {
       tenantProfile: tenantProfile ?? this.tenantProfile,
       owner: owner ?? this.owner,
       ownerVerified: ownerVerified ?? this.ownerVerified,
+      ownerRejected: ownerRejected ?? this.ownerRejected,
+      counterpartPhone: clearPhone
+          ? null
+          : (counterpartPhone ?? this.counterpartPhone),
     );
   }
 
@@ -70,5 +86,7 @@ class InquiryThreadState extends Equatable {
     tenantProfile,
     owner,
     ownerVerified,
+    ownerRejected,
+    counterpartPhone,
   ];
 }

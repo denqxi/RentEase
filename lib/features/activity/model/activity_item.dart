@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../core/firestore/models/models.dart';
+
 /// Category of an activity notification.
 enum ActivityType {
   /// A new listing match was found.
@@ -27,6 +29,43 @@ class ActivityItem extends Equatable {
   final String title;
   final String timeAgo;
   final bool isRead;
+
+  /// Maps a `notifications` doc; [now] is injectable for tests.
+  factory ActivityItem.fromNotification(NotificationDoc n, {DateTime? now}) {
+    final type = switch (n.type) {
+      'new_match' => ActivityType.match,
+      'inquiry' ||
+      'inquiry_accepted' ||
+      'inquiry_declined' ||
+      'invitation' ||
+      'invitation_accepted' ||
+      'invitation_declined' ||
+      'message' => ActivityType.message,
+      _ => ActivityType.update,
+    };
+    return ActivityItem(
+      id: n.notifId,
+      type: type,
+      title: n.title,
+      timeAgo: timeAgoLabel(n.createdAt?.toDate(), now ?? DateTime.now()),
+      isRead: n.isRead,
+    );
+  }
+
+  /// "Just now", "5 minutes ago", "Yesterday", "3 days ago"...
+  static String timeAgoLabel(DateTime? at, DateTime now) {
+    if (at == null) return 'Just now';
+    final d = now.difference(at);
+    if (d.inMinutes < 1) return 'Just now';
+    if (d.inMinutes < 60) {
+      return '${d.inMinutes} minute${d.inMinutes == 1 ? '' : 's'} ago';
+    }
+    if (d.inHours < 24) {
+      return '${d.inHours} hour${d.inHours == 1 ? '' : 's'} ago';
+    }
+    if (d.inDays == 1) return 'Yesterday';
+    return '${d.inDays} days ago';
+  }
 
   ActivityItem copyWith({bool? isRead}) {
     return ActivityItem(

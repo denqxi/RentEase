@@ -31,7 +31,7 @@ class AppChip extends StatelessWidget {
         border = AppColors.accent;
         textColor = AppColors.accent;
       case AppChipVariant.session:
-        bg = const Color(0xFFFEF3C7);
+        bg = AppColors.warningFill;
         border = AppColors.matchMedium;
         textColor = AppColors.matchMedium;
       case AppChipVariant.owner:

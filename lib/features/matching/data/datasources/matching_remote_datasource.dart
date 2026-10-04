@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/models.dart';
+import '../../../../core/firestore/tenant_profile_loader.dart';
 import '../../domain/services/topsis_service.dart' show TopsisResult;
 
 /// Raw Firestore access backing [FilteringRepository].
@@ -12,29 +13,26 @@ class MatchingRemoteDataSource {
   final FirebaseFirestore _firestore;
 
   Future<String?> fetchUserGender(String uid) async {
-    final snap =
-        await _firestore.collection(FirestoreCollections.users).doc(uid).get();
+    final snap = await _firestore
+        .collection(FirestoreCollections.users)
+        .doc(uid)
+        .get();
     if (!snap.exists) return null;
     return snap.data()?['gender'] as String?;
   }
 
-  Future<TenantProfileDoc?> fetchTenantProfile(String uid) async {
-    final snap = await _firestore
-        .collection(FirestoreCollections.tenantProfiles)
-        .doc(uid)
-        .get();
-    if (!snap.exists) return null;
-    return TenantProfileDoc.fromSnapshot(snap);
-  }
+  /// The signed-in tenant's profile merged with their private prefs (map
+  /// pin + TOPSIS weights live in `tenantProfiles/{uid}/private/prefs`).
+  Future<TenantProfileDoc?> fetchTenantProfile(String uid) =>
+      loadOwnTenantProfile(_firestore, uid);
 
-  /// Only listings a tenant could actually book: available and admin-
-  /// verified. Matches the composite index already declared in
-  /// firestore.indexes.json (isAvailable, isVerified, monthlyRent).
-  Future<List<PropertyDoc>> fetchAvailableVerifiedProperties() async {
+  /// Every available listing, whether or not its owner is verified (Oct 2026:
+  /// listings are visible and matchable immediately, and verification gates no
+  /// feature). A single equality filter needs no composite index.
+  Future<List<PropertyDoc>> fetchAvailableListings() async {
     final snap = await _firestore
         .collection(FirestoreCollections.properties)
         .where('isAvailable', isEqualTo: true)
-        .where('isVerified', isEqualTo: true)
         .get();
     return snap.docs.map(PropertyDoc.fromSnapshot).toList();
   }
@@ -62,7 +60,9 @@ class MatchingRemoteDataSource {
             .collection(FirestoreCollections.properties)
             .doc(id)
             .get();
-        return snap.exists ? MapEntry(id, PropertyDoc.fromSnapshot(snap)) : null;
+        return snap.exists
+            ? MapEntry(id, PropertyDoc.fromSnapshot(snap))
+            : null;
       }),
     );
     return Map.fromEntries(entries.whereType<MapEntry<String, PropertyDoc>>());

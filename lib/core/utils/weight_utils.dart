@@ -43,7 +43,16 @@ NormalizedWeights normalizeWeights({
   }
 
   if (round != null) {
-    return NormalizedWeights(round(clamped), round(newA), round(newB));
+    // Rounding each weight independently can drift the total (e.g. 105%), so
+    // derive the last weight from the other two to keep the sum exact.
+    final rc = round(clamped);
+    var ra = round(newA);
+    var rb = round(1 - rc - ra);
+    if (rb < minWeight) {
+      ra = round(1 - rc - minWeight);
+      rb = round(1 - rc - ra);
+    }
+    return NormalizedWeights(rc, ra, rb);
   }
   return NormalizedWeights(clamped, newA, newB);
 }

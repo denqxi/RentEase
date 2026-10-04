@@ -19,7 +19,9 @@ import 'package:rentease/core/theme/app_theme.dart';
 import 'package:rentease/features/activity/cubit/activity_cubit.dart';
 import 'package:rentease/features/activity/model/activity_item.dart';
 import 'package:rentease/features/activity/view/activity_screen.dart';
+import 'package:rentease/debug/preview_admin_repository.dart';
 import 'package:rentease/features/admin/view/admin_login_screen.dart';
+import 'package:rentease/features/admin/widgets/admin_providers.dart';
 import 'package:rentease/features/admin/view/analytics_screen.dart';
 import 'package:rentease/features/admin/view/pending_verifications_screen.dart';
 import 'package:rentease/features/admin/view/property_management_screen.dart';
@@ -42,7 +44,7 @@ import 'package:rentease/features/matching/domain/services/filtering_service.dar
 import 'package:rentease/features/matching/domain/services/topsis_service.dart';
 import 'package:rentease/features/inquiry/view/tenant_inquiries_screen.dart';
 import 'package:rentease/features/landlord_home/cubit/landlord_home_cubit.dart';
-import 'package:rentease/features/landlord_home/model/tenant_detail.dart';
+import 'package:rentease/features/owner/model/compatible_tenant.dart';
 import 'package:rentease/features/landlord_home/view/landlord_home_screen.dart';
 import 'package:rentease/features/landlord_home/view/tenant_detail_screen.dart';
 import 'package:rentease/features/landlord_matches/view/landlord_matches_screen.dart';
@@ -244,7 +246,7 @@ void main() {
       const AddPropertyScreen(),
     );
     await _capture(
-        tester, '53_owner_tenant_detail', const TenantDetailScreen(detail: TenantDetail.sample));
+        tester, '53_owner_tenant_detail', const TenantDetailScreen(tenant: CompatibleTenant(matchId: 'm1', tenantId: 't1', name: 'Preview Tenant', gender: 'Female', maxBudget: 4500, bScore: 1)));
     await _capture(tester, '54_owner_find_tenants', const FindTenantsScreen());
     await _capture(tester, '55_owner_properties', const OwnerPropertiesScreen());
     await _capture(tester, '56_owner_inquiries', const OwnerInquiriesScreen());
@@ -259,13 +261,13 @@ void main() {
     await _capture(tester, '60_owner_profile', const OwnerProfileScreen());
 
     // ── Admin ────────────────────────────────────────────────────
-    await _capture(tester, '70_admin_login', const AdminLoginScreen());
-    await _capture(tester, '71_admin_analytics', const AnalyticsScreen());
+    await _capture(tester, '70_admin_login', const AdminLoginScreen(repository: PreviewAdminRepository()));
+    await _capture(tester, '71_admin_analytics', const AdminProviders(repository: PreviewAdminRepository(), child: AnalyticsScreen()));
     await _capture(
-        tester, '72_admin_pending_verifications', const PendingVerificationsScreen());
-    await _capture(tester, '73_admin_user_management', const UserManagementScreen());
+        tester, '72_admin_pending_verifications', const AdminProviders(repository: PreviewAdminRepository(), child: PendingVerificationsScreen()));
+    await _capture(tester, '73_admin_user_management', const AdminProviders(repository: PreviewAdminRepository(), child: UserManagementScreen()));
     await _capture(
-        tester, '74_admin_property_management', const PropertyManagementScreen());
+        tester, '74_admin_property_management', const AdminProviders(repository: PreviewAdminRepository(), child: PropertyManagementScreen()));
 
     // ignore: avoid_print
     print('\n=== DONE: ${_failures.length} failures ===');

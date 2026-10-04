@@ -1,8 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 
@@ -10,12 +9,18 @@ class SessionFilterSheet extends StatefulWidget {
   const SessionFilterSheet({
     required this.initialBudget,
     required this.initialDistance,
+    required this.savedBudget,
+    required this.savedDistance,
     required this.onApply,
     super.key,
   });
 
   final double initialBudget;
   final double initialDistance;
+
+  /// The tenant's saved limits — shown for reference and used by Reset.
+  final double savedBudget;
+  final double savedDistance;
   final void Function(double budget, double distance) onApply;
 
   @override
@@ -106,7 +111,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                   ],
                 ),
                 Text(
-                  'Saved: ₱${MockData.tenantMaxBudget.round()}/mo',
+                  'Saved: ₱${widget.savedBudget.round()}/mo',
                   style: AppTextStyles.caption(context),
                 ),
                 SliderTheme(
@@ -148,7 +153,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                   ],
                 ),
                 Text(
-                  'Saved: ${MockData.tenantMaxDistance.toStringAsFixed(1)} km',
+                  'Saved: ${widget.savedDistance.toStringAsFixed(1)} km',
                   style: AppTextStyles.caption(context),
                 ),
                 SliderTheme(
@@ -169,8 +174,8 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => setState(() {
-                      _budget = MockData.tenantMaxBudget;
-                      _distance = MockData.tenantMaxDistance;
+                      _budget = widget.savedBudget;
+                      _distance = widget.savedDistance;
                     }),
                     child: Text(
                       'Reset',

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -11,9 +13,8 @@ part 'auth_state.dart';
 /// Screens dispatch events and react to [AuthState] instead of talking to
 /// Firebase directly.
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc({required AuthRepository repository})
-      : _repository = repository,
-        super(const AuthInitial()) {
+  AuthBloc({required this._repository})
+      : super(const AuthInitial()) {
     on<AuthCheckRequested>(_onCheckRequested);
     on<AuthSignInRequested>(_onSignInRequested);
     on<AuthSignUpRequested>(_onSignUpRequested);
@@ -21,9 +22,54 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthEmailVerificationResendRequested>(_onResendRequested);
     on<AuthEmailVerificationCheckRequested>(_onVerificationCheckRequested);
     on<AuthPasswordResetRequested>(_onPasswordResetRequested);
+    on<AuthSuspensionDetected>(_onSuspensionDetected);
   }
 
+  /// Shown on the sign-in screen after an admin suspends the account.
+  static const suspendedMessage =
+      'Your account has been suspended. Contact support.';
+
   final AuthRepository _repository;
+  StreamSubscription<bool>? _suspensionSub;
+
+  /// Follows the signed-in user's status so a suspension applies even while
+  /// the app is open; cancelled on sign-out and in [close].
+  void _watchSuspension(AppUser user) {
+    _suspensionSub?.cancel();
+    _suspensionSub = _repository.watchSuspended(user.uid).listen((suspended) {
+      if (suspended) add(const AuthSuspensionDetected());
+    }, onError: (_) {});
+  }
+
+  void _stopWatching() {
+    _suspensionSub?.cancel();
+    _suspensionSub = null;
+  }
+
+  /// Signs a suspended [user] out. Returns true when it did.
+  Future<bool> _rejectIfSuspended(AppUser user, Emitter<AuthState> emit) async {
+    if (!user.isSuspended) return false;
+    _stopWatching();
+    await _repository.signOut();
+    emit(const AuthSuspended());
+    return true;
+  }
+
+  Future<void> _onSuspensionDetected(
+    AuthSuspensionDetected event,
+    Emitter<AuthState> emit,
+  ) async {
+    if (state is! AuthAuthenticated && state is! AuthEmailNotVerified) return;
+    _stopWatching();
+    await _repository.signOut();
+    emit(const AuthSuspended());
+  }
+
+  @override
+  Future<void> close() {
+    _suspensionSub?.cancel();
+    return super.close();
+  }
 
   Future<void> _onCheckRequested(
     AuthCheckRequested event,
@@ -33,10 +79,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final user = await _repository.currentUser();
     if (user == null) {
       emit(const AuthUnauthenticated());
+    } else if (await _rejectIfSuspended(user, emit)) {
+      return;
     } else if (!user.emailVerified) {
       emit(AuthEmailNotVerified(user));
+      _watchSuspension(user);
     } else {
       emit(AuthAuthenticated(user));
+      _watchSuspension(user);
     }
   }
 
@@ -50,7 +100,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         email: event.email,
         password: event.password,
       );
+      if (await _rejectIfSuspended(user, emit)) return;
       emit(user.emailVerified ? AuthAuthenticated(user) : AuthEmailNotVerified(user));
+      _watchSuspension(user);
     } catch (e) {
       emit(AuthOperationFailure(e.toString().replaceFirst('Exception: ', '')));
       emit(const AuthUnauthenticated());
@@ -74,6 +126,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
       // Freshly created accounts are always unverified.
       emit(AuthEmailNotVerified(user));
+      _watchSuspension(user);
     } catch (e) {
       emit(AuthOperationFailure(e.toString().replaceFirst('Exception: ', '')));
       emit(const AuthUnauthenticated());
@@ -84,6 +137,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthSignOutRequested event,
     Emitter<AuthState> emit,
   ) async {
+    _stopWatching();
     await _repository.signOut();
     emit(const AuthUnauthenticated());
   }
@@ -96,6 +150,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (current is! AuthEmailNotVerified) return;
     try {
       await _repository.sendEmailVerification();
+      emit(const AuthVerificationEmailResent());
+      emit(current);
     } catch (e) {
       emit(AuthOperationFailure(e.toString().replaceFirst('Exception: ', '')));
       emit(current);
@@ -108,7 +164,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     final current = state;
     if (current is! AuthEmailNotVerified) return;
-    final verified = await _repository.reloadAndCheckEmailVerified();
+    final bool verified;
+    try {
+      verified = await _repository.reloadAndCheckEmailVerified();
+    } catch (e) {
+      emit(const AuthOperationFailure('Could not check verification. Try again.'));
+      emit(current);
+      return;
+    }
     if (verified) {
       emit(
         AuthAuthenticated(
@@ -119,6 +182,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             emailVerified: true,
             firstName: current.user.firstName,
             lastName: current.user.lastName,
+            status: current.user.status,
           ),
         ),
       );

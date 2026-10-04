@@ -1,3 +1,4 @@
+import '../../../core/constants/app_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -5,18 +6,26 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../features/registration/widgets/step_header.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/map_zoom_controls.dart';
+import '../../../core/constants/cloudinary_config.dart';
+import '../../uploads/data/repositories/cloudinary_image_upload_repository.dart';
+import '../../uploads/domain/entities/uploaded_image.dart';
+import '../../uploads/domain/repositories/image_upload_repository.dart';
+import '../../uploads/presentation/cubit/image_upload_cubit.dart';
+import '../../uploads/presentation/widgets/image_upload_slot.dart';
 import '../cubit/owner_onboarding_cubit.dart';
 import 'property_rules_screen.dart';
 
 class AddPropertyScreen extends StatefulWidget {
-  const AddPropertyScreen({super.key});
+  const AddPropertyScreen({this.repository, super.key});
+
+  /// Override for tests; defaults to the Cloudinary implementation.
+  final ImageUploadRepository? repository;
 
   @override
   State<AddPropertyScreen> createState() => _AddPropertyScreenState();
@@ -27,11 +36,17 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
   final _addressController = TextEditingController();
   final _mapController = MapController();
   LatLng? _pinnedLocation;
-  final List<bool> _photoSlots = [false, false, false];
+  late final ImageUploadCubit _uploads = ImageUploadCubit(
+    repository: widget.repository ?? CloudinaryImageUploadRepository(),
+    kind: ImageKind.propertyPhoto,
+    slotCount: CloudinaryConfig.maxPropertyPhotos,
+    minRequired: 1,
+  );
 
   // The pin is required: tenants' LocationMatch and distance ranking are
   // computed from these coordinates.
   bool get _canContinue =>
+      _uploads.state.isReady &&
       _nameController.text.trim().isNotEmpty &&
       _addressController.text.trim().isNotEmpty &&
       _pinnedLocation != null;
@@ -41,6 +56,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
     _nameController.dispose();
     _addressController.dispose();
     _mapController.dispose();
+    _uploads.close();
     super.dispose();
   }
 
@@ -107,15 +123,17 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                             const SizedBox(height: AppSpacing.md),
                             Text(
                               'Location',
-                              style: AppTextStyles.label(context)
-                                  .copyWith(color: context.appColors.textSecondary),
+                              style: AppTextStyles.label(context).copyWith(
+                                color: context.appColors.textSecondary,
+                              ),
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             Container(
                               height: 180,
                               decoration: BoxDecoration(
-                                borderRadius:
-                                    BorderRadius.circular(AppRadii.field),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.field,
+                                ),
                                 border: Border.all(
                                   color: _pinnedLocation != null
                                       ? AppColors.accent
@@ -130,12 +148,13 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                                     mapController: _mapController,
                                     options: MapOptions(
                                       initialCenter: const LatLng(
-                                        MockData.tenantPoiLat,
-                                        MockData.tenantPoiLng,
+                                        AppOptions.defaultMapLat,
+                                        AppOptions.defaultMapLng,
                                       ),
                                       initialZoom: 14,
                                       onTap: (_, latLng) => setState(
-                                          () => _pinnedLocation = latLng),
+                                        () => _pinnedLocation = latLng,
+                                      ),
                                     ),
                                     children: [
                                       TileLayer(
@@ -152,9 +171,11 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                                               width: 40,
                                               height: 40,
                                               alignment: Alignment.topCenter,
-                                              child: Icon(Icons.location_pin,
-                                                  color: AppColors.accent,
-                                                  size: 40),
+                                              child: Icon(
+                                                Icons.location_pin,
+                                                color: AppColors.accent,
+                                                size: 40,
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -166,28 +187,32 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                                     bottom: AppSpacing.sm,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 6),
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: context.appColors.surface,
                                         borderRadius: BorderRadius.circular(
-                                            AppRadii.field),
+                                          AppRadii.field,
+                                        ),
                                         border: Border.all(
-                                            color:
-                                                context.appColors.fieldBorder),
+                                          color: context.appColors.fieldBorder,
+                                        ),
                                       ),
                                       child: Text(
                                         _pinnedLocation == null
                                             ? 'Tap to pin your property (required)'
                                             : 'Pinned '
-                                                '${_pinnedLocation!.latitude.toStringAsFixed(4)}, '
-                                                '${_pinnedLocation!.longitude.toStringAsFixed(4)}',
+                                                  '${_pinnedLocation!.latitude.toStringAsFixed(4)}, '
+                                                  '${_pinnedLocation!.longitude.toStringAsFixed(4)}',
                                         style: AppTextStyles.caption(context)
                                             .copyWith(
-                                          color: _pinnedLocation != null
-                                              ? AppColors.accent
-                                              : context
-                                                  .appColors.textSecondary,
-                                        ),
+                                              color: _pinnedLocation != null
+                                                  ? AppColors.accent
+                                                  : context
+                                                        .appColors
+                                                        .textSecondary,
+                                            ),
                                       ),
                                     ),
                                   ),
@@ -197,52 +222,36 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                             const SizedBox(height: AppSpacing.md),
                             Text(
                               'Photos',
-                              style: AppTextStyles.label(context)
-                                  .copyWith(color: context.appColors.textSecondary),
+                              style: AppTextStyles.label(context).copyWith(
+                                color: context.appColors.textSecondary,
+                              ),
                             ),
                             const SizedBox(height: AppSpacing.sm),
-                            Row(
-                              children: List.generate(3, (i) {
-                                return Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                        right: i < 2 ? AppSpacing.sm : 0),
-                                    child: GestureDetector(
-                                      onTap: () => setState(
-                                          () => _photoSlots[i] = !_photoSlots[i]),
-                                      child: AnimatedContainer(
-                                        duration:
-                                            const Duration(milliseconds: 200),
-                                        height: 80,
-                                        decoration: BoxDecoration(
-                                          color: _photoSlots[i]
-                                              ? AppColors.accentSoft
-                                              : context.appColors.fieldFill,
-                                          borderRadius: BorderRadius.circular(
-                                              AppRadii.field),
-                                          border: Border.all(
-                                            color: _photoSlots[i]
-                                                ? AppColors.accent
-                                                : context.appColors.fieldBorder,
-                                            width: _photoSlots[i] ? 1.5 : 1,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Icon(
-                                            _photoSlots[i]
-                                                ? Icons.check_rounded
-                                                : Icons.add_a_photo_outlined,
-                                            color: _photoSlots[i]
-                                                ? AppColors.accent
-                                                : context.appColors.hint,
-                                            size: 22,
-                                          ),
-                                        ),
-                                      ),
+                            BlocBuilder<ImageUploadCubit, ImageUploadState>(
+                              bloc: _uploads,
+                              builder: (context, state) => Wrap(
+                                spacing: AppSpacing.sm,
+                                runSpacing: AppSpacing.sm,
+                                children: List.generate(
+                                  state.slots.length,
+                                  (i) => SizedBox(
+                                    width: 96,
+                                    child: ImageUploadSlot(
+                                      slot: state.slots[i],
+                                      emptyLabel: i == 0 ? 'Cover' : null,
+                                      onPick: (src) =>
+                                          _uploads.pickAndUpload(i, src),
+                                      onRetry: () => _uploads.retry(i),
+                                      onRemove: () => _uploads.remove(i),
                                     ),
                                   ),
-                                );
-                              }),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Add 1 to ${CloudinaryConfig.maxPropertyPhotos} photos. The first is the cover.',
+                              style: AppTextStyles.caption(context),
                             ),
                             const SizedBox(height: AppSpacing.lg),
                           ],
@@ -250,23 +259,27 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    AppPrimaryButton(
-                      label: 'Continue',
-                      onPressed: _canContinue
-                          ? () {
-                              context.read<OwnerOnboardingCubit>().saveBasics(
-                                title: _nameController.text.trim(),
-                                address: _addressController.text.trim(),
-                                latitude: _pinnedLocation!.latitude,
-                                longitude: _pinnedLocation!.longitude,
-                              );
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => const PropertyRulesScreen(),
-                                ),
-                              );
-                            }
-                          : null,
+                    BlocBuilder<ImageUploadCubit, ImageUploadState>(
+                      bloc: _uploads,
+                      builder: (context, _) => AppPrimaryButton(
+                        label: 'Continue',
+                        onPressed: _canContinue
+                            ? () {
+                                context.read<OwnerOnboardingCubit>().saveBasics(
+                                  title: _nameController.text.trim(),
+                                  address: _addressController.text.trim(),
+                                  latitude: _pinnedLocation!.latitude,
+                                  longitude: _pinnedLocation!.longitude,
+                                  photos: _uploads.state.images,
+                                );
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const PropertyRulesScreen(),
+                                  ),
+                                );
+                              }
+                            : null,
+                      ),
                     ),
                   ],
                 ),

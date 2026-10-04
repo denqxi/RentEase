@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../features/activity/model/activity_item.dart';
 import '../../../features/registration/model/user_role.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../activity/cubit/activity_cubit.dart';
+import '../../activity/data/repositories/notification_repository_impl.dart';
 import '../../activity/view/activity_screen.dart';
 import '../../auth/presentation/bloc/auth_bloc.dart';
+import '../../auth/presentation/current_uid.dart';
 import '../../home/cubit/home_cubit.dart';
+import '../../inquiry/data/repositories/inquiry_repository_impl.dart';
 import '../../home/data/repositories/home_repository_impl.dart';
 import '../../home/view/home_screen.dart';
 import '../../home/view/search_screen.dart';
@@ -34,7 +36,9 @@ class MainShell extends StatelessWidget {
       providers: <BlocProvider>[
         BlocProvider<HomeCubit>(
           create: (_) {
-            if (isGuest) return HomeCubit.guest();
+            if (isGuest) {
+              return HomeCubit.guest(repository: HomeRepositoryImpl());
+            }
             // MainShell is only ever reached once AuthBloc has confirmed a
             // signed-in tenant (see AppRouter/app.dart routing) for the
             // non-guest path, so this is always available.
@@ -53,10 +57,25 @@ class MainShell extends StatelessWidget {
           },
         ),
         BlocProvider<ActivityCubit>(
-          create: (_) => ActivityCubit(initialItems: ActivityItem.samples),
+          create: (ctx) {
+            final uid = isGuest ? null : currentUidOrNull(ctx);
+            if (uid == null) return ActivityCubit();
+            return ActivityCubit(
+              repository: NotificationRepositoryImpl(),
+              uid: uid,
+            );
+          },
         ),
         BlocProvider<ProfileCubit>(
-          create: (_) => ProfileCubit(userRole: sessionRole),
+          create: (ctx) {
+            final uid = isGuest ? null : currentUidOrNull(ctx);
+            if (uid == null) return ProfileCubit(userRole: sessionRole);
+            return ProfileCubit(
+              userRole: sessionRole,
+              uid: uid,
+              repository: InquiryRepositoryImpl(),
+            );
+          },
         ),
         BlocProvider<ShellCubit>(create: (_) => ShellCubit()),
       ],
@@ -76,17 +95,27 @@ class _ShellView extends StatelessWidget {
     ProfileScreen(),
   ];
 
-  static const List<FloatingNavBarItem> _items = <FloatingNavBarItem>[
-    FloatingNavBarItem(icon: Icons.home_rounded,       label: 'Home'),
-    FloatingNavBarItem(icon: Icons.search_rounded,     label: 'Search'),
-    FloatingNavBarItem(icon: Icons.chat_bubble_rounded, label: 'Inquiries'),
-    FloatingNavBarItem(icon: Icons.notifications_rounded, label: 'Alerts'),
-    FloatingNavBarItem(icon: Icons.person_rounded,     label: 'Profile'),
+  static List<FloatingNavBarItem> _items(int unread) => <FloatingNavBarItem>[
+    const FloatingNavBarItem(icon: Icons.home_rounded, label: 'Home'),
+    const FloatingNavBarItem(icon: Icons.search_rounded, label: 'Search'),
+    const FloatingNavBarItem(
+      icon: Icons.chat_bubble_rounded,
+      label: 'Inquiries',
+    ),
+    FloatingNavBarItem(
+      icon: Icons.notifications_rounded,
+      label: 'Alerts',
+      badgeCount: unread,
+    ),
+    const FloatingNavBarItem(icon: Icons.person_rounded, label: 'Profile'),
   ];
 
   @override
   Widget build(BuildContext context) {
     final tab = context.watch<ShellCubit>().state.tab;
+    final unread = context.select<ActivityCubit, int>(
+      (c) => c.state.unreadCount,
+    );
 
     return Scaffold(
       extendBody: true,
@@ -95,7 +124,7 @@ class _ShellView extends StatelessWidget {
         children: _screens,
       ),
       bottomNavigationBar: FloatingNavBar(
-        items: _items,
+        items: _items(unread),
         selectedIndex: tab.index,
         onTap: (i) {
           final isGuest =

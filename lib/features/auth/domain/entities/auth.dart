@@ -11,6 +11,7 @@ class AppUser extends Equatable {
     required this.emailVerified,
     this.firstName,
     this.lastName,
+    this.status = 'active',
   });
 
   final String uid;
@@ -22,11 +23,15 @@ class AppUser extends Equatable {
   final String? firstName;
   final String? lastName;
 
+  /// `users.status`: 'active' | 'pending' | 'suspended' (admin-controlled).
+  final String status;
+
   bool get isTenant => role == 'tenant';
   bool get isOwner => role == 'owner';
   bool get isAdmin => role == 'admin';
+  bool get isSuspended => status == 'suspended';
 
   @override
   List<Object?> get props =>
-      [uid, email, role, emailVerified, firstName, lastName];
+      [uid, email, role, emailVerified, firstName, lastName, status];
 }

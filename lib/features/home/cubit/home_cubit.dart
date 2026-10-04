@@ -18,28 +18,25 @@ part 'home_state.dart';
 /// whatever was last computed at onboarding time.
 class HomeCubit extends Cubit<HomeState> {
   HomeCubit({
-    required String tenantId,
-    required HomeRepository repository,
-    required FilteringService filteringService,
-    required TopsisService topsisService,
-  }) : _tenantId = tenantId,
-       _repository = repository,
-       _filteringService = filteringService,
-       _topsisService = topsisService,
-       super(HomeState(listings: const [], isLoading: true)) {
+    required this._tenantId,
+    required HomeRepository this._repository,
+    required FilteringService this._filteringService,
+    required TopsisService this._topsisService,
+  }) : super(HomeState(listings: const [], isLoading: true)) {
     refresh();
   }
 
   /// Guest browsing — no account, so no tenantProfiles/matches to read.
-  /// Shows every listing ([Listing.guestSamples]) straight from local mock
-  /// data, unranked; [refresh]/[toggleSaved]/[loadPropertyDetail] are no-ops
-  /// since there's nothing server-side to hit.
-  HomeCubit.guest()
+  /// Loads the newest available listings (the public `properties` view),
+  /// unranked and without any personalised score. [refresh] reloads that
+  /// feed; saving stays session-only.
+  HomeCubit.guest({required HomeRepository this._repository})
     : _tenantId = '',
-      _repository = null,
       _filteringService = null,
       _topsisService = null,
-      super(HomeState(listings: Listing.guestSamples, isGuest: true));
+      super(HomeState(listings: const [], isGuest: true, isLoading: true)) {
+    refresh();
+  }
 
   final String _tenantId;
   final HomeRepository? _repository;
@@ -50,21 +47,54 @@ class HomeCubit extends Cubit<HomeState> {
     final repository = _repository;
     final filteringService = _filteringService;
     final topsisService = _topsisService;
-    if (repository == null || filteringService == null || topsisService == null) {
-      return; // guest mode — nothing to refresh
+    if (state.isGuest) {
+      if (repository == null) return;
+      emit(state.copyWith(isLoading: true, clearError: true));
+      try {
+        final listings = await repository.fetchGuestListings();
+        if (isClosed) return;
+        emit(state.copyWith(listings: listings, isLoading: false));
+      } catch (e) {
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            isLoading: false,
+            errorMessage: e.toString().replaceFirst('Exception: ', ''),
+          ),
+        );
+      }
+      return;
+    }
+    if (repository == null ||
+        filteringService == null ||
+        topsisService == null) {
+      return;
     }
 
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
       await filteringService.runFiltering(_tenantId);
       await topsisService.computeTOPSIS(_tenantId);
-      final listings = await repository.fetchCompatibleListings(_tenantId);
+      final fetched = await repository.fetchCompatibleListings(_tenantId);
+      if (isClosed) return;
+      // Hearts are session-only; keep them across a refresh (e.g. after
+      // editing preferences) instead of silently clearing them.
+      final savedIds = {
+        for (final l in state.listings)
+          if (l.isSaved) l.id,
+      };
+      final listings = [
+        for (final l in fetched)
+          savedIds.contains(l.id) ? l.copyWith(isSaved: true) : l,
+      ];
       emit(state.copyWith(listings: listings, isLoading: false));
     } on StateError {
+      if (isClosed) return;
       // No tenantProfiles doc yet — onboarding hasn't been completed. Not
       // an error to surface; there's simply nothing to match yet.
       emit(state.copyWith(listings: const [], isLoading: false));
     } catch (e) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           isLoading: false,
@@ -89,12 +119,12 @@ class HomeCubit extends Cubit<HomeState> {
   void updateSearch(String query) => emit(state.copyWith(searchQuery: query));
 
   /// Assembles the detail-screen map for one listing (owner info included) —
-  /// fetched on demand rather than upfront for the whole feed. Null in guest
-  /// mode; guest screens build their detail view straight from MockData
-  /// instead (see NearbySection/RecommendedSection).
+  /// fetched on demand rather than upfront for the whole feed. Guests get the
+  /// public view (no owner info, no match).
   Future<Map<String, dynamic>?> loadPropertyDetail(String propertyId) {
     final repository = _repository;
     if (repository == null) return Future.value(null);
+    if (state.isGuest) return repository.fetchGuestPropertyDetail(propertyId);
     return repository.fetchPropertyDetail(
       tenantId: _tenantId,
       propertyId: propertyId,

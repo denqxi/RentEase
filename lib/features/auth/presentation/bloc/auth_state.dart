@@ -53,6 +53,12 @@ class AuthOperationFailure extends AuthState {
   List<Object?> get props => [message];
 }
 
+/// The verification email was re-sent successfully. Transient — the bloc
+/// returns to [AuthEmailNotVerified] right after.
+class AuthVerificationEmailResent extends AuthState {
+  const AuthVerificationEmailResent();
+}
+
 class AuthPasswordResetEmailSent extends AuthState {
   const AuthPasswordResetEmailSent(this.email);
 
@@ -60,4 +66,10 @@ class AuthPasswordResetEmailSent extends AuthState {
 
   @override
   List<Object?> get props => [email];
+}
+
+/// An admin suspended this account. The user has already been signed out;
+/// the sign-in screen shows [AuthBloc.suspendedMessage].
+class AuthSuspended extends AuthState {
+  const AuthSuspended();
 }

@@ -3,11 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/auth/presentation/bloc/auth_bloc.dart';
-import '../../../shared/widgets/topsis_weight_bar.dart';
+import '../../landlord_home/cubit/landlord_home_cubit.dart';
 import '../../../shared/widgets/verified_badge.dart';
 
 class OwnerProfileScreen extends StatelessWidget {
@@ -16,6 +15,7 @@ class OwnerProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final state = context.watch<LandlordHomeCubit>().state;
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
@@ -41,22 +41,20 @@ class OwnerProfileScreen extends StatelessWidget {
                         letterSpacing: -0.4,
                       ),
                     ),
-                    const Spacer(),
-                    Icon(Icons.settings_outlined, size: 24, color: cs.onSurface),
                   ],
                 ),
               ),
 
               const SizedBox(height: AppSpacing.md),
 
-              // Avatar + name + badge
+              // Avatar + name + badge (real account data)
               Center(
                 child: Column(
                   children: <Widget>[
-                    _OwnerAvatar(),
+                    _OwnerAvatar(photoUrl: state.photoUrl),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      MockData.ownerName,
+                      state.fullName.isEmpty ? 'Owner' : state.fullName,
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 20,
@@ -64,137 +62,22 @@ class OwnerProfileScreen extends StatelessWidget {
                         color: cs.onSurface,
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    const VerifiedBadge(isVerified: true),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
-
-              // Verification status card
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: context.appColors.fieldFill,
-                    borderRadius: BorderRadius.circular(AppRadii.card),
-                    border: Border.all(color: context.appColors.fieldBorder),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      _StatusRow(
-                        icon: Icons.check_circle_rounded,
-                        color: AppColors.matchHigh,
-                        label: 'Documents submitted',
-                      ),
+                    if (state.verificationStatus != null) ...[
                       const SizedBox(height: AppSpacing.sm),
-                      _StatusRow(
-                        icon: Icons.check_circle_rounded,
-                        color: AppColors.matchHigh,
-                        label: 'Admin approved',
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        'Verified since Mar 12, 2025',
-                        style: AppTextStyles.caption(context),
-                      ),
+                      VerifiedBadge(isVerified: state.isVerified),
                     ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
-
-              // TOPSIS weights — fixed (CLAUDE.md "Two TOPSIS Instances":
-              // unlike the tenant side, owner-side weights are not
-              // owner-adjustable), so this is a read-only summary.
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Text(
-                  'My tenant ranking',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurface,
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Column(
-                  children: <Widget>[
-                    TopsisWeightBar(
-                      label: 'Credibility score',
-                      weight: 0.60,
-                      color: AppColors.accent,
-                    ),
-                    TopsisWeightBar(
-                      label: 'Profile completeness',
-                      weight: 0.40,
-                      color: AppColors.accent,
-                    ),
                   ],
                 ),
               ),
 
               const SizedBox(height: AppSpacing.lg),
 
-              // Ratings
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Text(
-                          'My ratings',
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: cs.onSurface,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        ...List.generate(
-                          5,
-                          (_) => Icon(Icons.star_rounded,
-                              color: AppColors.matchMedium, size: 16),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '4.8',
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: cs.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _ReviewCard(
-                      name: 'Maria Andres',
-                      stars: 5,
-                      text: 'Great landlord! Very responsive.',
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _ReviewCard(
-                      name: 'Jana Ramos',
-                      stars: 4,
-                      text: 'Good place, highly recommended.',
-                    ),
-                  ],
+              // Verification status card (from ownerProfiles.verificationStatus)
+              if (state.verificationStatus != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: _VerificationCard(status: state.verificationStatus!),
                 ),
-              ),
 
               const SizedBox(height: AppSpacing.lg),
 
@@ -227,35 +110,69 @@ class OwnerProfileScreen extends StatelessWidget {
 }
 
 class _OwnerAvatar extends StatelessWidget {
+  const _OwnerAvatar({this.photoUrl});
+
+  final String? photoUrl;
+
   @override
   Widget build(BuildContext context) {
+    final url = photoUrl;
+    return CircleAvatar(
+      radius: 48,
+      backgroundColor: AppColors.accentSoft,
+      backgroundImage: (url != null && url.isNotEmpty) ? NetworkImage(url) : null,
+      child: (url != null && url.isNotEmpty)
+          ? null
+          : Icon(Icons.person, color: AppColors.accent, size: 44),
+    );
+  }
+}
+
+class _VerificationCard extends StatelessWidget {
+  const _VerificationCard({required this.status});
+
+  /// 'none' | 'pending' | 'verified' | 'rejected'
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final submitted = status != 'none';
+    final approved = status == 'verified';
+    final summary = switch (status) {
+      'verified' => 'Your account is verified.',
+      'pending' => 'Documents are with an admin for review.',
+      'rejected' => 'Your verification was not approved. Resubmit documents.',
+      _ => 'Submit documents to get verified.',
+    };
     return Container(
-      width: 96,
-      height: 96,
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        border: Border.all(color: Colors.white, width: 3),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.10),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: context.appColors.fieldFill,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: context.appColors.fieldBorder),
       ),
-      child: Container(
-        width: 90,
-        height: 90,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: <Color>[Color(0xFFDBC59C), Color(0xFF8B6914)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          _StatusRow(
+            icon: submitted
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked,
+            color: submitted ? AppColors.matchHigh : AppColors.hint,
+            label: 'Documents submitted',
           ),
-        ),
-        child: const Icon(Icons.person, color: Colors.white, size: 44),
+          const SizedBox(height: AppSpacing.sm),
+          _StatusRow(
+            icon: approved
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked,
+            color: approved ? AppColors.matchHigh : AppColors.hint,
+            label: 'Admin approved',
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(summary, style: AppTextStyles.caption(context)),
+        ],
       ),
     );
   }
@@ -284,59 +201,6 @@ class _StatusRow extends StatelessWidget {
   }
 }
 
-class _ReviewCard extends StatelessWidget {
-  const _ReviewCard({
-    required this.name,
-    required this.stars,
-    required this.text,
-  });
-
-  final String name;
-  final int stars;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: context.appColors.fieldFill,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        border: Border.all(color: context.appColors.fieldBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Text(
-                name,
-                style: TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: context.appColors.textPrimary,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              ...List.generate(
-                stars,
-                (_) => Icon(Icons.star_rounded,
-                    color: AppColors.matchMedium, size: 13),
-              ),
-              if (stars < 5)
-                Icon(Icons.star_outline_rounded,
-                    color: AppColors.matchMedium, size: 13),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(text, style: AppTextStyles.caption(context).copyWith(fontSize: 13)),
-        ],
-      ),
-    );
-  }
-}
-
 class _MenuCard extends StatelessWidget {
   const _MenuCard({required this.onLogout});
 
@@ -352,7 +216,7 @@ class _MenuCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.card),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: AppColors.scrim.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 2),
           ),

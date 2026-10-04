@@ -17,9 +17,8 @@ class InquiryListCubit extends Cubit<InquiryListState> {
   InquiryListCubit({
     required this.uid,
     required this.isOwner,
-    required InquiryRepository repository,
-  }) : _repository = repository,
-       super(const InquiryListState()) {
+    required this._repository,
+  }) : super(const InquiryListState()) {
     _subscription =
         (isOwner
                 ? _repository.watchOwnerInquiries(uid)

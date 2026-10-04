@@ -9,6 +9,7 @@ import '../../../shared/widgets/phase_badge.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../../inquiry/cubit/inquiry_list_cubit.dart';
 import '../../inquiry/data/repositories/inquiry_repository_impl.dart';
+import '../../inquiry/domain/services/inquiry_service.dart';
 import '../../inquiry/model/inquiry_summary.dart';
 import '../../inquiry/view/inquiry_thread_screen.dart';
 
@@ -80,13 +81,14 @@ class _OwnerInquiryTabs extends StatelessWidget {
     return TabBarView(
       children: [
         _InquiryList(
-          items: state.active,
+          items: state.incoming,
           emptyText: 'No incoming inquiries yet.',
         ),
-        // Owner-initiated invitations ("Invite" on Find Tenants) aren't
-        // built yet — every inquiry today is tenant-initiated.
-        const _InboxMessage('No sent invitations yet.'),
-        _InquiryList(items: state.resolved, emptyText: 'No past inquiries yet.'),
+        _InquiryList(
+          items: state.sentInvitations,
+          emptyText: 'No sent invitations yet.',
+        ),
+        _InquiryList(items: state.history, emptyText: 'No past inquiries yet.'),
       ],
     );
   }
@@ -139,6 +141,7 @@ class _OwnerInquiryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final inquiry = summary.inquiry;
     final phase = inquiry.stage.toInt();
+    final isInvite = InquiryService.isInvite(inquiry);
     final resolvedLabel = switch (inquiry.status) {
       'booked' => 'Booked',
       'declined' => 'Declined',
@@ -233,6 +236,8 @@ class _OwnerInquiryCard extends StatelessWidget {
               label: inquiry.status == 'booked' ? 'View & rate' : 'View',
               onTap: open,
             )
+          else if (isInvite && phase == 1)
+            _LinkButton(label: 'View invitation', onTap: open)
           else if (phase == 1)
             AppButton(label: 'Review inquiry', isSmall: true, onPressed: open)
           else

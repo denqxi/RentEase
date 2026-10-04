@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rentease/core/firestore/models/models.dart';
+import 'package:rentease/features/activity/domain/repositories/notification_repository.dart';
 import 'package:rentease/features/inquiry/domain/repositories/inquiry_repository.dart';
 import 'package:rentease/features/inquiry/domain/services/inquiry_service.dart';
 
@@ -122,6 +123,29 @@ class _FakeRepository implements InquiryRepository {
   @override
   Future<bool> hasRated({required String inquiryId, required String raterId}) async =>
       alreadyRated;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
+}
+
+class _FakeNotifications implements NotificationRepository {
+  _FakeNotifications({this.fail = false});
+  final bool fail;
+  final created = <NotificationDoc>[];
+  final upserted = <NotificationDoc>[];
+
+  @override
+  Future<void> create(NotificationDoc notification) async {
+    if (fail) throw Exception('permission-denied');
+    created.add(notification);
+  }
+
+  @override
+  Future<void> upsert(NotificationDoc notification) async {
+    if (fail) throw Exception('permission-denied');
+    upserted.add(notification);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) =>
@@ -379,6 +403,94 @@ void main() {
         service.submitRating(inquiry: booked, raterId: _tenant, stars: 5),
         throwsA(isA<InquiryException>()),
       );
+    });
+  });
+
+  group('notifications', () {
+    test('inquiry, accept, decline and message notify the right party',
+        () async {
+      final notes = _FakeNotifications();
+      final svc = InquiryService(repository: repo, notifications: notes);
+
+      repo.match = _match();
+      await svc.sendInquiry(tenantId: _tenant, matchId: _matchId);
+      await svc.accept(inquiry: _inquiry(), ownerId: _owner);
+      await svc.decline(inquiry: _inquiry(), ownerId: _owner);
+      final active = _inquiry(
+        stage: 2,
+        ownerDecision: 'accepted',
+        status: 'active',
+      );
+      await svc.sendMessage(inquiry: active, senderId: _tenant, content: 'Hi');
+      await svc.sendMessage(inquiry: active, senderId: _owner, content: 'Hello');
+
+      expect(notes.created.map((n) => (n.type, n.recipientId)).toList(), [
+        ('inquiry', _owner),
+        ('inquiry_accepted', _tenant),
+        ('inquiry_declined', _tenant),
+      ]);
+      expect(notes.upserted.map((n) => (n.type, n.recipientId)).toList(), [
+        ('message', _owner),
+        ('message', _tenant),
+      ]);
+    });
+
+    test('message alert has no chat text and reuses one doc id per recipient',
+        () async {
+      final notes = _FakeNotifications();
+      final svc = InquiryService(repository: repo, notifications: notes);
+      final active = _inquiry(
+        stage: 2,
+        ownerDecision: 'accepted',
+        status: 'active',
+      );
+      await svc.sendMessage(
+        inquiry: active,
+        senderId: _tenant,
+        content: 'secret deposit details',
+      );
+      await svc.sendMessage(
+        inquiry: active,
+        senderId: _tenant,
+        content: 'another secret',
+      );
+
+      expect(notes.created, isEmpty);
+      expect(notes.upserted, hasLength(2));
+      expect(notes.upserted[0].notifId, 'msg_${active.inquiryId}_$_owner');
+      expect(notes.upserted[1].notifId, notes.upserted[0].notifId);
+      for (final n in notes.upserted) {
+        expect(n.body, isNot(contains('secret')));
+        expect(n.isRead, isFalse);
+      }
+    });
+
+    test('a failing message alert never breaks sendMessage', () async {
+      final svc = InquiryService(
+        repository: repo,
+        notifications: _FakeNotifications(fail: true),
+      );
+      final active = _inquiry(
+        stage: 2,
+        ownerDecision: 'accepted',
+        status: 'active',
+      );
+      await svc.sendMessage(inquiry: active, senderId: _tenant, content: 'Hi');
+    });
+
+    test('a failing notification write never breaks the action', () async {
+      final svc = InquiryService(
+        repository: repo,
+        notifications: _FakeNotifications(fail: true),
+      );
+      repo.match = _match();
+
+      final id = await svc.sendInquiry(tenantId: _tenant, matchId: _matchId);
+      await svc.accept(inquiry: _inquiry(), ownerId: _owner);
+
+      expect(id, _matchId);
+      expect(repo.created, hasLength(1));
+      expect(repo.updates, hasLength(1));
     });
   });
 }

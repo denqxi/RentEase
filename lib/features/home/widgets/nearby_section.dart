@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/match_badge.dart';
@@ -32,6 +31,7 @@ Future<void> openPropertyDetail(
     MaterialPageRoute<void>(
       builder: (_) => PropertyDetailScreen(
         property: detail,
+        isGuest: cubit.state.isGuest,
         onPreferencesSaved: cubit.refresh,
       ),
     ),
@@ -45,8 +45,9 @@ class NearbySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final listings =
-        context.select<HomeCubit, List<Listing>>((c) => c.state.nearby);
+    final listings = context.select<HomeCubit, List<Listing>>(
+      (c) => c.state.nearby,
+    );
     final cubit = context.read<HomeCubit>();
     final isGuest = context.select<ProfileCubit, bool>(
       (c) => c.state.userRole == UserRole.guest,
@@ -60,7 +61,7 @@ class NearbySection extends StatelessWidget {
           child: Row(
             children: <Widget>[
               Text(
-                isGuest ? 'All properties' : 'Compatible properties',
+                isGuest ? 'Newest listings' : 'Compatible properties',
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 18,
@@ -84,6 +85,23 @@ class NearbySection extends StatelessWidget {
             ],
           ),
         ),
+        if (isGuest)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.xs,
+              AppSpacing.lg,
+              0,
+            ),
+            child: Text(
+              'Sign up to see your matches',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 13,
+                color: context.appColors.textSecondary,
+              ),
+            ),
+          ),
         SizedBox(height: AppSpacing.sm),
         ListView.separated(
           physics: const NeverScrollableScrollPhysics(),
@@ -101,22 +119,7 @@ class NearbySection extends StatelessWidget {
               }
               cubit.toggleSaved(listings[i].id);
             },
-            // Guests have no real matches/tenantProfiles to fetch a live
-            // detail map for — their listings are MockData-only, so the
-            // detail screen is built straight from that, gated instead of
-            // fetched.
-            onTap: isGuest
-                ? () => Navigator.of(ctx).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => PropertyDetailScreen(
-                        property: MockData.properties.firstWhere(
-                          (p) => p['propertyId'] == listings[i].id,
-                        ),
-                        isGuest: true,
-                      ),
-                    ),
-                  )
-                : () => openPropertyDetail(ctx, cubit, listings[i].id),
+            onTap: () => openPropertyDetail(ctx, cubit, listings[i].id),
           ),
         ),
       ],
@@ -137,9 +140,10 @@ class _NearbyCard extends StatelessWidget {
   final bool isGuest;
   final VoidCallback? onTap;
 
-  String _fmt(int value) => value
-      .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+  String _fmt(int value) => value.toString().replaceAllMapped(
+    RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+    (m) => '${m[1]},',
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +155,7 @@ class _NearbyCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
+              color: AppColors.scrim.withValues(alpha: 0.06),
               blurRadius: 14,
               offset: const Offset(0, 4),
             ),
@@ -168,7 +172,10 @@ class _NearbyCard extends StatelessWidget {
                 children: <Widget>[
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: ListingImagePlaceholder(seed: listing.imageSeed),
+                    child: ListingImagePlaceholder(
+                      seed: listing.imageSeed,
+                      photoUrl: listing.photoUrl,
+                    ),
                   ),
                   Positioned(
                     bottom: 4,

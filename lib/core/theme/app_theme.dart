@@ -15,41 +15,41 @@ abstract final class AppTheme {
       brightness: Brightness.dark,
       primary: AppColors.primary,
     ),
-    scaffoldBackgroundColor: const Color(0xFF121212),
+    scaffoldBackgroundColor: AppColors.darkScaffold,
     appBarTheme: AppBarTheme(
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: AppColors.darkAppBar,
       elevation: 0,
       scrolledUnderElevation: 0,
       systemOverlayStyle: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
       ),
-      iconTheme: const IconThemeData(color: Colors.white),
+      iconTheme: const IconThemeData(color: AppColors.onInk),
       titleTextStyle: TextStyle(
         fontFamily: GoogleFonts.dmSans().fontFamily,
         fontSize: 16,
         fontWeight: FontWeight.w600,
-        color: Colors.white,
+        color: AppColors.onInk,
       ),
     ),
-    cardColor: const Color(0xFF1E1E24),
+    cardColor: AppColors.darkCard,
     dividerTheme: const DividerThemeData(
-      color: Color(0xFF404050),
+      color: AppColors.darkDivider,
       thickness: 0.5,
       space: 0,
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: const Color(0xFF2A2A36),
+      fillColor: AppColors.darkField,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       hintStyle: TextStyle(
         fontFamily: GoogleFonts.dmSans().fontFamily,
         fontSize: 15,
-        color: const Color(0xFF7A7A8C),
+        color: AppColors.textSecondary,
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF404050)),
+        borderSide: const BorderSide(color: AppColors.darkDivider),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -57,14 +57,14 @@ abstract final class AppTheme {
       ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF404050)),
+        borderSide: const BorderSide(color: AppColors.darkDivider),
       ),
     ),
     switchTheme: SwitchThemeData(
-      thumbColor: WidgetStateProperty.all(Colors.white),
+      thumbColor: WidgetStateProperty.all(AppColors.onInk),
       trackColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) return AppColors.accent;
-        return const Color(0xFF444444);
+        return AppColors.darkSwitchTrack;
       }),
     ),
     extensions: const <ThemeExtension<dynamic>>[AppAdaptiveColors.dark],
@@ -156,7 +156,7 @@ abstract final class AppTheme {
       activeTrackColor: AppColors.accent,
       inactiveTrackColor: AppColors.indicatorInactive,
       thumbColor: AppColors.accent,
-      overlayColor: Color(0x201F7D8C),
+      overlayColor: AppColors.accentOverlay,
     ),
     tabBarTheme: const TabBarThemeData(
       labelColor: AppColors.accent,

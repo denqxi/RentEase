@@ -1,9 +1,20 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../core/constants/app_options.dart';
+import '../../../core/constants/cloudinary_config.dart';
+import '../../../shared/widgets/admin_unlisted_notice.dart';
+import '../../uploads/data/repositories/cloudinary_image_upload_repository.dart';
+import '../../uploads/domain/entities/uploaded_image.dart';
+import '../../uploads/domain/repositories/image_upload_repository.dart';
+import '../../uploads/presentation/cubit/image_upload_cubit.dart';
+import '../../uploads/presentation/widgets/image_upload_slot.dart';
+import '../../../core/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../registration/widgets/preference_dropdown.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -17,8 +28,12 @@ class EditPropertyScreen extends StatefulWidget {
   const EditPropertyScreen({
     required this.property,
     required this.onSave,
+    this.uploadRepository,
     super.key,
   });
+
+  /// Override for tests; defaults to the Cloudinary implementation.
+  final ImageUploadRepository? uploadRepository;
 
   final PropertyDoc property;
   final Future<void> Function(Map<String, dynamic> fields) onSave;
@@ -45,11 +60,29 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
   int? _curfewHours;
   late Set<String> _selectedAmenities;
   bool _saving = false;
+  late final ImageUploadCubit _uploads;
 
   @override
   void initState() {
     super.initState();
     final p = widget.property;
+    // photos and photoPublicIds are parallel arrays; pad a missing id so the
+    // pair stays aligned.
+    _uploads = ImageUploadCubit(
+      repository: widget.uploadRepository ?? CloudinaryImageUploadRepository(),
+      kind: ImageKind.propertyPhoto,
+      slotCount: CloudinaryConfig.maxPropertyPhotos,
+      minRequired: 1,
+      initialImages: [
+        for (var i = 0;
+            i < p.photos.length && i < CloudinaryConfig.maxPropertyPhotos;
+            i++)
+          UploadedImage(
+            url: p.photos[i],
+            publicId: i < p.photoPublicIds.length ? p.photoPublicIds[i] : '',
+          ),
+      ],
+    );
     _nameController = TextEditingController(text: p.title);
     _addressController = TextEditingController(text: p.address);
     _rentController = TextEditingController(text: '${p.monthlyRent.round()}');
@@ -76,6 +109,7 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
     _rentController.dispose();
     _depositController.dispose();
     _occupantsController.dispose();
+    _uploads.close();
     super.dispose();
   }
 
@@ -116,13 +150,23 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
 
     // Checklist order (not tap order); amenityScore must equal its length —
     // firestore.rules rejects the write otherwise.
-    final amenities = MockData.amenities
+    final amenities = AppOptions.amenities
         .where(_selectedAmenities.contains)
         .toList();
+
+    if (!_uploads.state.isReady) {
+      _showError('Add at least 1 photo and wait for uploads to finish.');
+      return;
+    }
+    // Removed photos just drop from the doc; unsigned Cloudinary presets
+    // can't delete from the client, so the old assets are orphaned.
+    final images = _uploads.state.images;
 
     setState(() => _saving = true);
     try {
       await widget.onSave({
+        'photos': [for (final i in images) i.url],
+        'photoPublicIds': [for (final i in images) i.publicId],
         'title': title,
         'address': address,
         'monthlyRent': rent,
@@ -148,7 +192,11 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      _showError(e.toString().replaceFirst('Exception: ', ''));
+      _showError(
+        e is Exception
+            ? e.toString().replaceFirst('Exception: ', '')
+            : 'Could not save the listing. Please try again.',
+      );
     }
   }
 
@@ -179,6 +227,40 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (widget.property.adminUnlisted) ...[
+              const AdminUnlistedNotice(),
+              SizedBox(height: AppSpacing.lg),
+            ],
+            _SectionLabel('PHOTOS'),
+            BlocBuilder<ImageUploadCubit, ImageUploadState>(
+              bloc: _uploads,
+              builder: (context, state) => Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: List.generate(
+                  state.slots.length,
+                  (i) => SizedBox(
+                    width: 96,
+                    child: ImageUploadSlot(
+                      slot: state.slots[i],
+                      emptyLabel: i == 0 ? 'Cover' : null,
+                      onPick: (src) => _uploads.pickAndUpload(i, src),
+                      onRetry: () => _uploads.retry(i),
+                      onRemove: () => _uploads.remove(i),
+                      onReplace: (src) => _uploads.pickAndUpload(i, src),
+                      onMoveEarlier: i == 0 ? null : () => _uploads.moveEarlier(i),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Add 1 to ${CloudinaryConfig.maxPropertyPhotos} photos. The first is the cover.',
+              style: AppTextStyles.caption(context),
+            ),
+            SizedBox(height: AppSpacing.lg),
+
             _SectionLabel('PROPERTY DETAILS'),
             _FieldLabel('Property name'),
             _TextInput(controller: _nameController, hint: 'e.g. Sunshine Boarding House'),
@@ -236,18 +318,12 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
             SizedBox(height: AppSpacing.lg),
 
             _SectionLabel('HOUSE RULES'),
-            _FieldLabel('Gender policy'),
-            Row(
-              children: [
-                for (final policy in _genderPolicies) ...[
-                  _ChoiceChip(
-                    label: policy,
-                    isSelected: _genderPolicy == policy,
-                    onTap: () => setState(() => _genderPolicy = policy),
-                  ),
-                  SizedBox(width: 8),
-                ],
-              ],
+            PreferenceDropdown(
+              label: 'Gender policy',
+              value: _genderPolicy,
+              hint: 'Select gender policy',
+              items: _genderPolicies,
+              onChanged: (v) => setState(() => _genderPolicy = v),
             ),
             SizedBox(height: AppSpacing.md),
             _ToggleRow(
@@ -287,7 +363,7 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          MockData.formatCurfew(_curfewHours),
+                          formatCurfew(_curfewHours),
                           style: AppTextStyles.field(context),
                         ),
                       ),
@@ -310,7 +386,7 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final amenity in MockData.amenities)
+                for (final amenity in AppOptions.amenities)
                   _ChoiceChip(
                     label: amenity,
                     isSelected: _selectedAmenities.contains(amenity),
@@ -324,9 +400,16 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
             ),
             SizedBox(height: AppSpacing.xl),
 
-            AppButton(
-              label: _saving ? 'Saving...' : 'Save changes',
-              onPressed: _saving ? null : _save,
+            BlocBuilder<ImageUploadCubit, ImageUploadState>(
+              bloc: _uploads,
+              builder: (context, state) => AppButton(
+                label: _saving
+                    ? 'Saving...'
+                    : state.isUploading
+                    ? 'Uploading photos...'
+                    : 'Save changes',
+                onPressed: _saving || !state.isReady ? null : _save,
+              ),
             ),
             SizedBox(height: AppSpacing.lg),
           ],

@@ -11,6 +11,7 @@ class PropertyDoc {
     required this.location,
     required this.geoHash,
     required this.photos,
+    this.photoPublicIds = const [],
     required this.monthlyRent,
     required this.depositAmount,
     required this.advanceMonths,
@@ -27,7 +28,12 @@ class PropertyDoc {
     required this.hasWifi,
     required this.amenityList,
     this.amenityScore,
+    this.adminUnlisted = false,
   });
+
+  /// Set only by an admin (with isAvailable=false); the owner cannot clear
+  /// it or flip isAvailable back to true (firestore.rules).
+  final bool adminUnlisted;
 
   /// Document ID.
   final String propertyId;
@@ -42,6 +48,9 @@ class PropertyDoc {
   final GeoPoint location;
   final String geoHash;
   final List<String> photos;
+
+  /// Cloudinary public_ids, parallel to [photos] (for later delete/replace).
+  final List<String> photoPublicIds;
   final num monthlyRent;
   final num depositAmount;
   final num advanceMonths;
@@ -81,6 +90,8 @@ class PropertyDoc {
         location: map['location'] as GeoPoint? ?? const GeoPoint(0, 0),
         geoHash: map['geoHash'] as String? ?? '',
         photos: (map['photos'] as List?)?.cast<String>() ?? const [],
+        photoPublicIds:
+            (map['photoPublicIds'] as List?)?.cast<String>() ?? const [],
         monthlyRent: map['monthlyRent'] as num? ?? 0,
         depositAmount: map['depositAmount'] as num? ?? 0,
         advanceMonths: map['advanceMonths'] as num? ?? 0,
@@ -97,6 +108,7 @@ class PropertyDoc {
         hasWifi: map['hasWifi'] as bool? ?? false,
         amenityList: (map['amenityList'] as List?)?.cast<String>() ?? const [],
         amenityScore: map['amenityScore'] as num?,
+        adminUnlisted: map['adminUnlisted'] as bool? ?? false,
       );
 
   factory PropertyDoc.fromSnapshot(
@@ -111,6 +123,7 @@ class PropertyDoc {
     'location': location,
     'geoHash': geoHash,
     'photos': photos,
+    'photoPublicIds': photoPublicIds,
     'monthlyRent': monthlyRent,
     'depositAmount': depositAmount,
     'advanceMonths': advanceMonths,
@@ -127,5 +140,6 @@ class PropertyDoc {
     'hasWifi': hasWifi,
     'amenityList': amenityList,
     'amenityScore': amenityScore ?? amenityList.length,
+    if (adminUnlisted) 'adminUnlisted': true,
   };
 }

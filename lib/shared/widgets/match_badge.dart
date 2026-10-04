@@ -25,8 +25,8 @@ class MatchBadge extends StatelessWidget {
   static Color colorFor(int percent) => percent >= 80
       ? AppColors.matchHigh
       : percent >= 60
-          ? AppColors.matchMedium
-          : AppColors.destructive;
+      ? AppColors.matchMedium
+      : AppColors.destructive;
 
   Color get _dotColor => colorFor(percent);
 
@@ -36,18 +36,18 @@ class MatchBadge extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.60),
+          color: AppColors.scrim.withValues(alpha: 0.60),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(Icons.lock_outline, color: Colors.white, size: 11),
+            Icon(Icons.lock_outline, color: AppColors.onInk, size: 11),
             SizedBox(width: 4),
             Text(
               showLabel ? 'Match Score' : 'Score',
               style: AppTextStyles.label(context).copyWith(
-                color: Colors.white,
+                color: AppColors.onInk,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -60,7 +60,7 @@ class MatchBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.60),
+        color: AppColors.scrim.withValues(alpha: 0.60),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -69,16 +69,13 @@ class MatchBadge extends StatelessWidget {
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _dotColor,
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: _dotColor),
           ),
           SizedBox(width: 4),
           Text(
             showLabel ? '$percent% match' : '$percent%',
             style: AppTextStyles.label(context).copyWith(
-              color: Colors.white,
+              color: AppColors.onInk,
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),

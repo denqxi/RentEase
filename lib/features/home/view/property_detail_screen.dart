@@ -1,14 +1,14 @@
+import '../../../core/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/ci_score_pill.dart';
 import '../../../shared/widgets/constraint_check_row.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
-import '../../../shared/widgets/match_badge.dart';
 import '../../inquiry/view/start_inquiry.dart';
+import '../../matching/domain/entities/mismatch_reason.dart';
 import '../../profile/view/edit_constraints_screen.dart';
 
 class PropertyDetailScreen extends StatelessWidget {
@@ -30,7 +30,14 @@ class PropertyDetailScreen extends StatelessWidget {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(builder: (_) => const EditConstraintsScreen()),
     );
-    if (saved == true) onPreferencesSaved?.call();
+    if (saved == true) {
+      onPreferencesSaved?.call();
+      // A view-only listing may match now; leave this stale detail so the
+      // refreshed Search shows it as a normal match (or still as a non-match).
+      if (property['isNonMatch'] == true && context.mounted) {
+        Navigator.of(context).pop();
+      }
+    }
   }
 
   void _guardGuestAction(BuildContext context, VoidCallback action) {
@@ -44,7 +51,13 @@ class PropertyDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isOutside = property['isOutsidePreference'] == true;
+    final bool isNonMatch = property['isNonMatch'] == true;
+    final reasons =
+        (property['mismatchReasons'] as List?)?.cast<MismatchReason>() ??
+        const <MismatchReason>[];
     final int bScore = (property['bScore'] as num).toInt();
+    final bool ownerVerified = property['isVerified'] == true;
+    final bool canInquire = bScore == 1;
     final int seed = (property['propertyId'] as String).hashCode % 5 + 1;
     final tenantCi = property['tenantCi'] as num?;
 
@@ -52,6 +65,38 @@ class PropertyDetailScreen extends StatelessWidget {
       backgroundColor: context.appColors.surface,
       body: Column(
         children: [
+          // View-only: the listing fails the saved preferences.
+          if (isNonMatch)
+            Container(
+              color: AppColors.amberFill,
+              padding: EdgeInsets.fromLTRB(
+                16,
+                MediaQuery.of(context).padding.top + 8,
+                16,
+                8,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    color: AppColors.amberPrimary,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      "Doesn't match your preferences (view only)",
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.amberText,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Outside preferences banner
           if (isOutside)
             Container(
@@ -65,8 +110,11 @@ class PropertyDetailScreen extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.warning_amber_rounded,
-                      color: AppColors.amberPrimary, size: 18),
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: AppColors.amberPrimary,
+                    size: 18,
+                  ),
                   SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -116,14 +164,23 @@ class PropertyDetailScreen extends StatelessWidget {
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            ListingImagePlaceholder(seed: seed),
+                            ListingImagePlaceholder(
+                              seed: seed,
+                              photoUrl: property['photoUrl'] as String?,
+                              fullSize: true,
+                            ),
                             if (isOutside)
-                              Container(color: AppColors.amberFill.withValues(alpha: 0.35)),
+                              Container(
+                                color: AppColors.amberFill.withValues(
+                                  alpha: 0.35,
+                                ),
+                              ),
                           ],
                         ),
                       ),
                       Positioned(
-                        top: MediaQuery.of(context).padding.top +
+                        top:
+                            MediaQuery.of(context).padding.top +
                             (isOutside ? 0 : 8),
                         left: 8,
                         child: IconButton(
@@ -137,7 +194,8 @@ class PropertyDetailScreen extends StatelessWidget {
                         ),
                       ),
                       Positioned(
-                        top: MediaQuery.of(context).padding.top +
+                        top:
+                            MediaQuery.of(context).padding.top +
                             (isOutside ? 0 : 8),
                         right: 8,
                         child: IconButton(
@@ -147,8 +205,7 @@ class PropertyDetailScreen extends StatelessWidget {
                                 ? AppColors.amberText
                                 : context.appColors.textPrimary,
                           ),
-                          onPressed: () =>
-                              _guardGuestAction(context, () {}),
+                          onPressed: () => _guardGuestAction(context, () {}),
                         ),
                       ),
                     ],
@@ -196,7 +253,9 @@ class PropertyDetailScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: context.appColors.fieldFill,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: context.appColors.fieldBorder),
+                            border: Border.all(
+                              color: context.appColors.fieldBorder,
+                            ),
                           ),
                           child: Row(
                             children: [
@@ -224,22 +283,25 @@ class PropertyDetailScreen extends StatelessWidget {
                                       color: context.appColors.textPrimary,
                                     ),
                                   ),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.check_circle,
+                                  if (ownerVerified)
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.check_circle,
                                           color: AppColors.primaryTeal,
-                                          size: 13),
-                                      SizedBox(width: 3),
-                                      Text(
-                                        'Verified Owner',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.primaryTeal,
+                                          size: 13,
                                         ),
-                                      ),
-                                    ],
-                                  ),
+                                        SizedBox(width: 3),
+                                        Text(
+                                          'Verified Owner',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.primaryTeal,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   Text(
                                     'Member since ${property['memberSince']} · ${property['propertyCount']} properties',
                                     style: TextStyle(
@@ -278,28 +340,35 @@ class PropertyDetailScreen extends StatelessWidget {
                           ),
                           _RuleRow(
                             label: 'Curfew',
-                            value: MockData.formatCurfew(property['curfewHours'] as num?),
+                            value: formatCurfew(
+                              property['curfewHours'] as num?,
+                            ),
                           ),
                           SizedBox(height: 16),
                           if (isGuest)
-                            MatchBadge(
-                              percent: 0,
-                              showLabel: true,
-                              isLocked: true,
+                            Text(
+                              'Sign up to see your matches',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: context.appColors.textSecondary,
+                              ),
                             )
-                          else if (tenantCi != null) ...[
+                          else if (!isNonMatch && tenantCi != null) ...[
                             Row(
                               children: [
                                 CiScorePill(score: tenantCi.toDouble()),
                                 SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: context.appColors.fieldFill,
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
-                                        color: context.appColors.fieldBorder),
+                                      color: context.appColors.fieldBorder,
+                                    ),
                                   ),
                                   child: Text(
                                     '#${property['tenantRank']} Rank',
@@ -313,6 +382,44 @@ class PropertyDetailScreen extends StatelessWidget {
                               ],
                             ),
                           ],
+                        ],
+
+                        // Why a view-only listing does not match.
+                        if (isNonMatch) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            "Why it doesn't match",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: context.appColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          for (final r in reasons)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.warning_amber_rounded,
+                                    color: AppColors.matchMedium,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      r.detailLabel,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: context.appColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                         ],
 
                         // Compatibility check (outside prefs)
@@ -330,20 +437,17 @@ class PropertyDetailScreen extends StatelessWidget {
                             label: 'Monthly rent',
                             value:
                                 '₱${property['monthlyRent']} — within budget',
-                            isPassing:
-                                (property['budgetExcess'] ?? 0) == 0,
+                            isPassing: (property['budgetExcess'] ?? 0) == 0,
                           ),
                           ConstraintCheckRow(
                             label: 'Distance',
                             value:
                                 '${property['distance']} km — +${property['distanceExcess']} km over limit',
-                            isPassing:
-                                (property['distanceExcess'] ?? 0) == 0,
+                            isPassing: (property['distanceExcess'] ?? 0) == 0,
                           ),
                           ConstraintCheckRow(
                             label: 'Gender policy',
-                            value:
-                                '${property['allowedGender']} — matches',
+                            value: '${property['allowedGender']} — matches',
                             isPassing: true,
                           ),
                         ],
@@ -364,7 +468,7 @@ class PropertyDetailScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (bScore == 1 && !isOutside)
+              if (canInquire && !isOutside && !isNonMatch)
                 AppButton(
                   label: 'Send Inquiry',
                   color: AppColors.ink,
@@ -377,20 +481,30 @@ class PropertyDetailScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (isOutside) ...[
+              // Rule 2: no Send Inquiry for a non-match (absent, not disabled).
+              if (isNonMatch)
                 AppButton(
-                  label: 'Send Inquiry Anyway',
+                  label: 'Update my preferences',
                   color: AppColors.ink,
-                  onPressed: () => _guardGuestAction(
-                    context,
-                    () => startInquiry(
+                  isOutlined: true,
+                  onPressed: () => _editPreferences(context),
+                ),
+              if (isOutside) ...[
+                if (canInquire) ...[
+                  AppButton(
+                    label: 'Send Inquiry Anyway',
+                    color: AppColors.ink,
+                    onPressed: () => _guardGuestAction(
                       context,
-                      propertyId: property['propertyId'] as String,
-                      matchId: property['matchId'] as String?,
+                      () => startInquiry(
+                        context,
+                        propertyId: property['propertyId'] as String,
+                        matchId: property['matchId'] as String?,
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(height: 8),
+                  SizedBox(height: 8),
+                ],
                 // Flagged listings already pass the *saved* preferences (the
                 // flag comes from Search's session filter), so this opens
                 // the saved preferences rather than implying they're exceeded.

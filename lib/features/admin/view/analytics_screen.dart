@@ -1,11 +1,16 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/firestore/models/models.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../auth/presentation/bloc/auth_bloc.dart';import '../cubit/analytics_cubit.dart';
+import '../domain/entities/admin_entities.dart';
 import '../widgets/admin_page_header.dart';
+import '../widgets/admin_state_views.dart';
 import 'admin_login_screen.dart';
 
 class AnalyticsScreen extends StatelessWidget {
@@ -17,6 +22,8 @@ class AnalyticsScreen extends StatelessWidget {
   final VoidCallback? onGoToVerify;
 
   void _logout(BuildContext context) {
+    final auth = context.read<AuthBloc>();
+    final navigator = Navigator.of(context);
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -39,9 +46,11 @@ class AnalyticsScreen extends StatelessWidget {
             ),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(ctx).pop();
-              Navigator.of(context).pushReplacement(
+              // Through AuthBloc so its state and suspension watcher reset.
+              auth.add(const AuthSignOutRequested());
+              navigator.pushReplacement(
                 MaterialPageRoute<void>(
                   builder: (_) => const AdminLoginScreen(),
                 ),
@@ -62,107 +71,199 @@ class AnalyticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.appColors.surface,
-      body: Column(
-        children: [
-          AdminPageHeader(
-            title: 'Dashboard',
-            subtitle: 'RentEase platform overview',
-            trailing: AdminAvatarMenu(onLogout: () => _logout(context)),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.md,
-                120,
+    return BlocBuilder<AnalyticsCubit, AnalyticsState>(
+      builder: (context, state) {
+        final stats = state.stats;
+        return Scaffold(
+          backgroundColor: context.appColors.surface,
+          body: Column(
+            children: [
+              AdminPageHeader(
+                title: 'Dashboard',
+                subtitle: 'RentEase platform overview',
+                trailing: AdminAvatarMenu(onLogout: () => _logout(context)),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _PendingReviewCard(count: 3, onReview: onGoToVerify),
-                  SizedBox(height: AppSpacing.md),
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: AppSpacing.sm,
-                    mainAxisSpacing: AppSpacing.sm,
-                    childAspectRatio: 1.5,
-                    children: const [
-                      _MetricCard(
-                        label: 'Total users',
-                        value: '1,284',
-                        delta: '+12% this month',
-                        icon: Icons.people_alt_rounded,
+              Expanded(
+                child: stats == null
+                    ? (state.isLoading
+                          ? const AdminLoadingView()
+                          : AdminMessageView(
+                              icon: Icons.error_outline_rounded,
+                              message:
+                                  state.errorMessage ??
+                                  'Could not load the dashboard.',
+                              onRetry: context.read<AnalyticsCubit>().refresh,
+                            ))
+                    : RefreshIndicator(
                         color: AppColors.accent,
+                        onRefresh: context.read<AnalyticsCubit>().refresh,
+                        child: _Body(
+                          stats: stats,
+                          logs: state.logs,
+                          onGoToVerify: onGoToVerify,
+                        ),
                       ),
-                      _MetricCard(
-                        label: 'Active listings',
-                        value: '342',
-                        delta: '+8 this week',
-                        icon: Icons.home_work_rounded,
-                        color: AppColors.matchHigh,
-                      ),
-                      _MetricCard(
-                        label: 'Matches this week',
-                        value: '89',
-                        delta: 'B-score = 1 pairs',
-                        icon: Icons.handshake_rounded,
-                        color: AppColors.matchMedium,
-                      ),
-                      _MetricCard(
-                        label: 'Bookings this month',
-                        value: '56',
-                        delta: '+21% vs May',
-                        icon: Icons.event_available_rounded,
-                        color: AppColors.primary,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: AppSpacing.lg),
-                  const _SectionTitle('Weekly sign-ups'),
-                  SizedBox(height: AppSpacing.sm),
-                  Container(
-                    height: 180,
-                    padding: const EdgeInsets.all(AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      color: context.appColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: context.appColors.fieldBorder,
-                        width: 0.5,
-                      ),
-                    ),
-                    child: const _BarChart(
-                      values: [24, 38, 30, 52, 44, 61, 47],
-                      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.lg),
-                  const _SectionTitle('User roles'),
-                  SizedBox(height: AppSpacing.sm),
-                  const _RoleSplitCard(tenants: 1046, owners: 238),
-                  SizedBox(height: AppSpacing.lg),
-                  const _SectionTitle('Recent activity'),
-                  SizedBox(height: AppSpacing.xs),
-                  ...[
-                    ('Maria Santos registered as tenant', '2 hours ago', Icons.person_add_rounded, AppColors.accent),
-                    ('bh001 was matched with 3 tenants', '4 hours ago', Icons.handshake_rounded, AppColors.matchHigh),
-                    ('Carlos Mendoza verified as owner', '5 hours ago', Icons.verified_rounded, AppColors.primary),
-                    ('New inquiry submitted for bh002', '1 day ago', Icons.mail_rounded, AppColors.matchMedium),
-                    ('Benito Cruz account suspended', '2 days ago', Icons.block_rounded, AppColors.destructive),
-                  ].map((e) => _ActivityRow(label: e.$1, time: e.$2, icon: e.$3, color: e.$4)),
-                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _Body extends StatelessWidget {
+  const _Body({required this.stats, required this.logs, this.onGoToVerify});
+
+  final AdminStats stats;
+  final List<AdminLogDoc> logs;
+  final VoidCallback? onGoToVerify;
+
+  @override
+  Widget build(BuildContext context) {
+    final signups = stats.signupsLast7Days;
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        120,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _PendingReviewCard(
+            count: stats.pendingVerifications,
+            onReview: onGoToVerify,
+          ),
+          SizedBox(height: AppSpacing.md),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: AppSpacing.sm,
+            mainAxisSpacing: AppSpacing.sm,
+            childAspectRatio: 1.5,
+            children: [
+              _MetricCard(
+                label: 'Total users',
+                value: '${stats.totalUsers}',
+                delta: '${stats.tenants} tenants · ${stats.owners} owners',
+                icon: Icons.people_alt_rounded,
+                color: AppColors.accent,
+              ),
+              _MetricCard(
+                label: 'Active listings',
+                value: '${stats.activeProperties}',
+                delta: 'of ${stats.properties} total',
+                icon: Icons.home_work_rounded,
+                color: AppColors.matchHigh,
+              ),
+              _MetricCard(
+                label: 'Inquiries',
+                value: '${stats.inquiries}',
+                delta: 'all time',
+                icon: Icons.mail_rounded,
+                color: AppColors.matchMedium,
+              ),
+              _MetricCard(
+                label: 'Bookings',
+                value: '${stats.bookings}',
+                delta: 'marked as booked',
+                icon: Icons.event_available_rounded,
+                color: AppColors.primary,
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.lg),
+          const _SectionTitle('Sign-ups, last 7 days'),
+          SizedBox(height: AppSpacing.sm),
+          Container(
+            height: 180,
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: context.appColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: context.appColors.fieldBorder,
+                width: 0.5,
               ),
             ),
+            child: signups.isEmpty
+                ? const SizedBox.shrink()
+                : _BarChart(
+                    values: [for (final d in signups) d.count],
+                    labels: [for (final d in signups) _weekday(d.day)],
+                  ),
           ),
+          SizedBox(height: AppSpacing.lg),
+          const _SectionTitle('User roles'),
+          SizedBox(height: AppSpacing.sm),
+          _RoleSplitCard(tenants: stats.tenants, owners: stats.owners),
+          SizedBox(height: AppSpacing.lg),
+          const _SectionTitle('Recent admin activity'),
+          SizedBox(height: AppSpacing.xs),
+          if (logs.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              child: Text(
+                'No admin actions yet.',
+                style: AppTextStyles.caption(context),
+              ),
+            )
+          else
+            ...logs.map((l) {
+              final (label, icon, color) = _describe(l);
+              return _ActivityRow(
+                label: label,
+                time: formatAdminDate(l.createdAt?.toDate()),
+                icon: icon,
+                color: color,
+              );
+            }),
         ],
       ),
     );
   }
+
+  static String _weekday(DateTime d) =>
+      const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d.weekday - 1];
+
+  static (String, IconData, Color) _describe(AdminLogDoc l) =>
+      switch (l.action) {
+        'approve_owner' => (
+          'Owner approved',
+          Icons.verified_rounded,
+          AppColors.matchHigh,
+        ),
+        'reject_owner' => (
+          'Owner verification rejected',
+          Icons.cancel_rounded,
+          AppColors.destructive,
+        ),
+        'suspend_user' => (
+          'Account suspended',
+          Icons.block_rounded,
+          AppColors.destructive,
+        ),
+        'reactivate_user' => (
+          'Account reactivated',
+          Icons.check_circle_rounded,
+          AppColors.accent,
+        ),
+        'unlist_property' => (
+          'Property unlisted',
+          Icons.visibility_off_rounded,
+          AppColors.matchMedium,
+        ),
+        'relist_property' => (
+          'Property relisted',
+          Icons.visibility_rounded,
+          AppColors.primary,
+        ),
+        _ => (l.action, Icons.history_rounded, AppColors.accent),
+      };
 }
 
 class _SectionTitle extends StatelessWidget {
@@ -225,7 +326,7 @@ class _PendingReviewCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$count owners awaiting verification',
+                  '$count owner${count == 1 ? "" : "s"} awaiting verification',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13.5,
@@ -234,7 +335,7 @@ class _PendingReviewCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'They cannot list properties until approved.',
+                  'Their listings are live, without the Verified badge, until approved.',
                   style: AppTextStyles.caption(context),
                 ),
               ],
@@ -355,7 +456,7 @@ class _RoleSplitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = tenants + owners;
-    final tenantFraction = tenants / total;
+    final tenantFraction = total == 0 ? 0.5 : tenants / total;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -388,10 +489,7 @@ class _RoleSplitCard extends StatelessWidget {
           SizedBox(height: AppSpacing.sm),
           Row(
             children: [
-              _LegendDot(
-                color: AppColors.accent,
-                label: 'Tenants · $tenants',
-              ),
+              _LegendDot(color: AppColors.accent, label: 'Tenants · $tenants'),
               SizedBox(width: AppSpacing.md),
               _LegendDot(
                 color: AppColors.matchMedium,
@@ -460,7 +558,7 @@ class _BarChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final maxVal = values.reduce(math.max).toDouble();
+    final maxVal = math.max(1, values.reduce(math.max)).toDouble();
     final barWidth = (size.width - 40) / values.length;
     final textStyle = TextStyle(
       fontFamily: 'DM Sans',
@@ -516,10 +614,7 @@ class _ActivityRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: context.appColors.fieldBorder,
-            width: 0.5,
-          ),
+          bottom: BorderSide(color: context.appColors.fieldBorder, width: 0.5),
         ),
       ),
       child: Row(
@@ -537,8 +632,9 @@ class _ActivityRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: AppTextStyles.label(context)
-                  .copyWith(fontSize: 13, fontWeight: FontWeight.w400),
+              style: AppTextStyles.label(
+                context,
+              ).copyWith(fontSize: 13, fontWeight: FontWeight.w400),
             ),
           ),
           Text(time, style: AppTextStyles.caption(context)),

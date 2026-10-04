@@ -104,7 +104,7 @@ class _RatingScreenState extends State<RatingScreen> {
                           color: AppColors.accent,
                         ),
                       )
-                    : const Icon(Icons.check, color: Colors.white, size: 44),
+                    : const Icon(Icons.check, color: AppColors.onInk, size: 44),
               ),
               const SizedBox(height: 20),
               Text(

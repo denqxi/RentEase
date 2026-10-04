@@ -50,8 +50,8 @@ class _OnboardingViewState extends State<_OnboardingView>
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: <Color>[
-        Color(0xFFBDE8F5), // soft sky-blue
-        Color(0xFFFFFFFF), // white
+        AppColors.onboardingSky,
+        AppColors.onInk,
       ],
       stops: <double>[0.0, 0.72],
     ),
@@ -195,7 +195,7 @@ class _HeroFrame extends StatelessWidget {
       end: Alignment.bottomCenter,
       colors: <Color>[
         Colors.transparent,
-        Color(0xCC000000),
+        AppColors.scrimStrong,
       ],
     ),
   );
@@ -211,7 +211,7 @@ class _HeroFrame extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(
+            color: AppColors.scrim.withValues(
               alpha: state.isLastPage ? 0.12 : 0.08,
             ),
             blurRadius: state.isLastPage ? 18 : 12,
@@ -280,7 +280,7 @@ class _HeroFallback extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: <Color>[Color(0xFFBDE8F5), AppColors.primary],
+          colors: <Color>[AppColors.onboardingSky, AppColors.primary],
         ),
       ),
     );

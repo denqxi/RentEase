@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -34,7 +34,7 @@ class ListingCardLarge extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
+              color: AppColors.scrim.withValues(alpha: 0.06),
               blurRadius: 14,
               offset: const Offset(0, 4),
             ),
@@ -76,7 +76,10 @@ class _Photo extends StatelessWidget {
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             child: SizedBox.expand(
-              child: ListingImagePlaceholder(seed: listing.imageSeed),
+              child: ListingImagePlaceholder(
+                seed: listing.imageSeed,
+                photoUrl: listing.photoUrl,
+              ),
             ),
           ),
           // Gradient overlay bottom
@@ -86,7 +89,9 @@ class _Photo extends StatelessWidget {
             bottom: 0,
             height: 60,
             child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -94,7 +99,7 @@ class _Photo extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: <Color>[
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.35),
+                      AppColors.scrim.withValues(alpha: 0.35),
                     ],
                   ),
                 ),
@@ -115,10 +120,7 @@ class _Photo extends StatelessWidget {
           Positioned(
             top: 8,
             right: 8,
-            child: _HeartButton(
-              isSaved: listing.isSaved,
-              onTap: onSavedToggle,
-            ),
+            child: _HeartButton(isSaved: listing.isSaved, onTap: onSavedToggle),
           ),
         ],
       ),
@@ -131,9 +133,10 @@ class _Details extends StatelessWidget {
 
   final Listing listing;
 
-  String _fmt(int value) => value
-      .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+  String _fmt(int value) => value.toString().replaceAllMapped(
+    RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+    (m) => '${m[1]},',
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +215,7 @@ class _HeartButton extends StatelessWidget {
         width: 32,
         height: 32,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.90),
+          color: AppColors.onInk.withValues(alpha: 0.90),
           shape: BoxShape.circle,
         ),
         child: Icon(

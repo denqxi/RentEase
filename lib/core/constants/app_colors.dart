@@ -104,7 +104,37 @@ abstract final class AppColors {
   static const Color redText    = Color(0xFF791F1F);
 
   // ── Admin ────────────────────────────────────────────────────────────────
+  static const Color scrim = Color(0xFF000000);
+  static const Color warningFill = Color(0xFFFEF3C7);
+  static const Color guestWarnFill = Color(0xFFFFF5E6);
+  static const Color guestWarnIcon = Color(0xFFDD6B20);
+  static const Color placeholderSandA = Color(0xFFDBC59C);
+  static const Color placeholderSandB = Color(0xFF8B6914);
+  static const Color placeholderNavyA = Color(0xFF2C3E6B);
+  static const Color placeholderNavyB = Color(0xFF0D1B3A);
+  static const Color placeholderSkyA = Color(0xFFB0D4E0);
+  static const Color placeholderSkyB = Color(0xFF5A9AB0);
+  static const Color placeholderClayA = Color(0xFFCDAA8C);
+  static const Color placeholderClayB = Color(0xFF8B6250);
+  static const Color placeholderBlueA = Color(0xFF4AA8D8);
+  static const Color placeholderBlueB = Color(0xFF1E5C8A);
+  static const Color darkScaffold = Color(0xFF121212);
+  static const Color darkAppBar = Color(0xFF1E1E1E);
+  static const Color darkCard = Color(0xFF1E1E24);
+  static const Color darkDivider = Color(0xFF404050);
+  static const Color darkField = Color(0xFF2A2A36);
+  static const Color darkSwitchTrack = Color(0xFF444444);
+  static const Color accentOverlay = Color(0x201F7D8C);
   static const Color adminNavy = Color(0xFF1A1A2E);
+  // Google "G" logo brand colors (sign-in button glyph only).
+  static const Color googleBlue = Color(0xFF4285F4);
+  static const Color googleGreen = Color(0xFF34A853);
+  static const Color googleYellow = Color(0xFFFBBC05);
+  static const Color googleRed = Color(0xFFEA4335);
+  static const Color onboardingSky = Color(0xFFBDE8F5);
+  static const Color onboardingDotInactive = Color(0xFFCBDFED);
+  static const Color scrimStrong = Color(0xCC000000);
+  static const Color scrimFaint = Color(0x16000000);
 }
 
 /// Theme-adaptive color tokens that flip between light and dark values.

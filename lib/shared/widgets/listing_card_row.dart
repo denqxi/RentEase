@@ -28,31 +28,31 @@ class ListingCardRow extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-      decoration: BoxDecoration(
-        color: context.appColors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.field),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        child: Row(
-          children: <Widget>[
-            _Thumbnail(
-              listing: listing,
-              isGuest: isGuest,
-              onSavedToggle: onSavedToggle,
+        decoration: BoxDecoration(
+          color: context.appColors.surface,
+          borderRadius: BorderRadius.circular(AppRadii.field),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: AppColors.scrim.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            SizedBox(width: AppSpacing.md),
-            Expanded(child: _Info(listing: listing)),
           ],
         ),
-      ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: Row(
+            children: <Widget>[
+              _Thumbnail(
+                listing: listing,
+                isGuest: isGuest,
+                onSavedToggle: onSavedToggle,
+              ),
+              SizedBox(width: AppSpacing.md),
+              Expanded(child: _Info(listing: listing)),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -78,15 +78,15 @@ class _Thumbnail extends StatelessWidget {
         children: <Widget>[
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadii.chip),
-            child: ListingImagePlaceholder(seed: listing.imageSeed),
+            child: ListingImagePlaceholder(
+              seed: listing.imageSeed,
+              photoUrl: listing.photoUrl,
+            ),
           ),
           Positioned(
             bottom: 6,
             left: 6,
-            child: MatchBadge(
-              percent: listing.matchPercent,
-              isLocked: isGuest,
-            ),
+            child: MatchBadge(percent: listing.matchPercent, isLocked: isGuest),
           ),
           Positioned(
             top: 6,
@@ -131,10 +131,9 @@ class _Info extends StatelessWidget {
             SizedBox(width: AppSpacing.sm),
             Text(
               '\$${listing.pricePerMonth.toLocale()}',
-              style: AppTextStyles.label(context).copyWith(
-                color: AppColors.accent,
-                fontSize: 14,
-              ),
+              style: AppTextStyles.label(
+                context,
+              ).copyWith(color: AppColors.accent, fontSize: 14),
             ),
           ],
         ),
@@ -192,7 +191,7 @@ class _HeartButton extends StatelessWidget {
         width: 26,
         height: 26,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.88),
+          color: AppColors.onInk.withValues(alpha: 0.88),
           shape: BoxShape.circle,
         ),
         child: Icon(

@@ -6,11 +6,13 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/phase_badge.dart';
 import '../../auth/presentation/current_uid.dart';
+import '../../activity/data/repositories/notification_repository_impl.dart';
 import '../cubit/inquiry_thread_cubit.dart';
 import '../data/repositories/inquiry_repository_impl.dart';
 import '../domain/services/inquiry_service.dart';
 import '../model/inquiry_summary.dart';
 import '../widgets/inquiry_chat_view.dart';
+import '../widgets/owner_invite_view.dart';
 import '../widgets/owner_phase1_view.dart';
 import '../widgets/tenant_phase1_view.dart';
 
@@ -42,7 +44,10 @@ class InquiryThreadScreen extends StatelessWidget {
         inquiryId: inquiryId,
         uid: uid,
         repository: repository,
-        service: InquiryService(repository: repository),
+        service: InquiryService(
+          repository: repository,
+          notifications: NotificationRepositoryImpl(),
+        ),
       ),
       child: _ThreadView(isOwner: isOwner),
     );
@@ -96,12 +101,18 @@ class _ThreadView extends StatelessWidget {
         }
 
         return _ThreadScaffold(
-          title: isOwner ? 'New inquiry' : propertyTitle,
+          title: isOwner
+              ? (InquiryService.isInvite(inquiry)
+                    ? 'Invitation sent'
+                    : 'New inquiry')
+              : propertyTitle,
           phase: 1,
           body: state.isLoading
               ? const Center(child: CircularProgressIndicator())
               : isOwner
-              ? const OwnerPhase1View()
+              ? (InquiryService.isInvite(inquiry)
+                    ? const OwnerInviteView()
+                    : const OwnerPhase1View())
               : const TenantPhase1View(),
         );
       },

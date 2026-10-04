@@ -27,6 +27,10 @@ abstract class AuthRepository {
     required String role,
   });
 
+  /// Live `users/{uid}.status == 'suspended'` flag, so a user an admin
+  /// suspends while the app is open can be signed out immediately.
+  Stream<bool> watchSuspended(String uid);
+
   Future<AppUser> signIn({required String email, required String password});
 
   Future<void> signOut();

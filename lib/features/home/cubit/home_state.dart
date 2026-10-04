@@ -2,7 +2,7 @@ part of 'home_cubit.dart';
 
 /// State for [HomeCubit] — holds all listings and the search query.
 class HomeState extends Equatable {
-  HomeState({
+  const HomeState({
     List<Listing>? listings,
     this.searchQuery = '',
     this.isLoading = false,
@@ -16,16 +16,13 @@ class HomeState extends Equatable {
   final String? errorMessage;
 
   /// True for the unauthenticated browse mode — no tenantProfiles/matches to
-  /// read, so listings are [Listing.guestSamples] and unranked.
+  /// read, so listings are the public newest-first feed and unranked.
   final bool isGuest;
 
   /// Top matches for the "Recommended for you" horizontal scroll.
   List<Listing> get recommended {
-    if (isGuest) {
-      final sorted = [...listings]
-        ..sort((a, b) => b.amenityScore.compareTo(a.amenityScore));
-      return sorted;
-    }
+    // Guests keep the feed's newest-first order: there is no Ci to rank by.
+    if (isGuest) return listings;
     final sorted = [...listings]
       ..sort((a, b) => b.matchPercent.compareTo(a.matchPercent));
     return sorted;
@@ -33,21 +30,12 @@ class HomeState extends Equatable {
 
   /// All listings for the "Compatible properties" vertical list — sorted by
   /// TOPSIS Ci score, never by distance alone (CLAUDE.md rule 9). Guests
-  /// have no Ci score at all, so they fall back to amenity score.
-  List<Listing> get nearby {
-    if (isGuest) {
-      return [...listings]
-        ..sort((a, b) => b.amenityScore.compareTo(a.amenityScore));
-    }
-    return listings;
-  }
+  /// have no Ci score at all, so they see the newest-first feed as loaded.
+  List<Listing> get nearby => listings;
 
   /// All listings sorted by match score (Matches tab).
   List<Listing> get allByMatch {
-    if (isGuest) {
-      return [...listings]
-        ..sort((a, b) => b.amenityScore.compareTo(a.amenityScore));
-    }
+    if (isGuest) return listings;
     return [...listings]
       ..sort((a, b) => b.matchPercent.compareTo(a.matchPercent));
   }
@@ -73,6 +61,11 @@ class HomeState extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      <Object?>[listings, searchQuery, isLoading, errorMessage, isGuest];
+  List<Object?> get props => <Object?>[
+    listings,
+    searchQuery,
+    isLoading,
+    errorMessage,
+    isGuest,
+  ];
 }

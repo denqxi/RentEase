@@ -29,8 +29,9 @@ class _ListingDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final detail = context
-        .select<ListingDetailCubit, ListingDetail>((c) => c.state.detail);
+    final detail = context.select<ListingDetailCubit, ListingDetail>(
+      (c) => c.state.detail,
+    );
     final cubit = context.read<ListingDetailCubit>();
 
     return Scaffold(
@@ -66,7 +67,10 @@ class _ListingDetailView extends StatelessWidget {
                     SizedBox(height: AppSpacing.lg),
                     _SectionTitle(title: 'About this home'),
                     SizedBox(height: AppSpacing.sm),
-                    Text(detail.description, style: AppTextStyles.body(context)),
+                    Text(
+                      detail.description,
+                      style: AppTextStyles.body(context),
+                    ),
                     SizedBox(height: AppSpacing.lg),
                     _SectionTitle(title: 'Amenities'),
                     SizedBox(height: AppSpacing.sm),
@@ -124,7 +128,9 @@ class _PhotoHeader extends StatelessWidget {
                     icon: detail.isSaved
                         ? Icons.favorite_rounded
                         : Icons.favorite_border,
-                    iconColor: detail.isSaved ? AppColors.destructive : context.appColors.textPrimary,
+                    iconColor: detail.isSaved
+                        ? AppColors.destructive
+                        : context.appColors.textPrimary,
                     onTap: onSaveToggle,
                   ),
                 ],
@@ -137,7 +143,10 @@ class _PhotoHeader extends StatelessWidget {
             right: 0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List<Widget>.generate(3, (i) => _DotIndicator(active: i == 0)),
+              children: List<Widget>.generate(
+                3,
+                (i) => _DotIndicator(active: i == 0),
+              ),
             ),
           ),
         ],
@@ -169,7 +178,7 @@ class _CircleButton extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
+              color: AppColors.scrim.withValues(alpha: 0.12),
               blurRadius: 8,
             ),
           ],
@@ -196,7 +205,9 @@ class _DotIndicator extends StatelessWidget {
       height: 6,
       margin: const EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
-        color: active ? context.appColors.surface : context.appColors.surface.withValues(alpha: 0.5),
+        color: active
+            ? context.appColors.surface
+            : context.appColors.surface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(3),
       ),
     );
@@ -222,10 +233,9 @@ class _TitleRow extends StatelessWidget {
           children: <Widget>[
             Text(
               '\$${detail.pricePerMonth.toLocale()}',
-              style: AppTextStyles.title(context).copyWith(
-                color: AppColors.accent,
-                fontSize: 20,
-              ),
+              style: AppTextStyles.title(
+                context,
+              ).copyWith(color: AppColors.accent, fontSize: 20),
             ),
             Text(
               'per month',
@@ -247,9 +257,16 @@ class _LocationRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        Icon(Icons.location_on_outlined, size: 14, color: context.appColors.textSecondary),
+        Icon(
+          Icons.location_on_outlined,
+          size: 14,
+          color: context.appColors.textSecondary,
+        ),
         SizedBox(width: 4),
-        Text(location, style: AppTextStyles.caption(context).copyWith(fontSize: 13)),
+        Text(
+          location,
+          style: AppTextStyles.caption(context).copyWith(fontSize: 13),
+        ),
       ],
     );
   }
@@ -299,10 +316,9 @@ class _SpecChip extends StatelessWidget {
           children: <Widget>[
             Text(
               value,
-              style: AppTextStyles.label(context).copyWith(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
+              style: AppTextStyles.label(
+                context,
+              ).copyWith(fontSize: 13, fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 2),
@@ -418,7 +434,7 @@ class _LandlordRow extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
-                colors: <Color>[Color(0xFF2C3E6B), Color(0xFF0D1B3A)],
+                colors: <Color>[AppColors.placeholderNavyA, AppColors.placeholderNavyB],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -432,10 +448,9 @@ class _LandlordRow extends StatelessWidget {
               children: <Widget>[
                 Text(
                   detail.landlordName,
-                  style: AppTextStyles.label(context).copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: AppTextStyles.label(
+                    context,
+                  ).copyWith(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 Text(
                   '${detail.landlordRole} · ${detail.landlordResponseTime}',
@@ -452,7 +467,11 @@ class _LandlordRow extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: context.appColors.fieldBorder),
             ),
-            child: Icon(Icons.chat_bubble_outline, size: 16, color: context.appColors.textSecondary),
+            child: Icon(
+              Icons.chat_bubble_outline,
+              size: 16,
+              color: context.appColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -505,7 +524,10 @@ class _BottomBar extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadii.button),
                   ),
                 ),
-                child: Text('Contact landlord', style: AppTextStyles.buttonLabel),
+                child: Text(
+                  'Contact landlord',
+                  style: AppTextStyles.buttonLabel,
+                ),
               ),
             ),
           ),
@@ -535,7 +557,9 @@ class _HeartButton extends StatelessWidget {
         ),
         child: Icon(
           isSaved ? Icons.favorite_rounded : Icons.favorite_border,
-          color: isSaved ? AppColors.destructive : context.appColors.textSecondary,
+          color: isSaved
+              ? AppColors.destructive
+              : context.appColors.textSecondary,
           size: 22,
         ),
       ),

@@ -1,3 +1,4 @@
+import 'package:rentease/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_text_styles.dart';
@@ -117,7 +118,7 @@ class _OnboardingCardState extends State<OnboardingCard>
                 child: Text(
                   page.title,
                   style: AppTextStyles.heading(context).copyWith(
-                    color: const Color(0xFFFFFFFF),
+                    color: AppColors.onInk,
                     fontSize: 30,
                   ),
                 ),
@@ -133,7 +134,7 @@ class _OnboardingCardState extends State<OnboardingCard>
                 child: Text(
                   page.subtitle,
                   style: AppTextStyles.body(context).copyWith(
-                    color: const Color(0xCCFFFFFF),
+                    color: AppColors.onInk.withValues(alpha: 0.8),
                     fontSize: 14,
                   ),
                 ),

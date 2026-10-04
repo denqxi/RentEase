@@ -58,13 +58,22 @@ it('walks the exact submit() sequence step by step', async () => {
         requiredGender: 'Mixed / Any',
         needsWifi: true,
         maxDistanceKm: 5,
-        poiLatLng: new GeoPoint(7.07, 125.6),
-        poiLabel: 'Test POI',
-        poiType: 'School',
         isSmoker: false,
         hasPet: false,
         groupSize: 1,
         isSeeking: true,
+        updatedAt: new Date(),
+      },
+      { merge: true },
+    ),
+  );
+  // Map pin + TOPSIS weights live in the private prefs doc.
+  await assertSucceeds(
+    tenantDb.doc(`tenantProfiles/${TENANT}/private/prefs`).set(
+      {
+        poiLatLng: new GeoPoint(7.07, 125.6),
+        poiLabel: 'Test POI',
+        poiType: 'School',
         wRent: 0.35,
         wDistance: 0.35,
         wAmenities: 0.30,

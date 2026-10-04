@@ -1,3 +1,4 @@
+import 'package:rentease/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_dimensions.dart';
@@ -42,8 +43,8 @@ class _CapsuleBar extends StatelessWidget {
   static const double _height = 6;
 
   // Sky-blue for active, light grey for inactive.
-  static const Color _activeColor = Color(0xFF1A7BBF);
-  static const Color _inactiveColor = Color(0xFFCBDFED);
+  static const Color _activeColor = AppColors.primaryMid;
+  static const Color _inactiveColor = AppColors.onboardingDotInactive;
 
   @override
   Widget build(BuildContext context) {

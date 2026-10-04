@@ -13,6 +13,21 @@ abstract class InquiryRepository {
 
   Future<MatchDoc?> fetchMatch(String matchId);
 
+  /// Cached bScore = 1 match rows between this owner and [tenantId] (one per
+  /// property). The `ownerId` filter is what lets the matches read rule
+  /// accept the query.
+  Future<List<MatchDoc>> fetchCompatibleMatchesWithTenant({
+    required String ownerId,
+    required String tenantId,
+  });
+
+  /// Every inquiry/invitation thread (any status) between this owner and
+  /// tenant. Filtered on `ownerId` so the inquiries read rule accepts it.
+  Future<List<InquiryDoc>> fetchInquiriesBetween({
+    required String ownerId,
+    required String tenantId,
+  });
+
   /// Creates the inquiry with [InquiryDoc.inquiryId] as its document ID.
   Future<void> createInquiry(InquiryDoc inquiry);
 
@@ -49,6 +64,26 @@ abstract class InquiryRepository {
 
   /// Whether [raterId] already rated this inquiry.
   Future<bool> hasRated({required String inquiryId, required String raterId});
+
+  // ── Contact sharing (after acceptance only) ─────────────────────────────
+
+  /// The signed-in user's own private contact (`users/{uid}/private/contact`).
+  Future<UserContactDoc?> fetchOwnContact(String uid);
+
+  /// `inquiries/{id}/contact/{role}` ('tenant' | 'owner'), or null if that
+  /// participant has not shared yet.
+  Future<ContactShareDoc?> fetchContactShare(String inquiryId, String role);
+
+  /// Live view of [role]'s share; emits null until it exists.
+  Stream<ContactShareDoc?> watchContactShare(String inquiryId, String role);
+
+  /// Writes the caller's OWN share (doc ID = their role). firestore.rules
+  /// only allow this after the inquiry is accepted.
+  Future<void> writeContactShare(
+    String inquiryId,
+    String role,
+    ContactShareDoc share,
+  );
 
   // ── Enrichment reads for display ────────────────────────────────────────
 

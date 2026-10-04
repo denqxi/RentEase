@@ -45,13 +45,17 @@ class MatchScoreCard extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       label,
-                      style: AppTextStyles.label(context).copyWith(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: AppTextStyles.label(
+                        context,
+                      ).copyWith(fontSize: 15, fontWeight: FontWeight.w700),
                     ),
                     SizedBox(height: 4),
-                    Text(summary, style: AppTextStyles.caption(context).copyWith(fontSize: 12)),
+                    Text(
+                      summary,
+                      style: AppTextStyles.caption(
+                        context,
+                      ).copyWith(fontSize: 12),
+                    ),
                   ],
                 ),
               ),
@@ -76,7 +80,10 @@ class _CircleGauge extends StatelessWidget {
       width: 72,
       height: 72,
       child: CustomPaint(
-        painter: _GaugePainter(percent: percent, trackColor: context.appColors.fieldBorder),
+        painter: _GaugePainter(
+          percent: percent,
+          trackColor: context.appColors.fieldBorder,
+        ),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -144,7 +151,8 @@ class _GaugePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_GaugePainter old) => old.percent != percent || old.trackColor != trackColor;
+  bool shouldRepaint(_GaugePainter old) =>
+      old.percent != percent || old.trackColor != trackColor;
 }
 
 class _ReasonRow extends StatelessWidget {
@@ -178,7 +186,9 @@ class _ReasonRow extends StatelessWidget {
               label,
               style: AppTextStyles.caption(context).copyWith(
                 fontSize: 13,
-                color: met ? context.appColors.textPrimary : context.appColors.textSecondary,
+                color: met
+                    ? context.appColors.textPrimary
+                    : context.appColors.textSecondary,
               ),
             ),
           ),

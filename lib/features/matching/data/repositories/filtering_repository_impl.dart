@@ -18,7 +18,7 @@ class FilteringRepositoryImpl implements FilteringRepository {
 
   @override
   Future<List<PropertyDoc>> fetchAvailableProperties() =>
-      _remote.fetchAvailableVerifiedProperties();
+      _remote.fetchAvailableListings();
 
   @override
   Future<Set<String>> fetchMatchedPropertyIds(String tenantId) async {

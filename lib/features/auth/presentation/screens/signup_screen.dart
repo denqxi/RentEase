@@ -99,7 +99,7 @@ class _SignupScreenState extends State<SignupScreen>
                       TextSpan(
                         text: 'RentEase',
                         style: TextStyle(
-                          color: Color(0xFF1ABCCE),
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w800,
                         ),
                       ),

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../features/activity/model/activity_item.dart';
 import '../../activity/cubit/activity_cubit.dart';
+import '../../activity/data/repositories/notification_repository_impl.dart';
 import '../../activity/view/activity_screen.dart';
+import '../../auth/presentation/current_uid.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
+import '../../owner/data/repositories/find_tenants_repository_impl.dart';
+import '../../owner/data/repositories/owner_property_repository_impl.dart';
 import '../../landlord_home/view/landlord_home_screen.dart';
 import '../../landlord_matches/view/landlord_matches_screen.dart';
 import '../../profile/view/owner_profile_screen.dart';
@@ -20,10 +23,26 @@ class LandlordShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: <BlocProvider>[
-        BlocProvider<LandlordHomeCubit>(create: (_) => LandlordHomeCubit()),
+        BlocProvider<LandlordHomeCubit>(
+          create: (ctx) {
+            final uid = currentUidOrNull(ctx);
+            if (uid == null) return LandlordHomeCubit();
+            return LandlordHomeCubit(
+              ownerId: uid,
+              propertyRepository: OwnerPropertyRepositoryImpl(),
+              tenantsRepository: FindTenantsRepositoryImpl(),
+            );
+          },
+        ),
         BlocProvider<ActivityCubit>(
-          create: (_) =>
-              ActivityCubit(initialItems: ActivityItem.landlordSamples),
+          create: (ctx) {
+            final uid = currentUidOrNull(ctx);
+            if (uid == null) return ActivityCubit();
+            return ActivityCubit(
+              repository: NotificationRepositoryImpl(),
+              uid: uid,
+            );
+          },
         ),
         BlocProvider<ShellCubit>(create: (_) => ShellCubit()),
       ],
@@ -44,17 +63,24 @@ class _LandlordShellView extends StatelessWidget {
     OwnerProfileScreen(),
   ];
 
-  static const List<FloatingNavBarItem> _items = <FloatingNavBarItem>[
-    FloatingNavBarItem(icon: Icons.home_rounded,          label: 'Home'),
-    FloatingNavBarItem(icon: Icons.favorite_rounded,      label: 'Matches'),
-    FloatingNavBarItem(icon: Icons.add_circle_rounded,    label: 'Add'),
-    FloatingNavBarItem(icon: Icons.notifications_rounded, label: 'Alerts'),
-    FloatingNavBarItem(icon: Icons.person_rounded,        label: 'Profile'),
+  static List<FloatingNavBarItem> _items(int unread) => <FloatingNavBarItem>[
+    const FloatingNavBarItem(icon: Icons.home_rounded, label: 'Home'),
+    const FloatingNavBarItem(icon: Icons.favorite_rounded, label: 'Matches'),
+    const FloatingNavBarItem(icon: Icons.add_circle_rounded, label: 'Add'),
+    FloatingNavBarItem(
+      icon: Icons.notifications_rounded,
+      label: 'Alerts',
+      badgeCount: unread,
+    ),
+    const FloatingNavBarItem(icon: Icons.person_rounded, label: 'Profile'),
   ];
 
   @override
   Widget build(BuildContext context) {
     final tab = context.watch<ShellCubit>().state.tab;
+    final unread = context.select<ActivityCubit, int>(
+      (c) => c.state.unreadCount,
+    );
 
     return Scaffold(
       extendBody: true,
@@ -63,7 +89,7 @@ class _LandlordShellView extends StatelessWidget {
         children: _screens,
       ),
       bottomNavigationBar: FloatingNavBar(
-        items: _items,
+        items: _items(unread),
         selectedIndex: tab.index,
         onTap: (i) {
           if (i == 2) {

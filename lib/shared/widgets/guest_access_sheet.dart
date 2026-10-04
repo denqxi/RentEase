@@ -107,12 +107,12 @@ class GuestAccessSheet extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF5E6),
+                  color: AppColors.guestWarnFill,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.lock_outline_rounded,
-                  color: Color(0xFFDD6B20),
+                  color: AppColors.guestWarnIcon,
                   size: 28,
                 ),
               ),

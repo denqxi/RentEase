@@ -37,7 +37,8 @@ class CardOverHeroLayout extends StatelessWidget {
             child: Container(
               width: double.infinity,
               constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * cardHeightFraction,
+                maxHeight:
+                    MediaQuery.of(context).size.height * cardHeightFraction,
               ),
               decoration: BoxDecoration(
                 color: context.appColors.surface,
@@ -46,7 +47,7 @@ class CardOverHeroLayout extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0x18000000),
+                    color: AppColors.scrim.withValues(alpha: 0.094),
                     blurRadius: 24,
                     offset: Offset(0, -6),
                   ),
@@ -59,10 +60,7 @@ class CardOverHeroLayout extends StatelessWidget {
                   AppSpacing.lg,
                   0,
                 ),
-                child: SafeArea(
-                  top: false,
-                  child: cardContent,
-                ),
+                child: SafeArea(top: false, child: cardContent),
               ),
             ),
           ),
@@ -124,13 +122,17 @@ class StepProgressDots extends StatelessWidget {
       children: List.generate(totalSteps, (i) {
         final active = i <= currentStep;
         return Padding(
-          padding: EdgeInsets.only(right: i < totalSteps - 1 ? AppSpacing.xs : 0),
+          padding: EdgeInsets.only(
+            right: i < totalSteps - 1 ? AppSpacing.xs : 0,
+          ),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              color: active ? AppColors.accent : context.appColors.indicatorInactive,
+              color: active
+                  ? AppColors.accent
+                  : context.appColors.indicatorInactive,
               shape: BoxShape.circle,
             ),
           ),

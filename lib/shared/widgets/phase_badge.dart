@@ -14,7 +14,7 @@ class PhaseBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: isPhase2 ? AppColors.accentSoft : const Color(0xFFFEF3C7),
+        color: isPhase2 ? AppColors.accentSoft : AppColors.warningFill,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(

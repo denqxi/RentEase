@@ -3,13 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../profile/cubit/profile_cubit.dart';
 import '../../registration/model/user_role.dart';
 import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
-import '../view/property_detail_screen.dart';
 import 'listing_card_large.dart';
 import 'nearby_section.dart' show openPropertyDetail;
 
@@ -19,8 +17,9 @@ class RecommendedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final listings =
-        context.select<HomeCubit, List<Listing>>((c) => c.state.recommended);
+    final listings = context.select<HomeCubit, List<Listing>>(
+      (c) => c.state.recommended,
+    );
     final cubit = context.read<HomeCubit>();
     final isGuest = context.select<ProfileCubit, bool>(
       (c) => c.state.userRole == UserRole.guest,
@@ -30,7 +29,7 @@ class RecommendedSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _SectionHeader(
-          title: isGuest ? 'Popular listings' : 'Recommended for you',
+          title: isGuest ? 'Just listed' : 'Recommended for you',
           onSeeAll: () {},
         ),
         SizedBox(height: AppSpacing.sm),
@@ -51,20 +50,7 @@ class RecommendedSection extends StatelessWidget {
                 }
                 cubit.toggleSaved(listings[i].id);
               },
-              // See NearbySection.onTap — guests have no real match/detail
-              // to fetch, so their tap goes straight to MockData.
-              onTap: isGuest
-                  ? () => Navigator.of(ctx).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => PropertyDetailScreen(
-                          property: MockData.properties.firstWhere(
-                            (p) => p['propertyId'] == listings[i].id,
-                          ),
-                          isGuest: true,
-                        ),
-                      ),
-                    )
-                  : () => openPropertyDetail(ctx, cubit, listings[i].id),
+              onTap: () => openPropertyDetail(ctx, cubit, listings[i].id),
             ),
           ),
         ),

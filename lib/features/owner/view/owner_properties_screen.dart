@@ -5,8 +5,10 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../shared/widgets/admin_unlisted_notice.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
+import '../../../shared/widgets/pending_listing_banner.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../../owner_onboarding/view/add_property_screen.dart';
 import '../cubit/owner_properties_cubit.dart';
@@ -123,6 +125,10 @@ class _OwnerPropertiesView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (state.showPendingBanner) ...[
+                  PendingListingBanner(status: state.verificationStatus),
+                  SizedBox(height: AppSpacing.md),
+                ],
                 // ── Metrics ────────────────────────────────────────────
                 Row(
                   children: [
@@ -166,7 +172,7 @@ class _OwnerPropertiesView extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
                     child: Text(
-                      'No listings yet. Tap "Add" to publish your first '
+                      'No listings yet. Tap "Add" to create your first '
                       'property.',
                       style: AppTextStyles.body(context),
                     ),
@@ -261,7 +267,10 @@ class _PropertyCard extends StatelessWidget {
           SizedBox(
             height: 110,
             width: double.infinity,
-            child: ListingImagePlaceholder(seed: seed),
+            child: ListingImagePlaceholder(
+              seed: seed,
+              photoUrl: property.photos.isEmpty ? null : property.photos.first,
+            ),
           ),
 
           Padding(
@@ -298,30 +307,33 @@ class _PropertyCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 6),
-                Row(
-                  children: [
-                    _StatusChip(
-                      label: 'Available',
-                      color: AppColors.matchHigh,
-                      isSelected: status == 'available',
-                      onTap: () => onStatusChange('available'),
-                    ),
-                    SizedBox(width: 8),
-                    _StatusChip(
-                      label: 'Pending',
-                      color: AppColors.matchMedium,
-                      isSelected: status == 'pending',
-                      onTap: () => onStatusChange('pending'),
-                    ),
-                    SizedBox(width: 8),
-                    _StatusChip(
-                      label: 'Booked',
-                      color: context.appColors.textSecondary,
-                      isSelected: status == 'booked',
-                      onTap: () => onStatusChange('booked'),
-                    ),
-                  ],
-                ),
+                if (property.adminUnlisted)
+                  const AdminUnlistedNotice()
+                else
+                  Row(
+                    children: [
+                      _StatusChip(
+                        label: 'Available',
+                        color: AppColors.matchHigh,
+                        isSelected: status == 'available',
+                        onTap: () => onStatusChange('available'),
+                      ),
+                      SizedBox(width: 8),
+                      _StatusChip(
+                        label: 'Pending',
+                        color: AppColors.matchMedium,
+                        isSelected: status == 'pending',
+                        onTap: () => onStatusChange('pending'),
+                      ),
+                      SizedBox(width: 8),
+                      _StatusChip(
+                        label: 'Booked',
+                        color: context.appColors.textSecondary,
+                        isSelected: status == 'booked',
+                        onTap: () => onStatusChange('booked'),
+                      ),
+                    ],
+                  ),
                 SizedBox(height: AppSpacing.sm + 2),
 
                 AppButton(

@@ -3,10 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../core/router/app_router.dart';
 import '../../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../../features/home/cubit/home_cubit.dart';
+import '../../registration/model/user_role.dart';
 import '../cubit/profile_cubit.dart';
 import '../widgets/profile_menu_card.dart';
 import 'edit_constraints_screen.dart';
@@ -56,8 +56,6 @@ class ProfileScreen extends StatelessWidget {
                         letterSpacing: -0.4,
                       ),
                     ),
-                    const Spacer(),
-                    Icon(Icons.settings_outlined, size: 24, color: cs.onSurface),
                   ],
                 ),
               ),
@@ -67,10 +65,12 @@ class ProfileScreen extends StatelessWidget {
               Center(
                 child: Column(
                   children: <Widget>[
-                    const _ProfileAvatar(),
+                    _ProfileAvatar(photoUrl: state.photoUrl),
                     SizedBox(height: AppSpacing.md),
                     Text(
-                      MockData.tenantName,
+                      state.fullName.isEmpty
+                          ? (state.userRole == UserRole.guest ? 'Guest' : 'Tenant')
+                          : state.fullName,
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 20,
@@ -149,7 +149,9 @@ class ProfileScreen extends StatelessWidget {
 // Avatar
 
 class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar();
+  const _ProfileAvatar({this.photoUrl});
+
+  final String? photoUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -180,7 +182,21 @@ class _ProfileAvatar extends StatelessWidget {
               end: Alignment.bottomRight,
             ),
           ),
-          child: Icon(Icons.person, color: AppColors.onInk, size: 44),
+          child: (photoUrl != null && photoUrl!.isNotEmpty)
+              ? ClipOval(
+                  child: Image.network(
+                    photoUrl!,
+                    width: 90,
+                    height: 90,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Icon(
+                      Icons.person,
+                      color: AppColors.onInk,
+                      size: 44,
+                    ),
+                  ),
+                )
+              : Icon(Icons.person, color: AppColors.onInk, size: 44),
         ),
       ),
     );
@@ -240,7 +256,11 @@ class _StatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final savedCount = context.watch<HomeCubit>().state.saved.length;
+    final home = context.watch<HomeCubit>().state;
+    final savedCount = home.saved.length;
+    final inquiryCount = context.select<ProfileCubit, int>(
+      (c) => c.state.inquiryCount,
+    );
     final homeCubit = context.read<HomeCubit>();
 
     final stats = <_StatData>[
@@ -257,8 +277,16 @@ class _StatsRow extends StatelessWidget {
           ),
         ),
       ),
-      _StatData(icon: Icons.chat_bubble_outline, count: 2, label: 'Inquiries'),
-      _StatData(icon: Icons.home_outlined, count: 8, label: 'Matches'),
+      _StatData(
+        icon: Icons.chat_bubble_outline,
+        count: inquiryCount,
+        label: 'Inquiries',
+      ),
+      _StatData(
+        icon: Icons.home_outlined,
+        count: home.listings.length,
+        label: 'Matches',
+      ),
     ];
 
     return Container(

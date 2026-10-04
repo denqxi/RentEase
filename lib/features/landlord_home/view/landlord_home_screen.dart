@@ -1,42 +1,207 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_dimensions.dart';
-import '../../../../core/constants/mock_data.dart';
-import '../../../../core/router/app_router.dart';
-import '../../../../shared/widgets/listing_image_placeholder.dart';
-import '../../../../shared/widgets/match_badge.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_dimensions.dart';
+import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/firestore/models/models.dart';
+import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/listing_image_placeholder.dart';
+import '../../../shared/widgets/pending_listing_banner.dart';
 import '../../home/widgets/home_header.dart';
 import '../cubit/landlord_home_cubit.dart';
-import '../model/tenant.dart';
-import '../model/tenant_detail.dart';
-import 'tenant_detail_screen.dart';
+import '../widgets/compatible_tenants_section.dart';
 
+/// Owner home: greeting, the owner's real listings and a preview of
+/// compatible tenants (unranked).
 class LandlordHomeScreen extends StatelessWidget {
   const LandlordHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final tenants = context
-        .select<LandlordHomeCubit, List<Tenant>>((c) => c.state.compatible);
-
+    final cubit = context.read<LandlordHomeCubit>();
     return Scaffold(
       backgroundColor: context.appColors.surface,
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: <Widget>[
-            SliverToBoxAdapter(
-              child: HomeHeader(userName: MockData.ownerName),
-            ),
-            const SliverToBoxAdapter(child: _PropertyListingsSection()),
-            const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
-            SliverToBoxAdapter(
-              child: _TopMatchesSection(tenants: tenants),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl)),
-          ],
+        child: BlocBuilder<LandlordHomeCubit, LandlordHomeState>(
+          builder: (context, state) {
+            return CustomScrollView(
+              slivers: <Widget>[
+                SliverToBoxAdapter(
+                  child: HomeHeader(userName: state.firstName),
+                ),
+                if (state.errorMessage != null)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _ErrorState(
+                      message: state.errorMessage!,
+                      onRetry: cubit.retry,
+                    ),
+                  )
+                else if (state.isLoading)
+                  const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else ...[
+                  if (state.showPendingBanner)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.lg,
+                          0,
+                          AppSpacing.lg,
+                          AppSpacing.md,
+                        ),
+                        child: PendingListingBanner(
+                          status: state.verificationStatus,
+                        ),
+                      ),
+                    ),
+                  SliverToBoxAdapter(child: _StatsRow(state: state)),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: AppSpacing.lg),
+                  ),
+                  SliverToBoxAdapter(
+                    child: _PropertyListingsSection(
+                      properties: state.properties,
+                    ),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: AppSpacing.lg),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                      child: CompatibleTenantsSection(limit: 3),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: AppSpacing.xl),
+                  ),
+                ],
+              ],
+            );
+          },
         ),
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            message,
+            style: AppTextStyles.body(context),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppButton(
+            label: 'Try again',
+            variant: AppButtonVariant.outline,
+            isSmall: true,
+            isFullWidth: false,
+            onPressed: onRetry,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+
+class _StatsRow extends StatelessWidget {
+  const _StatsRow({required this.state});
+
+  final LandlordHomeState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = state.properties.length;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Row(
+        children: [
+          Expanded(
+            child: _StatCard(
+              label: 'Listings',
+              value: '$total',
+              color: AppColors.accent,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: _StatCard(
+              label: 'Available',
+              value: '${state.availableCount}',
+              color: AppColors.matchHigh,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: _StatCard(
+              label: 'Not available',
+              value: '${total - state.availableCount}',
+              color: AppColors.matchMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  const _StatCard({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: context.appColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.appColors.fieldBorder, width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: AppTextStyles.caption(context)),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: color,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -96,7 +261,9 @@ class _SectionHeader extends StatelessWidget {
 // ── "Your listings" horizontal carousel ──────────────────────────────────────
 
 class _PropertyListingsSection extends StatelessWidget {
-  const _PropertyListingsSection();
+  const _PropertyListingsSection({required this.properties});
+
+  final List<PropertyDoc> properties;
 
   @override
   Widget build(BuildContext context) {
@@ -110,52 +277,91 @@ class _PropertyListingsSection extends StatelessWidget {
           trailing: GestureDetector(
             onTap: () => Navigator.of(context).pushNamed(AppRouter.addProperty),
             child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: AppColors.accentSoft,
-                shape: BoxShape.circle,
+              width: 48,
+              height: 48,
+              alignment: Alignment.center,
+              child: Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: AppColors.accentSoft,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.add_rounded,
+                  color: AppColors.accent,
+                  size: 18,
+                ),
               ),
-              child: Icon(Icons.add_rounded, color: AppColors.accent, size: 18),
             ),
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        SizedBox(
-          height: 270,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
+        if (properties.isEmpty)
+          Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            itemCount: MockData.properties.length,
-            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
-            itemBuilder: (_, i) => _PropertyCardLarge(
-              property: MockData.properties[i],
-              seed: (i % 5) + 1,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: context.appColors.fieldFill,
+                borderRadius: BorderRadius.circular(AppRadii.card),
+                border: Border.all(
+                  color: context.appColors.fieldBorder,
+                  width: 0.5,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'You have no listings yet. Add a property to start '
+                    'matching with tenants.',
+                    style: AppTextStyles.body(context),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  AppButton(
+                    label: 'Add your first property',
+                    onPressed: () =>
+                        Navigator.of(context).pushNamed(AppRouter.addProperty),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: 270,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              itemCount: properties.length,
+              separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
+              itemBuilder: (_, i) => _PropertyCardLarge(
+                property: properties[i],
+                seed: (properties[i].propertyId.hashCode % 5) + 1,
+              ),
             ),
           ),
-        ),
       ],
     );
   }
 }
 
 class _PropertyCardLarge extends StatelessWidget {
-  const _PropertyCardLarge({
-    required this.property,
-    required this.seed,
-  });
+  const _PropertyCardLarge({required this.property, required this.seed});
 
-  final Map<String, dynamic> property;
+  final PropertyDoc property;
   final int seed;
 
-  String _fmt(int value) => value
+  String _fmt(num value) => value
+      .round()
       .toString()
       .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 
   @override
   Widget build(BuildContext context) {
-    final status = property['vacancyStatus'] as String? ?? 'available';
-    final isAvailable = status == 'available';
+    final status = property.vacancyStatus;
 
     return Container(
       width: 220,
@@ -163,92 +369,38 @@ class _PropertyCardLarge extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.appColors.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: context.appColors.fieldBorder, width: 0.5),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // Image area
           SizedBox(
             height: 155,
+            width: double.infinity,
             child: Stack(
+              fit: StackFit.expand,
               children: <Widget>[
-                ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(16)),
-                  child: SizedBox.expand(
-                    child: ListingImagePlaceholder(seed: seed),
-                  ),
+                ListingImagePlaceholder(
+                  seed: seed,
+                  photoUrl:
+                      property.photos.isEmpty ? null : property.photos.first,
                 ),
-                // Gradient overlay
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: 60,
-                  child: ClipRRect(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: <Color>[
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.35),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // Status badge top-left
                 Positioned(
                   top: 10,
                   left: 10,
-                  child: _StatusBadge(isAvailable: isAvailable),
-                ),
-                // More options top-right
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.90),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.more_horiz_rounded,
-                      color: context.appColors.textPrimary,
-                      size: 17,
-                    ),
-                  ),
+                  child: _StatusBadge(status: status),
                 ),
               ],
             ),
           ),
-          // Details
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.sm + 2,
-              AppSpacing.sm,
-              AppSpacing.sm + 2,
-              AppSpacing.sm,
-            ),
+            padding: const EdgeInsets.all(AppSpacing.sm + 2),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  property['title'] as String,
+                  property.title,
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,
@@ -260,7 +412,7 @@ class _PropertyCardLarge extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '₱${_fmt(property['monthlyRent'] as int)}/mo',
+                  '₱${_fmt(property.monthlyRent)}/mo',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,
@@ -279,7 +431,7 @@ class _PropertyCardLarge extends StatelessWidget {
                     const SizedBox(width: 2),
                     Expanded(
                       child: Text(
-                        property['address'] as String,
+                        property.address,
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12,
@@ -301,16 +453,22 @@ class _PropertyCardLarge extends StatelessWidget {
 }
 
 class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.isAvailable});
+  const _StatusBadge({required this.status});
 
-  final bool isAvailable;
+  /// 'available' | 'pending' | 'booked'
+  final String status;
 
   @override
   Widget build(BuildContext context) {
+    final (label, color) = switch (status) {
+      'available' => ('Available', AppColors.matchHigh),
+      'booked' => ('Booked', AppColors.indicatorInactive),
+      _ => ('Pending', AppColors.matchMedium),
+    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.60),
+        color: AppColors.ink.withValues(alpha: 0.60),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -319,176 +477,19 @@ class _StatusBadge extends StatelessWidget {
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isAvailable ? AppColors.matchHigh : AppColors.matchMedium,
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
           ),
           const SizedBox(width: 4),
           Text(
-            isAvailable ? 'Available' : 'Pending',
-            style: const TextStyle(
+            label,
+            style: TextStyle(
               fontFamily: 'DM Sans',
-              color: Colors.white,
+              color: AppColors.onInk,
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── "Top matches" vertical list ───────────────────────────────────────────────
-
-class _TopMatchesSection extends StatelessWidget {
-  const _TopMatchesSection({
-    required this.tenants,
-  });
-
-  final List<Tenant> tenants;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        _SectionHeader(
-          title: 'Top tenant matches',
-          onSeeAll: () => Navigator.of(context).pushNamed(AppRouter.findTenants),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        ListView.separated(
-          physics: const NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          itemCount: tenants.length,
-          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-          itemBuilder: (ctx, i) => _TenantRowCard(
-            tenant: tenants[i],
-            onTap: () => Navigator.of(ctx).push(
-              MaterialPageRoute<void>(
-                builder: (_) =>
-                    TenantDetailScreen(detail: TenantDetail.sample),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TenantRowCard extends StatelessWidget {
-  const _TenantRowCard({
-    required this.tenant,
-    this.onTap,
-  });
-
-  final Tenant tenant;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.appColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(AppSpacing.sm + 4),
-        child: Row(
-          children: <Widget>[
-            // Avatar with match badge
-            SizedBox(
-              width: 72,
-              height: 72,
-              child: Stack(
-                children: <Widget>[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: ListingImagePlaceholder(seed: tenant.imageSeed),
-                  ),
-                  Positioned(
-                    bottom: 4,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: MatchBadge(percent: tenant.matchPercent),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    tenant.name,
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: context.appColors.textPrimary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
-                  Row(
-                    children: <Widget>[
-                      Icon(
-                        Icons.work_outline_rounded,
-                        size: 12,
-                        color: context.appColors.textSecondary,
-                      ),
-                      const SizedBox(width: 2),
-                      Expanded(
-                        child: Text(
-                          tenant.occupation,
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 12,
-                            color: context.appColors.textSecondary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    tenant.incomeRange,
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.accent,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: context.appColors.textSecondary,
-              size: 20,
-            ),
-          ],
-        ),
       ),
     );
   }

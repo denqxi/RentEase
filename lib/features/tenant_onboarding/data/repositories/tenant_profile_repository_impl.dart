@@ -29,6 +29,15 @@ class TenantProfileRepositoryImpl implements TenantProfileRepository {
   }
 
   @override
+  Future<void> updatePrefs(String uid, Map<String, dynamic> fields) async {
+    try {
+      await _remote.updatePrefs(uid, fields);
+    } on FirebaseException catch (e) {
+      throw Exception(_messageFor(e));
+    }
+  }
+
+  @override
   Future<void> updateFields(String uid, Map<String, dynamic> fields) async {
     try {
       await _remote.updateFields(uid, fields);

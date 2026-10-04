@@ -26,6 +26,25 @@ class InquiryRepositoryImpl implements InquiryRepository {
       _guard(() => _remote.fetchMatch(matchId));
 
   @override
+  Future<List<MatchDoc>> fetchCompatibleMatchesWithTenant({
+    required String ownerId,
+    required String tenantId,
+  }) => _guard(
+    () => _remote.fetchCompatibleMatchesWithTenant(
+      ownerId: ownerId,
+      tenantId: tenantId,
+    ),
+  );
+
+  @override
+  Future<List<InquiryDoc>> fetchInquiriesBetween({
+    required String ownerId,
+    required String tenantId,
+  }) => _guard(
+    () => _remote.fetchInquiriesBetween(ownerId: ownerId, tenantId: tenantId),
+  );
+
+  @override
   Future<void> createInquiry(InquiryDoc inquiry) =>
       _guard(() => _remote.createInquiry(inquiry));
 
@@ -86,6 +105,25 @@ class InquiryRepositoryImpl implements InquiryRepository {
   @override
   Future<bool> hasRated({required String inquiryId, required String raterId}) =>
       _guard(() => _remote.hasRated(inquiryId: inquiryId, raterId: raterId));
+
+  @override
+  Future<UserContactDoc?> fetchOwnContact(String uid) =>
+      _guard(() => _remote.fetchOwnContact(uid));
+
+  @override
+  Future<ContactShareDoc?> fetchContactShare(String inquiryId, String role) =>
+      _guard(() => _remote.fetchContactShare(inquiryId, role));
+
+  @override
+  Stream<ContactShareDoc?> watchContactShare(String inquiryId, String role) =>
+      _remote.watchContactShare(inquiryId, role);
+
+  @override
+  Future<void> writeContactShare(
+    String inquiryId,
+    String role,
+    ContactShareDoc share,
+  ) => _guard(() => _remote.writeContactShare(inquiryId, role, share));
 
   @override
   Future<PropertyDoc?> fetchProperty(String propertyId) =>

@@ -35,7 +35,7 @@ class MatchDoc {
   final num bScore;
 
   /// Haversine distance (km) between property location and tenant POI,
-  /// computed server-side at match time. Shown as "X km" in the UI.
+  /// computed on-device by the client-side matching engine. Shown as "X km" in the UI.
   final num? distanceKm;
 
   /// TOPSIS Ci for tenant-side ranking (0.00–1.00). There is no owner-side

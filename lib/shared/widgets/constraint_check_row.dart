@@ -24,7 +24,9 @@ class ConstraintCheckRow extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                isPassing ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
+                isPassing
+                    ? Icons.check_circle_rounded
+                    : Icons.warning_amber_rounded,
                 color: isPassing ? AppColors.matchHigh : AppColors.matchMedium,
                 size: 16,
               ),
@@ -45,13 +47,19 @@ class ConstraintCheckRow extends StatelessWidget {
                   fontFamily: 'DM Sans',
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isPassing ? context.appColors.textPrimary : AppColors.matchMedium,
+                  color: isPassing
+                      ? context.appColors.textPrimary
+                      : AppColors.matchMedium,
                 ),
               ),
             ],
           ),
         ),
-        Divider(color: context.appColors.fieldBorder, thickness: 0.5, height: 1),
+        Divider(
+          color: context.appColors.fieldBorder,
+          thickness: 0.5,
+          height: 1,
+        ),
       ],
     );
   }

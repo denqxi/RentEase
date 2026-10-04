@@ -1,9 +1,9 @@
+import '../../../core/constants/app_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../features/registration/widgets/form_step_layout.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../cubit/tenant_onboarding_cubit.dart';
@@ -105,7 +105,7 @@ class _SoftPreferencesStepScreenState extends State<SoftPreferencesStepScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      for (final amenity in MockData.amenities)
+                      for (final amenity in AppOptions.amenities)
                         _PrefChip(
                           label: amenity,
                           isSelected: _preferredAmenities.contains(amenity),

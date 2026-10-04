@@ -102,7 +102,9 @@ class AppButton extends StatelessWidget {
         child: ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: onPressed != null ? color : context.appColors.indicatorInactive,
+            backgroundColor: onPressed != null
+                ? color
+                : context.appColors.indicatorInactive,
             foregroundColor: AppColors.onInk,
             elevation: 0,
             shape: RoundedRectangleBorder(
@@ -113,7 +115,9 @@ class AppButton extends StatelessWidget {
             label,
             style: AppTextStyles.buttonLabel.copyWith(
               fontSize: isSmall ? 13 : 15,
-              color: onPressed != null ? AppColors.onInk : context.appColors.textSecondary,
+              color: onPressed != null
+                  ? AppColors.onInk
+                  : context.appColors.textSecondary,
             ),
           ),
         ),
@@ -129,8 +133,12 @@ class AppButton extends StatelessWidget {
           child: ElevatedButton(
             onPressed: onPressed,
             style: ElevatedButton.styleFrom(
-              backgroundColor: onPressed != null ? context.appColors.ink : context.appColors.indicatorInactive,
-              foregroundColor: onPressed != null ? AppColors.onInk : context.appColors.textSecondary,
+              backgroundColor: onPressed != null
+                  ? context.appColors.ink
+                  : context.appColors.indicatorInactive,
+              foregroundColor: onPressed != null
+                  ? AppColors.onInk
+                  : context.appColors.textSecondary,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadii.button),
@@ -140,7 +148,9 @@ class AppButton extends StatelessWidget {
               label,
               style: AppTextStyles.buttonLabel.copyWith(
                 fontSize: isSmall ? 13 : 15,
-                color: onPressed != null ? AppColors.onInk : context.appColors.textSecondary,
+                color: onPressed != null
+                    ? AppColors.onInk
+                    : context.appColors.textSecondary,
               ),
             ),
           ),
@@ -225,13 +235,13 @@ class AppPrimaryButton extends StatelessWidget {
             }
             if (states.contains(WidgetState.pressed)) {
               return Color.alphaBlend(
-                Colors.white.withValues(alpha: 0.20),
+                AppColors.onInk.withValues(alpha: 0.20),
                 inkColor,
               );
             }
             if (states.contains(WidgetState.hovered)) {
               return Color.alphaBlend(
-                Colors.white.withValues(alpha: 0.12),
+                AppColors.onInk.withValues(alpha: 0.12),
                 inkColor,
               );
             }
@@ -248,7 +258,7 @@ class AppPrimaryButton extends StatelessWidget {
             return 0.0;
           }),
           overlayColor: WidgetStateProperty.all(
-            Colors.white.withValues(alpha: 0.12),
+            AppColors.onInk.withValues(alpha: 0.12),
           ),
           shape: WidgetStateProperty.all(
             RoundedRectangleBorder(

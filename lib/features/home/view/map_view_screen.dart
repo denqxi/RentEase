@@ -1,10 +1,10 @@
+import '../../../core/constants/app_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../shared/widgets/map_zoom_controls.dart';
 import '../../../shared/widgets/match_badge.dart';
 import '../../../shared/widgets/verified_badge.dart';
@@ -18,6 +18,8 @@ class MapViewScreen extends StatefulWidget {
   const MapViewScreen({
     required this.properties,
     this.isGuest = false,
+    this.poi,
+    this.poiLabel,
     super.key,
   });
 
@@ -25,6 +27,11 @@ class MapViewScreen extends StatefulWidget {
 
   /// Opens pins' detail screens in the gated guest mode.
   final bool isGuest;
+
+  /// The tenant's saved point of interest; null for guests / no profile, in
+  /// which case the map centers on Davao City and shows no POI marker.
+  final LatLng? poi;
+  final String? poiLabel;
 
   @override
   State<MapViewScreen> createState() => _MapViewScreenState();
@@ -64,7 +71,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm,
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.sm,
               ),
               child: Container(
                 decoration: BoxDecoration(
@@ -77,105 +87,117 @@ class _MapViewScreenState extends State<MapViewScreen> {
                     FlutterMap(
                       mapController: _mapController,
                       options: MapOptions(
-                    initialCenter: const LatLng(
-                      MockData.tenantPoiLat,
-                      MockData.tenantPoiLng,
-                    ),
-                    initialZoom: 13.5,
-                    // Tapping empty map space dismisses the callout.
-                    onTap: (_, _) => setState(() => _selectedIndex = null),
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.rentease.app',
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        // POI marker — tenant's school/work
-                        Marker(
-                          point: const LatLng(
-                            MockData.tenantPoiLat,
-                            MockData.tenantPoiLng,
-                          ),
-                          width: 120,
-                          height: 54,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.school_rounded,
-                                  color: AppColors.accent, size: 24),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: context.appColors.surface,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                      color: context.appColors.fieldBorder),
-                                ),
-                                child: Text(
-                                  'Your POI',
-                                  style: TextStyle(
-                                    fontFamily: 'DM Sans',
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700,
-                                    color: context.appColors.textSecondary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        initialCenter:
+                            widget.poi ??
+                            const LatLng(
+                              AppOptions.defaultMapLat,
+                              AppOptions.defaultMapLng,
+                            ),
+                        initialZoom: 13.5,
+                        // Tapping empty map space dismisses the callout.
+                        onTap: (_, _) => setState(() => _selectedIndex = null),
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.rentease.app',
                         ),
-                        // Property pins — color = match strength
-                        for (int i = 0; i < properties.length; i++)
-                          Marker(
-                            point: LatLng(
-                              (properties[i]['latitude'] as num).toDouble(),
-                              (properties[i]['longitude'] as num).toDouble(),
-                            ),
-                            width: 60,
-                            height: 56,
-                            child: _PropertyPin(
-                              property: properties[i],
-                              isSelected: _selectedIndex == i,
-                              onTap: () =>
-                                  setState(() => _selectedIndex = i),
-                            ),
-                          ),
-                        // Floating callout above the selected pin —
-                        // drawn last so it sits on top of everything.
-                        if (_selectedIndex != null)
-                          Marker(
-                            point: LatLng(
-                              (properties[_selectedIndex!]['latitude'] as num)
-                                  .toDouble(),
-                              (properties[_selectedIndex!]['longitude'] as num)
-                                  .toDouble(),
-                            ),
-                            width: 240,
-                            height: 150,
-                            // Anchor the widget's bottom to the pin point so
-                            // the callout floats above it.
-                            alignment: Alignment.topCenter,
-                            child: _PinCallout(
-                              property: properties[_selectedIndex!],
-                              rank: _selectedIndex! + 1,
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => PropertyDetailScreen(
-                                    property: properties[_selectedIndex!],
-                                    isGuest: widget.isGuest,
+                        MarkerLayer(
+                          markers: [
+                            // POI marker — tenant's school/work
+                            if (widget.poi != null)
+                              Marker(
+                                point: widget.poi!,
+                                width: 120,
+                                height: 54,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.school_rounded,
+                                      color: AppColors.accent,
+                                      size: 24,
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: context.appColors.surface,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: context.appColors.fieldBorder,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        widget.poiLabel?.isNotEmpty == true
+                                            ? widget.poiLabel!
+                                            : 'Your POI',
+                                        style: TextStyle(
+                                          fontFamily: 'DM Sans',
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w700,
+                                          color:
+                                              context.appColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            // Property pins — color = match strength
+                            for (int i = 0; i < properties.length; i++)
+                              Marker(
+                                point: LatLng(
+                                  (properties[i]['latitude'] as num).toDouble(),
+                                  (properties[i]['longitude'] as num)
+                                      .toDouble(),
+                                ),
+                                width: 60,
+                                height: 56,
+                                child: _PropertyPin(
+                                  property: properties[i],
+                                  isSelected: _selectedIndex == i,
+                                  onTap: () =>
+                                      setState(() => _selectedIndex = i),
+                                ),
+                              ),
+                            // Floating callout above the selected pin —
+                            // drawn last so it sits on top of everything.
+                            if (_selectedIndex != null)
+                              Marker(
+                                point: LatLng(
+                                  (properties[_selectedIndex!]['latitude']
+                                          as num)
+                                      .toDouble(),
+                                  (properties[_selectedIndex!]['longitude']
+                                          as num)
+                                      .toDouble(),
+                                ),
+                                width: 240,
+                                height: 150,
+                                // Anchor the widget's bottom to the pin point so
+                                // the callout floats above it.
+                                alignment: Alignment.topCenter,
+                                child: _PinCallout(
+                                  property: properties[_selectedIndex!],
+                                  rank: _selectedIndex! + 1,
+                                  onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => PropertyDetailScreen(
+                                        property: properties[_selectedIndex!],
+                                        isGuest: widget.isGuest,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
                     MapZoomControls(controller: _mapController),
                   ],
                 ),
@@ -212,8 +234,8 @@ class _PropertyPin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int percent =
-        ((property['tenantCi'] as num).toDouble() * 100).round();
+    final int percent = ((property['tenantCi'] as num).toDouble() * 100)
+        .round();
     final Color color = MatchBadge.colorFor(percent);
 
     return GestureDetector(
@@ -227,9 +249,7 @@ class _PropertyPin extends StatelessWidget {
               color: color,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected
-                    ? context.appColors.ink
-                    : AppColors.onInk,
+                color: isSelected ? context.appColors.ink : AppColors.onInk,
                 width: isSelected ? 2 : 1,
               ),
             ),
@@ -265,8 +285,8 @@ class _PinCallout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int percent =
-        ((property['tenantCi'] as num).toDouble() * 100).round();
+    final int percent = ((property['tenantCi'] as num).toDouble() * 100)
+        .round();
     final Color tierColor = MatchBadge.colorFor(percent);
 
     return GestureDetector(
@@ -280,11 +300,13 @@ class _PinCallout extends StatelessWidget {
             decoration: BoxDecoration(
               color: context.appColors.surface,
               borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: context.appColors.fieldBorder, width: 0.5),
+              border: Border.all(
+                color: context.appColors.fieldBorder,
+                width: 0.5,
+              ),
               boxShadow: <BoxShadow>[
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
+                  color: AppColors.scrim.withValues(alpha: 0.15),
                   blurRadius: 10,
                   offset: const Offset(0, 3),
                 ),
@@ -297,7 +319,9 @@ class _PinCallout extends StatelessWidget {
                   children: <Widget>[
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.accentSoft,
                         borderRadius: BorderRadius.circular(8),
@@ -347,7 +371,9 @@ class _PinCallout extends StatelessWidget {
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: tierColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),

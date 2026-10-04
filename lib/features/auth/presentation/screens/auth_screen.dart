@@ -10,6 +10,7 @@ import '../../../../shared/widgets/app_button.dart';
 import '../../../registration/model/user_role.dart';
 import '../../domain/entities/auth.dart';
 import '../bloc/auth_bloc.dart';
+import 'email_verification_screen.dart';
 
 /// Sign-in screen â€” hero building image behind a bottom-anchored white card.
 class SignInScreen extends StatefulWidget {
@@ -25,14 +26,85 @@ class SignInScreen extends StatefulWidget {
   State<SignInScreen> createState() => _SignInScreenState();
 }
 
-class _SignInScreenState extends State<SignInScreen> {
+class _SignInScreenState extends State<SignInScreen>
+    with SingleTickerProviderStateMixin, RouteAware {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _rememberMe = false;
   bool _obscurePassword = true;
 
+  late final AnimationController _animCtrl;
+  late final Animation<double> _imageFade;
+  late final Animation<double> _imageScale;
+  late final Animation<Offset> _cardSlide;
+  late final Animation<double> _cardFade;
+  late final Animation<Offset> _headerSlide;
+  late final Animation<Offset> _fieldsSlide;
+  late final Animation<Offset> _buttonsSlide;
+  late final Animation<Offset> _socialSlide;
+
+  Animation<Offset> _slide(double dy, double begin, double end) =>
+      Tween<Offset>(begin: Offset(0, dy), end: Offset.zero).animate(
+        CurvedAnimation(
+          parent: _animCtrl,
+          curve: Interval(begin, end, curve: Curves.easeOutCubic),
+        ),
+      );
+
+  @override
+  void initState() {
+    super.initState();
+    // 8-second staggered entrance: hero scales/fades in, card slides up.
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 8000),
+    );
+    _imageFade = CurvedAnimation(
+      parent: _animCtrl,
+      curve: const Interval(0.0, 0.70, curve: Curves.easeOut),
+    );
+    _imageScale = Tween<double>(begin: 0.88, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animCtrl,
+        curve: const Interval(0.0, 0.85, curve: Curves.easeOutCubic),
+      ),
+    );
+    _cardSlide = _slide(0.35, 0.05, 0.85);
+    _cardFade = CurvedAnimation(
+      parent: _animCtrl,
+      curve: const Interval(0.0, 0.75, curve: Curves.easeOut),
+    );
+    _headerSlide = _slide(0.30, 0.10, 0.80);
+    _fieldsSlide = _slide(0.35, 0.20, 0.90);
+    _buttonsSlide = _slide(0.40, 0.30, 0.95);
+    _socialSlide = _slide(0.45, 0.38, 1.0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _animCtrl.forward();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final modalRoute = ModalRoute.of(context);
+    if (modalRoute != null) {
+      AppRouter.routeObserver.subscribe(this, modalRoute);
+    }
+    // Warm the image cache to avoid decode latency during the entrance.
+    precacheImage(const AssetImage('assets/images/building2.png'), context);
+    precacheImage(const AssetImage('assets/images/logo.png'), context);
+  }
+
+  @override
+  void didPopNext() {
+    // Replay the entrance when returning from registration.
+    if (mounted) _animCtrl.forward(from: 0.0);
+  }
+
   @override
   void dispose() {
+    AppRouter.routeObserver.unsubscribe(this);
+    _animCtrl.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -86,9 +158,23 @@ class _SignInScreenState extends State<SignInScreen> {
         if (state is AuthAuthenticated) {
           widget.onSignIn?.call(state.user);
         } else if (state is AuthEmailNotVerified) {
-          _showError('Please verify your email before signing in.');
+          // Send them to the verification screen (resend/check) instead of
+          // leaving them stuck on sign-in with no way to resend. Admins
+          // never verify email (same rule as the splash routing).
+          if (state.user.isAdmin) {
+            widget.onSignIn?.call(state.user);
+            return;
+          }
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) =>
+                  EmailVerificationScreen(isOwner: state.user.isOwner),
+            ),
+          );
         } else if (state is AuthOperationFailure) {
           _showError(state.message);
+        } else if (state is AuthSuspended) {
+          _showError(AuthBloc.suspendedMessage);
         } else if (state is AuthPasswordResetEmailSent) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Password reset link sent to ${state.email}.')),
@@ -100,16 +186,34 @@ class _SignInScreenState extends State<SignInScreen> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            const _SignInBackground(),
+            RepaintBoundary(
+              child: ScaleTransition(
+                scale: _imageScale,
+                child: FadeTransition(
+                  opacity: _imageFade,
+                  child: const _SignInBackground(),
+                ),
+              ),
+            ),
             Align(
               alignment: Alignment.bottomCenter,
-              child: BlocBuilder<AuthBloc, AuthState>(
+              child: RepaintBoundary(
+                child: SlideTransition(
+                  position: _cardSlide,
+                  child: FadeTransition(
+                    opacity: _cardFade,
+                    child: BlocBuilder<AuthBloc, AuthState>(
                 builder: (context, state) => _SignInCard(
+                  headerSlide: _headerSlide,
+                  fieldsSlide: _fieldsSlide,
+                  buttonsSlide: _buttonsSlide,
+                  socialSlide: _socialSlide,
                   emailController: _emailController,
                   passwordController: _passwordController,
                   rememberMe: _rememberMe,
                   obscurePassword: _obscurePassword,
                   isLoading: state is AuthLoading,
+                  isSuspended: state is AuthSuspended,
                   onRememberMeChanged: (v) =>
                       setState(() => _rememberMe = v ?? false),
                   onTogglePassword: () =>
@@ -117,6 +221,9 @@ class _SignInScreenState extends State<SignInScreen> {
                   onCreateAccount: widget.onCreateAccount,
                   onSignIn: _handleSignIn,
                   onForgotPassword: _handleForgotPassword,
+                ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -143,7 +250,7 @@ class _SignInBackground extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.primary, Color(0xFF0E8FA0), context.appColors.ink],
+            colors: [AppColors.primary, AppColors.accent, context.appColors.ink],
           ),
         ),
       ),
@@ -161,17 +268,29 @@ class _SignInCard extends StatelessWidget {
     required this.obscurePassword,
     required this.onRememberMeChanged,
     required this.onTogglePassword,
+    required this.headerSlide,
+    required this.fieldsSlide,
+    required this.buttonsSlide,
+    required this.socialSlide,
     this.isLoading = false,
+    this.isSuspended = false,
     this.onCreateAccount,
     this.onSignIn,
     this.onForgotPassword,
   });
 
+  /// The account was suspended by an admin: show a persistent notice (the
+  /// snackbar alone is missed when this is the first screen after app start).
+  final bool isSuspended;
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final bool rememberMe;
   final bool obscurePassword;
   final bool isLoading;
+  final Animation<Offset> headerSlide;
+  final Animation<Offset> fieldsSlide;
+  final Animation<Offset> buttonsSlide;
+  final Animation<Offset> socialSlide;
   final ValueChanged<bool?> onRememberMeChanged;
   final VoidCallback onTogglePassword;
   final VoidCallback? onCreateAccount;
@@ -192,9 +311,9 @@ class _SignInCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x18000000),
+            color: AppColors.ink.withValues(alpha: 0.09),
             blurRadius: 24,
-            offset: Offset(0, -6),
+            offset: const Offset(0, -6),
           ),
         ],
       ),
@@ -210,37 +329,80 @@ class _SignInCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SignInLogoRow(),
+              SlideTransition(
+                position: headerSlide,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SignInLogoRow(),
+                    SizedBox(height: AppSpacing.md),
+                    Text('Sign in', style: AppTextStyles.title(context)),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Welcome back! continue your rental journey with RentEase.',
+                      style: AppTextStyles.body(context),
+                    ),
+                  ],
+                ),
+              ),
+              if (isSuspended) ...[
+                SizedBox(height: AppSpacing.md),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.destructive.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(AppRadii.field),
+                    border: Border.all(color: AppColors.destructive, width: 0.5),
+                  ),
+                  child: Text(
+                    AuthBloc.suspendedMessage,
+                    style: AppTextStyles.body(
+                      context,
+                    ).copyWith(color: AppColors.destructive),
+                  ),
+                ),
+              ],
               SizedBox(height: AppSpacing.lg),
-              Text('Sign in', style: AppTextStyles.title(context)),
-              SizedBox(height: AppSpacing.sm),
-              Text(
-                'Welcome back! continue your rental journey with RentEase.',
-                style: AppTextStyles.body(context),
+              SlideTransition(
+                position: fieldsSlide,
+                child: _SignInFields(
+                  emailController: emailController,
+                  passwordController: passwordController,
+                  obscurePassword: obscurePassword,
+                  rememberMe: rememberMe,
+                  onRememberMeChanged: onRememberMeChanged,
+                  onTogglePassword: onTogglePassword,
+                  onForgotPassword: onForgotPassword,
+                ),
               ),
               SizedBox(height: AppSpacing.lg),
-              _SignInFields(
-                emailController: emailController,
-                passwordController: passwordController,
-                obscurePassword: obscurePassword,
-                rememberMe: rememberMe,
-                onRememberMeChanged: onRememberMeChanged,
-                onTogglePassword: onTogglePassword,
-                onForgotPassword: onForgotPassword,
+              SlideTransition(
+                position: buttonsSlide,
+                child: Column(
+                  children: [
+                    AppPrimaryButton(
+                      label: isLoading ? 'Signing in\u2026' : 'Sign In',
+                      onPressed: isLoading ? null : (onSignIn ?? () {}),
+                    ),
+                    SizedBox(height: AppSpacing.md),
+                    _CreateAccountRow(onCreateAccount: onCreateAccount),
+                  ],
+                ),
               ),
-              SizedBox(height: AppSpacing.lg),
-              AppPrimaryButton(
-                label: isLoading ? 'Signing in…' : 'Sign In',
-                onPressed: isLoading ? null : (onSignIn ?? () {}),
+              SizedBox(height: AppSpacing.md),
+              SlideTransition(
+                position: socialSlide,
+                child: Column(
+                  children: [
+                    const _OrDivider(),
+                    SizedBox(height: AppSpacing.md),
+                    const _GoogleButton(),
+                    SizedBox(height: AppSpacing.sm),
+                    const _GuestButton(),
+                  ],
+                ),
               ),
-              SizedBox(height: AppSpacing.lg),
-              const _OrDivider(),
-              SizedBox(height: AppSpacing.lg),
-              const _GoogleButton(),
-              SizedBox(height: AppSpacing.sm),
-              const _GuestButton(),
-              SizedBox(height: AppSpacing.lg),
-              _CreateAccountRow(onCreateAccount: onCreateAccount),
               SizedBox(height: AppSpacing.lg),
             ],
           ),
@@ -681,10 +843,10 @@ class _GoogleLogoPainter extends CustomPainter {
       ..close();
 
     final fill = Paint()..style = PaintingStyle.fill;
-    canvas.drawPath(blue, fill..color = const Color(0xFF4285F4));
-    canvas.drawPath(green, fill..color = const Color(0xFF34A853));
-    canvas.drawPath(yellow, fill..color = const Color(0xFFFBBC05));
-    canvas.drawPath(red, fill..color = const Color(0xFFEA4335));
+    canvas.drawPath(blue, fill..color = AppColors.googleBlue);
+    canvas.drawPath(green, fill..color = AppColors.googleGreen);
+    canvas.drawPath(yellow, fill..color = AppColors.googleYellow);
+    canvas.drawPath(red, fill..color = AppColors.googleRed);
 
     canvas.restore();
   }

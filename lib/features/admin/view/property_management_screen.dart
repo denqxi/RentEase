@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/vacancy_status_pill.dart';
 import '../../../shared/widgets/verified_badge.dart';
+import '../cubit/properties_cubit.dart';
+import '../domain/entities/admin_entities.dart';
 import '../widgets/admin_page_header.dart';
+import '../widgets/admin_state_views.dart';
 
 class PropertyManagementScreen extends StatefulWidget {
   const PropertyManagementScreen({super.key});
@@ -21,7 +24,8 @@ class PropertyManagementScreen extends StatefulWidget {
 
 class _PropertyManagementScreenState extends State<PropertyManagementScreen> {
   final _searchController = TextEditingController();
-  String _query = '';
+
+  static const _tabs = ['all', 'active', 'unlisted'];
 
   @override
   void dispose() {
@@ -29,150 +33,106 @@ class _PropertyManagementScreenState extends State<PropertyManagementScreen> {
     super.dispose();
   }
 
-  void _toggleFlag(Map<String, dynamic> property) {
-    setState(() {
-      final i = MockData.properties.indexOf(property);
-      if (i == -1) return;
-      MockData.properties[i] = {
-        ...MockData.properties[i],
-        'isFlagged': !(property['isFlagged'] == true),
-      };
-    });
-  }
-
-  void _removeListing(Map<String, dynamic> property) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ctx.appColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Remove listing?',
-          style: TextStyle(fontFamily: 'DM Sans', fontWeight: FontWeight.w700),
-        ),
-        content: Text(
-          '"${property['title']}" will be removed from the platform. '
-          'This cannot be undone.',
-          style: TextStyle(fontFamily: 'DM Sans', fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: ctx.appColors.textSecondary),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              setState(() => MockData.properties.remove(property));
-            },
-            child: Text(
-              'Remove',
-              style: TextStyle(
-                color: AppColors.destructive,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
+  Future<void> _toggleListed(AdminPropertyItem item) async {
+    final cubit = context.read<AdminPropertiesCubit>();
+    final listed = item.property.isAvailable;
+    final ok = await confirmAdminAction(
+      context,
+      title: listed ? 'Unlist property?' : 'Relist property?',
+      body: listed
+          ? '"${item.property.title}" will be hidden from matching and '
+                'search. The owner cannot relist it.'
+          : '"${item.property.title}" will be visible to tenants again.',
+      confirmLabel: listed ? 'Unlist' : 'Relist',
+      destructive: listed,
     );
-  }
-
-  List<Map<String, dynamic>> get _filtered {
-    if (_query.isEmpty) return MockData.properties;
-    return MockData.properties.where((p) {
-      return (p['title'] as String)
-              .toLowerCase()
-              .contains(_query.toLowerCase()) ||
-          (p['address'] as String)
-              .toLowerCase()
-              .contains(_query.toLowerCase());
-    }).toList();
+    if (ok) {
+      cubit.setListed(item.property.propertyId, listed: !listed);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        backgroundColor: context.appColors.surface,
-        body: Column(
-          children: [
-            AdminPageHeader(
-              title: 'Properties',
-              subtitle: '${MockData.properties.length} listings on the platform',
-              bottom: AdminSearchField(
-                controller: _searchController,
-                hintText: 'Search by name or address...',
-                onChanged: (v) => setState(() => _query = v),
-              ),
-            ),
-            TabBar(
-              indicatorColor: AppColors.accent,
-              labelColor: AppColors.accent,
-              unselectedLabelColor: context.appColors.textSecondary,
-              labelStyle: TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-              tabs: const [
-                Tab(text: 'All'),
-                Tab(text: 'Active'),
-                Tab(text: 'Flagged'),
+    return BlocConsumer<AdminPropertiesCubit, AdminPropertiesState>(
+      listenWhen: (a, b) => a.noticeSeq != b.noticeSeq,
+      listener: (context, state) => showAdminNotice(context, state.notice),
+      builder: (context, state) {
+        return DefaultTabController(
+          length: _tabs.length,
+          child: Scaffold(
+            backgroundColor: context.appColors.surface,
+            body: Column(
+              children: [
+                AdminPageHeader(
+                  title: 'Properties',
+                  subtitle: '${state.items.length} listings on the platform',
+                  bottom: AdminSearchField(
+                    controller: _searchController,
+                    hintText: 'Search by name, address or owner...',
+                    onChanged: context.read<AdminPropertiesCubit>().setQuery,
+                  ),
+                ),
+                TabBar(
+                  indicatorColor: AppColors.accent,
+                  labelColor: AppColors.accent,
+                  unselectedLabelColor: context.appColors.textSecondary,
+                  labelStyle: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  tabs: const [
+                    Tab(text: 'All'),
+                    Tab(text: 'Active'),
+                    Tab(text: 'Unlisted'),
+                  ],
+                ),
+                Expanded(
+                  child: state.isLoading
+                      ? const AdminLoadingView()
+                      : state.errorMessage != null && state.items.isEmpty
+                      ? AdminMessageView(
+                          icon: Icons.error_outline_rounded,
+                          message: state.errorMessage!,
+                          onRetry: context.read<AdminPropertiesCubit>().start,
+                        )
+                      : TabBarView(
+                          children: [
+                            for (final tab in _tabs)
+                              _PropertyList(
+                                items: state.filtered(tab),
+                                busyIds: state.busyIds,
+                                onToggle: _toggleListed,
+                              ),
+                          ],
+                        ),
+                ),
               ],
             ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  _PropertyList(
-                    properties: _filtered,
-                    onToggleFlag: _toggleFlag,
-                    onRemove: _removeListing,
-                  ),
-                  _PropertyList(
-                    properties: _filtered
-                        .where((p) => p['vacancyStatus'] == 'available')
-                        .toList(),
-                    onToggleFlag: _toggleFlag,
-                    onRemove: _removeListing,
-                  ),
-                  _PropertyList(
-                    properties: _filtered
-                        .where((p) => p['isFlagged'] == true)
-                        .toList(),
-                    onToggleFlag: _toggleFlag,
-                    onRemove: _removeListing,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
 
 class _PropertyList extends StatelessWidget {
   const _PropertyList({
-    required this.properties,
-    required this.onToggleFlag,
-    required this.onRemove,
+    required this.items,
+    required this.busyIds,
+    required this.onToggle,
   });
 
-  final List<Map<String, dynamic>> properties;
-  final ValueChanged<Map<String, dynamic>> onToggleFlag;
-  final ValueChanged<Map<String, dynamic>> onRemove;
+  final List<AdminPropertyItem> items;
+  final Set<String> busyIds;
+  final ValueChanged<AdminPropertyItem> onToggle;
 
   @override
   Widget build(BuildContext context) {
-    if (properties.isEmpty) {
-      return Center(
-        child: Text('No properties found.', style: AppTextStyles.body(context)),
+    if (items.isEmpty) {
+      return const AdminMessageView(
+        icon: Icons.home_work_outlined,
+        message: 'No properties found.',
       );
     }
 
@@ -183,12 +143,12 @@ class _PropertyList extends StatelessWidget {
         AppSpacing.md,
         120,
       ),
-      itemCount: properties.length,
+      itemCount: items.length,
       separatorBuilder: (_, _) => SizedBox(height: AppSpacing.sm),
       itemBuilder: (_, i) => _PropertyCard(
-        property: properties[i],
-        onToggleFlag: () => onToggleFlag(properties[i]),
-        onRemove: () => onRemove(properties[i]),
+        item: items[i],
+        isBusy: busyIds.contains(items[i].property.propertyId),
+        onToggle: () => onToggle(items[i]),
       ),
     );
   }
@@ -196,19 +156,20 @@ class _PropertyList extends StatelessWidget {
 
 class _PropertyCard extends StatelessWidget {
   const _PropertyCard({
-    required this.property,
-    required this.onToggleFlag,
-    required this.onRemove,
+    required this.item,
+    required this.isBusy,
+    required this.onToggle,
   });
 
-  final Map<String, dynamic> property;
-  final VoidCallback onToggleFlag;
-  final VoidCallback onRemove;
+  final AdminPropertyItem item;
+  final bool isBusy;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
-    final isFlagged = property['isFlagged'] == true;
-    final seed = (property['propertyId'] as String).hashCode % 5 + 1;
+    final p = item.property;
+    final seed = p.propertyId.hashCode.abs() % 5 + 1;
+    final placeholder = ListingImagePlaceholder(seed: seed);
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -216,10 +177,10 @@ class _PropertyCard extends StatelessWidget {
         color: context.appColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isFlagged
+          color: item.adminUnlisted
               ? AppColors.destructive
               : context.appColors.fieldBorder,
-          width: isFlagged ? 1.0 : 0.5,
+          width: item.adminUnlisted ? 1.0 : 0.5,
         ),
       ),
       child: Row(
@@ -230,7 +191,13 @@ class _PropertyCard extends StatelessWidget {
             child: SizedBox(
               width: 60,
               height: 60,
-              child: ListingImagePlaceholder(seed: seed),
+              child: p.photos.isEmpty
+                  ? placeholder
+                  : Image.network(
+                      p.photos.first,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => placeholder,
+                    ),
             ),
           ),
           SizedBox(width: AppSpacing.sm),
@@ -242,7 +209,7 @@ class _PropertyCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        property['title'] as String,
+                        p.title.isEmpty ? 'Untitled listing' : p.title,
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 14,
@@ -252,19 +219,18 @@ class _PropertyCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (isFlagged)
+                    if (item.adminUnlisted)
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 7,
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color:
-                              AppColors.destructive.withValues(alpha: 0.10),
+                          color: AppColors.destructive.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(AppRadii.chip),
                         ),
                         child: Text(
-                          'Flagged',
+                          'Unlisted',
                           style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 10,
@@ -274,21 +240,21 @@ class _PropertyCard extends StatelessWidget {
                         ),
                       )
                     else
-                      VacancyStatusPill.fromString(
-                        property['vacancyStatus'] as String,
-                      ),
+                      VacancyStatusPill.fromString(p.vacancyStatus),
                   ],
                 ),
                 SizedBox(height: 2),
                 Text(
-                  property['address'] as String,
+                  p.address,
                   style: AppTextStyles.caption(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 SizedBox(height: 2),
                 Row(
                   children: [
                     Text(
-                      '₱${property['monthlyRent']}/mo',
+                      '₱${p.monthlyRent}/mo',
                       style: AppTextStyles.caption(context).copyWith(
                         fontWeight: FontWeight.w700,
                         color: context.appColors.textPrimary,
@@ -297,13 +263,13 @@ class _PropertyCard extends StatelessWidget {
                     SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        '· ${property['ownerName']}',
+                        '· ${item.ownerName}',
                         style: AppTextStyles.caption(context),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
                     ),
-                    if (property['isVerified'] == true) ...[
+                    if (p.isVerified) ...[
                       SizedBox(width: 4),
                       const VerifiedBadge(isVerified: true, isSmall: true),
                     ],
@@ -312,41 +278,52 @@ class _PropertyCard extends StatelessWidget {
               ],
             ),
           ),
-          PopupMenuButton<String>(
-            icon: Icon(
-              Icons.more_vert_rounded,
-              color: context.appColors.textSecondary,
-              size: 18,
-            ),
-            color: context.appColors.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            onSelected: (value) {
-              if (value == 'flag') onToggleFlag();
-              if (value == 'remove') onRemove();
-            },
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: 'flag',
-                child: Text(
-                  isFlagged ? 'Unflag listing' : 'Flag listing',
-                  style: TextStyle(fontFamily: 'DM Sans', fontSize: 13),
+          if (isBusy)
+            const Padding(
+              padding: EdgeInsets.all(12),
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.accent,
                 ),
               ),
-              PopupMenuItem(
-                value: 'remove',
-                child: Text(
-                  'Remove listing',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 13,
-                    color: AppColors.destructive,
+            )
+          else
+            PopupMenuButton<String>(
+              icon: Icon(
+                Icons.more_vert_rounded,
+                color: context.appColors.textSecondary,
+                size: 18,
+              ),
+              color: context.appColors.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              onSelected: (_) => onToggle(),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'toggle',
+                  enabled: p.isAvailable || item.adminUnlisted,
+                  child: Text(
+                    p.isAvailable
+                        ? 'Unlist property'
+                        : item.adminUnlisted
+                        ? 'Relist property'
+                        : 'Closed by owner',
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: p.isAvailable
+                          ? AppColors.destructive
+                          : AppColors.matchHigh,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );

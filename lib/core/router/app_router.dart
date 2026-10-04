@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../features/admin/view/admin_login_screen.dart';
+import '../../features/admin/widgets/admin_only_gate.dart';
+import '../../features/admin/widgets/admin_providers.dart';
 import '../../features/admin/view/analytics_screen.dart';
+import '../../features/admin/view/admin_shell.dart';
 import '../../features/admin/view/pending_verifications_screen.dart';
 import '../../features/admin/view/property_management_screen.dart';
 import '../../features/admin/view/user_management_screen.dart';
@@ -59,11 +62,17 @@ class AppRouter {
   static const ownerInquiries = '/owner/inquiries';
   static const ownerProfile = '/owner/profile';
 
+  static const adminHome = '/admin/home';
   static const adminLogin = '/admin/login';
   static const adminVerifications = '/admin/verifications';
   static const adminUsers = '/admin/users';
   static const adminProperties = '/admin/properties';
   static const adminAnalytics = '/admin/analytics';
+
+  /// Where a signed-in user lands: admins must never fall through to the
+  /// tenant home.
+  static String homeRouteFor({required bool isAdmin, required bool isOwner}) =>
+      isAdmin ? adminHome : (isOwner ? landlordHome : tenantHome);
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     Widget page;
@@ -73,7 +82,7 @@ class AppRouter {
         page = Builder(
           builder: (ctx) => SignInScreen(
             onSignIn: (user) => Navigator.of(ctx).pushNamedAndRemoveUntil(
-              user.isOwner ? landlordHome : tenantHome,
+              homeRouteFor(isAdmin: user.isAdmin, isOwner: user.isOwner),
               (_) => false,
             ),
             onCreateAccount: () => Navigator.of(ctx).push(
@@ -133,16 +142,26 @@ class AppRouter {
       case ownerProfile:
         page = const OwnerProfileScreen();
 
+      case adminHome:
+        page = const AdminOnlyGate(child: AdminShell());
       case adminLogin:
         page = const AdminLoginScreen();
       case adminVerifications:
-        page = const PendingVerificationsScreen();
+        page = const AdminOnlyGate(
+          child: AdminProviders(child: PendingVerificationsScreen()),
+        );
       case adminUsers:
-        page = const UserManagementScreen();
+        page = const AdminOnlyGate(
+          child: AdminProviders(child: UserManagementScreen()),
+        );
       case adminProperties:
-        page = const PropertyManagementScreen();
+        page = const AdminOnlyGate(
+          child: AdminProviders(child: PropertyManagementScreen()),
+        );
       case adminAnalytics:
-        page = const AnalyticsScreen();
+        page = const AdminOnlyGate(
+          child: AdminProviders(child: AnalyticsScreen()),
+        );
 
       default:
         page = const _NotFoundPage();

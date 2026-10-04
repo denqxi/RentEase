@@ -36,6 +36,30 @@ class InquiryRemoteDataSource {
     return snap.exists ? MatchDoc.fromSnapshot(snap) : null;
   }
 
+  Future<List<MatchDoc>> fetchCompatibleMatchesWithTenant({
+    required String ownerId,
+    required String tenantId,
+  }) async {
+    final snap = await _firestore
+        .collection(FirestoreCollections.matches)
+        .where('ownerId', isEqualTo: ownerId)
+        .where('tenantId', isEqualTo: tenantId)
+        .where('bScore', isEqualTo: 1)
+        .get();
+    return snap.docs.map(MatchDoc.fromSnapshot).toList();
+  }
+
+  Future<List<InquiryDoc>> fetchInquiriesBetween({
+    required String ownerId,
+    required String tenantId,
+  }) async {
+    final snap = await _inquiries
+        .where('ownerId', isEqualTo: ownerId)
+        .where('tenantId', isEqualTo: tenantId)
+        .get();
+    return snap.docs.map(InquiryDoc.fromSnapshot).toList();
+  }
+
   Future<void> createInquiry(InquiryDoc inquiry) =>
       _inquiries.doc(inquiry.inquiryId).set(inquiry.toMap());
 
@@ -109,9 +133,12 @@ class InquiryRemoteDataSource {
   Future<void> addMessage(String inquiryId, MessageDoc message) =>
       _messages(inquiryId).add(message.toMap());
 
+  // Deterministic ID (one rating per inquiry + rater): a double-tap that slips
+  // past the hasRated check becomes an update, which firestore.rules deny.
   Future<void> createRating(RatingDoc rating) => _firestore
       .collection(FirestoreCollections.ratings)
-      .add(rating.toMap());
+      .doc('${rating.inquiryId}_${rating.raterId}')
+      .set(rating.toMap());
 
   Future<bool> hasRated({
     required String inquiryId,
@@ -125,6 +152,38 @@ class InquiryRemoteDataSource {
         .get();
     return snap.docs.isNotEmpty;
   }
+
+  DocumentReference<Map<String, dynamic>> _share(String inquiryId, String role) =>
+      _inquiries
+          .doc(inquiryId)
+          .collection(FirestoreCollections.inquiryContact)
+          .doc(role);
+
+  Future<UserContactDoc?> fetchOwnContact(String uid) async {
+    final snap = await _firestore
+        .collection(FirestoreCollections.users)
+        .doc(uid)
+        .collection(FirestoreCollections.userPrivate)
+        .doc(FirestoreCollections.userContact)
+        .get();
+    return snap.exists ? UserContactDoc.fromSnapshot(snap) : null;
+  }
+
+  Future<ContactShareDoc?> fetchContactShare(String inquiryId, String role) async {
+    final snap = await _share(inquiryId, role).get();
+    return snap.exists ? ContactShareDoc.fromSnapshot(snap) : null;
+  }
+
+  Stream<ContactShareDoc?> watchContactShare(String inquiryId, String role) =>
+      _share(inquiryId, role).snapshots().map(
+        (s) => s.exists ? ContactShareDoc.fromSnapshot(s) : null,
+      );
+
+  Future<void> writeContactShare(
+    String inquiryId,
+    String role,
+    ContactShareDoc share,
+  ) => _share(inquiryId, role).set(share.toMap());
 
   Future<PropertyDoc?> fetchProperty(String propertyId) async {
     final snap = await _firestore

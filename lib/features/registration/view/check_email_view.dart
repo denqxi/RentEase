@@ -46,7 +46,7 @@ class CheckEmailView extends StatelessWidget {
               ),
               child: const Icon(
                 Icons.mark_email_unread_rounded,
-                color: Colors.white,
+                color: AppColors.onInk,
                 size: 30,
               ),
             ),

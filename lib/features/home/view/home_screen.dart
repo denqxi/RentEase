@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
+import '../../../core/utils/date_utils.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../profile/cubit/profile_cubit.dart';
 import '../../registration/model/user_role.dart';
@@ -34,35 +34,47 @@ class HomeScreen extends StatelessWidget {
               // Re-running the matching engine on pull-to-refresh is the
               // same trigger point as opening this screen (CLAUDE.md
               // "Client-Side Matching Engine" trigger b) — just user-invoked.
-              // No-op in guest mode (HomeCubit.refresh() returns early).
+              // Guests just reload the public newest-listings feed.
               onRefresh: () => context.read<HomeCubit>().refresh(),
               child: CustomScrollView(
                 slivers: <Widget>[
                   SliverToBoxAdapter(
                     child: HomeHeader(
                       userName: isGuest
-                          ? MockData.guestDisplayName
-                          : MockData.tenantName,
+                          ? 'Guest'
+                          : firstNameOf(
+                              context.select<ProfileCubit, String>(
+                                (c) => c.state.fullName,
+                              ),
+                            ),
                     ),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.sm)),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: AppSpacing.sm),
+                  ),
                   if (state.errorMessage != null)
-                    SliverToBoxAdapter(child: _ErrorBanner(message: state.errorMessage!))
+                    SliverToBoxAdapter(
+                      child: _ErrorBanner(message: state.errorMessage!),
+                    )
                   else if (state.isLoading && state.listings.isEmpty)
                     const SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(child: CircularProgressIndicator()),
                     )
                   else if (state.listings.isEmpty)
-                    const SliverFillRemaining(
+                    SliverFillRemaining(
                       hasScrollBody: false,
-                      child: _EmptyState(),
+                      child: _EmptyState(isGuest: isGuest),
                     )
                   else ...[
                     const SliverToBoxAdapter(child: RecommendedSection()),
-                    const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: AppSpacing.lg),
+                    ),
                     const SliverToBoxAdapter(child: NearbySection()),
-                    const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: AppSpacing.lg),
+                    ),
                   ],
                 ],
               ),
@@ -75,7 +87,9 @@ class HomeScreen extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  const _EmptyState({required this.isGuest});
+
+  final bool isGuest;
 
   @override
   Widget build(BuildContext context) {
@@ -84,18 +98,30 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.home_work_outlined, size: 48, color: context.appColors.hint),
+          Icon(
+            Icons.home_work_outlined,
+            size: 48,
+            color: context.appColors.hint,
+          ),
           SizedBox(height: AppSpacing.md),
           Text(
-            'No compatible properties yet',
-            style: AppTextStyles.body(context).copyWith(fontWeight: FontWeight.w700),
+            isGuest ? 'No listings yet' : 'No compatible properties yet',
+            style: AppTextStyles.body(
+              context,
+            ).copyWith(fontWeight: FontWeight.w700),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: AppSpacing.xs),
           Text(
-            'Try widening your budget, distance, or other preferences from '
-            'your profile — or check back once more listings are verified.',
-            style: AppTextStyles.body(context).copyWith(color: context.appColors.textSecondary),
+            isGuest
+                ? 'Check back soon, or sign up to see the boarding houses '
+                      'that match you.'
+                : 'Try widening your budget, distance, or other preferences '
+                      'from your profile — or check back once more listings '
+                      'are verified.',
+            style: AppTextStyles.body(
+              context,
+            ).copyWith(color: context.appColors.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -121,7 +147,9 @@ class _ErrorBanner extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.destructive.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(AppRadii.field),
-          border: Border.all(color: AppColors.destructive.withValues(alpha: 0.3)),
+          border: Border.all(
+            color: AppColors.destructive.withValues(alpha: 0.3),
+          ),
         ),
         child: Row(
           children: [
@@ -130,7 +158,9 @@ class _ErrorBanner extends StatelessWidget {
             Expanded(
               child: Text(
                 message,
-                style: AppTextStyles.body(context).copyWith(color: AppColors.destructive),
+                style: AppTextStyles.body(
+                  context,
+                ).copyWith(color: AppColors.destructive),
               ),
             ),
           ],

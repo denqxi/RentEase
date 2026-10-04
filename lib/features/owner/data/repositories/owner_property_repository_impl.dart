@@ -20,6 +20,32 @@ class OwnerPropertyRepositoryImpl implements OwnerPropertyRepository {
       .map((s) => s.docs.map(PropertyDoc.fromSnapshot).toList());
 
   @override
+  Stream<String> watchVerificationStatus(String ownerId) => _firestore
+      .collection(FirestoreCollections.ownerProfiles)
+      .doc(ownerId)
+      .snapshots()
+      .map((s) => s.data()?['verificationStatus'] as String? ?? 'none');
+
+  @override
+  Future<UserDoc?> fetchUser(String uid) async {
+    final snap =
+        await _firestore.collection(FirestoreCollections.users).doc(uid).get();
+    return snap.exists ? UserDoc.fromSnapshot(snap) : null;
+  }
+
+  @override
+  Future<void> publishListings(Iterable<String> propertyIds) async {
+    final batch = _firestore.batch();
+    for (final id in propertyIds) {
+      batch.update(
+        _firestore.collection(FirestoreCollections.properties).doc(id),
+        {'isVerified': true, 'updatedAt': FieldValue.serverTimestamp()},
+      );
+    }
+    await batch.commit();
+  }
+
+  @override
   Stream<int> watchOpenInquiryCount(String ownerId) => _firestore
       .collection(FirestoreCollections.inquiries)
       .where('ownerId', isEqualTo: ownerId)
@@ -42,12 +68,7 @@ class OwnerPropertyRepositoryImpl implements OwnerPropertyRepository {
           .doc(propertyId)
           .update({...fields, 'updatedAt': FieldValue.serverTimestamp()});
     } on FirebaseException catch (e) {
-      throw Exception(
-        e.code == 'permission-denied'
-            ? "You can't edit this listing. Only a verified owner can edit "
-                  'their own properties.'
-            : e.message ?? 'Could not save the listing. Please try again.',
-      );
+      throw Exception(ownerPropertyErrorMessage(e.code, fields));
     }
   }
 }

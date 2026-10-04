@@ -8,6 +8,8 @@ import '../../../shared/widgets/app_button.dart';
 import '../cubit/inquiry_thread_cubit.dart';
 import '../domain/services/inquiry_service.dart';
 import '../model/inquiry_summary.dart';
+import 'contact_consent_notice.dart';
+import 'rejected_owner_notice.dart';
 
 /// Owner side of Phase 1: the auto-sent tenant summary (built live from the
 /// tenant's user + tenantProfiles docs) and the Accept / Decline decision.
@@ -58,7 +60,6 @@ class OwnerPhase1View extends StatelessWidget {
                   children: [
                     _SummaryRow('Name', fullNameOf(tenant, fallback: 'Tenant')),
                     _SummaryRow('Gender', orDash(tenant?.gender)),
-                    _SummaryRow('Phone', orDash(tenant?.phone)),
                     _SummaryRow('School', orDash(profile?.school)),
                     _SummaryRow('Occupation', orDash(profile?.occupation)),
                     _SummaryRow(
@@ -77,10 +78,6 @@ class OwnerPhase1View extends StatelessWidget {
                     ),
                     _SummaryRow('Smoker', profile?.isSmoker == true ? 'Yes' : 'No'),
                     _SummaryRow('Has pet', profile?.hasPet == true ? 'Yes' : 'No'),
-                    _SummaryRow(
-                      'Emergency contact',
-                      orDash(profile?.emergencyContact),
-                    ),
                     const SizedBox(height: AppSpacing.sm),
                     // An inquiry can only be created against a bScore = 1
                     // match (enforced by firestore.rules), so every tenant
@@ -122,6 +119,9 @@ class OwnerPhase1View extends StatelessWidget {
             ],
           ),
         ),
+        if (state.ownerRejected && pending)
+          const RejectedOwnerNotice(isOwner: true)
+        else
         Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
           child: SafeArea(
@@ -129,6 +129,8 @@ class OwnerPhase1View extends StatelessWidget {
             child: pending
                 ? Column(
                     children: [
+                      const ContactConsentNotice(sharedWith: 'the tenant'),
+                      const SizedBox(height: AppSpacing.sm),
                       AppButton(
                         label: state.isBusy ? 'Please wait...' : 'Accept',
                         onPressed: state.isBusy

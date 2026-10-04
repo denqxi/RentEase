@@ -6,9 +6,11 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_chip.dart';
-import '../../../shared/widgets/qualified_badge.dart';
+import '../../../shared/widgets/compatible_badge.dart';
 import '../../auth/presentation/current_uid.dart';
+import '../../inquiry/widgets/invite_button.dart';
 import '../cubit/find_tenants_cubit.dart';
+import '../../landlord_home/view/tenant_detail_screen.dart';
 import '../data/repositories/find_tenants_repository_impl.dart';
 import '../model/compatible_tenant.dart';
 
@@ -87,7 +89,8 @@ class _FindTenantsView extends StatelessWidget {
         if (state.listings.isEmpty) {
           return const _FindTenantsScaffold(
             body: _Message(
-              text: 'Add a property first — compatible tenants are matched '
+              text:
+                  'Add a property first — compatible tenants are matched '
                   'against its rules.',
             ),
           );
@@ -116,7 +119,8 @@ class _FindTenantsView extends StatelessWidget {
                             ),
                             child: ChoiceChip(
                               label: Text(l.title),
-                              selected: l.propertyId == state.selectedPropertyId,
+                              selected:
+                                  l.propertyId == state.selectedPropertyId,
                               selectedColor: AppColors.accentSoft,
                               onSelected: (_) =>
                                   cubit.selectProperty(l.propertyId),
@@ -150,19 +154,20 @@ class _FindTenantsView extends StatelessWidget {
                   _Message(text: state.errorMessage!, onRetry: cubit.load)
                 else if (state.tenants.isEmpty)
                   const _Message(
-                    text: 'No compatible tenants yet. Tenants appear here once '
+                    text:
+                        'No compatible tenants yet. Tenants appear here once '
                         'their matching runs and they pass all of your '
                         'rules — check back later.',
                   )
                 else ...[
                   Text(
-                    '${state.tenants.length} qualified '
+                    '${state.tenants.length} compatible '
                     '${state.tenants.length == 1 ? 'tenant' : 'tenants'}',
                     style: AppTextStyles.caption(context),
                   ),
                   SizedBox(height: AppSpacing.sm),
                   for (final t in state.tenants) ...[
-                    _TenantCard(tenant: t),
+                    _TenantCard(tenant: t, propertyId: state.selectedPropertyId),
                     SizedBox(height: AppSpacing.sm),
                   ],
                 ],
@@ -210,9 +215,12 @@ class _Message extends StatelessWidget {
 }
 
 class _TenantCard extends StatelessWidget {
-  const _TenantCard({required this.tenant});
+  const _TenantCard({required this.tenant, this.propertyId});
 
   final CompatibleTenant tenant;
+
+  /// The property Find Tenants is currently scoped to (invite target).
+  final String? propertyId;
 
   @override
   Widget build(BuildContext context) {
@@ -220,75 +228,77 @@ class _TenantCard extends StatelessWidget {
       if (tenant.gender.isNotEmpty) tenant.gender,
       if (tenant.occupation?.isNotEmpty ?? false) tenant.occupation!,
     ].join(' · ');
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: context.appColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.appColors.fieldBorder, width: 0.5),
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => TenantDetailScreen(tenant: tenant),
+        ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: AppColors.accentSoft,
-            child: Text(
-              tenant.initials,
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: context.appColors.ink,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: context.appColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.appColors.fieldBorder, width: 0.5),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: AppColors.accentSoft,
+              child: Text(
+                tenant.initials,
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: context.appColors.ink,
+                ),
               ),
             ),
-          ),
-          SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tenant.name,
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: context.appColors.textPrimary,
-                  ),
-                ),
-                SizedBox(height: 2),
-                if (details.isNotEmpty)
-                  Text(details, style: AppTextStyles.caption(context)),
-                if (tenant.school?.isNotEmpty ?? false)
-                  Text(tenant.school!, style: AppTextStyles.caption(context)),
-                Text(
-                  '₱${tenant.maxBudget}/mo budget',
-                  style: AppTextStyles.caption(context),
-                ),
-                SizedBox(height: AppSpacing.sm),
-                const QualifiedBadge(),
-                SizedBox(height: AppSpacing.sm),
-                // CLAUDE.md rule 2: absent, never disabled, when bScore = 0.
-                if (tenant.bScore == 1)
-                  AppButton(
-                    label: 'Invite',
-                    variant: AppButtonVariant.outline,
-                    isSmall: true,
-                    isFullWidth: false,
-                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Invitation sent to ${tenant.name}!'),
-                        backgroundColor: context.appColors.ink,
-                      ),
+            SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tenant.name,
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: context.appColors.textPrimary,
                     ),
-                  )
-                else
-                  const SizedBox.shrink(),
-              ],
+                  ),
+                  SizedBox(height: 2),
+                  if (details.isNotEmpty)
+                    Text(details, style: AppTextStyles.caption(context)),
+                  if (tenant.school?.isNotEmpty ?? false)
+                    Text(tenant.school!, style: AppTextStyles.caption(context)),
+                  Text(
+                    '₱${tenant.maxBudget}/mo budget',
+                    style: AppTextStyles.caption(context),
+                  ),
+                  SizedBox(height: AppSpacing.sm),
+                  const CompatibleBadge(),
+                  SizedBox(height: AppSpacing.sm),
+                  // CLAUDE.md rule 2: absent, never disabled, unless the owner
+                  // can really invite (bScore 1, verified, property available,
+                  // no existing thread) - InviteButton decides.
+                  InviteButton(
+                    tenantId: tenant.tenantId,
+                    tenantName: tenant.name,
+                    bScore: tenant.bScore,
+                    propertyId: propertyId,
+                    compact: true,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

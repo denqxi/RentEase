@@ -3,6 +3,7 @@
 library;
 
 export 'admin_log_doc.dart';
+export 'contact_share_doc.dart';
 export 'inquiry_doc.dart';
 export 'match_doc.dart';
 export 'message_doc.dart';
@@ -12,5 +13,7 @@ export 'property_doc.dart';
 export 'rating_doc.dart';
 export 'report_doc.dart';
 export 'room_doc.dart';
+export 'tenant_private_prefs_doc.dart';
 export 'tenant_profile_doc.dart';
+export 'user_contact_doc.dart';
 export 'user_doc.dart';

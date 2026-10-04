@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 
+import '../../../../core/firestore/models/user_contact_doc.dart';
 import '../../../../core/firestore/models/user_doc.dart';
 import '../../domain/entities/auth.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -48,12 +49,12 @@ class AuthRepositoryImpl implements AuthRepository {
           userId: fbUser.uid,
           firstName: firstName,
           lastName: lastName,
-          email: email,
           gender: gender,
-          phone: phone,
           role: role,
           status: 'active',
         ),
+        // Email + phone go to the private doc only (same batch).
+        contact: UserContactDoc(phone: phone, email: email),
       );
 
       await _remote.sendEmailVerification();
@@ -72,6 +73,11 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Stream<bool> watchSuspended(String uid) => _remote.watchUserStatus(uid).map(
+    (status) => status == 'suspended',
+  );
+
+  @override
   Future<AppUser> signIn({
     required String email,
     required String password,
@@ -82,7 +88,11 @@ class AuthRepositoryImpl implements AuthRepository {
         password: password,
       );
       final fbUser = credential.user!;
-      await _remote.touchLastLogin(fbUser.uid);
+      // Best-effort: a failed timestamp write (missing doc, rules, offline)
+      // must not fail a sign-in that already succeeded.
+      try {
+        await _remote.touchLastLogin(fbUser.uid);
+      } catch (_) {}
       return _toAppUser(fbUser);
     } on fb.FirebaseAuthException catch (e) {
       throw Exception(_messageForAuthError(e));
@@ -112,6 +122,22 @@ class AuthRepositoryImpl implements AuthRepository {
 
   Future<AppUser> _toAppUser(fb.User fbUser) async {
     final doc = await _remote.fetchUserDoc(fbUser.uid);
+    if (doc != null && doc.hasLegacyContact) {
+      // Best effort and never blocks sign-in: a failure (offline, rules,
+      // suspended) just retries on the next sign-in / app start.
+      try {
+        await _remote.migrateLegacyContact(doc);
+      } catch (_) {}
+    }
+    if (doc != null && doc.role == 'tenant') {
+      try {
+        await _remote.migrateLegacyEmergencyContact(fbUser.uid);
+      } catch (_) {}
+      // Map pin + weights move to the owner-hidden private prefs doc.
+      try {
+        await _remote.migrateLegacyTenantPrefs(fbUser.uid);
+      } catch (_) {}
+    }
     return AppUser(
       uid: fbUser.uid,
       email: fbUser.email ?? doc?.email ?? '',
@@ -119,6 +145,7 @@ class AuthRepositoryImpl implements AuthRepository {
       emailVerified: fbUser.emailVerified,
       firstName: doc?.firstName,
       lastName: doc?.lastName,
+      status: doc?.status ?? 'active',
     );
   }
 

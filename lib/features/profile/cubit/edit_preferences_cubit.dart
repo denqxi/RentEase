@@ -30,13 +30,10 @@ class EditPreferencesState extends Equatable {
 class EditPreferencesCubit extends Cubit<EditPreferencesState> {
   EditPreferencesCubit({
     required this.uid,
-    required TenantProfileRepository repository,
-    required FilteringService filteringService,
-    required TopsisService topsisService,
-  }) : _repository = repository,
-       _filteringService = filteringService,
-       _topsisService = topsisService,
-       super(const EditPreferencesState()) {
+    required this._repository,
+    required this._filteringService,
+    required this._topsisService,
+  }) : super(const EditPreferencesState()) {
     _load();
   }
 
@@ -90,6 +87,36 @@ class EditPreferencesCubit extends Cubit<EditPreferencesState> {
     );
   }
 
+  /// Soft preferences never affect eligibility or the cached scores, so this
+  /// is a plain profile write — no matching re-run.
+  Future<void> saveSoftPreferences({
+    required String roomType,
+    required List<String> preferredAmenities,
+  }) async {
+    final profile = state.profile;
+    emit(
+      EditPreferencesState(
+        status: EditPreferencesStatus.saving,
+        profile: profile,
+      ),
+    );
+    try {
+      await _repository.updateFields(uid, {
+        'roomType': roomType,
+        'preferredAmenities': preferredAmenities,
+      });
+      if (isClosed) return;
+      emit(
+        EditPreferencesState(
+          status: EditPreferencesStatus.saved,
+          profile: profile,
+        ),
+      );
+    } catch (e) {
+      _fail(e);
+    }
+  }
+
   /// Weights only change the ranking, not eligibility — TOPSIS alone
   /// re-runs. CLAUDE.md: the three weights must always sum to 1.0.
   Future<void> saveWeights({
@@ -101,6 +128,7 @@ class EditPreferencesCubit extends Cubit<EditPreferencesState> {
       _fail(Exception('Your priorities must add up to exactly 100%.'));
       return;
     }
+    // Weights are private: they live in tenantProfiles/{uid}/private/prefs.
     await _save(
       fields: {
         'wRent': wRent,
@@ -108,17 +136,23 @@ class EditPreferencesCubit extends Cubit<EditPreferencesState> {
         'wAmenities': wAmenities,
       },
       refilter: false,
+      privatePrefs: true,
     );
   }
 
   Future<void> _save({
     required Map<String, dynamic> fields,
     required bool refilter,
+    bool privatePrefs = false,
   }) async {
     final profile = state.profile;
     emit(EditPreferencesState(status: EditPreferencesStatus.saving, profile: profile));
     try {
-      await _repository.updateFields(uid, fields);
+      if (privatePrefs) {
+        await _repository.updatePrefs(uid, fields);
+      } else {
+        await _repository.updateFields(uid, fields);
+      }
       if (refilter) await _filteringService.runFiltering(uid);
       await _topsisService.computeTOPSIS(uid);
       if (isClosed) return;

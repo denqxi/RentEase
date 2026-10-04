@@ -8,9 +8,12 @@ part 'listing_detail_state.dart';
 /// Manages saved state and contact action for a single listing detail screen.
 class ListingDetailCubit extends Cubit<ListingDetailState> {
   ListingDetailCubit({required ListingDetail detail})
-      : super(ListingDetailState(detail: detail));
+    : super(ListingDetailState(detail: detail));
 
   /// Toggles the saved / heart state.
-  void toggleSaved() =>
-      emit(state.copyWith(detail: state.detail.copyWith(isSaved: !state.detail.isSaved)));
+  void toggleSaved() => emit(
+    state.copyWith(
+      detail: state.detail.copyWith(isSaved: !state.detail.isSaved),
+    ),
+  );
 }

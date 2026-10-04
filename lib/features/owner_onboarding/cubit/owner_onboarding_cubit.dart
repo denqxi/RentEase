@@ -3,6 +3,8 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/firestore/models/models.dart';
+import '../../../core/constants/cloudinary_config.dart';
+import '../../uploads/domain/entities/uploaded_image.dart';
 import '../domain/repositories/owner_onboarding_repository.dart';
 
 part 'owner_onboarding_state.dart';
@@ -11,9 +13,8 @@ part 'owner_onboarding_state.dart';
 /// property" wizard, whose draft spans three pushed routes (so, like
 /// `TenantOnboardingCubit`, this lives above the Navigator).
 class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
-  OwnerOnboardingCubit({required OwnerOnboardingRepository repository})
-    : _repository = repository,
-      super(const OwnerOnboardingState());
+  OwnerOnboardingCubit({required this._repository})
+    : super(const OwnerOnboardingState());
 
   final OwnerOnboardingRepository _repository;
 
@@ -22,10 +23,28 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
 
   // ── Verification ────────────────────────────────────────────────────────
 
-  Future<void> submitForVerification(String uid) async {
+  Future<void> submitForVerification(
+    String uid, {
+    List<UploadedImage> documents = const [],
+  }) async {
+    // Two required documents (ID, ownership); the business permit is optional.
+    if (documents.length < CloudinaryConfig.requiredDocumentCount ||
+        documents.length > CloudinaryConfig.documentCount) {
+      emit(
+        state.copyWith(
+          status: OwnerOnboardingStatus.failure,
+          errorMessage:
+              'Please upload your government ID and property ownership document.',
+        ),
+      );
+      return;
+    }
     emit(state.copyWith(status: OwnerOnboardingStatus.saving));
     try {
-      final status = await _repository.submitForVerification(uid);
+      final status = await _repository.submitForVerification(
+        uid,
+        documents: documents,
+      );
       emit(
         state.copyWith(
           status: OwnerOnboardingStatus.saved,
@@ -52,6 +71,7 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
     required String address,
     required double latitude,
     required double longitude,
+    List<UploadedImage> photos = const [],
   }) {
     emit(
       state.copyWith(
@@ -60,6 +80,7 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
         address: address,
         latitude: latitude,
         longitude: longitude,
+        photos: List<UploadedImage>.unmodifiable(photos),
       ),
     );
   }
@@ -103,9 +124,8 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
 
   // ── Submit ───────────────────────────────────────────────────────────────
 
-  /// Creates the `properties` doc. Owner-side TOPSIS weights are fixed
-  /// (CLAUDE.md "Two TOPSIS Instances" — unlike the tenant side, the owner
-  /// does not adjust them), so there's no weight step to collect here.
+  /// Creates the `properties` doc. There is no owner-side TOPSIS, so no
+  /// weight step to collect here.
   /// Emits [OwnerOnboardingStatus.saved] on success; on failure the draft is
   /// kept so the owner can retry.
   Future<void> submitProperty({required String uid}) async {
@@ -117,7 +137,7 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
           status: OwnerOnboardingStatus.failure,
           errorMessage:
               'Some steps are incomplete. Please go back and fill in the '
-              'property name, address, map pin and monthly rent.',
+              'property name, address, map pin, at least one photo and monthly rent.',
         ),
       );
       return;
@@ -134,15 +154,16 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
       // Not used for querying yet — distance filtering runs on-device over
       // all available listings (DistanceUtils), not via geohash ranges.
       geoHash: '',
-      photos: const [],
+      photos: [for (final p in draft.photos) p.url],
+      photoPublicIds: [for (final p in draft.photos) p.publicId],
       monthlyRent: draft.monthlyRent,
       depositAmount: draft.depositAmount,
       advanceMonths: draft.advanceMonths,
       isAvailable: true,
       vacancyStatus: 'available',
-      // Mirrors the owner's own verification; the create rule only accepts
-      // this write from an admin-verified owner in the first place.
-      isVerified: true,
+      // Placeholder: the datasource sets the real value from the owner's
+      // verification status (badge only; the listing is live regardless).
+      isVerified: false,
       allowedGender: draft.allowedGender,
       smokingAllowed: draft.smokingAllowed,
       petsAllowed: draft.petsAllowed,

@@ -1,4 +1,6 @@
 import '../../../../core/firestore/models/models.dart';
+import '../../../activity/domain/repositories/notification_repository.dart';
+import '../../model/invite_option.dart';
 import '../repositories/inquiry_repository.dart';
 
 /// A rule the inquiry flow refused — the message is safe to show the user.
@@ -21,20 +23,91 @@ class InquiryException implements Exception {
 /// - Phase 2 (`stage` 2): after Accept, open chat. The owner can mark the
 ///   booking, after which both sides can rate each other.
 ///
+/// Owner invitations reuse the same thread: an owner invites a
+/// compatible (bScore = 1) tenant, creating an inquiry with
+/// `initiatedBy: 'owner'` at stage 1. Here the TENANT is the recipient, so
+/// `ownerDecision` holds the tenant's decision (pending / accepted /
+/// declined); accepting opens Phase 2 chat, declining closes the thread.
+///
 /// Every check here is mirrored by firestore.rules — the rules are the real
 /// enforcement (a modified client skips this class entirely); these checks
 /// exist so the UI fails fast with a readable message instead of a
 /// permission-denied.
 class InquiryService {
-  InquiryService({required InquiryRepository repository})
-    : _repository = repository;
+  InquiryService({
+    required this._repository,
+    this._notifications,
+  });
 
   final InquiryRepository _repository;
+  final NotificationRepository? _notifications;
+
+  /// Best-effort in-app notification for [recipientId]; a failure here never
+  /// affects the inquiry action that triggered it.
+  Future<void> _notify({
+    required String recipientId,
+    required String type,
+    required String title,
+    required String body,
+    required String inquiryId,
+    String? notifId,
+  }) async {
+    final repo = _notifications;
+    if (repo == null) return;
+    try {
+      final doc = NotificationDoc(
+        notifId: notifId ?? '',
+        recipientId: recipientId,
+        type: type,
+        title: title,
+        body: body,
+        relatedId: inquiryId,
+        relatedType: 'inquiry',
+        isRead: false,
+      );
+      if (notifId == null) {
+        await repo.create(doc);
+      } else {
+        await repo.upsert(doc);
+      }
+    } catch (_) {
+      // Intentionally swallowed — see above.
+    }
+  }
+
+  /// Shown to an owner whose verification was rejected (mirrors the
+  /// `ownerNotRejected` rule in firestore.rules).
+  static const rejectedOwnerMessage =
+      "Your verification was not approved, so you can't send invitations or "
+      'messages. Contact support to resubmit.';
+
+  /// Shown to the tenant in a thread whose owner was rejected.
+  static const rejectedOwnerTenantNote =
+      "This owner can't reply right now.";
+
+  /// Whether [ownerId]'s verification was rejected. A missing profile or a
+  /// failed read counts as not rejected (firestore.rules is the enforcement).
+  Future<bool> isOwnerRejected(String ownerId) async {
+    try {
+      final profile = await _repository.fetchOwnerProfile(ownerId);
+      return profile?.verificationStatus == 'rejected';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _requireOwnerNotRejected(String ownerId) async {
+    if (await isOwnerRejected(ownerId)) {
+      throw const InquiryException(rejectedOwnerMessage);
+    }
+  }
 
   // ── Pure rules (unit-tested directly) ───────────────────────────────────
 
   static bool isPhase1Pending(InquiryDoc i) =>
       i.stage == 1 && i.ownerDecision == 'pending' && i.status == 'pending';
+
+  static bool isInvite(InquiryDoc i) => i.initiatedBy == 'owner';
 
   static bool canChat(InquiryDoc i) =>
       i.stage == 2 && i.ownerDecision == 'accepted' && i.status == 'active';
@@ -104,6 +177,13 @@ class InquiryService {
       autoInfoSent: true,
     );
     await _repository.createInquiry(inquiry);
+    await _notify(
+      recipientId: inquiry.ownerId,
+      type: 'inquiry',
+      title: 'New inquiry from a compatible tenant',
+      body: 'A tenant who passes all your rules sent an inquiry.',
+      inquiryId: inquiry.inquiryId,
+    );
     return inquiry.inquiryId;
   }
 
@@ -112,6 +192,8 @@ class InquiryService {
     required String ownerId,
   }) async {
     _requireOwner(inquiry, ownerId);
+    _requireTenantInitiated(inquiry);
+    await _requireOwnerNotRejected(ownerId);
     if (!isPhase1Pending(inquiry)) {
       throw const InquiryException('This inquiry has already been answered.');
     }
@@ -120,6 +202,15 @@ class InquiryService {
       'ownerDecision': 'accepted',
       'status': 'active',
     });
+    // The owner's phone is shared on acceptance (consent notice shown first).
+    await shareMyContact(inquiry: inquiry, uid: ownerId, accepted: true);
+    await _notify(
+      recipientId: inquiry.tenantId,
+      type: 'inquiry_accepted',
+      title: 'Your inquiry was accepted',
+      body: 'Chat is now open with the owner.',
+      inquiryId: inquiry.inquiryId,
+    );
   }
 
   Future<void> decline({
@@ -128,6 +219,8 @@ class InquiryService {
     String? reason,
   }) async {
     _requireOwner(inquiry, ownerId);
+    _requireTenantInitiated(inquiry);
+    await _requireOwnerNotRejected(ownerId);
     if (!isPhase1Pending(inquiry)) {
       throw const InquiryException('This inquiry has already been answered.');
     }
@@ -137,6 +230,211 @@ class InquiryService {
       'status': 'declined',
       if (trimmed.isNotEmpty) 'declineReason': trimmed,
     });
+    await _notify(
+      recipientId: inquiry.tenantId,
+      type: 'inquiry_declined',
+      title: 'Your inquiry was declined',
+      body: 'The owner declined your inquiry.',
+      inquiryId: inquiry.inquiryId,
+    );
+  }
+
+  // ── Owner invitations ───────────────────────────────────────────────────
+
+  /// The properties this owner can still invite [tenantId] to: one
+  /// per bScore = 1 match whose property is available and has no thread with
+  /// this tenant yet (any status — a declined or booked thread is final).
+  /// Owner verification is a badge only and does not gate this. [propertyId] narrows it to one
+  /// property (Find Tenants is already scoped to the selected one).
+  Future<List<InviteOption>> inviteOptions({
+    required String ownerId,
+    required String tenantId,
+    String? propertyId,
+  }) async {
+    // Rejected owners get no invite options (button absent).
+    if (await isOwnerRejected(ownerId)) return const [];
+    final (matches, threads) = await (
+      _repository.fetchCompatibleMatchesWithTenant(
+        ownerId: ownerId,
+        tenantId: tenantId,
+      ),
+      _repository.fetchInquiriesBetween(ownerId: ownerId, tenantId: tenantId),
+    ).wait;
+    final taken = {for (final t in threads) t.propertyId};
+
+    final options = <InviteOption>[];
+    for (final m in matches) {
+      if (m.bScore != 1 || m.ownerId != ownerId || m.tenantId != tenantId) {
+        continue;
+      }
+      if (propertyId != null && m.propertyId != propertyId) continue;
+      if (taken.contains(m.propertyId)) continue;
+      final property = await _repository.fetchProperty(m.propertyId);
+      if (property == null ||
+          !property.isAvailable ||
+          property.ownerId != ownerId) {
+        continue;
+      }
+      options.add(
+        InviteOption(
+          matchId: m.matchId,
+          propertyId: m.propertyId,
+          propertyTitle: property.title,
+        ),
+      );
+    }
+    return options;
+  }
+
+  /// Invites the match's tenant to the match's property and returns the new
+  /// thread's ID (the match ID).
+  Future<String> sendInvite({
+    required String ownerId,
+    required String matchId,
+  }) async {
+    await _requireOwnerNotRejected(ownerId);
+    final match = await _repository.fetchMatch(matchId);
+    if (match == null || match.ownerId != ownerId || match.bScore != 1) {
+      // CLAUDE.md: communication only after bilateral compatibility.
+      throw const InquiryException(
+        'You can only invite tenants who are compatible with your property.',
+      );
+    }
+    final property = await _repository.fetchProperty(match.propertyId);
+    if (property == null ||
+        !property.isAvailable ||
+        property.ownerId != ownerId) {
+      throw const InquiryException(
+        'This listing is fully booked and no longer taking tenants.',
+      );
+    }
+    final threads = await _repository.fetchInquiriesBetween(
+      ownerId: ownerId,
+      tenantId: match.tenantId,
+    );
+    if (threads.any((t) => t.propertyId == match.propertyId)) {
+      throw const InquiryException(
+        'This tenant already has an inquiry or invitation for this property.',
+      );
+    }
+
+    final invitation = InquiryDoc(
+      inquiryId: match.matchId,
+      matchId: match.matchId,
+      tenantId: match.tenantId,
+      ownerId: ownerId,
+      propertyId: match.propertyId,
+      tenantCiSnapshot: match.tenantCi ?? 0,
+      stage: 1,
+      initiatedBy: 'owner',
+      status: 'pending',
+      ownerDecision: 'pending',
+      autoInfoSent: true,
+    );
+    await _repository.createInquiry(invitation);
+    await _notify(
+      recipientId: invitation.tenantId,
+      type: 'invitation',
+      title: 'You were invited to a property',
+      body: 'An owner invited you to ${property.title}.',
+      inquiryId: invitation.inquiryId,
+    );
+    return invitation.inquiryId;
+  }
+
+  /// The invited tenant accepts: Phase 2 chat opens.
+  Future<void> acceptInvite({
+    required InquiryDoc inquiry,
+    required String tenantId,
+  }) async {
+    _requireInvitedTenant(inquiry, tenantId);
+    await _repository.updateInquiry(inquiry.inquiryId, {
+      'stage': 2,
+      'ownerDecision': 'accepted',
+      'status': 'active',
+    });
+    // The tenant's phone is shared on acceptance (consent notice shown first).
+    await shareMyContact(inquiry: inquiry, uid: tenantId, accepted: true);
+    await _notify(
+      recipientId: inquiry.ownerId,
+      type: 'invitation_accepted',
+      title: 'Your invitation was accepted',
+      body: 'Chat is now open with the tenant.',
+      inquiryId: inquiry.inquiryId,
+    );
+  }
+
+  /// The invited tenant declines: the thread closes.
+  Future<void> declineInvite({
+    required InquiryDoc inquiry,
+    required String tenantId,
+    String? reason,
+  }) async {
+    _requireInvitedTenant(inquiry, tenantId);
+    final trimmed = reason?.trim() ?? '';
+    await _repository.updateInquiry(inquiry.inquiryId, {
+      'ownerDecision': 'declined',
+      'status': 'declined',
+      if (trimmed.isNotEmpty) 'declineReason': trimmed,
+    });
+    await _notify(
+      recipientId: inquiry.ownerId,
+      type: 'invitation_declined',
+      title: 'Your invitation was declined',
+      body: 'The tenant declined your invitation.',
+      inquiryId: inquiry.inquiryId,
+    );
+  }
+
+  // ── Contact sharing ─────────────────────────────────────────────────────
+
+  /// Consent copy shown before a phone number can be shared; [other] is
+  /// 'the owner' or 'the tenant'.
+  static String contactConsentMessage(String other) =>
+      'Your phone number will be shared with $other once the inquiry is '
+      'accepted.';
+
+  /// Accepted threads (active or booked) may exchange phone numbers.
+  static bool canShareContact(InquiryDoc i) =>
+      i.stage == 2 &&
+      i.ownerDecision == 'accepted' &&
+      (i.status == 'active' || i.status == 'booked');
+
+  /// Writes [uid]'s own phone to `inquiries/{id}/contact/{role}` so the other
+  /// participant can see it. Each participant can only write their own doc
+  /// (firestore.rules), so the counterpart shares theirs when they next open
+  /// the thread. Idempotent, best effort and never throws: a failure must not
+  /// break accepting or opening a thread. Never shares an email.
+  ///
+  /// [accepted] lets accept()/acceptInvite() pass the post-update state, since
+  /// the [inquiry] they hold is the pre-accept snapshot.
+  Future<void> shareMyContact({
+    required InquiryDoc inquiry,
+    required String uid,
+    bool accepted = false,
+  }) async {
+    try {
+      if (!accepted && !canShareContact(inquiry)) return;
+      final role = uid == inquiry.ownerId
+          ? 'owner'
+          : uid == inquiry.tenantId
+          ? 'tenant'
+          : null;
+      if (role == null) return;
+      if (role == 'owner' && await isOwnerRejected(uid)) return;
+      if (await _repository.fetchContactShare(inquiry.inquiryId, role) != null) {
+        return;
+      }
+      final phone = (await _repository.fetchOwnContact(uid))?.phone.trim() ?? '';
+      if (phone.isEmpty) return;
+      await _repository.writeContactShare(
+        inquiry.inquiryId,
+        role,
+        ContactShareDoc(phone: phone),
+      );
+    } catch (_) {
+      // Intentionally swallowed — see above.
+    }
   }
 
   // ── Phase 2 ─────────────────────────────────────────────────────────────
@@ -157,6 +455,11 @@ class InquiryService {
     if (!isOwner && senderId != inquiry.tenantId) {
       throw const InquiryException('You are not part of this inquiry.');
     }
+    if (await isOwnerRejected(inquiry.ownerId)) {
+      throw InquiryException(
+        isOwner ? rejectedOwnerMessage : rejectedOwnerTenantNote,
+      );
+    }
     await _repository.addMessage(
       inquiry.inquiryId,
       MessageDoc(
@@ -166,6 +469,19 @@ class InquiryService {
         content: text,
         isAutoGenerated: false,
       ),
+    );
+    // Chat text lives only in inquiries/{id}/messages: the alert is one
+    // rolling, content-free doc per inquiry + recipient.
+    final recipientId = isOwner ? inquiry.tenantId : inquiry.ownerId;
+    await _notify(
+      recipientId: recipientId,
+      type: 'message',
+      title: 'New message',
+      body: isOwner
+          ? 'The owner sent you a new message.'
+          : 'The tenant sent you a new message.',
+      inquiryId: inquiry.inquiryId,
+      notifId: 'msg_${inquiry.inquiryId}_$recipientId',
     );
   }
 
@@ -181,6 +497,7 @@ class InquiryService {
     bool fillsLastVacancy = false,
   }) async {
     _requireOwner(inquiry, ownerId);
+    await _requireOwnerNotRejected(ownerId);
     if (!canChat(inquiry)) {
       throw const InquiryException(
         'Only an accepted, active inquiry can be marked as booked.',
@@ -236,6 +553,23 @@ class InquiryService {
         review: trimmed.isEmpty ? null : trimmed,
       ),
     );
+  }
+
+  void _requireTenantInitiated(InquiryDoc inquiry) {
+    if (isInvite(inquiry)) {
+      throw const InquiryException(
+        'Only the invited tenant can answer an invitation.',
+      );
+    }
+  }
+
+  void _requireInvitedTenant(InquiryDoc inquiry, String tenantId) {
+    if (!isInvite(inquiry) || inquiry.tenantId != tenantId) {
+      throw const InquiryException('Only the invited tenant can do this.');
+    }
+    if (!isPhase1Pending(inquiry)) {
+      throw const InquiryException('This invitation has already been answered.');
+    }
   }
 
   void _requireOwner(InquiryDoc inquiry, String ownerId) {

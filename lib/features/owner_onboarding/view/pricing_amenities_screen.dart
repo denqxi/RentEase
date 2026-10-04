@@ -1,10 +1,10 @@
+import '../../../core/constants/app_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
@@ -45,7 +45,7 @@ class _PricingAmenitiesScreenState extends State<PricingAmenitiesScreen> {
     cubit.savePricing(
       monthlyRent: int.tryParse(_rentController.text) ?? 0,
       // Checklist order, not tap order.
-      amenities: MockData.amenities.where(_selected.contains).toList(),
+      amenities: AppOptions.amenities.where(_selected.contains).toList(),
     );
 
     setState(() => _saving = true);
@@ -140,7 +140,7 @@ class _PricingAmenitiesScreenState extends State<PricingAmenitiesScreen> {
                                 ),
                                 const Spacer(),
                                 Text(
-                                  '${_selected.length} of ${MockData.amenities.length} selected',
+                                  '${_selected.length} of ${AppOptions.amenities.length} selected',
                                   style: AppTextStyles.caption(context),
                                 ),
                               ],
@@ -149,7 +149,7 @@ class _PricingAmenitiesScreenState extends State<PricingAmenitiesScreen> {
                             Wrap(
                               spacing: AppSpacing.sm,
                               runSpacing: AppSpacing.sm,
-                              children: MockData.amenities.map((amenity) {
+                              children: AppOptions.amenities.map((amenity) {
                                 final isSelected = _selected.contains(amenity);
                                 return GestureDetector(
                                   onTap: () => setState(() {

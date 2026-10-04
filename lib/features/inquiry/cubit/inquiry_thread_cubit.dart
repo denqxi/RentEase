@@ -17,11 +17,9 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
   InquiryThreadCubit({
     required this.inquiryId,
     required this.uid,
-    required InquiryRepository repository,
-    required InquiryService service,
-  }) : _repository = repository,
-       _service = service,
-       super(const InquiryThreadState()) {
+    required this._repository,
+    required this._service,
+  }) : super(const InquiryThreadState()) {
     _inquirySub = _repository.watchInquiry(inquiryId).listen(
       _onInquiry,
       onError: _onError,
@@ -44,7 +42,9 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
   final InquiryService _service;
   StreamSubscription<InquiryDoc?>? _inquirySub;
   StreamSubscription<List<MessageDoc>>? _messagesSub;
+  StreamSubscription<ContactShareDoc?>? _contactSub;
   bool _contextLoaded = false;
+  bool _contactStarted = false;
 
   Future<void> _onInquiry(InquiryDoc? inquiry) async {
     if (isClosed) return;
@@ -58,10 +58,28 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
       return;
     }
     emit(state.copyWith(inquiry: inquiry));
+    _startContactSharing(inquiry);
     if (!_contextLoaded) {
       _contextLoaded = true;
       await _loadContext(inquiry);
     }
+  }
+
+  /// Once the inquiry is accepted: share my own phone (idempotent, best
+  /// effort — covers the counterpart who could not write mine at accept time)
+  /// and follow the counterpart's share live. Runs once per thread screen.
+  void _startContactSharing(InquiryDoc inquiry) {
+    if (_contactStarted || !InquiryService.canShareContact(inquiry)) return;
+    _contactStarted = true;
+    _service.shareMyContact(inquiry: inquiry, uid: uid);
+    final counterpartRole = uid == inquiry.ownerId ? 'tenant' : 'owner';
+    _contactSub = _repository
+        .watchContactShare(inquiryId, counterpartRole)
+        .listen((share) {
+          if (isClosed) return;
+          final phone = share?.phone.trim() ?? '';
+          emit(state.copyWith(counterpartPhone: phone, clearPhone: phone.isEmpty));
+        }, onError: (_) {});
   }
 
   /// The docs behind the Phase 1 auto-info summaries and the chat header —
@@ -84,6 +102,7 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
           tenantProfile: tenantProfile,
           owner: owner,
           ownerVerified: ownerProfile?.verificationStatus == 'verified',
+          ownerRejected: ownerProfile?.verificationStatus == 'rejected',
         ),
       );
     } catch (e) {
@@ -93,11 +112,19 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
 
   // ── Actions ───────────────────────────────────────────────────────────
 
-  Future<bool> accept() =>
-      _run((i) => _service.accept(inquiry: i, ownerId: uid));
+  /// Phase 1 accept: the owner for a tenant's inquiry, or the invited tenant
+  /// for an owner's invitation.
+  Future<bool> accept() => _run(
+    (i) => InquiryService.isInvite(i)
+        ? _service.acceptInvite(inquiry: i, tenantId: uid)
+        : _service.accept(inquiry: i, ownerId: uid),
+  );
 
-  Future<bool> decline(String? reason) =>
-      _run((i) => _service.decline(inquiry: i, ownerId: uid, reason: reason));
+  Future<bool> decline(String? reason) => _run(
+    (i) => InquiryService.isInvite(i)
+        ? _service.declineInvite(inquiry: i, tenantId: uid, reason: reason)
+        : _service.decline(inquiry: i, ownerId: uid, reason: reason),
+  );
 
   Future<bool> markBooked({bool fillsLastVacancy = false}) => _run(
     (i) => _service.markBooked(
@@ -153,6 +180,7 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
   Future<void> close() {
     _inquirySub?.cancel();
     _messagesSub?.cancel();
+    _contactSub?.cancel();
     return super.close();
   }
 }

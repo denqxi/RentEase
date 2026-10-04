@@ -3,8 +3,13 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 
 class FloatingNavBarItem {
-  const FloatingNavBarItem({required this.icon, required this.label});
+  const FloatingNavBarItem({
+    required this.icon,
+    required this.label,
+    this.badgeCount = 0,
+  });
   final IconData icon;
+  final int badgeCount;
   final String label;
 }
 
@@ -52,7 +57,7 @@ class FloatingNavBar extends StatelessWidget {
                 color: context.appColors.surface,
                 boxShadow: const <BoxShadow>[
                   BoxShadow(
-                    color: Color(0x16000000),
+                    color: AppColors.scrimFaint,
                     blurRadius: 12,
                     offset: Offset(0, -3),
                   ),
@@ -150,7 +155,25 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
                   opacity: (1.0 - _fade.value).clamp(0.0, 1.0),
                   child: Transform.scale(
                     scale: 0.8 + 0.2 * (1.0 - _fade.value),
-                    child: Icon(widget.data.icon, size: 24, color: context.appColors.ink),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: <Widget>[
+                        Icon(widget.data.icon, size: 24, color: context.appColors.ink),
+                        if (widget.data.badgeCount > 0)
+                          Positioned(
+                            right: -2,
+                            top: -2,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: const BoxDecoration(
+                                color: AppColors.unread,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -222,7 +245,7 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Icon(widget.data.icon, size: 20, color: Colors.white),
+                  Icon(widget.data.icon, size: 20, color: AppColors.onInk),
                   const SizedBox(height: 2),
                   Text(
                     widget.data.label,
@@ -230,7 +253,7 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
                       fontFamily: 'DM Sans',
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: AppColors.onInk,
                     ),
                   ),
                 ],

@@ -1,17 +1,17 @@
+import '../../../core/constants/app_options.dart';
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../shared/widgets/ci_score_pill.dart';
-import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
-import '../../../shared/widgets/match_badge.dart';
 import '../../../shared/widgets/verified_badge.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../../inquiry/view/start_inquiry.dart';
+import '../../matching/domain/entities/mismatch_reason.dart';
 import '../../profile/cubit/profile_cubit.dart';
 import '../../registration/model/user_role.dart';
 import '../../tenant/view/session_filter_sheet.dart';
@@ -35,15 +35,26 @@ class SearchScreen extends StatelessWidget {
     );
     final uid = currentUidOrNull(context);
 
-    if (isGuest || uid == null) {
-      return _SearchView(
-        // Guests have no matches, so no Ci — the map view still reads one.
-        results: [
-          for (final p in MockData.properties)
-            {...p, 'tenantCi': p['tenantCi'] ?? 0},
-        ],
-        isGuest: true,
+    if (isGuest) {
+      // Guests browse the public newest-available feed: unranked, no Ci, no
+      // profile (the rules let signed-out visitors read nothing else).
+      return BlocProvider(
+        create: (_) => SearchCubit.guest(repository: HomeRepositoryImpl()),
+        child: BlocBuilder<SearchCubit, SearchState>(
+          builder: (context, state) => _SearchView(
+            results: state.results,
+            isGuest: true,
+            isLoading: state.isLoading,
+            errorMessage: state.errorMessage,
+            onRefresh: context.read<SearchCubit>().load,
+          ),
+        ),
       );
+    }
+    if (uid == null) {
+      // Signed out outside guest mode (or the offline screenshot harness):
+      // nothing to read.
+      return const _SearchView(results: [], isGuest: false);
     }
 
     return BlocProvider(
@@ -59,6 +70,13 @@ class SearchScreen extends StatelessWidget {
           builder: (context, state) => _SearchView(
             results: state.results,
             profile: state.profile,
+            nonMatches: state.nonMatches,
+            includeNonMatching: state.includeNonMatching,
+            isLoadingNonMatches: state.isLoadingNonMatches,
+            nonMatchesFailed: state.nonMatchesFailed,
+            onToggleNonMatching: context
+                .read<SearchCubit>()
+                .setIncludeNonMatching,
             isGuest: false,
             isLoading: state.isLoading,
             errorMessage: state.errorMessage,
@@ -75,6 +93,11 @@ class _SearchView extends StatefulWidget {
     required this.results,
     required this.isGuest,
     this.profile,
+    this.nonMatches = const [],
+    this.includeNonMatching = false,
+    this.isLoadingNonMatches = false,
+    this.nonMatchesFailed = false,
+    this.onToggleNonMatching,
     this.isLoading = false,
     this.errorMessage,
     this.onRefresh,
@@ -82,6 +105,13 @@ class _SearchView extends StatefulWidget {
 
   final List<Map<String, dynamic>> results;
   final TenantProfileDoc? profile;
+
+  /// View-only listings outside the saved preferences (toggle on only).
+  final List<Map<String, dynamic>> nonMatches;
+  final bool includeNonMatching;
+  final bool isLoadingNonMatches;
+  final bool nonMatchesFailed;
+  final ValueChanged<bool>? onToggleNonMatching;
   final bool isGuest;
   final bool isLoading;
   final String? errorMessage;
@@ -107,11 +137,17 @@ class _SearchViewState extends State<_SearchView> {
   /// saved limits (clamped to the sheet's slider ranges) the first time.
   void _showFilterSheet() {
     final profile = widget.profile;
-    final budget =
-        _session?.maxBudget ?? (profile?.maxBudget ?? MockData.tenantMaxBudget);
-    final distance =
-        _session?.maxDistanceKm ??
-        (profile?.maxDistanceKm ?? MockData.tenantMaxDistance);
+    final savedBudget = (profile?.maxBudget ?? AppOptions.defaultMaxBudget)
+        .toDouble()
+        .clamp(1000, 10000)
+        .toDouble();
+    final savedDistance =
+        (profile?.maxDistanceKm ?? AppOptions.defaultMaxDistanceKm)
+            .toDouble()
+            .clamp(0.5, 15)
+            .toDouble();
+    final budget = _session?.maxBudget ?? savedBudget;
+    final distance = _session?.maxDistanceKm ?? savedDistance;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -122,6 +158,8 @@ class _SearchViewState extends State<_SearchView> {
       builder: (_) => SessionFilterSheet(
         initialBudget: budget.toDouble().clamp(1000, 10000),
         initialDistance: distance.toDouble().clamp(0.5, 15),
+        savedBudget: savedBudget,
+        savedDistance: savedDistance,
         onApply: (budget, distance) => setState(
           () => _session = SearchSession(
             maxBudget: budget,
@@ -136,7 +174,13 @@ class _SearchViewState extends State<_SearchView> {
     final matching = widget.results
         .where((p) => matchesSearchQuery(p, _queryController.text))
         .toList();
-    return _session?.apply(matching) ?? matching;
+    final matched = _session?.apply(matching) ?? matching;
+    // Non-matches always follow the Ci-ranked matches; the session filter
+    // only applies to matched results.
+    final others = widget.nonMatches
+        .where((p) => matchesSearchQuery(p, _queryController.text))
+        .toList();
+    return [...matched, ...others];
   }
 
   /// The tenant's saved hard constraints, as chips.
@@ -147,9 +191,12 @@ class _SearchViewState extends State<_SearchView> {
     final gender = p.requiredGender.trim();
     final isAnyGender =
         gender.isEmpty ||
-        const ['any', 'all', 'mixed', 'mixed / any'].contains(
-          gender.toLowerCase(),
-        );
+        const [
+          'any',
+          'all',
+          'mixed',
+          'mixed / any',
+        ].contains(gender.toLowerCase());
     return [
       isAnyGender ? 'Any gender' : gender,
       if (p.needsWifi) 'WiFi',
@@ -207,8 +254,18 @@ class _SearchViewState extends State<_SearchView> {
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => MapViewScreen(
-                          properties: properties,
+                          properties: [
+                            for (final p in properties)
+                              if (p['isNonMatch'] != true) p,
+                          ],
                           isGuest: widget.isGuest,
+                          poi: widget.profile == null
+                              ? null
+                              : LatLng(
+                                  widget.profile!.poiLatLng.latitude,
+                                  widget.profile!.poiLatLng.longitude,
+                                ),
+                          poiLabel: widget.profile?.poiLabel,
                         ),
                       ),
                     ),
@@ -304,6 +361,49 @@ class _SearchViewState extends State<_SearchView> {
               ),
             ),
 
+            if (!widget.isGuest && widget.onToggleNonMatching != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        'Include listings outside my preferences',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: context.appColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    if (widget.isLoadingNonMatches)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    Switch(
+                      value: widget.includeNonMatching,
+                      activeThumbColor: AppColors.accent,
+                      onChanged: widget.onToggleNonMatching,
+                    ),
+                  ],
+                ),
+              ),
+            if (widget.nonMatchesFailed)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Text(
+                  "Couldn't load listings outside your preferences.",
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 12,
+                    color: context.appColors.textSecondary,
+                  ),
+                ),
+              ),
+
             SizedBox(height: AppSpacing.sm),
 
             if (!widget.isLoading && widget.errorMessage == null)
@@ -339,7 +439,7 @@ class _SearchViewState extends State<_SearchView> {
     final String? message;
     if (widget.errorMessage != null) {
       message = widget.errorMessage;
-    } else if (widget.results.isEmpty) {
+    } else if (widget.results.isEmpty && widget.nonMatches.isEmpty) {
       message =
           'No compatible properties yet. Try widening your budget or '
           'distance from your profile.';
@@ -518,7 +618,11 @@ class _AmberChip extends StatelessWidget {
           const SizedBox(width: 4),
           GestureDetector(
             onTap: onClose,
-            child: const Icon(Icons.close, size: 12, color: AppColors.amberText),
+            child: const Icon(
+              Icons.close,
+              size: 12,
+              color: AppColors.amberText,
+            ),
           ),
         ],
       ),
@@ -555,220 +659,247 @@ class _PropertyCard extends StatelessWidget {
     final int rent = (property['monthlyRent'] as num).toInt();
     final bool isVerified = property['isVerified'] as bool? ?? false;
     final num? distance = property['distance'] as num?;
+    final bool isNonMatch = property['isNonMatch'] == true;
+    final reasons =
+        (property['mismatchReasons'] as List?)?.cast<MismatchReason>() ??
+        const <MismatchReason>[];
     final bool isOutside = property['isOutsidePreference'] == true;
     final num budgetExcess = (property['budgetExcess'] as num?) ?? 0;
     final num distanceExcess = (property['distanceExcess'] as num?) ?? 0;
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: context.appColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // ── Image with rank badge overlay ──────────────────────────
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
+      child: Opacity(
+        // Muted: view-only listings read as secondary to real matches.
+        opacity: isNonMatch ? 0.75 : 1,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          decoration: BoxDecoration(
+            color: context.appColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: AppColors.scrim.withValues(alpha: 0.06),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
               ),
-              child: SizedBox(
-                height: 140,
-                width: double.infinity,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: <Widget>[
-                    ListingImagePlaceholder(seed: seed),
-                    if (rank != null)
-                      Positioned(
-                        top: 10,
-                        left: 10,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: context.appColors.ink.withValues(alpha: 0.75),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '#$rank',
-                            style: const TextStyle(
-                              fontFamily: 'DM Sans',
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.onInk,
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              // ── Image with rank badge overlay ──────────────────────────
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                child: SizedBox(
+                  height: 140,
+                  width: double.infinity,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: <Widget>[
+                      ListingImagePlaceholder(
+                        seed: seed,
+                        photoUrl: property['photoUrl'] as String?,
+                      ),
+                      if (rank != null && !isNonMatch)
+                        Positioned(
+                          top: 10,
+                          left: 10,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: context.appColors.ink.withValues(
+                                alpha: 0.75,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '#$rank',
+                              style: const TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.onInk,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Card body ──────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.sm,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          property['title'] as String,
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: context.appColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // CLAUDE.md: the search screen shows the raw Ci for
-                      // precise comparison (Home uses a percentage).
-                      if (isGuest)
-                        const MatchBadge(
-                          percent: 0,
-                          showLabel: true,
-                          isLocked: true,
-                        )
-                      else if (tenantCi != null)
-                        CiScorePill(score: tenantCi.toDouble()),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                ),
+              ),
 
-                  Row(
-                    children: <Widget>[
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 12,
-                        color: context.appColors.textSecondary,
-                      ),
-                      const SizedBox(width: 3),
-                      Expanded(
-                        child: Text(
-                          [
-                            property['address'] as String,
-                            if (!isGuest && distance != null) '$distance km',
-                          ].join(' · '),
+              // ── Card body ──────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            property['title'] as String,
+                            style: TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: context.appColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // CLAUDE.md: the search screen shows the raw Ci for
+                        // precise comparison (Home uses a percentage).
+                        if (!isGuest && !isNonMatch && tenantCi != null)
+                          CiScorePill(score: tenantCi.toDouble()),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+
+                    Row(
+                      children: <Widget>[
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 12,
+                          color: context.appColors.textSecondary,
+                        ),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            [
+                              property['address'] as String,
+                              if (!isGuest && distance != null) '$distance km',
+                            ].join(' · '),
+                            style: TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: context.appColors.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          '₱${_fmtRent(rent)}',
+                          style: const TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.accent,
+                          ),
+                        ),
+                        Text(
+                          '/mo',
                           style: TextStyle(
                             fontFamily: 'DM Sans',
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: FontWeight.w400,
                             color: context.appColors.textSecondary,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
+                        const Spacer(),
+                        if (isVerified) const VerifiedBadge(isVerified: true),
+                      ],
+                    ),
 
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        '₱${_fmtRent(rent)}',
-                        style: const TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.accent,
-                        ),
-                      ),
-                      Text(
-                        '/mo',
+                    if (isNonMatch) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      const Text(
+                        "Doesn't match your preferences",
                         style: TextStyle(
                           fontFamily: 'DM Sans',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                          color: context.appColors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.amberText,
                         ),
                       ),
-                      const Spacer(),
-                      if (isVerified) const VerifiedBadge(isVerified: true),
-                    ],
-                  ),
-
-                  if (isOutside) ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      [
-                        'Outside your session filter',
-                        if (budgetExcess > 0) '₱$budgetExcess over budget',
-                        if (distanceExcess > 0) '$distanceExcess km farther',
-                      ].join(' · '),
-                      style: const TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.amberText,
-                      ),
-                    ),
-                  ],
-
-                  // CLAUDE.md rule 2: absent, never disabled, when bScore = 0.
-                  if (property['bScore'] == 1 || isGuest) ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (isGuest) {
-                            GuestAccessSheet.show(context);
-                            return;
-                          }
-                          startInquiry(
-                            context,
-                            propertyId: property['propertyId'] as String,
-                            matchId: property['matchId'] as String?,
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: context.appColors.ink,
-                          foregroundColor: AppColors.onInk,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          textStyle: const TextStyle(
+                      if (reasons.isNotEmpty)
+                        Text(
+                          reasons.take(2).map((r) => r.shortLabel).join(' · '),
+                          style: TextStyle(
                             fontFamily: 'DM Sans',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            color: context.appColors.textSecondary,
                           ),
                         ),
-                        child: Text(
-                          isOutside ? 'Send Inquiry Anyway' : 'Send Inquiry',
+                    ],
+
+                    if (isOutside) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        [
+                          'Outside your session filter',
+                          if (budgetExcess > 0) '₱$budgetExcess over budget',
+                          if (distanceExcess > 0) '$distanceExcess km farther',
+                        ].join(' · '),
+                        style: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.amberText,
                         ),
                       ),
-                    ),
+                    ],
+
+                    // CLAUDE.md rule 2: absent, never disabled, when bScore = 0.
+                    // Owner verification is a badge only (Oct 2026), so it does
+                    // not gate the button. Guests have no match, never see it.
+                    if (!isGuest && !isNonMatch && property['bScore'] == 1) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 40,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            startInquiry(
+                              context,
+                              propertyId: property['propertyId'] as String,
+                              matchId: property['matchId'] as String?,
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: context.appColors.ink,
+                            foregroundColor: AppColors.onInk,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            textStyle: const TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          child: Text(
+                            isOutside ? 'Send Inquiry Anyway' : 'Send Inquiry',
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -34,7 +34,7 @@ class ProfileMenuCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.card),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: AppColors.scrim.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 2),
           ),

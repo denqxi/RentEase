@@ -26,7 +26,11 @@ class TopsisCandidate {
 }
 
 class TopsisResult {
-  const TopsisResult({required this.matchId, required this.ci, required this.rank});
+  const TopsisResult({
+    required this.matchId,
+    required this.ci,
+    required this.rank,
+  });
 
   final String matchId;
 
@@ -37,14 +41,14 @@ class TopsisResult {
   final int rank;
 }
 
-/// TOPSIS multi-criteria ranking (CLAUDE.md "Two TOPSIS Instances",
-/// Instance 1 — tenant-side). Client-side, per the "Client-Side Matching
+/// TOPSIS multi-criteria ranking (CLAUDE.md "TOPSIS (Tenant-Side Ranking)" —
+/// the only instance; there is no owner-side TOPSIS). Client-side, per the "Client-Side Matching
 /// Engine" decision (no Cloud Functions).
 ///
 /// [computeCloseness] is pure and unit-tested directly; [computeTOPSIS] is
 /// the Firestore-backed orchestration that feeds it real match/property data.
 class TopsisService {
-  TopsisService({required TopsisRepository repository}) : _repository = repository;
+  TopsisService({required this._repository});
 
   final TopsisRepository _repository;
 

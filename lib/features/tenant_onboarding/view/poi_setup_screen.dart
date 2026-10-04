@@ -1,10 +1,10 @@
+import '../../../core/constants/app_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/registration/widgets/form_step_layout.dart';
@@ -44,7 +44,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
   String _addressFor(LatLng pos) {
     Map<String, dynamic>? nearest;
     double best = double.infinity;
-    for (final area in MockData.davaoAreas) {
+    for (final area in AppOptions.davaoAreas) {
       final dLat = pos.latitude - (area['lat'] as double);
       final dLng = pos.longitude - (area['lng'] as double);
       final d = dLat * dLat + dLng * dLng;
@@ -71,7 +71,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
     setState(() {
       _suggestions = q.length < 2
           ? const []
-          : MockData.davaoPlaces
+          : AppOptions.davaoPlaces
                 .where((p) => (p['name'] as String).toLowerCase().contains(q))
                 .toList();
     });
@@ -182,10 +182,10 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                     onPlaceTap: _selectPlace,
                     onLocate: () {
                       const pos = LatLng(
-                        MockData.tenantPoiLat,
-                        MockData.tenantPoiLng,
+                        AppOptions.defaultMapLat,
+                        AppOptions.defaultMapLng,
                       );
-                      _dropPin(pos, label: MockData.tenantPoi);
+                      _dropPin(pos, label: AppOptions.defaultMapLabel);
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (mounted) _mapController.move(pos, 15);
                       });
@@ -307,8 +307,8 @@ class _PoiMap extends StatelessWidget {
             mapController: mapController,
             options: MapOptions(
               initialCenter: const LatLng(
-                MockData.tenantPoiLat,
-                MockData.tenantPoiLng,
+                AppOptions.defaultMapLat,
+                AppOptions.defaultMapLng,
               ),
               initialZoom: 14,
               onTap: (_, latLng) => onTap(latLng),
@@ -321,7 +321,7 @@ class _PoiMap extends StatelessWidget {
               MarkerLayer(
                 markers: [
                   // Known schools and workplaces — tappable landmarks.
-                  for (final place in MockData.davaoPlaces)
+                  for (final place in AppOptions.davaoPlaces)
                     Marker(
                       point: LatLng(
                         place['lat'] as double,

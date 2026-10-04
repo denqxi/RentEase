@@ -12,19 +12,43 @@ import 'features/onboarding/view/onboarding_screen.dart';
 import 'features/registration/model/user_role.dart';
 import 'features/registration/view/registration_flow_screen.dart';
 
+final _navigatorKey = GlobalKey<NavigatorState>();
+
+/// How long the splash waits for an unresolved auth check before falling
+/// back to onboarding.
+const authResolveTimeout = Duration(seconds: 8);
+
 class RentEaseApp extends StatelessWidget {
   const RentEaseApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    return BlocListener<AuthBloc, AuthState>(
+      // An admin suspended the user while the app was open: the bloc has
+      // signed them out, so send them to sign-in (which shows the notice).
+      // Not at app start - the splash routes there itself.
+      listenWhen: (prev, curr) =>
+          curr is AuthSuspended &&
+          (prev is AuthAuthenticated || prev is AuthEmailNotVerified),
+      listener: (_, _) => _navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        AppRouter.signIn,
+        (_) => false,
+      ),
+      child: _themedApp(),
+    );
+  }
+
+  Widget _themedApp() {
     return BlocBuilder<AppThemeCubit, bool>(
       builder: (_, isDark) => MaterialApp(
+        navigatorKey: _navigatorKey,
         title: 'RentEase',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
         onGenerateRoute: AppRouter.onGenerateRoute,
+        navigatorObservers: [AppRouter.routeObserver],
         home: Builder(
           builder: (ctx) => SplashScreen(
             // AuthCheckRequested was dispatched at app start (main.dart); by
@@ -38,14 +62,37 @@ class RentEaseApp extends StatelessWidget {
     );
   }
 
-  void _routeAfterSplash(BuildContext context) {
-    final state = context.read<AuthBloc>().state;
-    if (state is AuthAuthenticated) {
+  Future<void> _routeAfterSplash(BuildContext context) async {
+    final bloc = context.read<AuthBloc>();
+    final AuthState resolved;
+    final current = bloc.state;
+    // On a slow network the auth check can still be running when the splash
+    // ends; wait for it to resolve (bounded) instead of misrouting.
+    if (current is AuthLoading || current is AuthInitial) {
+      resolved = await bloc.stream
+          .firstWhere((s) => s is! AuthLoading && s is! AuthInitial)
+          .timeout(
+            authResolveTimeout,
+            onTimeout: () => const AuthUnauthenticated(),
+          );
+      if (!context.mounted) return;
+    } else {
+      resolved = current;
+    }
+    final state = resolved;
+    // Admins are created in the console and never go through email
+    // verification, so they route home whichever auth state they resolve to.
+    final user = switch (state) {
+      AuthAuthenticated(:final user) => user,
+      AuthEmailNotVerified(:final user) when user.isAdmin => user,
+      _ => null,
+    };
+    if (user != null) {
       Navigator.of(context).pushNamedAndRemoveUntil(
-        state.user.isOwner ? AppRouter.landlordHome : AppRouter.tenantHome,
+        AppRouter.homeRouteFor(isAdmin: user.isAdmin, isOwner: user.isOwner),
         (_) => false,
       );
-    } else if (state is AuthEmailNotVerified) {
+    } else if (state is AuthEmailNotVerified && !state.user.isAdmin) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
           builder: (_) =>
@@ -78,7 +125,7 @@ class _SignInEntry extends StatelessWidget {
       // later pushNamed from inside the shell (e.g. the profile screen's
       // Log out button) would silently fail to resolve.
       onSignIn: (user) => Navigator.of(context).pushNamedAndRemoveUntil(
-        user.isOwner ? AppRouter.landlordHome : AppRouter.tenantHome,
+        AppRouter.homeRouteFor(isAdmin: user.isAdmin, isOwner: user.isOwner),
         (_) => false,
       ),
       onCreateAccount: () => Navigator.of(context).push(

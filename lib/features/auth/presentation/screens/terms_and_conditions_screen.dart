@@ -52,8 +52,9 @@ class TermsAndConditionsScreen extends StatelessWidget {
                         title: 'Account and role',
                         body:
                             'You choose a role (tenant or owner) at signup. Your role is '
-                            'permanent and cannot be changed afterward. Owner accounts require '
-                            'admin verification before property listings can be posted.',
+                            'permanent and cannot be changed afterward. Owners may list '
+                            'properties right away; admin verification adds a Verified badge '
+                            'to build trust.',
                       ),
                       _Section(
                         title: 'Communication',
@@ -68,7 +69,10 @@ class TermsAndConditionsScreen extends StatelessWidget {
                         body:
                             'Your profile details, location pin, and preferences are stored to '
                             'compute matches and are not sold to third parties. Location data '
-                            'is used only for distance calculations and map display.',
+                            'is used only for distance calculations and map display. Your '
+                            'contact details are private by default. Your phone number is '
+                            'shared with the other party only after an inquiry is accepted, '
+                            'and your emergency contact is never shared.',
                       ),
                       _Section(
                         title: 'Conduct',

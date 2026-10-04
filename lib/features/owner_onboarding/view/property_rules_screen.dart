@@ -1,10 +1,10 @@
+import '../../../core/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../features/registration/widgets/step_header.dart';
@@ -30,7 +30,7 @@ class _PropertyRulesScreenState extends State<PropertyRulesScreen> {
   bool _petsAllowed = false;
   int _curfewHours = 22;
 
-  String get _curfew => MockData.formatCurfew(_curfewHours);
+  String get _curfew => formatCurfew(_curfewHours);
 
   Future<void> _pickCurfew() async {
     final picked = await showTimePicker(

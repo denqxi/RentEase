@@ -1,4 +1,7 @@
 import '../../../../core/firestore/models/models.dart';
+import '../../../../core/utils/distance_utils.dart';
+import '../../../matching/domain/services/filtering_service.dart';
+import '../../../matching/domain/entities/mismatch_reason.dart';
 import '../../domain/repositories/home_repository.dart';
 import '../../model/listing.dart';
 import '../datasources/home_remote_datasource.dart';
@@ -21,7 +24,11 @@ class HomeRepositoryImpl implements HomeRepository {
       // FilteringService.runFiltering() pass will clean the stale match up.
       if (property == null || !property.isAvailable) continue;
       listings.add(
-        Listing.fromMatch(match: match, property: property, imageSeed: i % 5 + 1),
+        Listing.fromMatch(
+          match: match,
+          property: property,
+          imageSeed: i % 5 + 1,
+        ),
       );
     }
     return listings;
@@ -86,6 +93,89 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
+  Future<List<Map<String, dynamic>>> fetchNonMatchingResults({
+    required String tenantId,
+    required TenantProfileDoc profile,
+    required Set<String> excludePropertyIds,
+    int limit = 50,
+  }) async {
+    final (properties, tenantUser) = await (
+      _remote.fetchAvailableProperties(limit: limit),
+      _remote.fetchUser(tenantId),
+    ).wait;
+    final tenantGender = tenantUser?.gender ?? '';
+
+    final candidates = <(PropertyDoc, double, List<MismatchReason>)>[];
+    for (final property in properties) {
+      if (excludePropertyIds.contains(property.propertyId)) continue;
+      final km = DistanceUtils.kmBetween(profile.poiLatLng, property.location);
+      final reasons = FilteringService.explainMismatch(
+        tenantGender: tenantGender,
+        tenant: profile,
+        property: property,
+        distanceKm: km,
+      );
+      // Passes every rule: a match whose cached row is just not written yet
+      // (the next matching run adds it). Not a non-match.
+      if (reasons.isEmpty) continue;
+      candidates.add((property, km, reasons));
+    }
+
+    final owners = <String, (UserDoc?, OwnerProfileDoc?)>{};
+    await Future.wait(
+      {for (final c in candidates) c.$1.ownerId}.map((id) async {
+        owners[id] = await (
+          _remote.fetchUser(id),
+          _remote.fetchOwnerProfile(id),
+        ).wait;
+      }),
+    );
+
+    return [
+      for (final (property, km, reasons) in candidates)
+        {
+          ..._propertyMap(
+            property,
+            null,
+            owners[property.ownerId]?.$1,
+            owners[property.ownerId]?.$2,
+          ),
+          'distance': _roundKm(km),
+          'bScore': 0,
+          'matchId': null,
+          'isNonMatch': true,
+          'mismatchReasons': reasons,
+        },
+    ];
+  }
+
+  @override
+  Future<List<Listing>> fetchGuestListings({int limit = 20}) async {
+    final properties = await _remote.fetchAvailableProperties(limit: limit);
+    return [
+      for (final (i, p) in properties.indexed)
+        Listing.fromProperty(property: p, imageSeed: i % 5 + 1),
+    ];
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchGuestSearchResults({
+    int limit = 20,
+  }) async {
+    final properties = await _remote.fetchAvailableProperties(limit: limit);
+    return [for (final p in properties) _propertyMap(p, null, null, null)];
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchGuestPropertyDetail(
+    String propertyId,
+  ) async {
+    final property = await _remote.fetchProperty(propertyId);
+    if (property == null || !property.isAvailable) return null;
+    return _propertyMap(property, null, null, null);
+  }
+
+  @override
   Future<TenantProfileDoc?> fetchTenantProfile(String tenantId) =>
       _remote.fetchTenantProfile(tenantId);
 
@@ -108,13 +198,16 @@ class HomeRepositoryImpl implements HomeRepository {
       // Needed to open an inquiry for this exact pairing (InquiryService).
       'matchId': match?.matchId,
       'title': property.title,
+      'photoUrl': property.photos.isNotEmpty ? property.photos.first : null,
       'address': property.address,
       'monthlyRent': property.monthlyRent,
       'distance': _roundKm(match?.distanceKm ?? 0),
       'amenityScore': property.amenityScore ?? property.amenityList.length,
       'tenantCi': match?.tenantCi ?? 0,
       'tenantRank': match?.tenantRank ?? 0,
-      'isVerified': property.isVerified,
+      // The owner's real status (the denormalised property flag can lag
+      // behind admin approval). Drives the Verified badge only.
+      'isVerified': ownerProfile?.verificationStatus == 'verified',
       'allowedGender': property.allowedGender,
       'smokingAllowed': property.smokingAllowed,
       'petsAllowed': property.petsAllowed,
@@ -155,8 +248,18 @@ class HomeRepositoryImpl implements HomeRepository {
   String _formatMemberSince(DateTime? createdAt) {
     if (createdAt == null) return 'RentEase';
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[createdAt.month - 1]} ${createdAt.year}';
   }

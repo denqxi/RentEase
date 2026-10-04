@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/utils/date_utils.dart';
 
 /// Top header for the Home screen: greeting only.
 ///
 /// Notifications live solely in the bottom-nav Alerts tab — this header
 /// intentionally has no bell to avoid a second, redundant entry point.
 class HomeHeader extends StatelessWidget {
-  const HomeHeader({required this.userName, super.key});
+  const HomeHeader({required this.userName, this.now, super.key});
 
+  /// First name to greet; empty (e.g. while loading) shows the greeting alone.
   final String userName;
+
+  /// Overrides the clock (tests); defaults to device local time.
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +30,7 @@ class HomeHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            'Good morning \u{1F44B}',
+            '${greetingFor(now ?? DateTime.now())} \u{1F44B}',
             style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 13,
@@ -35,7 +40,7 @@ class HomeHeader extends StatelessWidget {
           ),
           SizedBox(height: 2),
           Text(
-            userName,
+            userName.isEmpty ? ' ' : userName,
             style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 22,

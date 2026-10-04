@@ -11,6 +11,8 @@ import '../features/activity/cubit/activity_cubit.dart';
 import '../features/activity/model/activity_item.dart';
 import '../features/activity/view/activity_screen.dart';
 import '../features/admin/view/admin_login_screen.dart';
+import '../features/admin/widgets/admin_providers.dart';
+import 'preview_admin_repository.dart';
 import '../features/admin/view/analytics_screen.dart';
 import '../features/admin/view/pending_verifications_screen.dart';
 import '../features/admin/view/property_management_screen.dart';
@@ -28,7 +30,7 @@ import '../features/home/view/property_detail_screen.dart';
 import '../features/home/view/search_screen.dart';
 import '../features/inquiry/view/tenant_inquiries_screen.dart';
 import '../features/landlord_home/cubit/landlord_home_cubit.dart';
-import '../features/landlord_home/model/tenant_detail.dart';
+import '../features/owner/model/compatible_tenant.dart';
 import '../features/landlord_home/view/landlord_home_screen.dart';
 import '../features/landlord_home/view/tenant_detail_screen.dart';
 import '../features/landlord_matches/view/landlord_matches_screen.dart';
@@ -95,7 +97,7 @@ class DebugScreenViewer extends StatelessWidget {
           'Email verification',
           (_) => const EmailVerificationScreen(isOwner: false),
         ),
-        _Entry('Admin login', (_) => const AdminLoginScreen()),
+        _Entry('Admin login', (_) => const AdminLoginScreen(repository: PreviewAdminRepository())),
       ]),
       _Section('Tenant onboarding', [
         _Entry('1. Hard constraints', (_) => const HardConstraintsScreen()),
@@ -197,7 +199,16 @@ class DebugScreenViewer extends StatelessWidget {
         ),
         _Entry(
           'Tenant detail',
-          (_) => const TenantDetailScreen(detail: TenantDetail.sample),
+          (_) => const TenantDetailScreen(
+            tenant: CompatibleTenant(
+              matchId: 'm1',
+              tenantId: 't1',
+              name: 'Preview Tenant',
+              gender: 'Female',
+              maxBudget: 4500,
+              bScore: 1,
+            ),
+          ),
         ),
         _Entry('Find tenants', (_) => const FindTenantsScreen()),
         _Entry('Properties', (_) => const OwnerPropertiesScreen()),
@@ -228,11 +239,11 @@ class DebugScreenViewer extends StatelessWidget {
       _Section('Admin', [
         _Entry(
           'Pending verifications',
-          (_) => const PendingVerificationsScreen(),
+          (_) => const AdminProviders(repository: PreviewAdminRepository(), child: PendingVerificationsScreen()),
         ),
-        _Entry('User management', (_) => const UserManagementScreen()),
-        _Entry('Property management', (_) => const PropertyManagementScreen()),
-        _Entry('Analytics', (_) => const AnalyticsScreen()),
+        _Entry('User management', (_) => const AdminProviders(repository: PreviewAdminRepository(), child: UserManagementScreen())),
+        _Entry('Property management', (_) => const AdminProviders(repository: PreviewAdminRepository(), child: PropertyManagementScreen())),
+        _Entry('Analytics', (_) => const AdminProviders(repository: PreviewAdminRepository(), child: AnalyticsScreen())),
       ]),
     ];
   }

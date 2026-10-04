@@ -10,7 +10,9 @@ import '../../../shared/widgets/phase_badge.dart';
 import '../../resolution/view/rating_screen.dart';
 import '../cubit/inquiry_thread_cubit.dart';
 import '../domain/services/inquiry_service.dart';
+import 'rejected_owner_notice.dart';
 import '../model/inquiry_summary.dart';
+import 'contact_row.dart';
 
 /// Phase 2 — open chat between tenant and owner, shared by both sides
 /// ([isOwner] picks the perspective). Owners can mark the booking; once
@@ -262,6 +264,9 @@ class _InquiryChatViewState extends State<InquiryChatView> {
       ),
       body: Column(
         children: [
+          // Shown once the other party shared their phone (accepted threads,
+          // including booked); absent otherwise.
+          ContactRow(phone: state.counterpartPhone),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -292,6 +297,8 @@ class _InquiryChatViewState extends State<InquiryChatView> {
             )
           else if (closed)
             _ClosedPanel(isOwner: widget.isOwner)
+          else if (state.ownerRejected)
+            RejectedOwnerNotice(isOwner: widget.isOwner)
           else ...[
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,

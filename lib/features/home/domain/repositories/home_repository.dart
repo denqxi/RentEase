@@ -25,6 +25,29 @@ abstract class HomeRepository {
   /// matching (CLAUDE.md rule 7).
   Future<List<Map<String, dynamic>>> fetchSearchResults(String tenantId);
 
+  /// Guest preview: the newest available listings, unranked, straight from
+  /// the public `properties` view - no matches, no Ci, no personalization.
+  Future<List<Listing>> fetchGuestListings({int limit = 20});
+
+  /// Same as [fetchGuestListings] as full detail maps (for Search and its
+  /// map). Owner info is not readable by guests, so no verified badge.
+  Future<List<Map<String, dynamic>>> fetchGuestSearchResults({int limit = 20});
+
+  /// Detail map for one available property, guest view.
+  Future<Map<String, dynamic>?> fetchGuestPropertyDetail(String propertyId);
+
+  /// View-only listings that do NOT pass [profile], newest first (at most
+  /// [limit], skipping [excludePropertyIds] - the tenant's matched set). Each
+  /// is a property map with `bScore` 0, `isNonMatch` true and the typed
+  /// `mismatchReasons` from `FilteringService.explainMismatch`. Reads
+  /// properties directly; never writes `matches` (no inquiry for these).
+  Future<List<Map<String, dynamic>>> fetchNonMatchingResults({
+    required String tenantId,
+    required TenantProfileDoc profile,
+    required Set<String> excludePropertyIds,
+    int limit = 50,
+  });
+
   /// The tenant's saved hard constraints — shown as Search's filter chips.
   Future<TenantProfileDoc?> fetchTenantProfile(String tenantId);
 }

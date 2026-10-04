@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/firestore/models/models.dart';
+import '../../../uploads/domain/entities/uploaded_image.dart';
 import '../../domain/repositories/owner_onboarding_repository.dart';
 import '../datasources/owner_onboarding_remote_datasource.dart';
 
@@ -11,8 +12,12 @@ class OwnerOnboardingRepositoryImpl implements OwnerOnboardingRepository {
   final OwnerOnboardingRemoteDataSource _remote;
 
   @override
-  Future<String> submitForVerification(String uid) =>
-      _guard(() => _remote.submitForVerification(uid));
+  Future<String> submitForVerification(
+    String uid, {
+    List<UploadedImage> documents = const [],
+  }) => _guard(
+    () => _remote.submitForVerification(uid, documents: documents),
+  );
 
   @override
   Stream<String> watchVerificationStatus(String uid) =>
@@ -33,8 +38,8 @@ class OwnerOnboardingRepositoryImpl implements OwnerOnboardingRepository {
   String _messageFor(FirebaseException e) {
     switch (e.code) {
       case 'permission-denied':
-        return "You don't have permission to do this yet. Listings can only "
-            'be posted once an admin has verified your account.';
+        return "You don't have permission to save this listing. Your account "
+            'may have been rejected — please contact support.';
       case 'unavailable':
         return 'Network error. Check your connection and try again.';
       default:

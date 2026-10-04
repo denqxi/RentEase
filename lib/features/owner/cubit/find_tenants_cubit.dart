@@ -13,9 +13,8 @@ part 'find_tenants_state.dart';
 class FindTenantsCubit extends Cubit<FindTenantsState> {
   FindTenantsCubit({
     required this.ownerId,
-    required FindTenantsRepository repository,
-  }) : _repository = repository,
-       super(const FindTenantsState()) {
+    required this._repository,
+  }) : super(const FindTenantsState()) {
     load();
   }
 

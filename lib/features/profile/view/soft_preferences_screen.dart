@@ -1,42 +1,105 @@
+import '../../../core/constants/app_options.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/mock_data.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../cubit/edit_preferences_cubit.dart';
+import 'edit_constraints_screen.dart';
 
 /// Tenant soft preferences — nice-to-haves that refine TOPSIS ranking but,
 /// unlike the non-negotiables (hard constraints), never remove a property
 /// from the matching pool.
-class SoftPreferencesScreen extends StatefulWidget {
+class SoftPreferencesScreen extends StatelessWidget {
   const SoftPreferencesScreen({super.key});
 
   @override
-  State<SoftPreferencesScreen> createState() => _SoftPreferencesScreenState();
+  Widget build(BuildContext context) =>
+      withEditPreferencesCubit(context, const _SoftPreferencesView());
 }
 
-class _SoftPreferencesScreenState extends State<SoftPreferencesScreen> {
+class _SoftPreferencesView extends StatefulWidget {
+  const _SoftPreferencesView();
+
+  @override
+  State<_SoftPreferencesView> createState() => _SoftPreferencesViewState();
+}
+
+class _SoftPreferencesViewState extends State<_SoftPreferencesView> {
+  static const _roomTypes = ['Solo', 'Shared', 'Either'];
+
   String _roomType = 'Either';
-  final Set<String> _preferredAmenities = <String>{
-    'WiFi',
-    'Study area or desk',
-    'Water included in rent',
-  };
+  final Set<String> _preferredAmenities = <String>{};
+  bool _initialized = false;
+
+  void _initFrom(EditPreferencesState state) {
+    final profile = state.profile;
+    if (_initialized || profile == null) return;
+    _initialized = true;
+    final saved = profile.roomType;
+    _roomType = saved != null && _roomTypes.contains(saved) ? saved : 'Either';
+    _preferredAmenities
+      ..clear()
+      ..addAll(profile.preferredAmenities ?? const <String>[]);
+  }
 
   void _save() {
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text(
-          'Soft preferences saved. Your rankings will refresh.',
-        ),
-        backgroundColor: context.appColors.ink,
-      ),
+    context.read<EditPreferencesCubit>().saveSoftPreferences(
+      roomType: _roomType,
+      preferredAmenities: _preferredAmenities.toList(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    return BlocConsumer<EditPreferencesCubit, EditPreferencesState>(
+      listener: (context, state) {
+        if (state.status == EditPreferencesStatus.saved) {
+          Navigator.of(context).pop(true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Soft preferences saved.'),
+              backgroundColor: context.appColors.ink,
+            ),
+          );
+        } else if (state.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage!),
+              backgroundColor: AppColors.destructive,
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        _initFrom(state);
+        if (state.status == EditPreferencesStatus.loading) {
+          return const EditScaffold(
+            title: 'Soft preferences',
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (state.profile == null) {
+          return EditScaffold(
+            title: 'Soft preferences',
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                child: Text(
+                  state.errorMessage ?? 'Could not load your preferences.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          );
+        }
+        return _buildForm(context, state);
+      },
+    );
+  }
+
+  Widget _buildForm(BuildContext context, EditPreferencesState state) {
     return Scaffold(
       backgroundColor: context.appColors.surface,
       appBar: AppBar(
@@ -107,7 +170,7 @@ class _SoftPreferencesScreenState extends State<SoftPreferencesScreen> {
             SizedBox(height: 8),
             Row(
               children: [
-                for (final type in const ['Solo', 'Shared', 'Either']) ...[
+                for (final type in _roomTypes) ...[
                   Expanded(
                     child: _PrefChip(
                       label: type,
@@ -145,7 +208,7 @@ class _SoftPreferencesScreenState extends State<SoftPreferencesScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final amenity in MockData.amenities)
+                for (final amenity in AppOptions.amenities)
                   _PrefChip(
                     label: amenity,
                     isSelected: _preferredAmenities.contains(amenity),
@@ -159,7 +222,12 @@ class _SoftPreferencesScreenState extends State<SoftPreferencesScreen> {
             ),
             SizedBox(height: AppSpacing.xl),
 
-            AppButton(label: 'Save preferences', onPressed: _save),
+            AppButton(
+              label: state.status == EditPreferencesStatus.saving
+                  ? 'Saving...'
+                  : 'Save preferences',
+              onPressed: state.status == EditPreferencesStatus.saving ? null : _save,
+            ),
             SizedBox(height: AppSpacing.lg),
           ],
         ),
