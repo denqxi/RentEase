@@ -31,6 +31,36 @@ class MatchResult extends Equatable {
     location: 'Sorted by best match for your property',
   );
 
+  /// Top three listings presented to tenants on the success screen.
+  static const List<MatchResult> tenantTopMatches = <MatchResult>[
+    tenantSample,
+    MatchResult(
+      scorePercent: 87,
+      title: 'Great fit',
+      location: 'Cozy studio near campus, Lahug',
+    ),
+    MatchResult(
+      scorePercent: 81,
+      title: 'Strong match',
+      location: 'Furnished bedspace, Banilad',
+    ),
+  ];
+
+  /// Top three tenant matches presented to landlords on the success screen.
+  static const List<MatchResult> landlordTopMatches = <MatchResult>[
+    landlordSample,
+    MatchResult(
+      scorePercent: 84,
+      title: 'Verified students',
+      location: 'Within your budget and house rules',
+    ),
+    MatchResult(
+      scorePercent: 79,
+      title: 'Young professionals',
+      location: 'Looking to move in this month',
+    ),
+  ];
+
   /// @deprecated Use [tenantSample] or [landlordSample].
   static const MatchResult sample = tenantSample;
 

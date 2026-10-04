@@ -1,7 +1,8 @@
 ## AUTH:GET_STARTED
 - [AUTH:GET_STARTED] `lib/features/auth/presentation/screens/splash_screen.dart` | App splash / initial launch screen
 - [AUTH:GET_STARTED] `lib/features/onboarding/view/onboarding_screen.dart` | Welcome onboarding flow for new users
-- [AUTH:GET_STARTED] `lib/features/onboarding/view/matching_transition_screen.dart` | Transition screen used during onboarding matching
+- [AUTH:GET_STARTED] `lib/features/onboarding/view/matching_transition_screen.dart` | Transition screen used during onboarding matching (Lottie radar + 900ms checklist → SuccessScreen)
+- [AUTH:GET_STARTED] `lib/features/registration/view/success_screen.dart` | Standalone "You're all set!" route (hosts SuccessView) shown after matching transition
 
 ## AUTH:SIGN_IN
 - [AUTH:SIGN_IN] `lib/features/auth/presentation/screens/auth_screen.dart` | Primary sign‑in screen (login UI)
@@ -88,4 +89,11 @@
 5. [FLOW:OWNER_REG] `lib/features/registration/view/property_step_view.dart` | Property Details
 6. [FLOW:OWNER_REG] `lib/features/registration/view/ideal_tenant_step_view.dart` | Ideal Tenant Criteria
 7. [FLOW:OWNER_REG] `lib/features/registration/view/success_view.dart` | Success Screen
+
+## ONBOARDING FLOW: TENANT
+1. [FLOW:TENANT_ONBOARDING] `lib/features/tenant_onboarding/view/hard_constraints_screen.dart` | Step 1/4: Must-haves (Budget, Gender Policy, WiFi, Occupancy, Smoking, Pets)
+2. [FLOW:TENANT_ONBOARDING] `lib/features/tenant_onboarding/view/soft_preferences_step_screen.dart` | Step 2/4: Amenities & Features
+3. [FLOW:TENANT_ONBOARDING] `lib/features/tenant_onboarding/view/poi_setup_screen.dart` | Step 3/4: Destination & Travel Distance (Merged POI & Distance)
+4. [FLOW:TENANT_ONBOARDING] `lib/features/tenant_onboarding/view/topsis_weight_screen.dart` | Step 4/4: Preference Priority (TOPSIS Weights)
+
 

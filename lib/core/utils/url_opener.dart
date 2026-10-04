@@ -33,3 +33,32 @@ class UrlLauncherOpener implements UrlOpener {
     }
   }
 }
+
+/// Opens the device's default email client (e.g. Mail, Gmail) to the inbox
+/// without composing a new email.
+Future<bool> openEmailApp() async {
+  // On iOS, message:// opens the Mail app directly to the inbox.
+  final iosMailUri = Uri.parse('message://');
+  try {
+    if (await canLaunchUrl(iosMailUri)) {
+      return await launchUrl(iosMailUri, mode: LaunchMode.externalApplication);
+    }
+  } catch (_) {}
+
+  // General mailto: scheme with no recipient or parameters.
+  final mailtoUri = Uri(scheme: 'mailto');
+  try {
+    if (await canLaunchUrl(mailtoUri)) {
+      return await launchUrl(mailtoUri, mode: LaunchMode.externalApplication);
+    }
+    return await launchUrl(mailtoUri, mode: LaunchMode.externalApplication);
+  } catch (_) {}
+
+  // Webmail fallback
+  try {
+    final webmailUri = Uri.parse('https://mail.google.com');
+    return await launchUrl(webmailUri, mode: LaunchMode.externalApplication);
+  } catch (_) {
+    return false;
+  }
+}

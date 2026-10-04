@@ -20,5 +20,5 @@ abstract final class AppRadii {
 /// Fixed component sizes shared across screens.
 abstract final class AppSizes {
   static const double buttonHeight = 56;
-  static const double fieldHeight = 52;
+  static const double fieldHeight = 50;
 }

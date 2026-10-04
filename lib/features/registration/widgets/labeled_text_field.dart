@@ -58,44 +58,51 @@ class LabeledTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(label, style: AppTextStyles.label(context)),
-        SizedBox(height: AppSpacing.sm),
-        TextField(
-          controller: controller,
-          onChanged: onChanged,
-          keyboardType: keyboardType,
-          obscureText: obscureText,
-          maxLines: obscureText ? 1 : maxLines,
-          minLines: maxLines > 1 ? maxLines : null,
-          style: AppTextStyles.field(context),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: AppTextStyles.field(context).copyWith(color: context.appColors.hint),
-            prefixText: prefixText,
-            prefixStyle: AppTextStyles.field(context).copyWith(color: context.appColors.hint),
-            suffixIcon: onToggleObscure == null
-                ? null
-                : IconButton(
-                    onPressed: onToggleObscure,
-                    icon: Icon(
-                      obscureText
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      color: context.appColors.hint,
-                      size: 20,
+        const SizedBox(height: 6),
+        SizedBox(
+          height: maxLines == 1 && errorText == null ? AppSizes.fieldHeight : null,
+          child: TextField(
+            controller: controller,
+            onChanged: onChanged,
+            keyboardType: keyboardType,
+            obscureText: obscureText,
+            maxLines: obscureText ? 1 : maxLines,
+            minLines: maxLines > 1 ? maxLines : null,
+            style: AppTextStyles.field(context),
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: hint,
+              hintStyle: AppTextStyles.field(context).copyWith(color: context.appColors.hint),
+              prefixText: prefixText,
+              prefixStyle: AppTextStyles.field(context).copyWith(color: context.appColors.hint),
+              suffixIcon: onToggleObscure == null
+                  ? null
+                  : IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                      onPressed: onToggleObscure,
+                      icon: Icon(
+                        obscureText
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: context.appColors.hint,
+                        size: 20,
+                      ),
                     ),
-                  ),
-            filled: true,
-            fillColor: context.appColors.fieldFill,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
+              suffixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              filled: true,
+              fillColor: context.appColors.fieldFill,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              errorText: errorText,
+              errorStyle: const TextStyle(color: AppColors.destructive, fontSize: 12),
+              enabledBorder: _border(context.appColors.fieldBorder),
+              focusedBorder: _border(AppColors.accent),
+              errorBorder: _border(AppColors.destructive),
+              focusedErrorBorder: _border(AppColors.destructive),
             ),
-            errorText: errorText,
-            errorStyle: TextStyle(color: AppColors.destructive, fontSize: 12),
-            enabledBorder: _border(context.appColors.fieldBorder),
-            focusedBorder: _border(AppColors.accent),
-            errorBorder: _border(AppColors.destructive),
-            focusedErrorBorder: _border(AppColors.destructive),
           ),
         ),
       ],

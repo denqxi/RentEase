@@ -336,11 +336,22 @@ class _SignInCard extends StatelessWidget {
                   children: [
                     const _SignInLogoRow(),
                     SizedBox(height: AppSpacing.md),
-                    Text('Sign in', style: AppTextStyles.title(context)),
+                    Text(
+                      'Sign In',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: context.appColors.textPrimary,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Text(
-                      'Welcome back! continue your rental journey with RentEase.',
-                      style: AppTextStyles.body(context),
+                      'Continue your rental journey with RentEase.',
+                      style: AppTextStyles.body(context).copyWith(
+                        color: context.appColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -379,27 +390,27 @@ class _SignInCard extends StatelessWidget {
               SizedBox(height: AppSpacing.lg),
               SlideTransition(
                 position: buttonsSlide,
-                child: Column(
-                  children: [
-                    AppPrimaryButton(
-                      label: isLoading ? 'Signing in\u2026' : 'Sign In',
-                      onPressed: isLoading ? null : (onSignIn ?? () {}),
-                    ),
-                    SizedBox(height: AppSpacing.md),
-                    _CreateAccountRow(onCreateAccount: onCreateAccount),
-                  ],
+                child: AppPrimaryButton(
+                  label: isLoading ? 'Signing in\u2026' : 'Sign In',
+                  onPressed: isLoading ? null : (onSignIn ?? () {}),
                 ),
               ),
-              SizedBox(height: AppSpacing.md),
+              SizedBox(height: AppSpacing.lg),
               SlideTransition(
                 position: socialSlide,
                 child: Column(
                   children: [
                     const _OrDivider(),
                     SizedBox(height: AppSpacing.md),
-                    const _GoogleButton(),
-                    SizedBox(height: AppSpacing.sm),
-                    const _GuestButton(),
+                    Row(
+                      children: [
+                        const Expanded(child: _GoogleButton()),
+                        SizedBox(width: AppSpacing.sm),
+                        const Expanded(child: _GuestButton()),
+                      ],
+                    ),
+                    SizedBox(height: AppSpacing.lg),
+                    _CreateAccountRow(onCreateAccount: onCreateAccount),
                   ],
                 ),
               ),
@@ -475,11 +486,11 @@ class _SignInFields extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _FieldLabel(label: 'Email'),
+        const _FieldLabel(label: 'Email address'),
         SizedBox(height: AppSpacing.sm),
         _AuthTextField(
           controller: emailController,
-          hintText: 'you@email.com',
+          hintText: 'Enter your email',
           keyboardType: TextInputType.emailAddress,
         ),
         SizedBox(height: AppSpacing.md),
@@ -487,16 +498,20 @@ class _SignInFields extends StatelessWidget {
         SizedBox(height: AppSpacing.sm),
         _AuthTextField(
           controller: passwordController,
-          hintText: 'Your password',
+          hintText: 'Enter your password',
           obscureText: obscurePassword,
-          suffixIcon: GestureDetector(
-            onTap: onTogglePassword,
-            child: Icon(
-              obscurePassword
-                  ? Icons.visibility_off_outlined
-                  : Icons.visibility_outlined,
-              color: context.appColors.hint,
-              size: 20,
+          suffixIcon: Semantics(
+            button: true,
+            label: obscurePassword ? 'Show password' : 'Hide password',
+            child: GestureDetector(
+              onTap: onTogglePassword,
+              child: Icon(
+                obscurePassword
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                color: context.appColors.hint,
+                size: 20,
+              ),
             ),
           ),
         ),
@@ -600,7 +615,7 @@ class _RememberForgotRow extends StatelessWidget {
             onChanged: onChanged,
             activeColor: AppColors.primary,
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
             side: BorderSide(color: context.appColors.hint, width: 1.5),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
@@ -684,7 +699,7 @@ class _GoogleButton extends StatelessWidget {
             ),
             SizedBox(width: AppSpacing.sm),
             Text(
-              'Continue with Google',
+              'Google',
               style: AppTextStyles.body(context).copyWith(
                 color: context.appColors.textPrimary,
                 fontWeight: FontWeight.w600,
@@ -762,14 +777,19 @@ class _GuestButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.person_outline_rounded,
-              size: 20,
-              color: context.appColors.textPrimary,
+            Image.asset(
+              'assets/images/guesticon.png',
+              width: 20,
+              height: 20,
+              errorBuilder: (_, _, _) => Icon(
+                Icons.person_outline_rounded,
+                size: 20,
+                color: context.appColors.textPrimary,
+              ),
             ),
             SizedBox(width: AppSpacing.sm),
             Text(
-              'Continue as guest',
+              'Guest',
               style: AppTextStyles.body(context).copyWith(
                 color: context.appColors.textPrimary,
                 fontWeight: FontWeight.w600,

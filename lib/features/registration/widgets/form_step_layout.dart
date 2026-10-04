@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_dimensions.dart';
 import '../../../shared/widgets/app_button.dart';
 import 'step_header.dart';
 
@@ -17,6 +16,11 @@ class FormStepLayout extends StatelessWidget {
     required this.onContinue,
     required this.fields,
     this.footer,
+    this.padding = const EdgeInsets.fromLTRB(20, 16, 20, 16),
+    this.fieldSpacing = 12.0,
+    this.headerSpacing = 16.0,
+    this.buttonHeight = 52.0,
+    this.buttonRadius = 12.0,
     super.key,
   });
 
@@ -33,39 +37,56 @@ class FormStepLayout extends StatelessWidget {
   /// should stay attached to the action it gates rather than scroll away.
   final Widget? footer;
 
+  /// Outer form padding around header, fields, and bottom button.
+  final EdgeInsetsGeometry padding;
+
+  /// Vertical spacing between each consecutive field.
+  final double fieldSpacing;
+
+  /// Vertical spacing below the header block.
+  final double headerSpacing;
+
+  /// Primary button height.
+  final double buttonHeight;
+
+  /// Primary button corner radius.
+  final double buttonRadius;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.lg,
-      ),
+      padding: padding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           StepHeader(title: title, subtitle: subtitle),
-          SizedBox(height: AppSpacing.lg),
+          SizedBox(height: headerSpacing),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  for (final Widget field in fields) ...<Widget>[
-                    field,
-                    SizedBox(height: AppSpacing.md),
+                  for (int i = 0; i < fields.length; i++) ...<Widget>[
+                    fields[i],
+                    if (i < fields.length - 1)
+                      SizedBox(height: fieldSpacing),
                   ],
                 ],
               ),
             ),
           ),
           if (footer != null) ...<Widget>[
+            const SizedBox(height: 12),
             footer!,
-            SizedBox(height: AppSpacing.md),
+            const SizedBox(height: 12),
           ] else
-            SizedBox(height: AppSpacing.sm),
-          AppPrimaryButton(label: buttonLabel, onPressed: onContinue),
+            const SizedBox(height: 12),
+          AppPrimaryButton(
+            label: buttonLabel,
+            onPressed: onContinue,
+            height: buttonHeight,
+            borderRadius: buttonRadius,
+          ),
         ],
       ),
     );

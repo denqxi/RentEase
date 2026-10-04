@@ -84,6 +84,8 @@ flutter:
   assets:
     - assets/images/
     - assets/images/email.json
+    - assets/images/match_transition.json
+    - assets/images/check_success.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

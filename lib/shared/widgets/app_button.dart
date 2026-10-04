@@ -210,6 +210,8 @@ class AppPrimaryButton extends StatelessWidget {
   const AppPrimaryButton({
     required this.label,
     required this.onPressed,
+    this.height,
+    this.borderRadius,
     super.key,
   });
 
@@ -219,13 +221,19 @@ class AppPrimaryButton extends StatelessWidget {
   /// Tapped callback. When null, the button renders disabled.
   final VoidCallback? onPressed;
 
+  /// Optional height override (defaults to [AppSizes.buttonHeight]).
+  final double? height;
+
+  /// Optional border radius override (defaults to [AppRadii.button]).
+  final double? borderRadius;
+
   @override
   Widget build(BuildContext context) {
     final inkColor = context.appColors.ink;
 
     return SizedBox(
       width: double.infinity,
-      height: AppSizes.buttonHeight,
+      height: height ?? AppSizes.buttonHeight,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ButtonStyle(
@@ -262,7 +270,7 @@ class AppPrimaryButton extends StatelessWidget {
           ),
           shape: WidgetStateProperty.all(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.button),
+              borderRadius: BorderRadius.circular(borderRadius ?? AppRadii.button),
             ),
           ),
         ),

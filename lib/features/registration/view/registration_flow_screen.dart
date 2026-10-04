@@ -121,6 +121,9 @@ class RegistrationFlowScreen extends StatelessWidget {
       RegistrationStep.property => const PropertyStepView(),
       RegistrationStep.idealTenant => const IdealTenantStepView(),
       RegistrationStep.success => SuccessView(
+          isOwner: context.read<RegistrationCubit>().state.data.role ==
+              UserRole.landlord,
+          onBackToStart: context.read<RegistrationCubit>().restart,
           onExplore: () => onComplete(
             context.read<RegistrationCubit>().state.data.role ??
                 UserRole.tenant,

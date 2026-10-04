@@ -8,6 +8,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/url_opener.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../features/registration/widgets/registration_app_bar.dart';
 import '../bloc/auth_bloc.dart';
@@ -156,13 +157,14 @@ class _EmailVerificationBodyState extends State<_EmailVerificationBody>
   late final Animation<Offset> _buttonSlide;
   late final Animation<double> _buttonFade;
 
-  // Resend countdown (30s) — presentational throttle only.
-  int _resendCountdown = 0;
+  // Resend countdown (45s) — anti-spam throttle on screen open and after resend.
+  int _resendCountdown = 45;
   Timer? _countdownTimer;
 
   @override
   void initState() {
     super.initState();
+    _startCountdown(45);
     _animCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 8000),
@@ -206,30 +208,43 @@ class _EmailVerificationBodyState extends State<_EmailVerificationBody>
 
   @override
   void dispose() {
-    _animCtrl.dispose();
     _countdownTimer?.cancel();
+    _animCtrl.dispose();
     super.dispose();
   }
 
-  void _resend() {
-    if (_resendCountdown > 0) return;
-    widget.onResend();
-    setState(() => _resendCountdown = 30);
+  void _startCountdown(int seconds) {
     _countdownTimer?.cancel();
+    setState(() => _resendCountdown = seconds);
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
       }
-      setState(() {
-        if (_resendCountdown > 1) {
-          _resendCountdown--;
-        } else {
-          _resendCountdown = 0;
-          timer.cancel();
-        }
-      });
+      if (_resendCountdown > 1) {
+        setState(() => _resendCountdown--);
+      } else {
+        setState(() => _resendCountdown = 0);
+        timer.cancel();
+      }
     });
+  }
+
+  void _resend() {
+    if (_resendCountdown > 0) return;
+    widget.onResend();
+    _startCountdown(45);
+  }
+
+  Future<void> _handleOpenEmailApp() async {
+    final opened = await openEmailApp();
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open email app. Please check your inbox.'),
+        ),
+      );
+    }
   }
 
   @override
@@ -358,8 +373,8 @@ class _EmailVerificationBodyState extends State<_EmailVerificationBody>
                     child: Column(
                       children: [
                         AppPrimaryButton(
-                          label: "I've verified my email",
-                          onPressed: widget.onContinue,
+                          label: 'Open email app',
+                          onPressed: _handleOpenEmailApp,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         GestureDetector(
