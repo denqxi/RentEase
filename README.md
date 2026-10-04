@@ -13,14 +13,18 @@ is only enabled once both sides pass the bilateral filter.
 ## Stack
 
 - **Frontend:** Flutter (Dart), BLoC/Cubit for state
-- **Backend:** Firebase — Authentication, Cloud Firestore, Storage (photos/
-  documents, not yet enabled), Cloud Messaging (not yet wired)
+- **Backend:** Firebase — Authentication, Cloud Firestore. No Cloud
+  Functions and no FCM push (both need a paid plan); in-app `notifications`
+  docs stand in for push alerts.
+- **Media:** Cloudinary (unsigned upload presets) for property photos and
+  owner verification documents — not Firebase Storage.
 - **Matching engine:** runs client-side in Dart (no Cloud Functions) —
   `FilteringService` for bilateral eligibility, `TopsisService` for ranking.
   See `CLAUDE.md` for the full architecture and the rules this project is
   built around.
-- **Maps:** Google Maps SDK for pin placement/display; `latlong2` (Haversine)
-  for the actual distance calculation used in matching, not the Maps API
+- **Maps:** `flutter_map` + OpenStreetMap tiles for pin placement/display;
+  `latlong2` (Haversine) for the actual distance calculation used in
+  matching, not a maps routing/distance API.
 
 ## Getting started
 
@@ -39,45 +43,54 @@ emulator from `firestore-tests/` (`npm test`, requires
 
 **Working end to end, backed by real Firestore data:**
 - Tenant onboarding → bilateral filtering → TOPSIS ranking → Home/Search
-- Owner onboarding (admin approval) → property listing → Find Tenants
+- Owner onboarding → property listing (live immediately, unverified or not)
+  → Find Tenants
+- Owner verification is a trust-signal badge only: it gates nothing for
+  `none`/`pending`/`verified` owners. A `rejected` status is the one
+  exception — it blocks listing, inviting, and chatting.
+- Admin screens (login, analytics, pending verifications with a document
+  viewer, user/property management) — no self-registration
 - Guest browsing (no account) with gated saving/inquiries/profile
 - Structured two-phase inquiries: Send Inquiry → owner Accept/Decline →
-  live chat → Mark as Booked → ratings
+  live chat → Mark as Booked → ratings, plus owner-initiated invites
+- Contact privacy: email/phone live in a private subdoc; a phone number is
+  shared per-inquiry only after acceptance, with a consent notice shown
+  first
 - Tenant profile/weight editing and owner property editing, both re-running
   the matching engine on save
+- Property photos and verification documents upload to Cloudinary
 
 **Still mock data / not built:**
-- Landlord home dashboard (the owner's main screen)
-- Admin screens (verification is console/script-only for now)
-- Firebase Storage uploads (needs the paid Blaze plan)
-- Push notifications, owner-initiated invites, rating aggregation into
-  credibility scores
+- Rating aggregation into tenant credibility scores
+- Cloud Functions / push notifications (permanently out of scope — no paid
+  plan; in-app `notifications` docs cover alerts instead)
 
 ## Recent branch work (`samson`)
-
-This branch merged in a separate UI-focused branch (`dumadapat`: splash
-video, onboarding carousel, new app icons, guest browsing) on top of this
-branch's Firebase backend work, then closed the gaps that merge left and
-built out everything that was still mock data:
 
 - **Removed the owner-side TOPSIS instance** (`ownerCi`/`ownerRank`, the
   owner weight-slider step, "Edit ranking") — the paper no longer describes
   a second instance, so owner-side tenant discovery is filtering-only.
-- **Reconciled the UI merge**: kept this branch's real Firebase-backed auth/
-  registration (the other branch predated the backend and wrote to
-  `MockData`), took the genuine UI improvements, fixed a mis-added "Guest"
-  role-picker option and a missing/broken guest entry point.
 - **Fixed a matching bug**: a booked/unlisted/unverified property's match
   row could survive indefinitely instead of being dropped, so it kept
   appearing as inquirable. Fixed in filtering, the UI, and the rules.
-- **Built `InquiryService`**: the entire two-phase inquiry flow was
-  `MockData`-only before this; it's now real, including the "fills my last
-  vacancy" booking flow that takes a listing off the market atomically.
-- **Wired up Search**: was 100% mock; now reads real ranked matches with a
-  working text search and session filter.
+- **Built `InquiryService`**: the entire two-phase inquiry flow is now
+  real, including the "fills my last vacancy" booking flow that takes a
+  listing off the market atomically.
+- **Reworked owner verification into a badge-only trust signal**: dropped
+  the earlier "unverified owners are hidden/gated" design — listings,
+  inquiries, invites, and chat all work regardless of verification status,
+  with a `rejected` status as the one feature-blocking exception
+  (`ownerNotRejected()` in `firestore.rules`).
+- **Added contact privacy**: moved email/phone out of the world-readable
+  user doc into a private subdoc; phone numbers are now shared per-inquiry
+  only after acceptance.
+- **Migrated off paid-plan-only Firebase features**: Cloudinary replaces
+  Firebase Storage for photo/document uploads; `flutter_map` +
+  OpenStreetMap replaces the Google Maps SDK; Cloud Functions stay
+  permanently out of scope, with `firestore.rules` doing the independent
+  server-side eligibility checks instead.
 - **Made the edit screens save**: tenant preference/weight editing and
-  owner property editing previously did nothing on "Save changes" — now
-  they persist and re-trigger matching.
+  owner property editing persist and re-trigger matching on save.
 
 See `CLAUDE.md` for the full set of architectural rules and invariants this
 project is held to (color tokens, the client-side matching engine, the
