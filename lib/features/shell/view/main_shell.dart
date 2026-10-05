@@ -19,6 +19,7 @@ import '../../matching/data/repositories/topsis_repository_impl.dart';
 import '../../matching/domain/services/filtering_service.dart';
 import '../../matching/domain/services/topsis_service.dart';
 import '../../profile/cubit/profile_cubit.dart';
+import '../../saved/data/repositories/saved_listings_repository_impl.dart';
 import '../../profile/view/profile_screen.dart';
 import '../cubit/shell_cubit.dart';
 import '../widgets/floating_nav_bar.dart';
@@ -51,8 +52,11 @@ class MainShell extends StatelessWidget {
             return HomeCubit(
               tenantId: tenantId,
               repository: HomeRepositoryImpl(),
-              filteringService: FilteringService(repository: FilteringRepositoryImpl()),
+              filteringService: FilteringService(
+                repository: FilteringRepositoryImpl(),
+              ),
               topsisService: TopsisService(repository: TopsisRepositoryImpl()),
+              savedRepository: SavedListingsRepositoryImpl(),
             );
           },
         ),
@@ -117,25 +121,31 @@ class _ShellView extends StatelessWidget {
       (c) => c.state.unreadCount,
     );
 
-    return Scaffold(
-      extendBody: true,
-      body: IndexedStack(
-        index: tab.index,
-        children: _screens,
+    return BlocListener<HomeCubit, HomeState>(
+      // A heart write failed and was rolled back (the cubit bumps the counter).
+      listenWhen: (prev, curr) => prev.saveFailures != curr.saveFailures,
+      listener: (context, _) => ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't update your saved listings. Try again."),
+        ),
       ),
-      bottomNavigationBar: FloatingNavBar(
-        items: _items(unread),
-        selectedIndex: tab.index,
-        onTap: (i) {
-          final isGuest =
-              context.read<ProfileCubit>().state.userRole == UserRole.guest;
-          // Inquiries (2), Alerts (3), Profile (4) require an account.
-          if (isGuest && i >= 2) {
-            GuestAccessSheet.show(context);
-            return;
-          }
-          context.read<ShellCubit>().selectTab(ShellTab.values[i]);
-        },
+      child: Scaffold(
+        extendBody: true,
+        body: IndexedStack(index: tab.index, children: _screens),
+        bottomNavigationBar: FloatingNavBar(
+          items: _items(unread),
+          selectedIndex: tab.index,
+          onTap: (i) {
+            final isGuest =
+                context.read<ProfileCubit>().state.userRole == UserRole.guest;
+            // Inquiries (2), Alerts (3), Profile (4) require an account.
+            if (isGuest && i >= 2) {
+              GuestAccessSheet.show(context);
+              return;
+            }
+            context.read<ShellCubit>().selectTab(ShellTab.values[i]);
+          },
+        ),
       ),
     );
   }

@@ -54,8 +54,18 @@ String inquiryDateLabel(DateTime? at) {
   return '${months[at.month - 1]} ${at.day}';
 }
 
-String fullNameOf(UserDoc? user, {required String fallback}) {
-  if (user == null) return fallback;
+/// Shown wherever a counterpart's users doc no longer exists (the account was
+/// deleted via Profile > Delete my account; inquiry records are kept).
+const String deletedUserName = 'Deleted user';
+
+/// Display name of [user]. A missing doc means a deleted account once the
+/// context has [loaded]; while it is still loading [fallback] is shown.
+String fullNameOf(
+  UserDoc? user, {
+  required String fallback,
+  bool loaded = true,
+}) {
+  if (user == null) return loaded ? deletedUserName : fallback;
   final name = '${user.firstName} ${user.lastName}'.trim();
   return name.isEmpty ? fallback : name;
 }

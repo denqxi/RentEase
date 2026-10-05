@@ -58,7 +58,8 @@ class OwnerPhase1View extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _SummaryRow('Name', fullNameOf(tenant, fallback: 'Tenant')),
+                    _SummaryRow('Name', fullNameOf(tenant,
+                        fallback: 'Tenant', loaded: !state.isLoading)),
                     _SummaryRow('Gender', orDash(tenant?.gender)),
                     _SummaryRow('School', orDash(profile?.school)),
                     _SummaryRow('Occupation', orDash(profile?.occupation)),

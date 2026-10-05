@@ -12,6 +12,8 @@ class ProfileMenuCard extends StatelessWidget {
     required this.onEditPreferences,
     this.onEditPriorities,
     this.onSoftPreferences,
+    this.onPrivacyNotice,
+    this.onDeleteAccount,
     super.key,
   });
 
@@ -23,6 +25,12 @@ class ProfileMenuCard extends StatelessWidget {
 
   /// Tenant-only row; hidden when null (owner profile).
   final VoidCallback? onSoftPreferences;
+
+  /// Opens the Privacy Notice; hidden when null.
+  final VoidCallback? onPrivacyNotice;
+
+  /// Opens Delete my account; hidden when null (guests).
+  final VoidCallback? onDeleteAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +70,18 @@ class ProfileMenuCard extends StatelessWidget {
           ],
           const _DarkModeRow(),
           const _Divider(),
+          if (onPrivacyNotice != null) ...[
+            _MenuRow(
+              icon: Icons.privacy_tip_outlined,
+              label: 'Privacy Notice',
+              onTap: onPrivacyNotice!,
+            ),
+            const _Divider(),
+          ],
+          if (onDeleteAccount != null) ...[
+            _DeleteAccountRow(onTap: onDeleteAccount!),
+            const _Divider(),
+          ],
           _LogOutRow(onTap: onLogout),
         ],
       ),
@@ -148,6 +168,53 @@ class _DarkModeRow extends StatelessWidget {
             onChanged: (_) => context.read<AppThemeCubit>().toggle(),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _DeleteAccountRow extends StatelessWidget {
+  const _DeleteAccountRow({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadii.card),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
+        child: Row(
+          children: <Widget>[
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.destructive.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.destructive,
+                size: 18,
+              ),
+            ),
+            SizedBox(width: AppSpacing.md),
+            Text(
+              'Delete my account',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: AppColors.destructive,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

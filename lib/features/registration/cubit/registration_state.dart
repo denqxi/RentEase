@@ -16,6 +16,10 @@ class RegistrationState extends Equatable {
   /// The role step requires a selection before "Continue" is enabled.
   bool get canContinueFromRole => data.role != null;
 
+  /// Validation message for the required 18+ confirmation; null when ticked.
+  String? get ageConfirmationError =>
+      data.ageConfirmed ? null : AppStrings.ageConfirmationRequired;
+
   /// Total number of progress-tracked form steps for the selected role.
   int get formStepCount => 1;
 

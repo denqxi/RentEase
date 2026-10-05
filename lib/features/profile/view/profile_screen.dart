@@ -6,6 +6,9 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/router/app_router.dart';
 import '../../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../../features/home/cubit/home_cubit.dart';
+import '../../account_deletion/presentation/screens/delete_account_screen.dart';
+import '../../auth/presentation/current_uid.dart';
+import '../../auth/presentation/screens/privacy_notice_screen.dart';
 import '../../registration/model/user_role.dart';
 import '../cubit/profile_cubit.dart';
 import '../widgets/profile_menu_card.dart';
@@ -116,6 +119,16 @@ class ProfileScreen extends StatelessWidget {
                     context,
                     const EditTopsisScreen(),
                   ),
+                  onPrivacyNotice: () => PrivacyNoticeScreen.open(context),
+                  // Real tenants only: not guests, never admins.
+                  onDeleteAccount: state.userRole == UserRole.tenant &&
+                          currentUidOrNull(context) != null
+                      ? () => DeleteAccountScreen.open(
+                            context,
+                            uid: currentUidOrNull(context)!,
+                            isOwner: false,
+                          )
+                      : null,
                   onSoftPreferences: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => const SoftPreferencesScreen(),
@@ -257,7 +270,7 @@ class _StatsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final home = context.watch<HomeCubit>().state;
-    final savedCount = home.saved.length;
+    final savedCount = home.savedIds.length;
     final inquiryCount = context.select<ProfileCubit, int>(
       (c) => c.state.inquiryCount,
     );

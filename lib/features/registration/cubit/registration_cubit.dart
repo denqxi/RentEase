@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/constants/app_strings.dart';
 import '../model/lifestyle_preference.dart';
 import '../model/property_type.dart';
 import '../model/registration_data.dart';
@@ -78,6 +79,9 @@ class RegistrationCubit extends Cubit<RegistrationState> {
 
   void updatePassword(String value) =>
       emit(state.copyWith(data: state.data.copyWith(password: value)));
+
+  void setAgeConfirmed(bool value) =>
+      emit(state.copyWith(data: state.data.copyWith(ageConfirmed: value)));
 
   // ── About-you step ─────────────────────────────────────────────────────────
 

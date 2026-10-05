@@ -10,6 +10,7 @@ import '../../registration/model/user_role.dart';
 import '../cubit/home_cubit.dart';
 import '../widgets/home_header.dart';
 import '../widgets/nearby_section.dart';
+import '../widgets/other_listings_section.dart';
 import '../widgets/recommended_section.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -61,17 +62,36 @@ class HomeScreen extends StatelessWidget {
                       hasScrollBody: false,
                       child: Center(child: CircularProgressIndicator()),
                     )
-                  else if (state.listings.isEmpty)
+                  else if (state.listings.isEmpty && isGuest)
                     SliverFillRemaining(
                       hasScrollBody: false,
                       child: _EmptyState(isGuest: isGuest),
                     )
-                  else ...[
+                  else if (state.listings.isEmpty) ...[
+                    // No compatible properties: still show the separate
+                    // "Other listings" section below the empty state.
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.lg,
+                        ),
+                        child: _EmptyState(isGuest: isGuest),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: OtherListingsSection()),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: AppSpacing.lg),
+                    ),
+                  ] else ...[
                     const SliverToBoxAdapter(child: RecommendedSection()),
                     const SliverToBoxAdapter(
                       child: SizedBox(height: AppSpacing.lg),
                     ),
                     const SliverToBoxAdapter(child: NearbySection()),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: AppSpacing.lg),
+                    ),
+                    const SliverToBoxAdapter(child: OtherListingsSection()),
                     const SliverToBoxAdapter(
                       child: SizedBox(height: AppSpacing.lg),
                     ),

@@ -44,8 +44,8 @@ class Listing extends Equatable {
   Color get matchDotColor =>
       matchPercent >= 80 ? AppColors.matchHigh : AppColors.matchMedium;
 
-  /// Returns a copy with [isSaved] overridden.
-  Listing copyWith({bool? isSaved}) {
+  /// Returns a copy with [isSaved] / [matchPercent] overridden.
+  Listing copyWith({bool? isSaved, int? matchPercent}) {
     return Listing(
       id: id,
       title: title,
@@ -53,7 +53,7 @@ class Listing extends Equatable {
       pricePerMonth: pricePerMonth,
       beds: beds,
       baths: baths,
-      matchPercent: matchPercent,
+      matchPercent: matchPercent ?? this.matchPercent,
       amenityScore: amenityScore,
       sqft: sqft,
       isSaved: isSaved ?? this.isSaved,

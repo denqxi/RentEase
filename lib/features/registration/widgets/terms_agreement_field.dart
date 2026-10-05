@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../auth/presentation/screens/privacy_notice_screen.dart';
 import '../../auth/presentation/screens/terms_and_conditions_screen.dart';
 
 /// Checkbox row requiring the user to accept the terms and agreement before
@@ -57,6 +58,22 @@ class TermsAgreementField extends StatelessWidget {
                       ),
                       child: Text(
                         'Terms and Agreement',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const TextSpan(text: ' and '),
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
+                    child: GestureDetector(
+                      onTap: () => PrivacyNoticeScreen.open(context),
+                      child: Text(
+                        'Privacy Notice',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 13,

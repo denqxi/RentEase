@@ -31,6 +31,7 @@ class AuthSignUpRequested extends AuthEvent {
     required this.gender,
     required this.phone,
     required this.role,
+    this.ageConfirmed = false,
   });
 
   final String email;
@@ -45,9 +46,12 @@ class AuthSignUpRequested extends AuthEvent {
   /// 'tenant' | 'owner'.
   final String role;
 
+  /// The user ticked "I am at least 18 and have read the Privacy Notice".
+  final bool ageConfirmed;
+
   @override
   List<Object?> get props =>
-      [email, password, firstName, lastName, gender, phone, role];
+      [email, password, firstName, lastName, gender, phone, role, ageConfirmed];
 }
 
 class AuthSignOutRequested extends AuthEvent {

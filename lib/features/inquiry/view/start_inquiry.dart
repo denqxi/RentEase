@@ -70,7 +70,7 @@ Future<void> startInquiry(
   } catch (e) {
     messenger.showSnackBar(
       SnackBar(
-        content: Text(e.toString().replaceFirst('Exception: ', '')),
+        content: Text(inquiryErrorMessage(e)),
         backgroundColor: AppColors.destructive,
       ),
     );

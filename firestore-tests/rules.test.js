@@ -29,7 +29,7 @@ before(async () => {
     firestore: {
       rules: fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8'),
       host: 'localhost',
-      port: 8080,
+      port: Number((process.env.FIRESTORE_EMULATOR_HOST || 'localhost:8080').split(':')[1]),
     },
   });
 });
@@ -50,13 +50,13 @@ async function seed(fn) {
 }
 
 function asTenant(uid) {
-  return testEnv.authenticatedContext(uid, { role: 'tenant' }).firestore();
+  return testEnv.authenticatedContext(uid, { role: 'tenant', email_verified: true }).firestore();
 }
 function asOwner(uid) {
-  return testEnv.authenticatedContext(uid, { role: 'owner' }).firestore();
+  return testEnv.authenticatedContext(uid, { role: 'owner', email_verified: true }).firestore();
 }
 function asAdmin(uid) {
-  return testEnv.authenticatedContext(uid, { role: 'admin' }).firestore();
+  return testEnv.authenticatedContext(uid, { role: 'admin', email_verified: true }).firestore();
 }
 
 const TENANT_A = 'tenantA';
@@ -141,7 +141,7 @@ describe('tenantProfiles — read restricted to self, owners and admin', () => {
       });
     });
     await assertSucceeds(
-      asTenant(TENANT_A).doc('inquiries/inqPriv').set({
+      asTenant(TENANT_A).doc(`inquiries/${MATCH_ID}`).set({
         matchId: MATCH_ID, tenantId: TENANT_A, ownerId: OWNER_A, propertyId: PROPERTY,
         stage: 1, ownerDecision: 'pending',
       }),
@@ -505,7 +505,7 @@ describe('inquiries — only for a real bScore=1 match belonging to the exact pa
         .set({ tenantId: TENANT_A, ownerId: OWNER_A, propertyId: PROPERTY, bScore: 1 }),
     );
     await assertSucceeds(
-      asTenant(TENANT_A).doc('inquiries/inq1').set({
+      asTenant(TENANT_A).doc(`inquiries/${MATCH_ID}`).set({
         matchId: MATCH_ID,
         tenantId: TENANT_A,
         ownerId: OWNER_A,
@@ -523,7 +523,7 @@ describe('inquiries — only for a real bScore=1 match belonging to the exact pa
         .set({ tenantId: TENANT_A, ownerId: OWNER_A, propertyId: PROPERTY, bScore: 0 }),
     );
     await assertFails(
-      asTenant(TENANT_A).doc('inquiries/inq1').set({
+      asTenant(TENANT_A).doc(`inquiries/${MATCH_ID}`).set({
         matchId: MATCH_ID,
         tenantId: TENANT_A,
         ownerId: OWNER_A,
@@ -543,7 +543,7 @@ describe('inquiries — only for a real bScore=1 match belonging to the exact pa
     );
     // Tenant tries to use it to message a different owner/property.
     await assertFails(
-      asTenant(TENANT_A).doc('inquiries/inq1').set({
+      asTenant(TENANT_A).doc(`inquiries/${MATCH_ID}`).set({
         matchId: MATCH_ID,
         tenantId: TENANT_A,
         ownerId: OWNER_B,
@@ -718,18 +718,18 @@ describe('inquiries — the exact writes and queries InquiryService makes', () =
   it('both sides can rate once booked — never before', async () => {
     await seedInquiry({ stage: 2, ownerDecision: 'accepted', status: 'active' });
     await assertFails(
-      asTenant(TENANT_A).collection('ratings').add({
+      asTenant(TENANT_A).doc(`ratings/${INQ}_${TENANT_A}`).set({
         inquiryId: INQ, raterId: TENANT_A, ratedId: OWNER_A, raterRole: 'tenant', stars: 5,
       }),
     );
     await seedInquiry({ stage: 2, ownerDecision: 'accepted', status: 'booked' });
     await assertSucceeds(
-      asTenant(TENANT_A).collection('ratings').add({
+      asTenant(TENANT_A).doc(`ratings/${INQ}_${TENANT_A}`).set({
         inquiryId: INQ, raterId: TENANT_A, ratedId: OWNER_A, raterRole: 'tenant', stars: 5,
       }),
     );
     await assertSucceeds(
-      asOwner(OWNER_A).collection('ratings').add({
+      asOwner(OWNER_A).doc(`ratings/${INQ}_${OWNER_A}`).set({
         inquiryId: INQ, raterId: OWNER_A, ratedId: TENANT_A, raterRole: 'owner', stars: 4,
       }),
     );
@@ -789,12 +789,12 @@ describe('unverified owner\'s listing — in the pool and inquirable (bScore 1)'
 
   it('a tenant can inquire an unverified (pending) owner with a bScore 1 match', async () => {
     await seed((db) => db.doc(`matches/${LIVE_MATCH}`).set(matchRow));
-    await assertSucceeds(asTenant(TENANT_A).doc('inquiries/inq1').set(inquiry));
+    await assertSucceeds(asTenant(TENANT_A).doc(`inquiries/${LIVE_MATCH}`).set(inquiry));
   });
 
   it('a tenant cannot inquire an unverified owner when the match is bScore 0', async () => {
     await seed((db) => db.doc(`matches/${LIVE_MATCH}`).set({ ...matchRow, bScore: 0 }));
-    await assertFails(asTenant(TENANT_A).doc('inquiries/inq1').set(inquiry));
+    await assertFails(asTenant(TENANT_A).doc(`inquiries/${LIVE_MATCH}`).set(inquiry));
   });
 
   it('a tenant can inquire once the owner is verified', async () => {
@@ -802,7 +802,7 @@ describe('unverified owner\'s listing — in the pool and inquirable (bScore 1)'
       await db.doc(`ownerProfiles/${OWNER_B}`).set({ verificationStatus: 'verified' });
       await db.doc(`matches/${LIVE_MATCH}`).set(matchRow);
     });
-    await assertSucceeds(asTenant(TENANT_A).doc('inquiries/inq1').set(inquiry));
+    await assertSucceeds(asTenant(TENANT_A).doc(`inquiries/${LIVE_MATCH}`).set(inquiry));
   });
 });
 
@@ -842,24 +842,25 @@ describe('inquiries/invites — rules re-derive non-distance eligibility (bScore
     it(`parity: ${c.name} -> ${c.ok ? 'allowed' : 'denied'} (tenant inquiry + owner invite)`, async () => {
       await seedPair(c.tp, c.prop, c.gender);
       const run = c.ok ? assertSucceeds : assertFails;
-      await run(asTenant(TENANT_A).doc('inquiries/inqP').set(inq));
+      await run(asTenant(TENANT_A).doc(`inquiries/${PM}`).set(inq));
+      await seed((db) => db.doc(`inquiries/${PM}`).delete());
       await run(asOwner(OWNER_A).doc(`inquiries/${PM}`).set(invite));
     });
   }
 
   it('stale match: owner edits property to disallow pets after the match -> inquiry and invite denied', async () => {
     await seedPair({ hasPet: true }, { petsAllowed: true }, 'Female');
-    await assertSucceeds(asTenant(TENANT_A).doc('inquiries/inqP').set(inq));
-    await seed((db) => db.doc('inquiries/inqP').delete());
+    await assertSucceeds(asTenant(TENANT_A).doc(`inquiries/${PM}`).set(inq));
+    await seed((db) => db.doc(`inquiries/${PM}`).delete());
     await seed((db) => db.doc(`properties/${P}`).update({ petsAllowed: false }));
-    await assertFails(asTenant(TENANT_A).doc('inquiries/inqP').set(inq));
+    await assertFails(asTenant(TENANT_A).doc(`inquiries/${PM}`).set(inq));
     await assertFails(asOwner(OWNER_A).doc(`inquiries/${PM}`).set(invite));
   });
 
   it('missing tenantProfile -> inquiry and invite denied even with a bScore=1 row', async () => {
     await seedPair({}, {}, '');
     await seed((db) => db.doc(`tenantProfiles/${TENANT_A}`).delete());
-    await assertFails(asTenant(TENANT_A).doc('inquiries/inqP').set(inq));
+    await assertFails(asTenant(TENANT_A).doc(`inquiries/${PM}`).set(inq));
     await assertFails(asOwner(OWNER_A).doc(`inquiries/${PM}`).set(invite));
   });
 
@@ -868,9 +869,9 @@ describe('inquiries/invites — rules re-derive non-distance eligibility (bScore
     await seedPair(
       { maxDistanceKm: 5, poiLatLng: new GeoPoint(7.3, 125.6) },
       { location: new GeoPoint(7.0, 125.6) }, '');
-    await assertFails(asTenant(TENANT_A).doc('inquiries/inqP').set(inq)); // ~33 km
+    await assertFails(asTenant(TENANT_A).doc(`inquiries/${PM}`).set(inq)); // ~33 km
     await seed((db) => db.doc(`tenantProfiles/${TENANT_A}`).update({ maxDistanceKm: 40 }));
-    await assertSucceeds(asTenant(TENANT_A).doc('inquiries/inqP').set(inq));
+    await assertSucceeds(asTenant(TENANT_A).doc(`inquiries/${PM}`).set(inq));
   });
 
   it('matches: forged bScore=1 denied when incompatible; bScore 0 and compatible rows allowed', async () => {
@@ -906,7 +907,7 @@ describe('messages — participants only, free chat gated to stage 2 accepted', 
     await seed((db) =>
       db
         .doc('inquiries/inq1/messages/m1')
-        .set({ senderId: TENANT_A, isAutoGenerated: false }),
+        .set({ senderId: TENANT_A, senderRole: 'tenant', content: 'hi', isAutoGenerated: false }),
     );
     await assertFails(asTenant(TENANT_B).doc('inquiries/inq1/messages/m1').get());
     await assertSucceeds(asTenant(TENANT_A).doc('inquiries/inq1/messages/m1').get());
@@ -917,7 +918,7 @@ describe('messages — participants only, free chat gated to stage 2 accepted', 
     await assertFails(
       asTenant(TENANT_A)
         .doc('inquiries/inq1/messages/m1')
-        .set({ senderId: TENANT_A, isAutoGenerated: false }),
+        .set({ senderId: TENANT_A, senderRole: 'tenant', content: 'hi', isAutoGenerated: false }),
     );
   });
 
@@ -931,7 +932,7 @@ describe('messages — participants only, free chat gated to stage 2 accepted', 
       );
       await assertFails(
         asTenant(TENANT_A).doc('inquiries/inq1/messages/m1')
-          .set({ senderId: TENANT_A, isAutoGenerated: false }),
+          .set({ senderId: TENANT_A, senderRole: 'tenant', content: 'hi', isAutoGenerated: false }),
       );
     }
   });
@@ -941,7 +942,7 @@ describe('messages — participants only, free chat gated to stage 2 accepted', 
     await assertSucceeds(
       asTenant(TENANT_A)
         .doc('inquiries/inq1/messages/m1')
-        .set({ senderId: TENANT_A, isAutoGenerated: false }),
+        .set({ senderId: TENANT_A, senderRole: 'tenant', content: 'hi', isAutoGenerated: false }),
     );
   });
 });
@@ -1119,7 +1120,7 @@ describe('admin — broad read/write for moderation collections', () => {
 
 describe('ownerProfiles/{uid}/private/documents � private verification links', () => {
   const DOCS = {
-    documentUrls: ['https://x/a.jpg', 'https://x/b.jpg'],
+    documentUrls: ['https://res.cloudinary.com/d/a.jpg', 'https://res.cloudinary.com/d/b.jpg'],
     documentPublicIds: ['a', 'b'],
   };
   const path = (uid) => `ownerProfiles/${uid}/private/documents`;
@@ -1140,7 +1141,7 @@ describe('ownerProfiles/{uid}/private/documents � private verification links',
   it('owner can submit three documents (optional business permit)', async () => {
     await assertSucceeds(
       asOwner(OWNER_B).doc(path(OWNER_B)).set({
-        documentUrls: ['https://x/a.jpg', 'https://x/b.jpg', 'https://x/c.jpg'],
+        documentUrls: ['https://res.cloudinary.com/d/a.jpg', 'https://res.cloudinary.com/d/b.jpg', 'https://res.cloudinary.com/d/c.jpg'],
         documentPublicIds: ['a', 'b', 'c'],
       }),
     );
@@ -1149,7 +1150,7 @@ describe('ownerProfiles/{uid}/private/documents � private verification links',
   it('owner cannot submit fewer than two documents', async () => {
     await assertFails(
       asOwner(OWNER_B).doc(path(OWNER_B)).set({
-        documentUrls: ['https://x/a.jpg'],
+        documentUrls: ['https://res.cloudinary.com/d/a.jpg'],
         documentPublicIds: ['a'],
       }),
     );
@@ -1189,9 +1190,10 @@ describe('ownerProfiles/{uid}/private/documents � private verification links',
     await assertSucceeds(asAdmin(ADMIN).doc(path(OWNER_B)).delete());
   });
 
-  it('owner cannot delete their docs', async () => {
+  it('owner can delete their own docs (account deletion); another owner cannot', async () => {
     await seed((db) => db.doc(path(OWNER_B)).set(DOCS));
-    await assertFails(asOwner(OWNER_B).doc(path(OWNER_B)).delete());
+    await assertFails(asOwner(OWNER_A).doc(path(OWNER_B)).delete());
+    await assertSucceeds(asOwner(OWNER_B).doc(path(OWNER_B)).delete());
   });
 
   it('a tenant can still read the public ownerProfiles doc', async () => {
@@ -1985,18 +1987,206 @@ describe('tenant private prefs — POI pin and weights hidden from owners', () =
     });
 
     it('no prefs doc -> bound skipped; far pin -> denied; near pin -> allowed (inquiry and invite)', async () => {
-      await assertSucceeds(asTenant(TENANT_A).doc('inquiries/i1').set(inq));
-      await seed((db) => db.doc('inquiries/i1').delete());
+      await assertSucceeds(asTenant(TENANT_A).doc(`inquiries/${PM}`).set(inq));
+      await seed((db) => db.doc(`inquiries/${PM}`).delete());
       await seed((db) => db.doc(prefsPath(TENANT_A)).set(prefs({ poiLatLng: new GeoPoint(7.3, 125.6) })));
-      await assertFails(asTenant(TENANT_A).doc('inquiries/i1').set(inq)); // ~33 km
+      await assertFails(asTenant(TENANT_A).doc(`inquiries/${PM}`).set(inq)); // ~33 km
       await assertFails(asOwner(OWNER_A).doc(`inquiries/${PM}`).set(invite));
       await assertFails(
         asTenant(TENANT_A).doc(`matches/${PM}`).update({ bScore: 1 }),
       );
       await seed((db) => db.doc(prefsPath(TENANT_A)).set(prefs({ poiLatLng: new GeoPoint(7.01, 125.6) })));
-      await assertSucceeds(asTenant(TENANT_A).doc('inquiries/i1').set(inq));
-      await seed((db) => db.doc('inquiries/i1').delete());
+      await assertSucceeds(asTenant(TENANT_A).doc(`inquiries/${PM}`).set(inq));
+      await seed((db) => db.doc(`inquiries/${PM}`).delete());
       await assertSucceeds(asOwner(OWNER_A).doc(`inquiries/${PM}`).set(invite));
     });
+  });
+});
+
+describe('saved listings — users/{uid}/savedListings/{propertyId}', () => {
+  beforeEach(seedUsersAndProfiles);
+  const savedDoc = (uid, id = PROPERTY) => `users/${uid}/savedListings/${id}`;
+  const SAVED = () => ({ propertyId: PROPERTY, savedAt: FieldValue.serverTimestamp() });
+
+  it('the user can create, read, list and delete their own saved listing', async () => {
+    const db = asTenant(TENANT_A);
+    await assertSucceeds(db.doc(savedDoc(TENANT_A)).set(SAVED()));
+    await assertSucceeds(db.doc(savedDoc(TENANT_A)).get());
+    await assertSucceeds(db.collection(`users/${TENANT_A}/savedListings`).get());
+    await assertSucceeds(db.doc(savedDoc(TENANT_A)).delete());
+  });
+
+  it('another user, an owner and guests cannot read or write it', async () => {
+    await seed(async (db) => db.doc(savedDoc(TENANT_A)).set({ propertyId: PROPERTY, savedAt: new Date() }));
+    await assertFails(asTenant(TENANT_B).doc(savedDoc(TENANT_A)).get());
+    await assertFails(asOwner(OWNER_A).doc(savedDoc(TENANT_A)).get());
+    await assertFails(asTenant(TENANT_B).doc(savedDoc(TENANT_A, 'other')).set({ propertyId: 'other', savedAt: FieldValue.serverTimestamp() }));
+    await assertFails(asTenant(TENANT_B).doc(savedDoc(TENANT_A)).delete());
+    const guest = testEnv.unauthenticatedContext().firestore();
+    await assertFails(guest.doc(savedDoc(TENANT_A)).get());
+    await assertFails(guest.doc(savedDoc(TENANT_A, 'g1')).set({ propertyId: 'g1', savedAt: FieldValue.serverTimestamp() }));
+  });
+
+  it('doc id must equal data.propertyId', async () => {
+    await assertFails(
+      asTenant(TENANT_A).doc(savedDoc(TENANT_A, 'prop2')).set(SAVED()),
+    );
+  });
+
+  it('keys must be exactly {propertyId, savedAt}', async () => {
+    const db = asTenant(TENANT_A);
+    await assertFails(db.doc(savedDoc(TENANT_A)).set({ ...SAVED(), note: 'x' }));
+    await assertFails(db.doc(savedDoc(TENANT_A)).set({ propertyId: PROPERTY }));
+    await assertFails(db.doc(savedDoc(TENANT_A)).set({ savedAt: FieldValue.serverTimestamp() }));
+  });
+
+  it('savedAt must be the server time (forged timestamps are denied)', async () => {
+    const db = asTenant(TENANT_A);
+    await assertFails(
+      db.doc(savedDoc(TENANT_A)).set({ propertyId: PROPERTY, savedAt: new Date('2020-01-01T00:00:00Z') }),
+    );
+    await assertFails(
+      db.doc(savedDoc(TENANT_A)).set({ propertyId: PROPERTY, savedAt: 'now' }),
+    );
+  });
+
+  it('updates are denied; unsave is delete', async () => {
+    await seed(async (db) => db.doc(savedDoc(TENANT_A)).set({ propertyId: PROPERTY, savedAt: new Date() }));
+    await assertFails(
+      asTenant(TENANT_A).doc(savedDoc(TENANT_A)).update({ savedAt: FieldValue.serverTimestamp() }),
+    );
+  });
+
+  it('admin can read but not write', async () => {
+    await seed(async (db) => db.doc(savedDoc(TENANT_A)).set({ propertyId: PROPERTY, savedAt: new Date() }));
+    await assertSucceeds(asAdmin(ADMIN).doc(savedDoc(TENANT_A)).get());
+    await assertFails(asAdmin(ADMIN).doc(savedDoc(TENANT_A)).delete());
+    await assertFails(asAdmin(ADMIN).doc(savedDoc(TENANT_A, 'p9')).set({ propertyId: 'p9', savedAt: FieldValue.serverTimestamp() }));
+  });
+
+  it('a suspended user cannot save or unsave but can still read', async () => {
+    await seed(async (db) => {
+      await db.doc(`users/${TENANT_A}`).set({ role: 'tenant', status: 'suspended' });
+      await db.doc(savedDoc(TENANT_A)).set({ propertyId: PROPERTY, savedAt: new Date() });
+    });
+    const db = asTenant(TENANT_A);
+    await assertFails(db.doc(savedDoc(TENANT_A, 'p2')).set({ propertyId: 'p2', savedAt: FieldValue.serverTimestamp() }));
+    await assertFails(db.doc(savedDoc(TENANT_A)).delete());
+    await assertSucceeds(db.doc(savedDoc(TENANT_A)).get());
+  });
+});
+
+
+// ---------- Privacy: 18+ stamp and self-service account deletion ----------
+describe('users.ageConfirmedAt (18+ confirmation, DPA)', () => {
+  it('sign-up may stamp ageConfirmedAt with the server time, or omit it', async () => {
+    await assertSucceeds(
+      asTenant('newT').doc('users/newT').set({
+        role: 'tenant', status: 'active', ageConfirmedAt: FieldValue.serverTimestamp(),
+      }),
+    );
+    await assertSucceeds(asOwner('newO').doc('users/newO').set({ role: 'owner', status: 'active' }));
+  });
+
+  it('a backdated or non-timestamp ageConfirmedAt is rejected', async () => {
+    await assertFails(
+      asTenant('newT').doc('users/newT').set({
+        role: 'tenant', status: 'active', ageConfirmedAt: new Date('2000-01-01'),
+      }),
+    );
+    await assertFails(
+      asTenant('newT').doc('users/newT').set({ role: 'tenant', status: 'active', ageConfirmedAt: true }),
+    );
+  });
+
+  it('the stamp is immutable on self update, other fields still update', async () => {
+    await seed((db) => db.doc(`users/${TENANT_A}`).set({
+      role: 'tenant', status: 'active', ageConfirmedAt: new Date('2026-01-01'),
+    }));
+    const db = asTenant(TENANT_A);
+    await assertFails(db.doc(`users/${TENANT_A}`).update({ ageConfirmedAt: FieldValue.serverTimestamp() }));
+    await assertFails(db.doc(`users/${TENANT_A}`).update({ ageConfirmedAt: FieldValue.delete() }));
+    await assertSucceeds(db.doc(`users/${TENANT_A}`).update({ lastLoginAt: FieldValue.serverTimestamp() }));
+  });
+});
+
+describe('self-service account deletion permissions', () => {
+  const NOTIF = 'notifications/n1';
+  beforeEach(async () => {
+    await seedUsersAndProfiles();
+    await seed(async (db) => {
+      await db.doc(`users/${TENANT_A}/private/contact`).set({ phone: '09' });
+      await db.doc(`users/${TENANT_A}/savedListings/${PROPERTY}`).set({ propertyId: PROPERTY, savedAt: new Date() });
+      await db.doc(`tenantProfiles/${TENANT_A}/private/prefs`).set({ wRent: 0.35 });
+      await db.doc(`matches/${MATCH_ID}`).set({ tenantId: TENANT_A, ownerId: OWNER_A, propertyId: PROPERTY, bScore: 1 });
+      await db.doc(NOTIF).set({ recipientId: TENANT_A, title: 't', body: 'b', isRead: false });
+      await db.doc(`users/${OWNER_A}/private/contact`).set({ phone: '09' });
+      await db.doc(`ownerProfiles/${OWNER_A}/private/documents`).set({ documentUrls: [] });
+      await db.doc(`properties/${PROPERTY}/rooms/r1`).set({ name: 'R' });
+    });
+  });
+
+  it('a tenant can delete every one of their own personal docs, users doc last', async () => {
+    const db = asTenant(TENANT_A);
+    await assertSucceeds(db.doc(`users/${TENANT_A}/private/contact`).delete());
+    await assertSucceeds(db.doc(`users/${TENANT_A}/savedListings/${PROPERTY}`).delete());
+    await assertSucceeds(db.doc(`tenantProfiles/${TENANT_A}/private/prefs`).delete());
+    await assertSucceeds(db.doc(`tenantProfiles/${TENANT_A}`).delete());
+    await assertSucceeds(db.doc(`matches/${MATCH_ID}`).delete());
+    await assertSucceeds(db.doc(NOTIF).delete());
+    await assertSucceeds(db.doc(`users/${TENANT_A}`).delete());
+  });
+
+  it("another user, an owner and a guest cannot delete a tenant's docs", async () => {
+    const guest = testEnv.unauthenticatedContext().firestore();
+    for (const who of [asTenant(TENANT_B), asOwner(OWNER_B), guest]) {
+      await assertFails(who.doc(`users/${TENANT_A}`).delete());
+      await assertFails(who.doc(`users/${TENANT_A}/private/contact`).delete());
+      await assertFails(who.doc(`users/${TENANT_A}/savedListings/${PROPERTY}`).delete());
+      await assertFails(who.doc(`tenantProfiles/${TENANT_A}`).delete());
+      await assertFails(who.doc(`tenantProfiles/${TENANT_A}/private/prefs`).delete());
+      await assertFails(who.doc(`matches/${MATCH_ID}`).delete());
+      await assertFails(who.doc(NOTIF).delete());
+    }
+  });
+
+  it('an owner can delete their rooms, then property, profile, documents and users doc', async () => {
+    const db = asOwner(OWNER_A);
+    await assertSucceeds(db.doc(`users/${OWNER_A}/private/contact`).delete());
+    await assertSucceeds(db.doc(`properties/${PROPERTY}/rooms/r1`).delete());
+    await assertSucceeds(db.doc(`properties/${PROPERTY}`).delete());
+    await assertSucceeds(db.doc(`ownerProfiles/${OWNER_A}/private/documents`).delete());
+    await assertSucceeds(db.doc(`ownerProfiles/${OWNER_A}`).delete());
+    await assertSucceeds(db.doc(`users/${OWNER_A}`).delete());
+  });
+
+  it('a rejected owner can still delete their listing and profile', async () => {
+    await seed((db) => db.doc(`ownerProfiles/${OWNER_A}`).set({ verificationStatus: 'rejected' }));
+    const db = asOwner(OWNER_A);
+    await assertSucceeds(db.doc(`properties/${PROPERTY}/rooms/r1`).delete());
+    await assertSucceeds(db.doc(`properties/${PROPERTY}`).delete());
+    await assertSucceeds(db.doc(`ownerProfiles/${OWNER_A}`).delete());
+  });
+
+  it("another owner, a tenant and a guest cannot delete an owner's docs", async () => {
+    const guest = testEnv.unauthenticatedContext().firestore();
+    for (const who of [asOwner(OWNER_B), asTenant(TENANT_A), guest]) {
+      await assertFails(who.doc(`users/${OWNER_A}`).delete());
+      await assertFails(who.doc(`users/${OWNER_A}/private/contact`).delete());
+      await assertFails(who.doc(`properties/${PROPERTY}`).delete());
+      await assertFails(who.doc(`properties/${PROPERTY}/rooms/r1`).delete());
+      await assertFails(who.doc(`ownerProfiles/${OWNER_A}`).delete());
+      await assertFails(who.doc(`ownerProfiles/${OWNER_A}/private/documents`).delete());
+    }
+  });
+
+  it('rooms stay non-writable by non-owners and admins still delete users', async () => {
+    await assertFails(asOwner(OWNER_B).doc(`properties/${PROPERTY}/rooms/r2`).set({ name: 'x' }));
+    await assertSucceeds(asAdmin(ADMIN).doc(`users/${TENANT_B}`).delete());
+  });
+
+  it('a suspended user cannot delete their own users doc', async () => {
+    await seed((db) => db.doc(`users/${TENANT_A}`).update({ status: 'suspended' }));
+    await assertFails(asTenant(TENANT_A).doc(`users/${TENANT_A}`).delete());
   });
 });

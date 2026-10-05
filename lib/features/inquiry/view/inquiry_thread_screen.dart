@@ -88,8 +88,10 @@ class _ThreadView extends StatelessWidget {
         }
 
         final counterpartName = isOwner
-            ? fullNameOf(state.tenant, fallback: 'Tenant')
-            : fullNameOf(state.owner, fallback: 'Property owner');
+            ? fullNameOf(state.tenant,
+                fallback: 'Tenant', loaded: !state.isLoading)
+            : fullNameOf(state.owner,
+                fallback: 'Property owner', loaded: !state.isLoading);
         final propertyTitle = state.property?.title ?? 'Listing';
 
         if (inquiry.stage == 2) {

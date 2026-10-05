@@ -16,6 +16,8 @@ class UserDoc {
     this.fcmToken,
     this.lastLoginAt,
     this.createdAt,
+    this.ageConfirmedAt,
+    this.confirmAgeNow = false,
     this.hasLegacyContact = false,
   });
 
@@ -44,6 +46,14 @@ class UserDoc {
   final Timestamp? lastLoginAt;
   final Timestamp? createdAt;
 
+  /// When the user confirmed they are at least 18 (server time, set once at
+  /// sign-up; absent on accounts created before the confirmation existed).
+  final Timestamp? ageConfirmedAt;
+
+  /// Create-time flag: [toMap] stamps `ageConfirmedAt` with the server time.
+  /// Never read back from Firestore.
+  final bool confirmAgeNow;
+
   /// True when the stored users doc still carries `phone` / `email` keys
   /// (written before contact moved to the private doc). Drives the
   /// best-effort self-migration at sign-in. Never serialised.
@@ -63,6 +73,8 @@ class UserDoc {
         fcmToken: fcmToken,
         lastLoginAt: lastLoginAt,
         createdAt: createdAt,
+        ageConfirmedAt: ageConfirmedAt,
+        confirmAgeNow: confirmAgeNow,
         hasLegacyContact: hasLegacyContact,
       );
 
@@ -80,6 +92,7 @@ class UserDoc {
         fcmToken: map['fcmToken'] as String?,
         lastLoginAt: map['lastLoginAt'] as Timestamp?,
         createdAt: map['createdAt'] as Timestamp?,
+        ageConfirmedAt: map['ageConfirmedAt'] as Timestamp?,
         hasLegacyContact: map.containsKey('phone') || map.containsKey('email'),
       );
 
@@ -97,5 +110,7 @@ class UserDoc {
         if (fcmToken != null) 'fcmToken': fcmToken,
         'lastLoginAt': lastLoginAt ?? FieldValue.serverTimestamp(),
         'createdAt': createdAt ?? FieldValue.serverTimestamp(),
+        // firestore.rules require this to equal request.time when present.
+        if (confirmAgeNow) 'ageConfirmedAt': FieldValue.serverTimestamp(),
       };
 }

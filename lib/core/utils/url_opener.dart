@@ -13,6 +13,8 @@ class UrlLauncherOpener implements UrlOpener {
 
   @override
   Future<bool> open(Uri uri) async {
+    // Allow-list: only https web pages and tel: dialer links ever launch.
+    if (uri.scheme != 'https' && uri.scheme != 'tel') return false;
     // Phone dialer links open in the dialer app, not an in-app browser tab.
     if (uri.scheme == 'tel') {
       try {

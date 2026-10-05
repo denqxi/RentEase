@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/utils/validators.dart';
 import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../cubit/registration_cubit.dart';
+import '../widgets/age_confirmation_field.dart';
 import '../widgets/form_step_layout.dart';
 import '../widgets/gender_select_field.dart';
 import '../widgets/labeled_text_field.dart';
@@ -30,6 +31,10 @@ class _AccountStepViewState extends State<AccountStepView> {
 
   void _handleContinue(BuildContext context) {
     final data = context.read<RegistrationCubit>().state.data;
+    if (!data.ageConfirmed) {
+      setState(() => _showErrors = true);
+      return;
+    }
     final hasErrors = Validators.required(data.firstName, field: 'First name') != null ||
         Validators.required(data.lastName, field: 'Last name') != null ||
         Validators.required(data.gender, field: 'Gender') != null ||
@@ -50,6 +55,7 @@ class _AccountStepViewState extends State<AccountStepView> {
             lastName: data.lastName.trim(),
             gender: data.gender,
             phone: data.phone.trim(),
+            ageConfirmed: data.ageConfirmed,
             role: 'tenant',
           ),
         );
@@ -70,9 +76,22 @@ class _AccountStepViewState extends State<AccountStepView> {
       onContinue: (_agreedToTerms && !isLoading)
           ? () => _handleContinue(context)
           : null,
-      footer: TermsAgreementField(
-        value: _agreedToTerms,
-        onChanged: (v) => setState(() => _agreedToTerms = v),
+      footer: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TermsAgreementField(
+            value: _agreedToTerms,
+            onChanged: (v) => setState(() => _agreedToTerms = v),
+          ),
+          const SizedBox(height: 12),
+          AgeConfirmationField(
+            value: data.ageConfirmed,
+            onChanged: cubit.setAgeConfirmed,
+            errorText: _showErrors
+                ? context.read<RegistrationCubit>().state.ageConfirmationError
+                : null,
+          ),
+        ],
       ),
       fields: <Widget>[
         LabeledTextField(

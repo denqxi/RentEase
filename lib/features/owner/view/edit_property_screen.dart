@@ -263,10 +263,10 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
 
             _SectionLabel('PROPERTY DETAILS'),
             _FieldLabel('Property name'),
-            _TextInput(controller: _nameController, hint: 'e.g. Sunshine Boarding House'),
+            _TextInput(controller: _nameController, hint: 'e.g. Sunshine Boarding House', maxLength: 120),
             SizedBox(height: AppSpacing.md),
             _FieldLabel('Address'),
-            _TextInput(controller: _addressController, hint: 'Street, barangay, Davao City'),
+            _TextInput(controller: _addressController, hint: 'Street, barangay, Davao City', maxLength: 300),
             SizedBox(height: AppSpacing.lg),
 
             _SectionLabel('PRICING'),
@@ -467,20 +467,26 @@ class _TextInput extends StatelessWidget {
     required this.controller,
     required this.hint,
     this.keyboardType,
+    this.maxLength,
   });
 
   final TextEditingController controller;
   final String hint;
   final TextInputType? keyboardType;
 
+  /// Hard cap on typed characters (mirrors the length caps in firestore.rules).
+  final int? maxLength;
+
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
-      inputFormatters: keyboardType == TextInputType.number
-          ? [FilteringTextInputFormatter.digitsOnly]
-          : null,
+      inputFormatters: [
+        if (keyboardType == TextInputType.number)
+          FilteringTextInputFormatter.digitsOnly,
+        if (maxLength != null) LengthLimitingTextInputFormatter(maxLength),
+      ],
       style: TextStyle(
         fontFamily: 'DM Sans',
         fontSize: 14,

@@ -6,6 +6,7 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../profile/cubit/profile_cubit.dart';
 import '../../registration/model/user_role.dart';
+import '../../shell/cubit/shell_cubit.dart';
 import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
 import 'listing_card_large.dart';
@@ -30,7 +31,8 @@ class RecommendedSection extends StatelessWidget {
       children: <Widget>[
         _SectionHeader(
           title: isGuest ? 'Just listed' : 'Recommended for you',
-          onSeeAll: () {},
+          onSeeAll: () =>
+              context.read<ShellCubit>().selectTab(ShellTab.search),
         ),
         SizedBox(height: AppSpacing.sm),
         SizedBox(

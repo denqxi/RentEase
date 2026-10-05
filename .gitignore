@@ -51,6 +51,7 @@ DATA_DICTIONARY.md
 RENTEASE_FIREBASE.md
 SPRINTPLAN.md
 UI_INDEX.md
+SECURITY_REPORT.md
 
 
 #Ignore the following files for the purpose of this project
@@ -65,3 +66,4 @@ firebase-debug.log
 
 # Local screenshots, not tracked
 /screenshots/
+/test/

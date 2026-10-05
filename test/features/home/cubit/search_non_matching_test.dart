@@ -61,6 +61,7 @@ class _Repo implements HomeRepository {
     required TenantProfileDoc profile,
     required Set<String> excludePropertyIds,
     int limit = 50,
+    int? displayLimit,
   }) async {
     nonCalls++;
     lastExcluded = excludePropertyIds;

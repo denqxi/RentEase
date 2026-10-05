@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
+import 'privacy_notice_screen.dart';
 
 /// Displays the RentEase terms of service and privacy policy for review
 /// during signup.
@@ -80,6 +81,16 @@ class TermsAndConditionsScreen extends StatelessWidget {
                             'You agree not to submit false verification documents, misuse the '
                             'inquiry system, or harass other users. Violations may result in '
                             'account suspension.',
+                      ),
+                      GestureDetector(
+                        onTap: () => PrivacyNoticeScreen.open(context),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                          child: Text(
+                            'Read the full Privacy Notice',
+                            style: AppTextStyles.link(context),
+                          ),
+                        ),
                       ),
                       SizedBox(height: AppSpacing.lg),
                     ],

@@ -8,6 +8,7 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../shared/widgets/map_zoom_controls.dart';
 import '../../../shared/widgets/match_badge.dart';
 import '../../../shared/widgets/verified_badge.dart';
+import '../cubit/home_cubit.dart';
 import 'property_detail_screen.dart';
 
 /// Map browsing view — Leaflet-style OpenStreetMap (flutter_map) showing
@@ -20,6 +21,7 @@ class MapViewScreen extends StatefulWidget {
     this.isGuest = false,
     this.poi,
     this.poiLabel,
+    this.homeCubit,
     super.key,
   });
 
@@ -32,6 +34,9 @@ class MapViewScreen extends StatefulWidget {
   /// which case the map centers on Davao City and shows no POI marker.
   final LatLng? poi;
   final String? poiLabel;
+
+  /// Passed on to the detail screens so their heart works.
+  final HomeCubit? homeCubit;
 
   @override
   State<MapViewScreen> createState() => _MapViewScreenState();
@@ -189,6 +194,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                                       builder: (_) => PropertyDetailScreen(
                                         property: properties[_selectedIndex!],
                                         isGuest: widget.isGuest,
+                                        homeCubit: widget.homeCubit,
                                       ),
                                     ),
                                   ),

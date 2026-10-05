@@ -69,7 +69,7 @@ class InviteCubit extends Cubit<InviteState> {
       emit(
         state.copyWith(
           isSending: false,
-          errorMessage: e.toString().replaceFirst('Exception: ', ''),
+          errorMessage: inquiryErrorMessage(e),
         ),
       );
       return false;

@@ -358,6 +358,9 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       child: TextField(
                         controller: _messageController,
                         enabled: canChat,
+                        maxLength: InquiryService.maxMessageLength,
+                        buildCounter: (_, {required currentLength,
+                                required isFocused, maxLength}) => null,
                         onSubmitted: _send,
                         textInputAction: TextInputAction.send,
                         style: AppTextStyles.field(context),

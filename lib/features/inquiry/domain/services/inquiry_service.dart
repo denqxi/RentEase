@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart' show FirebaseException;
+
 import '../../../../core/firestore/models/models.dart';
 import '../../../activity/domain/repositories/notification_repository.dart';
 import '../../model/invite_option.dart';
@@ -11,6 +13,17 @@ class InquiryException implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// A user-safe message for any error thrown by an inquiry action. Rule
+/// refusals ([InquiryException]) pass through; anything else (Firestore
+/// paths, SDK text) is replaced by a generic message instead of leaking.
+String inquiryErrorMessage(Object e) {
+  if (e is InquiryException) return e.message;
+  if (e is FirebaseException && e.code == 'permission-denied') {
+    return "You don't have permission to do that.";
+  }
+  return 'Something went wrong. Please try again.';
 }
 
 /// The structured two-phase inquiry (CLAUDE.md "Structured Two-Phase
@@ -74,6 +87,11 @@ class InquiryService {
       // Intentionally swallowed — see above.
     }
   }
+
+  /// Client-side caps for free text (firestore.rules adds no size limit).
+  static const maxMessageLength = 1000;
+  static const maxReasonLength = 500;
+  static const maxReviewLength = 500;
 
   /// Shown to an owner whose verification was rejected (mirrors the
   /// `ownerNotRejected` rule in firestore.rules).
@@ -224,7 +242,7 @@ class InquiryService {
     if (!isPhase1Pending(inquiry)) {
       throw const InquiryException('This inquiry has already been answered.');
     }
-    final trimmed = reason?.trim() ?? '';
+    final trimmed = _capped(reason, maxReasonLength);
     await _repository.updateInquiry(inquiry.inquiryId, {
       'ownerDecision': 'declined',
       'status': 'declined',
@@ -371,7 +389,7 @@ class InquiryService {
     String? reason,
   }) async {
     _requireInvitedTenant(inquiry, tenantId);
-    final trimmed = reason?.trim() ?? '';
+    final trimmed = _capped(reason, maxReasonLength);
     await _repository.updateInquiry(inquiry.inquiryId, {
       'ownerDecision': 'declined',
       'status': 'declined',
@@ -446,6 +464,11 @@ class InquiryService {
   }) async {
     final text = content.trim();
     if (text.isEmpty) return;
+    if (text.length > maxMessageLength) {
+      throw const InquiryException(
+        'Messages can be at most $maxMessageLength characters.',
+      );
+    }
     if (!canChat(inquiry)) {
       throw const InquiryException(
         'Chat opens once the owner accepts this inquiry.',
@@ -541,7 +564,7 @@ class InquiryService {
     )) {
       throw const InquiryException('You already rated this booking.');
     }
-    final trimmed = review?.trim() ?? '';
+    final trimmed = _capped(review, maxReviewLength);
     await _repository.createRating(
       RatingDoc(
         ratingId: '',
@@ -553,6 +576,11 @@ class InquiryService {
         review: trimmed.isEmpty ? null : trimmed,
       ),
     );
+  }
+
+  static String _capped(String? v, int max) {
+    final t = v?.trim() ?? '';
+    return t.length > max ? t.substring(0, max) : t;
   }
 
   void _requireTenantInitiated(InquiryDoc inquiry) {

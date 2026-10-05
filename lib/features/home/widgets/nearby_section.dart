@@ -8,6 +8,7 @@ import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/match_badge.dart';
 import '../../profile/cubit/profile_cubit.dart';
 import '../../registration/model/user_role.dart';
+import '../../shell/cubit/shell_cubit.dart';
 import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
 import '../view/property_detail_screen.dart';
@@ -32,6 +33,7 @@ Future<void> openPropertyDetail(
       builder: (_) => PropertyDetailScreen(
         property: detail,
         isGuest: cubit.state.isGuest,
+        homeCubit: cubit,
         onPreferencesSaved: cubit.refresh,
       ),
     ),
@@ -71,7 +73,8 @@ class NearbySection extends StatelessWidget {
               ),
               const Spacer(),
               GestureDetector(
-                onTap: () {},
+                onTap: () =>
+                    context.read<ShellCubit>().selectTab(ShellTab.search),
                 child: Text(
                   'See all',
                   style: TextStyle(

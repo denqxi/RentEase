@@ -12,7 +12,7 @@ import '../widgets/step_header.dart';
 
 /// "Join RentEase" — choose a role before starting the form.
 ///
-/// Fully animated with 8-second staggered slide-up and fade transitions.
+/// Fully animated with 1.4s staggered slide-up and fade transitions.
 class RoleSelectionView extends StatefulWidget {
   const RoleSelectionView({required this.onSignIn, super.key});
 
@@ -27,7 +27,7 @@ class _RoleSelectionViewState extends State<RoleSelectionView>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animCtrl;
 
-  // Staggered scale-up and fade animations (8s)
+  // Staggered scale-up and fade animations (1.4s)
   late final Animation<double> _headerScale;
   late final Animation<double> _headerFade;
 
@@ -40,10 +40,10 @@ class _RoleSelectionViewState extends State<RoleSelectionView>
   @override
   void initState() {
     super.initState();
-    // 8-second smooth animation controller
+    // 1.4s smooth animation controller
     _animCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 8000),
+      duration: AppDurations.entrance,
     );
 
     // Header & Subheader: scale-up + fade (Interval: 0.0 -> 0.70)

@@ -6,6 +6,9 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../../account_deletion/presentation/screens/delete_account_screen.dart';
+import '../../auth/presentation/current_uid.dart';
+import '../../auth/presentation/screens/privacy_notice_screen.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
 import '../../../shared/widgets/verified_badge.dart';
 
@@ -85,6 +88,14 @@ class OwnerProfileScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: _MenuCard(
+                  onPrivacyNotice: () => PrivacyNoticeScreen.open(context),
+                  onDeleteAccount: currentUidOrNull(context) == null
+                      ? null
+                      : () => DeleteAccountScreen.open(
+                            context,
+                            uid: currentUidOrNull(context)!,
+                            isOwner: true,
+                          ),
                   onLogout: () {
                     context.read<AuthBloc>().add(const AuthSignOutRequested());
                     Navigator.of(context)
@@ -202,9 +213,15 @@ class _StatusRow extends StatelessWidget {
 }
 
 class _MenuCard extends StatelessWidget {
-  const _MenuCard({required this.onLogout});
+  const _MenuCard({
+    required this.onLogout,
+    required this.onPrivacyNotice,
+    required this.onDeleteAccount,
+  });
 
   final VoidCallback onLogout;
+  final VoidCallback onPrivacyNotice;
+  final VoidCallback? onDeleteAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -230,6 +247,21 @@ class _MenuCard extends StatelessWidget {
               onTap: () =>
                   Navigator.of(context).pushNamed(AppRouter.ownerInquiries)),
           _Divider(),
+          _MenuRow(
+            icon: Icons.privacy_tip_outlined,
+            label: 'Privacy Notice',
+            onTap: onPrivacyNotice,
+          ),
+          _Divider(),
+          if (onDeleteAccount != null) ...[
+            _MenuRow(
+              icon: Icons.delete_outline_rounded,
+              label: 'Delete my account',
+              onTap: onDeleteAccount!,
+              isDestructive: true,
+            ),
+            _Divider(),
+          ],
           _MenuRow(
             icon: Icons.logout_rounded,
             label: 'Log out',

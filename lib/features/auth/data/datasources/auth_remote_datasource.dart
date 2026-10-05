@@ -50,9 +50,22 @@ class AuthRemoteDataSource {
 
   /// Reloads the current Firebase user and returns the fresh instance
   /// (reload() mutates in place, so re-read `currentUser` afterwards).
+  ///
+  /// Also force-refreshes the ID token: `firestore.rules` gates inquiries,
+  /// chat, ratings and listings on the token's `email_verified` claim, which
+  /// otherwise stays false for up to an hour after the user verifies.
   Future<fb.User?> reloadCurrentUser() async {
-    await _auth.currentUser?.reload();
-    return _auth.currentUser;
+    final user = _auth.currentUser;
+    await user?.reload();
+    final reloaded = _auth.currentUser;
+    if (reloaded != null && reloaded.emailVerified) {
+      try {
+        await reloaded.getIdToken(true);
+      } catch (_) {
+        // Best effort: the claim refreshes on the next automatic token renewal.
+      }
+    }
+    return reloaded;
   }
 
   DocumentReference<Map<String, dynamic>> _contactRef(String uid) => _firestore

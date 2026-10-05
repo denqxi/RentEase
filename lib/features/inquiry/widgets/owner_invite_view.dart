@@ -20,7 +20,8 @@ class OwnerInviteView extends StatelessWidget {
     final state = context.watch<InquiryThreadCubit>().state;
     final inquiry = state.inquiry!;
     final property = state.property;
-    final tenantName = fullNameOf(state.tenant, fallback: 'The tenant');
+    final tenantName = fullNameOf(state.tenant,
+        fallback: 'The tenant', loaded: !state.isLoading);
 
     final (IconData icon, Color iconColor, String title, String detail) =
         switch (inquiry.status) {

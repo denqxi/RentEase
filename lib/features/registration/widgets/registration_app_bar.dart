@@ -36,10 +36,10 @@ class _RegistrationAppBarState extends State<RegistrationAppBar>
   @override
   void initState() {
     super.initState();
-    // 8-second scale-up entrance animation for back button
+    // 1.4s scale-up entrance animation for back button
     _animCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 8000),
+      duration: AppDurations.entrance,
     );
 
     _scaleAnimation = Tween<double>(begin: 0.65, end: 1.0).animate(

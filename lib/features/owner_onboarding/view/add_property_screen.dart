@@ -1,5 +1,6 @@
 import '../../../core/constants/app_options.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -108,6 +109,10 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                               child: AppTextField(
                                 controller: _nameController,
                                 hintText: 'e.g. Sunshine Boarding House',
+                                // Matches the 120-char cap in firestore.rules.
+                                inputFormatters: [
+                                  LengthLimitingTextInputFormatter(120),
+                                ],
                                 onChanged: (_) => setState(() {}),
                               ),
                             ),
@@ -117,6 +122,10 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                               child: AppTextField(
                                 controller: _addressController,
                                 hintText: 'Street, Barangay, City',
+                                // Matches the 300-char cap in firestore.rules.
+                                inputFormatters: [
+                                  LengthLimitingTextInputFormatter(300),
+                                ],
                                 onChanged: (_) => setState(() {}),
                               ),
                             ),

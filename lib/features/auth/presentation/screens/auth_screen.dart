@@ -54,10 +54,10 @@ class _SignInScreenState extends State<SignInScreen>
   @override
   void initState() {
     super.initState();
-    // 8-second staggered entrance: hero scales/fades in, card slides up.
+    // 1.4s staggered entrance: hero scales/fades in, card slides up.
     _animCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 8000),
+      duration: AppDurations.entrance,
     );
     _imageFade = CurvedAnimation(
       parent: _animCtrl,

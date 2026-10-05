@@ -47,4 +47,9 @@ class FirestoreCollections {
   /// admins, hidden from owners).
   static const String tenantPrivate = 'private';
   static const String tenantPrefs = 'prefs';
+
+  /// Subcollection of users: users/{uid}/savedListings/{propertyId} with
+  /// {propertyId, savedAt}. The tenant's hearted listings; readable and
+  /// writable only by that user (admins read).
+  static const String savedListings = 'savedListings';
 }

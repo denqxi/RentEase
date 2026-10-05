@@ -8,7 +8,40 @@ class HomeState extends Equatable {
     this.isLoading = false,
     this.errorMessage,
     this.isGuest = false,
+    this.otherListings = const [],
+    this.isLoadingOthers = false,
+    this.othersFailed = false,
+    this.searchNonMatchesRequests = 0,
+    this.savedIds = const {},
+    this.savedListings = const [],
+    this.isLoadingSaved = false,
+    this.savedLoadFailed = false,
+    this.saveFailures = 0,
   }) : listings = listings ?? const <Listing>[];
+
+  /// "Other listings": view-only property maps (`isNonMatch`, `bScore` 0,
+  /// `mismatchReasons`) that fail the tenant's saved preferences. Separate
+  /// from [listings]; never ranked, never inquirable.
+  final List<Map<String, dynamic>> otherListings;
+  final bool isLoadingOthers;
+  final bool othersFailed;
+
+  /// Bumped by "See more" so Search switches its non-match toggle on.
+  final int searchNonMatchesRequests;
+
+  /// Ids the tenant has hearted (users/{uid}/savedListings). The single source
+  /// of truth for every heart; guests never get any.
+  final Set<String> savedIds;
+
+  /// Saved screen data: the available properties among [savedIds] (loaded on
+  /// demand by `loadSaved`; unsaved ones are filtered out by the screen).
+  final List<Listing> savedListings;
+  final bool isLoadingSaved;
+  final bool savedLoadFailed;
+
+  /// Bumped when a save/unsave write failed and was rolled back, so the UI
+  /// shows a SnackBar once.
+  final int saveFailures;
 
   final List<Listing> listings;
   final String searchQuery;
@@ -40,7 +73,8 @@ class HomeState extends Equatable {
       ..sort((a, b) => b.matchPercent.compareTo(a.matchPercent));
   }
 
-  /// Only saved listings (Saved tab).
+  /// Compatible listings that are hearted (the Saved screen reads
+  /// [savedListings] instead, which also covers non-match listings).
   List<Listing> get saved => listings.where((l) => l.isSaved).toList();
 
   HomeState copyWith({
@@ -50,8 +84,27 @@ class HomeState extends Equatable {
     String? errorMessage,
     bool clearError = false,
     bool? isGuest,
+    List<Map<String, dynamic>>? otherListings,
+    bool? isLoadingOthers,
+    bool? othersFailed,
+    int? searchNonMatchesRequests,
+    Set<String>? savedIds,
+    List<Listing>? savedListings,
+    bool? isLoadingSaved,
+    bool? savedLoadFailed,
+    int? saveFailures,
   }) {
     return HomeState(
+      otherListings: otherListings ?? this.otherListings,
+      isLoadingOthers: isLoadingOthers ?? this.isLoadingOthers,
+      othersFailed: othersFailed ?? this.othersFailed,
+      searchNonMatchesRequests:
+          searchNonMatchesRequests ?? this.searchNonMatchesRequests,
+      savedIds: savedIds ?? this.savedIds,
+      savedListings: savedListings ?? this.savedListings,
+      isLoadingSaved: isLoadingSaved ?? this.isLoadingSaved,
+      savedLoadFailed: savedLoadFailed ?? this.savedLoadFailed,
+      saveFailures: saveFailures ?? this.saveFailures,
       listings: listings ?? this.listings,
       searchQuery: searchQuery ?? this.searchQuery,
       isLoading: isLoading ?? this.isLoading,
@@ -67,5 +120,14 @@ class HomeState extends Equatable {
     isLoading,
     errorMessage,
     isGuest,
+    otherListings,
+    isLoadingOthers,
+    othersFailed,
+    searchNonMatchesRequests,
+    savedIds,
+    savedListings,
+    isLoadingSaved,
+    savedLoadFailed,
+    saveFailures,
   ];
 }

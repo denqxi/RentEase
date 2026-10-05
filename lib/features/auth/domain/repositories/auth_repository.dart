@@ -25,6 +25,7 @@ abstract class AuthRepository {
     required String gender,
     required String phone,
     required String role,
+    bool ageConfirmed = false,
   });
 
   /// Live `users/{uid}.status == 'suspended'` flag, so a user an admin

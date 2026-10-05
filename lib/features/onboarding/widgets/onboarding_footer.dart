@@ -33,10 +33,10 @@ class _OnboardingFooterState extends State<OnboardingFooter>
   @override
   void initState() {
     super.initState();
-    // 8.0s smooth, visible slide-up entrance animation on first screen
+    // 1.4s smooth, visible slide-up entrance animation on first screen
     _entranceCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 8000),
+      duration: AppDurations.entrance,
     );
 
     _slideAnimation = Tween<Offset>(
@@ -67,8 +67,8 @@ class _OnboardingFooterState extends State<OnboardingFooter>
 
   @override
   Widget build(BuildContext context) {
-    // 8.0 seconds (8000ms) animation specifically for the last page transition
-    const lastPageDuration = Duration(milliseconds: 8000);
+    // Entrance-length animation specifically for the last page transition
+    const lastPageDuration = AppDurations.entrance;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -106,7 +106,7 @@ class _OnboardingFooterState extends State<OnboardingFooter>
                         ),
                       ),
 
-                      // Skip button with smooth 8.0s fade and height transition on last page
+                      // Skip button with smooth 1.4s fade and height transition on last page
                       AnimatedCrossFade(
                         duration: lastPageDuration,
                         firstCurve: Curves.easeInOutCubic,

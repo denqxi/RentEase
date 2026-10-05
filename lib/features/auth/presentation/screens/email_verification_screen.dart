@@ -167,7 +167,7 @@ class _EmailVerificationBodyState extends State<_EmailVerificationBody>
     _startCountdown(45);
     _animCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 8000),
+      duration: AppDurations.entrance,
     );
     _lottieScale = Tween<double>(begin: 0.65, end: 1.0).animate(
       CurvedAnimation(

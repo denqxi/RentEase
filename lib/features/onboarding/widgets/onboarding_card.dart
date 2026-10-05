@@ -1,6 +1,8 @@
 import 'package:rentease/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_dimensions.dart';
+
 import '../../../core/theme/app_text_styles.dart';
 import '../cubit/onboarding_cubit.dart';
 import 'onboarding_page_indicator.dart';
@@ -40,9 +42,9 @@ class _OnboardingCardState extends State<OnboardingCard>
   @override
   void initState() {
     super.initState();
-    // 8.0s on the first screen and last page, 350ms on intermediate pages
+    // 1.4s on the first screen and last page, 350ms on intermediate pages
     final duration = (widget.state.currentPage == 0 || widget.state.isLastPage)
-        ? const Duration(milliseconds: 8000)
+        ? AppDurations.entrance
         : const Duration(milliseconds: 350);
 
     _controller = AnimationController(vsync: this, duration: duration);

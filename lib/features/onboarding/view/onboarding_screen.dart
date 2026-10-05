@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/constants/app_dimensions.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -60,10 +62,10 @@ class _OnboardingViewState extends State<_OnboardingView>
   @override
   void initState() {
     super.initState();
-    // 8.0s smooth, visible slide-up entrance animation after splash screen
+    // 1.4s smooth, visible slide-up entrance animation after splash screen
     _entranceCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 8000),
+      duration: AppDurations.entrance,
     );
     _entranceFade = CurvedAnimation(
       parent: _entranceCtrl,
@@ -204,7 +206,7 @@ class _HeroFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: state.isLastPage
-          ? const Duration(milliseconds: 8000)
+          ? AppDurations.entrance
           : const Duration(milliseconds: 350),
       curve: Curves.easeInOutCubic,
       decoration: BoxDecoration(

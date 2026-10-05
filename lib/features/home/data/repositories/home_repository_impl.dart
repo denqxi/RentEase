@@ -54,7 +54,34 @@ class HomeRepositoryImpl implements HomeRepository {
       _remote.fetchUser(property.ownerId),
       _remote.fetchOwnerProfile(property.ownerId),
     ).wait;
-    return _propertyMap(property, match, owner, ownerProfile);
+    final map = _propertyMap(property, match, owner, ownerProfile);
+    if (match != null) return map;
+
+    // No eligible match (e.g. saved from Other listings, or it went stale):
+    // explain why, exactly as fetchNonMatchingResults does. bScore stays 0
+    // either way, so Send Inquiry is absent; an empty reasons list (it now
+    // passes, cached row not written yet) is a plain view-only detail.
+    final (profile, tenantUser) = await (
+      _remote.fetchTenantProfile(tenantId),
+      _remote.fetchUser(tenantId),
+    ).wait;
+    if (profile == null) return map;
+    final km = DistanceUtils.kmBetween(profile.poiLatLng, property.location);
+    final reasons = FilteringService.explainMismatch(
+      tenantGender: tenantUser?.gender ?? '',
+      tenant: profile,
+      property: property,
+      distanceKm: km,
+    );
+    if (reasons.isEmpty) return map;
+    return {
+      ...map,
+      'distance': _roundKm(km),
+      'bScore': 0,
+      'matchId': null,
+      'isNonMatch': true,
+      'mismatchReasons': reasons,
+    };
   }
 
   @override
@@ -98,6 +125,7 @@ class HomeRepositoryImpl implements HomeRepository {
     required TenantProfileDoc profile,
     required Set<String> excludePropertyIds,
     int limit = 50,
+    int? displayLimit,
   }) async {
     final (properties, tenantUser) = await (
       _remote.fetchAvailableProperties(limit: limit),
@@ -121,9 +149,21 @@ class HomeRepositoryImpl implements HomeRepository {
       candidates.add((property, km, reasons));
     }
 
+    var shown = candidates;
+    if (displayLimit != null && candidates.length > displayLimit) {
+      // Fewest reasons first, ties newest-first (the fetch order); the index
+      // keeps the sort stable.
+      final indexed = candidates.indexed.toList()
+        ..sort((a, b) {
+          final byReasons = a.$2.$3.length.compareTo(b.$2.$3.length);
+          return byReasons != 0 ? byReasons : a.$1.compareTo(b.$1);
+        });
+      shown = [for (final e in indexed.take(displayLimit)) e.$2];
+    }
+
     final owners = <String, (UserDoc?, OwnerProfileDoc?)>{};
     await Future.wait(
-      {for (final c in candidates) c.$1.ownerId}.map((id) async {
+      {for (final c in shown) c.$1.ownerId}.map((id) async {
         owners[id] = await (
           _remote.fetchUser(id),
           _remote.fetchOwnerProfile(id),
@@ -132,7 +172,7 @@ class HomeRepositoryImpl implements HomeRepository {
     );
 
     return [
-      for (final (property, km, reasons) in candidates)
+      for (final (property, km, reasons) in shown)
         {
           ..._propertyMap(
             property,
@@ -199,6 +239,7 @@ class HomeRepositoryImpl implements HomeRepository {
       'matchId': match?.matchId,
       'title': property.title,
       'photoUrl': property.photos.isNotEmpty ? property.photos.first : null,
+      'photos': List<String>.from(property.photos),
       'address': property.address,
       'monthlyRent': property.monthlyRent,
       'distance': _roundKm(match?.distanceKm ?? 0),

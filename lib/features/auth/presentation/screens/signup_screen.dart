@@ -8,6 +8,7 @@ import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/card_over_hero_layout.dart';
 import 'auth_screen.dart';
 import '../../../../core/router/app_router.dart';
+import 'privacy_notice_screen.dart';
 import 'terms_and_conditions_screen.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -39,7 +40,7 @@ class _SignupScreenState extends State<SignupScreen>
     super.initState();
     _animCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 8000),
+      duration: AppDurations.entrance,
     );
 
     _slideAnimation = Tween<Offset>(
@@ -224,6 +225,21 @@ class _SignupScreenState extends State<SignupScreen>
                                   ),
                                   child: const Text(
                                     'Terms and Agreement',
+                                    style: TextStyle(
+                                      fontFamily: 'DM Sans',
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const TextSpan(text: ' and '),
+                              WidgetSpan(
+                                child: GestureDetector(
+                                  onTap: () => PrivacyNoticeScreen.open(context),
+                                  child: const Text(
+                                    'Privacy Notice',
                                     style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 13,

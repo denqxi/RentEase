@@ -7,6 +7,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../shared/widgets/ci_score_pill.dart';
+import '../../../shared/widgets/guest_access_sheet.dart';
+import '../../../shared/widgets/hero_icon_button.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/verified_badge.dart';
 import '../../auth/presentation/current_uid.dart';
@@ -61,6 +63,13 @@ class SearchScreen extends StatelessWidget {
       create: (_) =>
           SearchCubit(tenantId: uid, repository: HomeRepositoryImpl()),
       child: BlocListener<HomeCubit, HomeState>(
+        // Home's "Other listings > See more" opens this tab with the
+        // session-only non-match toggle already on (never persisted).
+        listenWhen: (prev, curr) =>
+            prev.searchNonMatchesRequests != curr.searchNonMatchesRequests,
+        listener: (context, _) =>
+            context.read<SearchCubit>().setIncludeNonMatching(true),
+        child: BlocListener<HomeCubit, HomeState>(
         // Home re-runs matching when opened or pulled (CLAUDE.md engine
         // trigger b). Search only reads the cached results, so reload once
         // that finishes rather than computing anything itself (rule 7).
@@ -82,6 +91,7 @@ class SearchScreen extends StatelessWidget {
             errorMessage: state.errorMessage,
             onRefresh: context.read<SearchCubit>().load,
           ),
+        ),
         ),
       ),
     );
@@ -217,6 +227,9 @@ class _SearchViewState extends State<_SearchView> {
   Widget build(BuildContext context) {
     final properties = _displayed;
     final session = _session;
+    final savedIds = context.select<HomeCubit, Set<String>>(
+      (c) => c.state.savedIds,
+    );
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
@@ -259,6 +272,7 @@ class _SearchViewState extends State<_SearchView> {
                               if (p['isNonMatch'] != true) p,
                           ],
                           isGuest: widget.isGuest,
+                          homeCubit: context.read<HomeCubit>(),
                           poi: widget.profile == null
                               ? null
                               : LatLng(
@@ -424,14 +438,18 @@ class _SearchViewState extends State<_SearchView> {
             SizedBox(height: AppSpacing.sm),
 
             // ── Results ────────────────────────────────────────────────
-            Expanded(child: _results(context, properties)),
+            Expanded(child: _results(context, properties, savedIds)),
           ],
         ),
       ),
     );
   }
 
-  Widget _results(BuildContext context, List<Map<String, dynamic>> properties) {
+  Widget _results(
+    BuildContext context,
+    List<Map<String, dynamic>> properties,
+    Set<String> savedIds,
+  ) {
     if (widget.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -476,8 +494,17 @@ class _SearchViewState extends State<_SearchView> {
               }
               final p = properties[i];
               final rank = (p['tenantRank'] as num?)?.toInt() ?? 0;
+              final homeCubit = context.read<HomeCubit>();
               return _PropertyCard(
                 property: p,
+                isSaved: savedIds.contains(p['propertyId']),
+                onSavedToggle: () {
+                  if (widget.isGuest) {
+                    GuestAccessSheet.show(context);
+                    return;
+                  }
+                  homeCubit.toggleSaved(p['propertyId'] as String);
+                },
                 // Guests have no TOPSIS ranking; a stale 0 rank shows none.
                 rank: widget.isGuest || rank == 0 ? null : rank,
                 isGuest: widget.isGuest,
@@ -486,6 +513,7 @@ class _SearchViewState extends State<_SearchView> {
                     builder: (_) => PropertyDetailScreen(
                       property: p,
                       isGuest: widget.isGuest,
+                      homeCubit: homeCubit,
                       // Re-running Home's matching also reloads Search.
                       onPreferencesSaved: widget.isGuest
                           ? null
@@ -638,9 +666,13 @@ class _PropertyCard extends StatelessWidget {
     required this.rank,
     required this.isGuest,
     required this.onTap,
+    required this.isSaved,
+    required this.onSavedToggle,
   });
 
   final Map<String, dynamic> property;
+  final bool isSaved;
+  final VoidCallback onSavedToggle;
 
   /// TOPSIS rank, or null when there is none to show (guests).
   final int? rank;
@@ -729,6 +761,16 @@ class _PropertyCard extends StatelessWidget {
                             ),
                           ),
                         ),
+                      Positioned(
+                        top: 2,
+                        right: 2,
+                        child: HeroIconButton(
+                          icon: isSaved ? Icons.favorite : Icons.favorite_border,
+                          iconColor: isSaved ? AppColors.destructive : null,
+                          tooltip: isSaved ? 'Remove from saved' : 'Save',
+                          onPressed: onSavedToggle,
+                        ),
+                      ),
                     ],
                   ),
                 ),

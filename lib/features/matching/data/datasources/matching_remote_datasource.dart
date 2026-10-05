@@ -68,10 +68,13 @@ class MatchingRemoteDataSource {
     return Map.fromEntries(entries.whereType<MapEntry<String, PropertyDoc>>());
   }
 
-  /// Firestore batches cap at 500 writes; chunk defensively even though a
-  /// single tenant's candidate pool is unlikely to approach that at alpha
-  /// scale.
-  static const _maxBatchSize = 450;
+  /// Each `bScore == 1` match write makes `firestore.rules` re-derive
+  /// eligibility (reads of the user, tenant profile, private prefs and the
+  /// property), and a batch may perform at most 20 such document accesses.
+  /// Measured against the rules suite: 15 eligible writes per batch pass,
+  /// 16 are denied — so chunk at 15 (not the 500-write Firestore cap).
+  /// Keep in sync with firestore-tests/security.test.js.
+  static const _maxBatchSize = 15;
 
   /// Partial update — only tenantCi/tenantRank change, so the pairing and
   /// bilateral scores FilteringService wrote are left untouched (and the

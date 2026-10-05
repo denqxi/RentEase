@@ -1,21 +1,57 @@
 import '../../../core/utils/date_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/ci_score_pill.dart';
 import '../../../shared/widgets/constraint_check_row.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
-import '../../../shared/widgets/listing_image_placeholder.dart';
+import '../../../shared/widgets/hero_icon_button.dart';
+import '../../../shared/widgets/property_photo_carousel.dart';
 import '../../inquiry/view/start_inquiry.dart';
 import '../../matching/domain/entities/mismatch_reason.dart';
 import '../../profile/view/edit_constraints_screen.dart';
+import '../cubit/home_cubit.dart';
+
+/// The detail-screen heart: filled destructive when saved. Rebuilds only when
+/// this property's saved flag changes.
+class _SaveHeart extends StatelessWidget {
+  const _SaveHeart({
+    required this.propertyId,
+    required this.cubit,
+    required this.onTap,
+  });
+
+  final String propertyId;
+  final HomeCubit? cubit;
+  final void Function(HomeCubit? cubit) onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cubit = this.cubit;
+    Widget button(bool saved) => HeroIconButton(
+      icon: saved ? Icons.favorite : Icons.favorite_border,
+      iconColor: saved ? AppColors.destructive : null,
+      tooltip: saved ? 'Remove from saved' : 'Save',
+      onPressed: () => onTap(cubit),
+    );
+    if (cubit == null) return button(false);
+    return BlocBuilder<HomeCubit, HomeState>(
+      bloc: cubit,
+      buildWhen: (a, b) =>
+          a.savedIds.contains(propertyId) != b.savedIds.contains(propertyId),
+      builder: (_, state) => button(state.savedIds.contains(propertyId)),
+    );
+  }
+}
 
 class PropertyDetailScreen extends StatelessWidget {
   const PropertyDetailScreen({
     required this.property,
     this.isGuest = false,
     this.onPreferencesSaved,
+    this.homeCubit,
     super.key,
   });
 
@@ -25,6 +61,11 @@ class PropertyDetailScreen extends StatelessWidget {
   /// Called after the tenant saves new preferences from this screen (which
   /// re-runs matching), so the opener can refresh its feed.
   final VoidCallback? onPreferencesSaved;
+
+  /// Owns the saved-listing (heart) state. Pushed routes sit outside the
+  /// shell's providers, so the opener passes it in; null leaves the heart
+  /// inert (previews).
+  final HomeCubit? homeCubit;
 
   Future<void> _editPreferences(BuildContext context) async {
     final saved = await Navigator.of(context).push<bool>(
@@ -38,6 +79,20 @@ class PropertyDetailScreen extends StatelessWidget {
         Navigator.of(context).pop();
       }
     }
+  }
+
+  /// All photos of the property, cover first; falls back to the single
+  /// `photoUrl` for maps built without a `photos` list.
+  static List<String> _photosOf(Map<String, dynamic> property) {
+    final photos = property['photos'];
+    if (photos is List && photos.isNotEmpty) {
+      return [
+        for (final p in photos)
+          if (p is String && p.isNotEmpty) p,
+      ];
+    }
+    final single = property['photoUrl'] as String?;
+    return single == null || single.isEmpty ? const [] : [single];
   }
 
   void _guardGuestAction(BuildContext context, VoidCallback action) {
@@ -164,15 +219,16 @@ class PropertyDetailScreen extends StatelessWidget {
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            ListingImagePlaceholder(
+                            PropertyPhotoCarousel(
                               seed: seed,
-                              photoUrl: property['photoUrl'] as String?,
-                              fullSize: true,
+                              photos: _photosOf(property),
                             ),
                             if (isOutside)
-                              Container(
-                                color: AppColors.amberFill.withValues(
-                                  alpha: 0.35,
+                              IgnorePointer(
+                                child: Container(
+                                  color: AppColors.amberFill.withValues(
+                                    alpha: 0.35,
+                                  ),
                                 ),
                               ),
                           ],
@@ -183,13 +239,9 @@ class PropertyDetailScreen extends StatelessWidget {
                             MediaQuery.of(context).padding.top +
                             (isOutside ? 0 : 8),
                         left: 8,
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.arrow_back_ios_new,
-                            color: isOutside
-                                ? AppColors.amberText
-                                : context.appColors.textPrimary,
-                          ),
+                        child: HeroIconButton(
+                          icon: Icons.arrow_back_ios_new,
+                          tooltip: 'Back',
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ),
@@ -198,14 +250,15 @@ class PropertyDetailScreen extends StatelessWidget {
                             MediaQuery.of(context).padding.top +
                             (isOutside ? 0 : 8),
                         right: 8,
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.favorite_border,
-                            color: isOutside
-                                ? AppColors.amberText
-                                : context.appColors.textPrimary,
+                        child: _SaveHeart(
+                          propertyId: property['propertyId'] as String,
+                          cubit: homeCubit,
+                          onTap: (cubit) => _guardGuestAction(
+                            context,
+                            () => cubit?.toggleSaved(
+                              property['propertyId'] as String,
+                            ),
                           ),
-                          onPressed: () => _guardGuestAction(context, () {}),
                         ),
                       ),
                     ],

@@ -41,11 +41,14 @@ abstract class HomeRepository {
   /// is a property map with `bScore` 0, `isNonMatch` true and the typed
   /// `mismatchReasons` from `FilteringService.explainMismatch`. Reads
   /// properties directly; never writes `matches` (no inquiry for these).
+  /// When [displayLimit] is set, only that many (fewest reasons, then newest)
+  /// are returned and owner lookups are made for those alone.
   Future<List<Map<String, dynamic>>> fetchNonMatchingResults({
     required String tenantId,
     required TenantProfileDoc profile,
     required Set<String> excludePropertyIds,
     int limit = 50,
+    int? displayLimit,
   });
 
   /// The tenant's saved hard constraints — shown as Search's filter chips.

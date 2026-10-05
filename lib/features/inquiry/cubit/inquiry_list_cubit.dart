@@ -73,7 +73,7 @@ class InquiryListCubit extends Cubit<InquiryListState> {
       InquiryListState(
         isLoading: false,
         items: state.items,
-        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+        errorMessage: inquiryErrorMessage(e),
       ),
     );
   }

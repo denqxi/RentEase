@@ -18,6 +18,7 @@ class RegistrationData extends Equatable {
     this.email = '',
     this.phone = '',
     this.password = '',
+    this.ageConfirmed = false,
     // Tenant about-you step.
     this.age = '',
     this.occupation = '',
@@ -74,6 +75,9 @@ class RegistrationData extends Equatable {
   final String phone;
   final String password;
 
+  /// "I am at least 18 and have read the Privacy Notice" (required).
+  final bool ageConfirmed;
+
   // ── Tenant about-you step ────────────────────────────────────────────────
   final String age;
   final String occupation;
@@ -128,6 +132,7 @@ class RegistrationData extends Equatable {
     String? email,
     String? phone,
     String? password,
+    bool? ageConfirmed,
     // Tenant about.
     String? age,
     String? occupation,
@@ -176,6 +181,7 @@ class RegistrationData extends Equatable {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       password: password ?? this.password,
+      ageConfirmed: ageConfirmed ?? this.ageConfirmed,
       age: age ?? this.age,
       occupation: occupation ?? this.occupation,
       monthlyIncome: monthlyIncome ?? this.monthlyIncome,
@@ -221,6 +227,7 @@ class RegistrationData extends Equatable {
         email,
         phone,
         password,
+        ageConfirmed,
         age,
         occupation,
         monthlyIncome,

@@ -169,7 +169,7 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
       state.copyWith(
         isLoading: false,
         isBusy: false,
-        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+        errorMessage: inquiryErrorMessage(e),
       ),
     );
   }

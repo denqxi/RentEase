@@ -9,6 +9,7 @@ import '../../features/admin/view/pending_verifications_screen.dart';
 import '../../features/admin/view/property_management_screen.dart';
 import '../../features/admin/view/user_management_screen.dart';
 import '../../features/auth/presentation/screens/auth_screen.dart';
+import '../../features/auth/presentation/screens/email_verification_screen.dart';
 
 import '../../features/auth/presentation/screens/role_selection_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
@@ -88,8 +89,16 @@ class AppRouter {
             onCreateAccount: () => Navigator.of(ctx).push(
               MaterialPageRoute<void>(
                 builder: (_) => RegistrationFlowScreen(
-                  onComplete: (role) => Navigator.of(ctx).pushNamed(
-                    role == UserRole.landlord ? documentUpload : hardConstraints,
+                  // A fresh account is unverified: go through email
+                  // verification first (it then routes into onboarding),
+                  // exactly like the _SignInEntry flow in app.dart.
+                  onComplete: (role) => Navigator.of(ctx).pushAndRemoveUntil(
+                    MaterialPageRoute<void>(
+                      builder: (_) => EmailVerificationScreen(
+                        isOwner: role == UserRole.landlord,
+                      ),
+                    ),
+                    (_) => false,
                   ),
                   onSignIn: () => Navigator.of(ctx).pop(),
                 ),

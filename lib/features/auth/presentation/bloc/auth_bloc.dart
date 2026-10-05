@@ -65,6 +65,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthSuspended());
   }
 
+  /// Repository errors arrive as `Exception(message)`; anything else (a raw
+  /// FirebaseException, etc.) must not leak its technical text to the UI.
+  static String _friendly(Object e) {
+    final text = e.toString();
+    if (e is Exception && text.startsWith('Exception: ')) {
+      return text.substring('Exception: '.length);
+    }
+    return 'Something went wrong. Please try again.';
+  }
+
   @override
   Future<void> close() {
     _suspensionSub?.cancel();
@@ -104,7 +114,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(user.emailVerified ? AuthAuthenticated(user) : AuthEmailNotVerified(user));
       _watchSuspension(user);
     } catch (e) {
-      emit(AuthOperationFailure(e.toString().replaceFirst('Exception: ', '')));
+      emit(AuthOperationFailure(_friendly(e)));
       emit(const AuthUnauthenticated());
     }
   }
@@ -123,12 +133,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         gender: event.gender,
         phone: event.phone,
         role: event.role,
+        ageConfirmed: event.ageConfirmed,
       );
       // Freshly created accounts are always unverified.
       emit(AuthEmailNotVerified(user));
       _watchSuspension(user);
     } catch (e) {
-      emit(AuthOperationFailure(e.toString().replaceFirst('Exception: ', '')));
+      emit(AuthOperationFailure(_friendly(e)));
       emit(const AuthUnauthenticated());
     }
   }
@@ -153,7 +164,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(const AuthVerificationEmailResent());
       emit(current);
     } catch (e) {
-      emit(AuthOperationFailure(e.toString().replaceFirst('Exception: ', '')));
+      emit(AuthOperationFailure(_friendly(e)));
       emit(current);
     }
   }
@@ -205,7 +216,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthPasswordResetEmailSent(event.email));
       emit(const AuthUnauthenticated());
     } catch (e) {
-      emit(AuthOperationFailure(e.toString().replaceFirst('Exception: ', '')));
+      emit(AuthOperationFailure(_friendly(e)));
       emit(const AuthUnauthenticated());
     }
   }

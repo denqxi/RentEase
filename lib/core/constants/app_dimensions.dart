@@ -22,3 +22,11 @@ abstract final class AppSizes {
   static const double buttonHeight = 56;
   static const double fieldHeight = 50;
 }
+
+/// Shared animation timings. Screen entrance animations (staggered fade/slide
+/// timelines) run over [entrance]; lengthen it for a slower reveal.
+class AppDurations {
+  const AppDurations._();
+
+  static const Duration entrance = Duration(milliseconds: 1400);
+}

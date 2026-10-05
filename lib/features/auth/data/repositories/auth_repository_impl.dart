@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/firestore/models/user_contact_doc.dart';
 import '../../../../core/firestore/models/user_doc.dart';
 import '../../domain/entities/auth.dart';
@@ -36,7 +37,11 @@ class AuthRepositoryImpl implements AuthRepository {
     required String gender,
     required String phone,
     required String role,
+    bool ageConfirmed = false,
   }) async {
+    if (!ageConfirmed) {
+      throw Exception(AppStrings.ageConfirmationRequired);
+    }
     try {
       final credential = await _remote.createUserWithEmailAndPassword(
         email: email,
@@ -52,6 +57,7 @@ class AuthRepositoryImpl implements AuthRepository {
           gender: gender,
           role: role,
           status: 'active',
+          confirmAgeNow: true,
         ),
         // Email + phone go to the private doc only (same batch).
         contact: UserContactDoc(phone: phone, email: email),
@@ -116,6 +122,8 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await _remote.sendPasswordResetEmail(email);
     } on fb.FirebaseAuthException catch (e) {
+      // Same outcome whether or not the email is registered (no enumeration).
+      if (e.code == 'user-not-found') return;
       throw Exception(_messageForAuthError(e));
     }
   }
@@ -157,11 +165,12 @@ class AuthRepositoryImpl implements AuthRepository {
         return 'That email address looks invalid.';
       case 'weak-password':
         return 'Password is too weak — use at least 6 characters.';
+      // One message for every bad-credential code so the response never
+      // reveals whether an email is registered.
       case 'user-not-found':
       case 'invalid-credential':
-        return 'No account found for that email and password.';
       case 'wrong-password':
-        return 'Incorrect password. Please try again.';
+        return 'Incorrect email or password.';
       case 'user-disabled':
         return 'This account has been disabled. Contact support.';
       case 'too-many-requests':
@@ -169,7 +178,7 @@ class AuthRepositoryImpl implements AuthRepository {
       case 'network-request-failed':
         return 'Network error. Check your connection and try again.';
       default:
-        return e.message ?? 'Something went wrong. Please try again.';
+        return 'Something went wrong. Please try again.';
     }
   }
 }
