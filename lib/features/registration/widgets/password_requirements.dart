@@ -29,40 +29,67 @@ class PasswordRequirements extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (password.isEmpty) return const SizedBox.shrink();
+    final isVisible = password.isNotEmpty;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final rule in _rules)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              children: [
-                Icon(
-                  rule.test(password)
-                      ? Icons.check_circle
-                      : Icons.radio_button_unchecked,
-                  size: 14,
-                  color: rule.test(password)
-                      ? AppColors.matchHigh
-                      : context.appColors.hint,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  rule.label,
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 12,
-                    color: rule.test(password)
-                        ? context.appColors.textPrimary
-                        : context.appColors.textSecondary,
-                  ),
-                ),
-              ],
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          final slideAnim = Tween<Offset>(
+            begin: const Offset(0.0, 0.25),
+            end: Offset.zero,
+          ).animate(animation);
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: slideAnim,
+              child: child,
             ),
-          ),
-      ],
+          );
+        },
+        child: isVisible
+            ? Column(
+                key: const ValueKey('password_requirements_visible'),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final rule in _rules)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            rule.test(password)
+                                ? Icons.check_circle
+                                : Icons.radio_button_unchecked,
+                            size: 14,
+                            color: rule.test(password)
+                                ? AppColors.matchHigh
+                                : context.appColors.hint,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            rule.label,
+                            style: TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 12,
+                              color: rule.test(password)
+                                  ? context.appColors.textPrimary
+                                  : context.appColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              )
+            : const SizedBox.shrink(
+                key: ValueKey('password_requirements_hidden'),
+              ),
+      ),
     );
   }
 }

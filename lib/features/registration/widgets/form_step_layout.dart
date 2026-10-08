@@ -15,6 +15,7 @@ class FormStepLayout extends StatelessWidget {
     required this.buttonLabel,
     required this.onContinue,
     required this.fields,
+    this.scrollController,
     this.footer,
     this.padding = const EdgeInsets.fromLTRB(20, 16, 20, 16),
     this.fieldSpacing = 12.0,
@@ -23,6 +24,9 @@ class FormStepLayout extends StatelessWidget {
     this.buttonRadius = 12.0,
     super.key,
   });
+
+  /// Optional scroll controller for programmatically scrolling the fields.
+  final ScrollController? scrollController;
 
   final String title;
   final String subtitle;
@@ -63,6 +67,7 @@ class FormStepLayout extends StatelessWidget {
           SizedBox(height: headerSpacing),
           Expanded(
             child: SingleChildScrollView(
+              controller: scrollController,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[

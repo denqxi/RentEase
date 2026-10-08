@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -14,13 +15,37 @@ class LabeledTextField extends StatelessWidget {
     required this.onChanged,
     this.keyboardType,
     this.prefixText,
+    this.prefixStyle,
+    this.alwaysShowPrefix = false,
+    this.showPrefixDivider = false,
     this.obscureText = false,
     this.onToggleObscure,
     this.maxLines = 1,
     this.controller,
+    this.focusNode,
     this.errorText,
+    this.inputFormatters,
+    this.textCapitalization = TextCapitalization.none,
     super.key,
   });
+
+  /// Whether to permanently show the prefix text even when unfocused and empty.
+  final bool alwaysShowPrefix;
+
+  /// Whether to display a vertical divider '|' after the prefix text.
+  final bool showPrefixDivider;
+
+  /// Optional focus node for managing field focus.
+  final FocusNode? focusNode;
+
+  /// Input formatters applied to the text field.
+  final List<TextInputFormatter>? inputFormatters;
+
+  /// Keyboard capitalization behavior.
+  final TextCapitalization textCapitalization;
+
+  /// Optional prefix style override.
+  final TextStyle? prefixStyle;
 
   /// Optional controller so callers can set the text programmatically.
   final TextEditingController? controller;
@@ -63,8 +88,11 @@ class LabeledTextField extends StatelessWidget {
           height: maxLines == 1 && errorText == null ? AppSizes.fieldHeight : null,
           child: TextField(
             controller: controller,
+            focusNode: focusNode,
             onChanged: onChanged,
             keyboardType: keyboardType,
+            textCapitalization: textCapitalization,
+            inputFormatters: inputFormatters,
             obscureText: obscureText,
             maxLines: obscureText ? 1 : maxLines,
             minLines: maxLines > 1 ? maxLines : null,
@@ -73,8 +101,46 @@ class LabeledTextField extends StatelessWidget {
               isDense: true,
               hintText: hint,
               hintStyle: AppTextStyles.field(context).copyWith(color: context.appColors.hint),
-              prefixText: prefixText,
-              prefixStyle: AppTextStyles.field(context).copyWith(color: context.appColors.hint),
+              prefixIcon: (prefixText != null && alwaysShowPrefix)
+                  ? Padding(
+                      padding: const EdgeInsets.only(left: 16, right: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            prefixText!.trim(),
+                            style: prefixStyle ??
+                                AppTextStyles.field(context).copyWith(
+                                  color: context.appColors.textPrimary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                          ),
+                          if (showPrefixDivider) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              '|',
+                              style: TextStyle(
+                                color: context.appColors.hint,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w300,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    )
+                  : null,
+              prefixIconConstraints: (prefixText != null && alwaysShowPrefix)
+                  ? const BoxConstraints(minWidth: 0, minHeight: 0)
+                  : null,
+              prefixText: (prefixText != null && !alwaysShowPrefix) ? prefixText : null,
+              prefixStyle: (prefixText != null && !alwaysShowPrefix)
+                  ? (prefixStyle ??
+                      AppTextStyles.field(context).copyWith(
+                        color: context.appColors.textPrimary,
+                        fontWeight: FontWeight.w500,
+                      ))
+                  : null,
               suffixIcon: onToggleObscure == null
                   ? null
                   : IconButton(

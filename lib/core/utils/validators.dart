@@ -9,10 +9,6 @@ class Validators {
   static final RegExp _emailPattern =
       RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
-  // A loose but sane PH-friendly pattern: optional leading +, then 7-15
-  // digits (allows local "09xx" and international "+639xx" formats), with
-  // spaces/dashes stripped before checking.
-  static final RegExp _phonePattern = RegExp(r'^\+?[0-9]{7,15}$');
 
   static String? required(String? value, {String field = 'This field'}) {
     if (value == null || value.trim().isEmpty) {
@@ -34,8 +30,16 @@ class Validators {
     final trimmed = value?.trim() ?? '';
     if (trimmed.isEmpty) return 'Phone number is required.';
     final digitsOnly = trimmed.replaceAll(RegExp(r'[\s-]'), '');
-    if (!_phonePattern.hasMatch(digitsOnly)) {
-      return 'Enter a valid phone number.';
+    String national = digitsOnly;
+    if (national.startsWith('+63')) {
+      national = national.substring(3);
+    } else if (national.startsWith('63')) {
+      national = national.substring(2);
+    } else if (national.startsWith('0')) {
+      national = national.substring(1);
+    }
+    if (national.isEmpty || !national.startsWith('9') || national.length != 10) {
+      return 'Invalid number (e.g., 9XX XXX XXXX)';
     }
     return null;
   }

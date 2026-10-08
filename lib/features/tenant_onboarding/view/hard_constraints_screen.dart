@@ -36,6 +36,18 @@ class _HardConstraintsScreenState extends State<HardConstraintsScreen> {
       _groupSize != null &&
       _groupSize! >= 1;
 
+  String? get _budgetError {
+    final text = _budgetController.text.trim();
+    if (text.isEmpty) {
+      return 'Maximum budget is required.';
+    }
+    final val = num.tryParse(text);
+    if (val == null || val < 1000) {
+      return 'Maximum budget must be at least ₱1,000.';
+    }
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -210,18 +222,45 @@ class _HardConstraintsScreenState extends State<HardConstraintsScreen> {
                                 fontSize: 14,
                                 color: context.appColors.hint,
                               ),
+                              errorText: _budgetError,
+                              errorStyle: const TextStyle(
+                                fontFamily: 'DM Sans',
+                                color: AppColors.destructive,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius:
                                     BorderRadius.circular(AppRadii.field),
                                 borderSide: BorderSide(
-                                  color: context.appColors.fieldBorder,
+                                  color: _budgetError != null
+                                      ? AppColors.destructive
+                                      : context.appColors.fieldBorder,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius:
                                     BorderRadius.circular(AppRadii.field),
+                                borderSide: BorderSide(
+                                  color: _budgetError != null
+                                      ? AppColors.destructive
+                                      : AppColors.primary,
+                                  width: 1.5,
+                                ),
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius:
+                                    BorderRadius.circular(AppRadii.field),
                                 borderSide: const BorderSide(
-                                  color: AppColors.primary,
+                                  color: AppColors.destructive,
+                                  width: 1.2,
+                                ),
+                              ),
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderRadius:
+                                    BorderRadius.circular(AppRadii.field),
+                                borderSide: const BorderSide(
+                                  color: AppColors.destructive,
                                   width: 1.5,
                                 ),
                               ),
@@ -624,7 +663,7 @@ class _StepperControl extends StatelessWidget {
   }
 }
 
-/// Custom toggle with ON (teal) / OFF (gray) text
+/// Custom toggle with YES (teal) / NO (gray) text
 class _TextToggle extends StatelessWidget {
   const _TextToggle({required this.value, required this.onChanged});
 
@@ -638,7 +677,7 @@ class _TextToggle extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 58,
+        width: 60,
         height: 28,
         padding: const EdgeInsets.symmetric(horizontal: 3),
         decoration: BoxDecoration(
@@ -654,10 +693,10 @@ class _TextToggle extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.only(
                   left: value ? 8 : 0,
-                  right: value ? 0 : 6,
+                  right: value ? 0 : 8,
                 ),
                 child: Text(
-                  value ? 'ON' : 'OFF',
+                  value ? 'YES' : 'NO',
                   style: const TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 10,

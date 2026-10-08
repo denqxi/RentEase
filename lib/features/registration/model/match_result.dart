@@ -6,43 +6,59 @@ class MatchResult extends Equatable {
     required this.scorePercent,
     required this.title,
     required this.location,
+    this.price,
+    this.imageAsset,
   });
 
   /// Compatibility score, 0–100.
   final int scorePercent;
 
-  /// Short listing title (e.g. "Top match found").
+  /// Short listing title (e.g. "Sunshine Boarding House").
   final String title;
 
-  /// Listing summary line (e.g. "Sunny 2-bed apartment, Downtown").
+  /// Listing summary line (e.g. "245 Taft Ave, Malate, Manila").
   final String location;
+
+  /// Monthly rental price (e.g. "₱8,500/mo").
+  final String? price;
+
+  /// Image asset path for property thumbnail.
+  final String? imageAsset;
 
   /// Sample presented to tenants once registration completes.
   static const MatchResult tenantSample = MatchResult(
-    scorePercent: 92,
-    title: 'Top match found',
-    location: 'Sunny 2-bed apartment, Downtown',
+    scorePercent: 96,
+    title: 'Sunshine Boarding House',
+    location: '245 Taft Ave, Malate, Manila',
+    price: '₱8,500/mo',
+    imageAsset: 'assets/images/hero-interior.png',
   );
 
   /// Sample presented to landlords once registration completes.
   static const MatchResult landlordSample = MatchResult(
-    scorePercent: 88,
-    title: '6 compatible tenants',
-    location: 'Sorted by best match for your property',
+    scorePercent: 96,
+    title: 'Verified Students',
+    location: '245 Taft Ave, Malate, Manila',
+    price: '₱8,500/mo budget',
+    imageAsset: 'assets/images/hero-interior.png',
   );
 
   /// Top three listings presented to tenants on the success screen.
   static const List<MatchResult> tenantTopMatches = <MatchResult>[
     tenantSample,
     MatchResult(
-      scorePercent: 87,
-      title: 'Great fit',
-      location: 'Cozy studio near campus, Lahug',
+      scorePercent: 92,
+      title: 'BlueSky Dormitory',
+      location: '1024 España Blvd, Sampaloc, Manila',
+      price: '₱7,200/mo',
+      imageAsset: 'assets/images/hero-room.png',
     ),
     MatchResult(
-      scorePercent: 81,
-      title: 'Strong match',
-      location: 'Furnished bedspace, Banilad',
+      scorePercent: 88,
+      title: 'Green Leaf Boarding House',
+      location: '789 Katipunan Ave, Loyola Heights, QC',
+      price: '₱9,000/mo',
+      imageAsset: 'assets/images/hero-modern.png',
     ),
   ];
 
@@ -50,14 +66,18 @@ class MatchResult extends Equatable {
   static const List<MatchResult> landlordTopMatches = <MatchResult>[
     landlordSample,
     MatchResult(
-      scorePercent: 84,
-      title: 'Verified students',
-      location: 'Within your budget and house rules',
+      scorePercent: 92,
+      title: 'Young Professionals',
+      location: '1024 España Blvd, Sampaloc, Manila',
+      price: '₱7,200/mo budget',
+      imageAsset: 'assets/images/hero-room.png',
     ),
     MatchResult(
-      scorePercent: 79,
-      title: 'Young professionals',
-      location: 'Looking to move in this month',
+      scorePercent: 88,
+      title: 'Graduate Researchers',
+      location: '789 Katipunan Ave, Loyola Heights, QC',
+      price: '₱9,000/mo budget',
+      imageAsset: 'assets/images/hero-modern.png',
     ),
   ];
 
@@ -65,5 +85,11 @@ class MatchResult extends Equatable {
   static const MatchResult sample = tenantSample;
 
   @override
-  List<Object?> get props => <Object?>[scorePercent, title, location];
+  List<Object?> get props => <Object?>[
+        scorePercent,
+        title,
+        location,
+        price,
+        imageAsset,
+      ];
 }
