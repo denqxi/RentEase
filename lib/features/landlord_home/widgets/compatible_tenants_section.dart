@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/router/app_router.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../cubit/landlord_home_cubit.dart';
 import '../view/tenant_detail_screen.dart';
 import 'tenant_card.dart';
@@ -69,18 +68,51 @@ class CompatibleTenantsSection extends StatelessWidget {
             children: [
               Text(
                 'Compatible tenants',
-                style: AppTextStyles.title(context).copyWith(fontSize: 18),
+                style: const TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E293B),
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 7.5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFE2E8F0),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  '${state.tenants.length}',
+                  style: const TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
               ),
               const Spacer(),
               GestureDetector(
                 onTap: () =>
-                      Navigator.of(context).pushNamed(AppRouter.findTenants),
-                  child: Text(
-                    'See all',
-                    style: AppTextStyles.link(context)
-                        .copyWith(color: AppColors.primary),
+                    Navigator.of(context).pushNamed(AppRouter.findTenants),
+                behavior: HitTestBehavior.opaque,
+                child: Text(
+                  'See all',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
                   ),
                 ),
+              ),
             ],
           ),
         if (limit != null) const SizedBox(height: AppSpacing.sm),
@@ -101,23 +133,63 @@ class _Note extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
       decoration: BoxDecoration(
-        color: context.appColors.fieldFill,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        border: Border.all(color: context.appColors.fieldBorder, width: 0.5),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0).withValues(alpha: 0.6),
+          width: 0.75,
+        ),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Icon(icon, color: context.appColors.textSecondary),
-          const SizedBox(height: AppSpacing.sm),
+          Container(
+            width: 46,
+            height: 46,
+            decoration: const BoxDecoration(
+              color: Color(0xFFF1F5F9),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Icon(
+                icon,
+                size: 22,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
           Text(
             text,
             textAlign: TextAlign.center,
-            style: AppTextStyles.body(context),
+            style: const TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF64748B),
+              height: 1.4,
+            ),
           ),
-          if (onRetry != null)
-            TextButton(onPressed: onRetry, child: const Text('Try again')),
+          if (onRetry != null) ...[
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: onRetry,
+              child: const Text('Try again'),
+            ),
+          ],
         ],
       ),
     );

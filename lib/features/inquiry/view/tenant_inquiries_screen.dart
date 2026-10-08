@@ -65,6 +65,25 @@ class _TenantInquiriesViewState extends State<_TenantInquiriesView> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
+                  if (Navigator.of(context).canPop()) ...[
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        margin: const EdgeInsets.only(right: AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: context.appColors.fieldFill,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_rounded,
+                          size: 20,
+                          color: context.appColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
                   Text(
                     'Inquiries',
                     style: TextStyle(

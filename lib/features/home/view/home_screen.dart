@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/utils/date_utils.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/date_utils.dart';
+import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../profile/cubit/profile_cubit.dart';
 import '../../registration/model/user_role.dart';
 import '../cubit/home_cubit.dart';
@@ -18,88 +20,122 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isGuest = context.select<ProfileCubit, bool>(
-      (c) => c.state.userRole == UserRole.guest,
-    );
+    ProfileState? profileState;
+    try {
+      profileState = context.watch<ProfileCubit>().state;
+    } catch (_) {
+      // In isolated tests/previews without ProfileCubit
+    }
+
+    final isGuest = profileState?.userRole == UserRole.guest;
+    final fullName = profileState?.fullName ?? '';
+    final firstName = firstNameOf(fullName);
+    final photoUrl = profileState?.photoUrl;
+    final inquiryCount = profileState?.inquiryCount ?? 0;
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
       body: SafeArea(
-        child: BlocBuilder<HomeCubit, HomeState>(
-          buildWhen: (prev, curr) =>
-              prev.isLoading != curr.isLoading ||
-              prev.errorMessage != curr.errorMessage ||
-              prev.listings.isEmpty != curr.listings.isEmpty,
-          builder: (context, state) {
-            return RefreshIndicator(
-              // Re-running the matching engine on pull-to-refresh is the
-              // same trigger point as opening this screen (CLAUDE.md
-              // "Client-Side Matching Engine" trigger b) — just user-invoked.
-              // Guests just reload the public newest-listings feed.
-              onRefresh: () => context.read<HomeCubit>().refresh(),
-              child: CustomScrollView(
-                slivers: <Widget>[
-                  SliverToBoxAdapter(
-                    child: HomeHeader(
-                      userName: isGuest
-                          ? 'Guest'
-                          : firstNameOf(
-                              context.select<ProfileCubit, String>(
-                                (c) => c.state.fullName,
-                              ),
-                            ),
-                    ),
-                  ),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: AppSpacing.sm),
-                  ),
-                  if (state.errorMessage != null)
-                    SliverToBoxAdapter(
-                      child: _ErrorBanner(message: state.errorMessage!),
-                    )
-                  else if (state.isLoading && state.listings.isEmpty)
-                    const SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (state.listings.isEmpty && isGuest)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _EmptyState(isGuest: isGuest),
-                    )
-                  else if (state.listings.isEmpty) ...[
-                    // No compatible properties: still show the separate
-                    // "Other listings" section below the empty state.
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.lg,
-                        ),
-                        child: _EmptyState(isGuest: isGuest),
-                      ),
-                    ),
-                    const SliverToBoxAdapter(child: OtherListingsSection()),
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: AppSpacing.lg),
-                    ),
-                  ] else ...[
-                    const SliverToBoxAdapter(child: RecommendedSection()),
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: AppSpacing.lg),
-                    ),
-                    const SliverToBoxAdapter(child: NearbySection()),
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: AppSpacing.lg),
-                    ),
-                    const SliverToBoxAdapter(child: OtherListingsSection()),
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: AppSpacing.lg),
-                    ),
-                  ],
-                ],
+        bottom: false,
+        child: Column(
+          children: <Widget>[
+            // Fixed top bar — stays stationary on pull down & scroll
+            ColoredBox(
+              color: context.appColors.surface,
+              child: HomeHeader(
+                userName: isGuest
+                    ? 'Guest'
+                    : (firstName.isEmpty ? 'Tenant' : firstName),
+                photoUrl: photoUrl,
+                isGuest: isGuest,
+                hasUnreadInquiries: !isGuest && inquiryCount > 0,
+                onInquiryTap: () {
+                  if (isGuest) {
+                    GuestAccessSheet.show(context);
+                  } else {
+                    Navigator.of(context).pushNamed(AppRouter.tenantInquiries);
+                  }
+                },
               ),
-            );
-          },
+            ),
+            // Invisible separation between the top bar and the section below
+            const SizedBox(height: AppSpacing.xs),
+            // Scrollable section with pull-to-refresh
+            Expanded(
+              child: BlocBuilder<HomeCubit, HomeState>(
+                buildWhen: (prev, curr) =>
+                    prev.isLoading != curr.isLoading ||
+                    prev.errorMessage != curr.errorMessage ||
+                    prev.listings.isEmpty != curr.listings.isEmpty,
+                builder: (context, state) {
+                  return RefreshIndicator(
+                    color: AppColors.primary,
+                    backgroundColor: Colors.white,
+                    edgeOffset: 0,
+                    // Re-running the matching engine on pull-to-refresh is the
+                    // same trigger point as opening this screen (CLAUDE.md
+                    // "Client-Side Matching Engine" trigger b) — just user-invoked.
+                    // Guests just reload the public newest-listings feed.
+                    onRefresh: () => context.read<HomeCubit>().refresh(),
+                    child: CustomScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(
+                        parent: BouncingScrollPhysics(),
+                      ),
+                      slivers: <Widget>[
+                        if (state.errorMessage != null)
+                          SliverToBoxAdapter(
+                            child: _ErrorBanner(message: state.errorMessage!),
+                          )
+                        else if (state.isLoading && state.listings.isEmpty)
+                          const SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                        else if (state.listings.isEmpty && isGuest)
+                          SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: _EmptyState(isGuest: isGuest),
+                          )
+                        else if (state.listings.isEmpty) ...[
+                          // No compatible properties: still show the separate
+                          // "Other listings" section below the empty state.
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSpacing.lg,
+                              ),
+                              child: _EmptyState(isGuest: isGuest),
+                            ),
+                          ),
+                          const SliverToBoxAdapter(
+                            child: OtherListingsSection(),
+                          ),
+                          const SliverToBoxAdapter(
+                            child: SizedBox(height: 100),
+                          ),
+                        ] else ...[
+                          const SliverToBoxAdapter(child: RecommendedSection()),
+                          const SliverToBoxAdapter(
+                            child: SizedBox(height: AppSpacing.lg),
+                          ),
+                          const SliverToBoxAdapter(child: NearbySection()),
+                          const SliverToBoxAdapter(
+                            child: SizedBox(height: AppSpacing.lg),
+                          ),
+                          const SliverToBoxAdapter(
+                            child: OtherListingsSection(),
+                          ),
+                          const SliverToBoxAdapter(
+                            child: SizedBox(height: 100),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

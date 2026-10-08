@@ -11,7 +11,9 @@ import '../../../features/home/widgets/nearby_section.dart'
 import '../../../shared/widgets/match_badge.dart';
 
 class SavedScreen extends StatefulWidget {
-  const SavedScreen({super.key});
+  const SavedScreen({this.showBackButton = true, super.key});
+
+  final bool showBackButton;
 
   @override
   State<SavedScreen> createState() => _SavedScreenState();
@@ -52,23 +54,26 @@ class _SavedScreenState extends State<SavedScreen> {
               ),
               child: Row(
                 children: <Widget>[
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: context.appColors.fieldFill,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.arrow_back_rounded,
-                        size: 20,
-                        color: context.appColors.textPrimary,
+                  if (widget.showBackButton &&
+                      Navigator.of(context).canPop()) ...[
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: context.appColors.fieldFill,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_rounded,
+                          size: 20,
+                          color: context.appColors.textPrimary,
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: AppSpacing.md),
+                    const SizedBox(width: AppSpacing.md),
+                  ],
                   Text(
                     'Saved',
                     style: TextStyle(
@@ -107,7 +112,7 @@ class _SavedScreenState extends State<SavedScreen> {
                         AppSpacing.lg,
                         0,
                         AppSpacing.lg,
-                        AppSpacing.lg,
+                        100,
                       ),
                       itemCount: saved.length,
                       itemBuilder: (ctx, i) => _SavedCard(

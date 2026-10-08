@@ -218,7 +218,7 @@ class AuthRepositoryImpl implements AuthRepository {
       case 'invalid-email':
         return 'That email address looks invalid.';
       case 'weak-password':
-        return 'Password is too weak — use at least 6 characters.';
+        return 'Password must be 12–16 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.';
       // One message for every bad-credential code so the response never
       // reveals whether an email is registered.
       case 'user-not-found':

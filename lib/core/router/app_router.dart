@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../firestore/firestore_collections.dart';
 import '../../features/admin/view/admin_login_screen.dart';
 import '../../features/admin/widgets/admin_only_gate.dart';
 import '../../features/admin/widgets/admin_providers.dart';
@@ -8,16 +10,19 @@ import '../../features/admin/view/admin_shell.dart';
 import '../../features/admin/view/pending_verifications_screen.dart';
 import '../../features/admin/view/property_management_screen.dart';
 import '../../features/admin/view/user_management_screen.dart';
+import '../../features/auth/domain/entities/auth.dart';
 import '../../features/auth/presentation/screens/auth_screen.dart';
 import '../../features/auth/presentation/screens/email_verification_screen.dart';
 
 import '../../features/auth/presentation/screens/role_selection_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
+import '../../features/inquiry/view/tenant_inquiries_screen.dart';
 import '../../features/owner/view/find_tenants_screen.dart';
 import '../../features/owner/view/owner_inquiries_screen.dart';
 import '../../features/owner/view/owner_properties_screen.dart';
 import '../../features/owner_onboarding/view/add_property_screen.dart';
 import '../../features/owner_onboarding/view/document_upload_screen.dart';
+import '../../features/profile/view/saved_screen.dart';
 import '../../features/shell/view/landlord_shell.dart';
 import '../../features/owner_onboarding/view/pricing_amenities_screen.dart';
 import '../../features/owner_onboarding/view/property_rules_screen.dart';
@@ -50,6 +55,8 @@ class AppRouter {
   static const matchingTransition = '/onboarding/matching';
 
   static const tenantHome = '/tenant/home';
+  static const tenantInquiries = '/tenant/inquiries';
+  static const saved = '/saved';
   static const landlordHome = '/landlord/home';
 
   static const documentUpload = '/owner-onboarding/docs';
@@ -75,6 +82,35 @@ class AppRouter {
   static String homeRouteFor({required bool isAdmin, required bool isOwner}) =>
       isAdmin ? adminHome : (isOwner ? landlordHome : tenantHome);
 
+  /// Resolves the destination route for an authenticated user based on role,
+  /// verification, and onboarding completion.
+  static Future<String> postAuthRouteFor(AppUser user) async {
+    if (user.isAdmin) return adminHome;
+    if (!user.emailVerified) {
+      return user.isOwner ? documentUpload : hardConstraints;
+    }
+    try {
+      final firestore = FirebaseFirestore.instance;
+      if (user.isOwner) {
+        final snap = await firestore
+            .collection(FirestoreCollections.ownerProfiles)
+            .doc(user.uid)
+            .get();
+        if (!snap.exists) return documentUpload;
+        return landlordHome;
+      } else {
+        final snap = await firestore
+            .collection(FirestoreCollections.tenantProfiles)
+            .doc(user.uid)
+            .get();
+        if (!snap.exists) return hardConstraints;
+        return tenantHome;
+      }
+    } catch (_) {
+      return homeRouteFor(isAdmin: user.isAdmin, isOwner: user.isOwner);
+    }
+  }
+
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     Widget page;
 
@@ -82,10 +118,11 @@ class AppRouter {
       case signIn:
         page = Builder(
           builder: (ctx) => SignInScreen(
-            onSignIn: (user) => Navigator.of(ctx).pushNamedAndRemoveUntil(
-              homeRouteFor(isAdmin: user.isAdmin, isOwner: user.isOwner),
-              (_) => false,
-            ),
+            onSignIn: (user) async {
+              final route = await postAuthRouteFor(user);
+              if (!ctx.mounted) return;
+              Navigator.of(ctx).pushNamedAndRemoveUntil(route, (_) => false);
+            },
             onCreateAccount: () => Navigator.of(ctx).push(
               MaterialPageRoute<void>(
                 builder: (_) => RegistrationFlowScreen(
@@ -127,6 +164,10 @@ class AppRouter {
         final sessionRole =
             (settings.arguments as UserRole?) ?? UserRole.tenant;
         page = MainShell(sessionRole: sessionRole);
+      case tenantInquiries:
+        page = const TenantInquiriesScreen();
+      case saved:
+        page = const SavedScreen();
       case landlordHome:
         page = const LandlordShell();
 

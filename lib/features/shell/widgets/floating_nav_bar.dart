@@ -2,15 +2,24 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 
+import '../../../shared/widgets/app_svg_icon.dart';
+
 class FloatingNavBarItem {
   const FloatingNavBarItem({
-    required this.icon,
+    this.icon,
+    this.svgString,
     required this.label,
     this.badgeCount = 0,
-  });
-  final IconData icon;
+    this.iconSize,
+    this.activeIconSize,
+  }) : assert(icon != null || svgString != null, 'Either icon or svgString must be provided');
+
+  final IconData? icon;
+  final String? svgString;
   final int badgeCount;
   final String label;
+  final double? iconSize;
+  final double? activeIconSize;
 }
 
 /// Animated floating nav bar shared by tenant and owner shells.
@@ -158,7 +167,7 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: <Widget>[
-                        Icon(widget.data.icon, size: 24, color: context.appColors.ink),
+                        _buildIcon(color: const Color(0xFF1B1B1B), active: false),
                         if (widget.data.badgeCount > 0)
                           Positioned(
                             right: -2,
@@ -245,7 +254,7 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Icon(widget.data.icon, size: 20, color: AppColors.onInk),
+                  _buildIcon(color: AppColors.onInk, active: true),
                   const SizedBox(height: 2),
                   Text(
                     widget.data.label,
@@ -262,6 +271,32 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildIcon({required Color color, required bool active}) {
+    final double defaultSize = active ? 20.0 : 24.0;
+    final double size = active
+        ? (widget.data.activeIconSize ??
+            (widget.data.iconSize != null
+                ? widget.data.iconSize! * (20.0 / 24.0)
+                : defaultSize))
+        : (widget.data.iconSize ?? defaultSize);
+
+    if (widget.data.svgString != null) {
+      return AppSvgIcon(
+        svgString: widget.data.svgString!,
+        size: size,
+        color: color,
+        semanticLabel: widget.data.label,
+      );
+    }
+
+    return Icon(
+      widget.data.icon,
+      size: size,
+      color: color,
+      semanticLabel: widget.data.label,
     );
   }
 }

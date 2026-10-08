@@ -1,8 +1,22 @@
 part of 'shell_cubit.dart';
 
-/// Navigation tab destinations. Tenant shell uses home/search/inquiries/profile.
-/// Landlord shell reuses all 5 slots (extra = 5th tab).
-enum ShellTab { home, search, inquiries, profile, extra }
+/// Navigation tab destinations:
+/// 0: home
+/// 1: search / matches
+/// 2: saved / center action
+/// 3: alerts
+/// 4: profile
+enum ShellTab {
+  home,
+  search,
+  saved,
+  alerts,
+  profile;
+
+  /// Backwards-compatible aliases.
+  static const ShellTab inquiries = saved;
+  static const ShellTab extra = profile;
+}
 
 /// State for [ShellCubit] — tracks which tab is active.
 class ShellState extends Equatable {

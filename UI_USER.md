@@ -15,7 +15,7 @@ This index maps the navigation flows, views, child screens, and components for *
 
 ### Tab 1: Home Dashboard (`ShellTab.home` / Index 0)
 - [FLOW:TENANT_HOME] `lib/features/home/view/home_screen.dart` | Main dashboard displaying personalized rental recommendations, Ci-ranked compatible properties, and other listings
-- [FLOW:TENANT_HOME] `lib/features/home/widgets/home_header.dart` | Greeting header showing tenant's name and quick status
+- [FLOW:TENANT_HOME] `lib/features/home/widgets/home_header.dart` | Reusable header (`AppHomeHeader`) with capsule profile/greeting, stationary positioning, and quick inquiry shortcut button
 - [FLOW:TENANT_HOME] `lib/features/home/widgets/recommended_section.dart` | "Recommended for you" horizontal carousel for top-scoring properties
 - [FLOW:TENANT_HOME] `lib/features/home/widgets/listing_card_large.dart` | Large featured property card (image hero, price, location, TOPSIS match badge, heart save button)
 - [FLOW:TENANT_HOME] `lib/features/home/widgets/nearby_section.dart` | "Compatible properties" vertical list ranked strictly by TOPSIS score
@@ -27,6 +27,7 @@ This index maps the navigation flows, views, child screens, and components for *
 2. [FLOW:TENANT_HOME] `lib/features/home/view/listing_detail_screen.dart` | Detailed listing view alternative with breakdown card and breakdown metrics
 3. [FLOW:TENANT_HOME] `lib/features/home/view/map_view_screen.dart` | Interactive OpenStreetMap showing property markers and POI radius
 4. [FLOW:TENANT_HOME] `lib/features/inquiry/view/start_inquiry.dart` | Direct action handler to send an inquiry with tenant consent prompt
+5. [FLOW:TENANT_INQUIRY] `lib/features/inquiry/view/tenant_inquiries_screen.dart` | Direct shortcut from the top bar header message button to view incoming/active tenant inquiries
 
 ---
 
@@ -38,11 +39,11 @@ This index maps the navigation flows, views, child screens, and components for *
 
 ---
 
-### Tab 3: Inquiries & Messaging (`ShellTab.inquiries` / Index 2)
-- [FLOW:TENANT_INQUIRY] `lib/features/inquiry/view/tenant_inquiries_screen.dart` | Tenant inbox displaying Active and Resolved inquiries sent to landlords
-- [FLOW:TENANT_INQUIRY] `lib/features/inquiry/view/start_inquiry.dart` | Consent modal and inquiry initialization flow
+### Tab 3: Saved Listings (`ShellTab.saved` / Index 2)
+- [FLOW:TENANT_SAVED] `lib/features/profile/view/saved_screen.dart` | "Saved Listings" bookmarks collection with quick unsave and property view directly in the center navigation slot (heart SVG)
 
-#### Inquiry Thread & Lifecycle States:
+#### Inquiry Thread & Lifecycle States (accessed from Header & Alerts):
+- [FLOW:TENANT_INQUIRY] `lib/features/inquiry/view/tenant_inquiries_screen.dart` | Tenant inbox displaying Active and Resolved inquiries sent to landlords
 - [FLOW:TENANT_INQUIRY] `lib/features/inquiry/view/inquiry_thread_screen.dart` | Live thread container dynamically switching between Phase 1 and Phase 2
 - [FLOW:TENANT_INQUIRY] `lib/features/inquiry/widgets/tenant_phase1_view.dart` | Phase 1 view: Inquiry sent, awaiting landlord response (anonymous contact protection)
 - [FLOW:TENANT_INQUIRY] `lib/features/inquiry/widgets/inquiry_chat_view.dart` | Phase 2 view: Landlord accepted; real-time in-app chat with contact details revealed

@@ -145,6 +145,35 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
   /// Retry / pull-to-refresh for the tenant list.
   Future<void> reloadTenants() => _refreshTenants(force: true);
 
+  /// Pull-to-refresh for the entire home screen: re-reads user account and tenants.
+  Future<void> refresh() async {
+    final id = _ownerId;
+    final repo = _properties;
+    if (id != null && repo != null) {
+      try {
+        final user = await repo.fetchUser(id);
+        if (!isClosed && user != null) {
+          final full = [
+            user.firstName,
+            user.lastName,
+          ].where((s) => s.trim().isNotEmpty).join(' ');
+          emit(
+            state.copyWith(
+              fullName: full,
+              firstName: firstNameOf(
+                user.firstName.trim().isNotEmpty ? user.firstName : full,
+              ),
+              photoUrl: user.profilePhoto,
+            ),
+          );
+        }
+      } catch (_) {
+        // Ignored; tenant reload still proceeds.
+      }
+    }
+    await reloadTenants();
+  }
+
   void _onError(Object e) {
     if (isClosed) return;
     emit(

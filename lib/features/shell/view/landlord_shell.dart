@@ -11,6 +11,7 @@ import '../../owner/data/repositories/owner_property_repository_impl.dart';
 import '../../landlord_home/view/landlord_home_screen.dart';
 import '../../landlord_matches/view/landlord_matches_screen.dart';
 import '../../profile/view/owner_profile_screen.dart';
+import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/router/app_router.dart';
 import '../cubit/shell_cubit.dart';
 import '../widgets/floating_nav_bar.dart';
@@ -64,15 +65,22 @@ class _LandlordShellView extends StatelessWidget {
   ];
 
   static List<FloatingNavBarItem> _items(int unread) => <FloatingNavBarItem>[
-    const FloatingNavBarItem(icon: Icons.home_rounded, label: 'Home'),
-    const FloatingNavBarItem(icon: Icons.favorite_rounded, label: 'Matches'),
-    const FloatingNavBarItem(icon: Icons.add_circle_rounded, label: 'Add'),
+    const FloatingNavBarItem(svgString: AppSvgIcons.home, label: 'Home'),
+    const FloatingNavBarItem(svgString: AppSvgIcons.save, label: 'Matches'),
+    const FloatingNavBarItem(
+      svgString: AppSvgIcons.ownerAdd,
+      label: 'Add',
+      iconSize: 28,
+      activeIconSize: 24,
+    ),
     FloatingNavBarItem(
-      icon: Icons.notifications_rounded,
+      svgString: AppSvgIcons.notification,
       label: 'Alerts',
       badgeCount: unread,
+      iconSize: 22,
+      activeIconSize: 18.5,
     ),
-    const FloatingNavBarItem(icon: Icons.person_rounded, label: 'Profile'),
+    const FloatingNavBarItem(svgString: AppSvgIcons.profile, label: 'Profile'),
   ];
 
   @override

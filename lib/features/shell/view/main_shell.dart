@@ -13,7 +13,7 @@ import '../../inquiry/data/repositories/inquiry_repository_impl.dart';
 import '../../home/data/repositories/home_repository_impl.dart';
 import '../../home/view/home_screen.dart';
 import '../../home/view/search_screen.dart';
-import '../../inquiry/view/tenant_inquiries_screen.dart';
+import '../../profile/view/saved_screen.dart';
 import '../../matching/data/repositories/filtering_repository_impl.dart';
 import '../../matching/data/repositories/topsis_repository_impl.dart';
 import '../../matching/domain/services/filtering_service.dart';
@@ -21,6 +21,7 @@ import '../../matching/domain/services/topsis_service.dart';
 import '../../profile/cubit/profile_cubit.dart';
 import '../../saved/data/repositories/saved_listings_repository_impl.dart';
 import '../../profile/view/profile_screen.dart';
+import '../../../core/constants/app_svg_icons.dart';
 import '../cubit/shell_cubit.dart';
 import '../widgets/floating_nav_bar.dart';
 
@@ -94,24 +95,26 @@ class _ShellView extends StatelessWidget {
   static const List<Widget> _screens = <Widget>[
     HomeScreen(),
     SearchScreen(),
-    TenantInquiriesScreen(),
+    SavedScreen(showBackButton: false),
     ActivityScreen(),
     ProfileScreen(),
   ];
 
   static List<FloatingNavBarItem> _items(int unread) => <FloatingNavBarItem>[
-    const FloatingNavBarItem(icon: Icons.home_rounded, label: 'Home'),
-    const FloatingNavBarItem(icon: Icons.search_rounded, label: 'Search'),
+    const FloatingNavBarItem(svgString: AppSvgIcons.home, label: 'Home'),
+    const FloatingNavBarItem(svgString: AppSvgIcons.search, label: 'Search'),
     const FloatingNavBarItem(
-      icon: Icons.chat_bubble_rounded,
-      label: 'Inquiries',
+      svgString: AppSvgIcons.save,
+      label: 'Saved',
     ),
     FloatingNavBarItem(
-      icon: Icons.notifications_rounded,
+      svgString: AppSvgIcons.notification,
       label: 'Alerts',
       badgeCount: unread,
+      iconSize: 22,
+      activeIconSize: 18.5,
     ),
-    const FloatingNavBarItem(icon: Icons.person_rounded, label: 'Profile'),
+    const FloatingNavBarItem(svgString: AppSvgIcons.profile, label: 'Profile'),
   ];
 
   @override
@@ -138,10 +141,13 @@ class _ShellView extends StatelessWidget {
           onTap: (i) {
             final isGuest =
                 context.read<ProfileCubit>().state.userRole == UserRole.guest;
-            // Inquiries (2), Alerts (3), Profile (4) require an account.
+            // Saved (2), Alerts (3), Profile (4) require an account.
             if (isGuest && i >= 2) {
               GuestAccessSheet.show(context);
               return;
+            }
+            if (i == 2) {
+              context.read<HomeCubit>().loadSaved();
             }
             context.read<ShellCubit>().selectTab(ShellTab.values[i]);
           },

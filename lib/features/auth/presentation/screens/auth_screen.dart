@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -12,7 +14,7 @@ import '../../domain/entities/auth.dart';
 import '../bloc/auth_bloc.dart';
 import 'email_verification_screen.dart';
 
-/// Sign-in screen â€” hero building image behind a bottom-anchored white card.
+/// Sign-in screen — hero building image behind a bottom-anchored white card.
 class SignInScreen extends StatefulWidget {
   const SignInScreen({this.onCreateAccount, this.onSignIn, super.key});
 
@@ -32,6 +34,8 @@ class _SignInScreenState extends State<SignInScreen>
   final _passwordController = TextEditingController();
   bool _rememberMe = false;
   bool _obscurePassword = true;
+  int _forgotPasswordCountdown = 0;
+  Timer? _forgotPasswordTimer;
 
   late final AnimationController _animCtrl;
   late final Animation<double> _imageFade;
@@ -103,6 +107,7 @@ class _SignInScreenState extends State<SignInScreen>
 
   @override
   void dispose() {
+    _forgotPasswordTimer?.cancel();
     AppRouter.routeObserver.unsubscribe(this);
     _animCtrl.dispose();
     _emailController.dispose();
@@ -137,12 +142,27 @@ class _SignInScreenState extends State<SignInScreen>
   }
 
   void _handleForgotPassword() {
+    if (_forgotPasswordCountdown > 0) return;
     final email = _emailController.text.trim();
     final emailError = Validators.email(email);
     if (emailError != null) {
       _showError('Enter your email above first, then tap "Forgot password?".');
       return;
     }
+    setState(() => _forgotPasswordCountdown = 40);
+    _forgotPasswordTimer?.cancel();
+    _forgotPasswordTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_forgotPasswordCountdown > 1) {
+        setState(() => _forgotPasswordCountdown--);
+      } else {
+        timer.cancel();
+        setState(() => _forgotPasswordCountdown = 0);
+      }
+    });
     context.read<AuthBloc>().add(AuthPasswordResetRequested(email: email));
   }
 
@@ -177,7 +197,9 @@ class _SignInScreenState extends State<SignInScreen>
           _showError(AuthBloc.suspendedMessage);
         } else if (state is AuthPasswordResetEmailSent) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Password reset link sent to ${state.email}.')),
+            SnackBar(
+              content: Text('Password reset link sent to ${state.email}.'),
+            ),
           );
         }
       },
@@ -221,6 +243,7 @@ class _SignInScreenState extends State<SignInScreen>
                   onCreateAccount: widget.onCreateAccount,
                   onSignIn: _handleSignIn,
                   onForgotPassword: _handleForgotPassword,
+                  forgotPasswordCountdown: _forgotPasswordCountdown,
                 ),
                     ),
                   ),
@@ -274,6 +297,7 @@ class _SignInCard extends StatelessWidget {
     required this.socialSlide,
     this.isLoading = false,
     this.isSuspended = false,
+    this.forgotPasswordCountdown = 0,
     this.onCreateAccount,
     this.onSignIn,
     this.onForgotPassword,
@@ -282,6 +306,7 @@ class _SignInCard extends StatelessWidget {
   /// The account was suspended by an admin: show a persistent notice (the
   /// snackbar alone is missed when this is the first screen after app start).
   final bool isSuspended;
+  final int forgotPasswordCountdown;
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final bool rememberMe;
@@ -385,6 +410,7 @@ class _SignInCard extends StatelessWidget {
                   onRememberMeChanged: onRememberMeChanged,
                   onTogglePassword: onTogglePassword,
                   onForgotPassword: onForgotPassword,
+                  forgotPasswordCountdown: forgotPasswordCountdown,
                 ),
               ),
               SizedBox(height: AppSpacing.lg),
@@ -471,6 +497,7 @@ class _SignInFields extends StatelessWidget {
     required this.onRememberMeChanged,
     required this.onTogglePassword,
     this.onForgotPassword,
+    this.forgotPasswordCountdown = 0,
   });
 
   final TextEditingController emailController;
@@ -480,6 +507,7 @@ class _SignInFields extends StatelessWidget {
   final ValueChanged<bool?> onRememberMeChanged;
   final VoidCallback onTogglePassword;
   final VoidCallback? onForgotPassword;
+  final int forgotPasswordCountdown;
 
   @override
   Widget build(BuildContext context) {
@@ -520,6 +548,7 @@ class _SignInFields extends StatelessWidget {
           rememberMe: rememberMe,
           onChanged: onRememberMeChanged,
           onForgotPassword: onForgotPassword,
+          forgotPasswordCountdown: forgotPasswordCountdown,
         ),
       ],
     );
@@ -597,14 +626,17 @@ class _RememberForgotRow extends StatelessWidget {
     required this.rememberMe,
     required this.onChanged,
     this.onForgotPassword,
+    this.forgotPasswordCountdown = 0,
   });
 
   final bool rememberMe;
   final ValueChanged<bool?> onChanged;
   final VoidCallback? onForgotPassword;
+  final int forgotPasswordCountdown;
 
   @override
   Widget build(BuildContext context) {
+    final isCountingDown = forgotPasswordCountdown > 0;
     return Row(
       children: [
         SizedBox(
@@ -630,10 +662,14 @@ class _RememberForgotRow extends StatelessWidget {
         ),
         const Spacer(),
         GestureDetector(
-          onTap: onForgotPassword,
+          onTap: isCountingDown ? null : onForgotPassword,
           child: Text(
-            'Forgot password?',
-            style: AppTextStyles.label(context).copyWith(color: AppColors.primary),
+            isCountingDown
+                ? 'Forgot password? (${forgotPasswordCountdown}s)'
+                : 'Forgot password?',
+            style: AppTextStyles.label(context).copyWith(
+              color: isCountingDown ? Colors.grey : AppColors.primary,
+            ),
           ),
         ),
       ],

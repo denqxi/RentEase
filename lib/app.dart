@@ -88,8 +88,10 @@ class RentEaseApp extends StatelessWidget {
       _ => null,
     };
     if (user != null) {
+      final route = await AppRouter.postAuthRouteFor(user);
+      if (!context.mounted) return;
       Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRouter.homeRouteFor(isAdmin: user.isAdmin, isOwner: user.isOwner),
+        route,
         (_) => false,
       );
     } else if (state is AuthEmailNotVerified && !state.user.isAdmin) {
@@ -124,10 +126,14 @@ class _SignInEntry extends StatelessWidget {
       // nested Navigator — a nested one only knows its initial route, so any
       // later pushNamed from inside the shell (e.g. the profile screen's
       // Log out button) would silently fail to resolve.
-      onSignIn: (user) => Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRouter.homeRouteFor(isAdmin: user.isAdmin, isOwner: user.isOwner),
-        (_) => false,
-      ),
+      onSignIn: (user) async {
+        final route = await AppRouter.postAuthRouteFor(user);
+        if (!context.mounted) return;
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          route,
+          (_) => false,
+        );
+      },
       onCreateAccount: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => RegistrationFlowScreen(

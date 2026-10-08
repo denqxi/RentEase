@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/services/geocoding_service.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../features/registration/widgets/step_header.dart';
@@ -36,7 +37,10 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _mapController = MapController();
+  final _geocodingService = const GeocodingService();
   LatLng? _pinnedLocation;
+  bool _isResolvingAddress = false;
+  int _geocodeRequestId = 0;
   late final ImageUploadCubit _uploads = ImageUploadCubit(
     repository: widget.repository ?? CloudinaryImageUploadRepository(),
     kind: ImageKind.propertyPhoto,
@@ -47,10 +51,38 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
   // The pin is required: tenants' LocationMatch and distance ranking are
   // computed from these coordinates.
   bool get _canContinue =>
+      !_isResolvingAddress &&
       _uploads.state.isReady &&
       _nameController.text.trim().isNotEmpty &&
       _addressController.text.trim().isNotEmpty &&
       _pinnedLocation != null;
+
+  Future<void> _onMapTapped(LatLng latLng) async {
+    final requestId = ++_geocodeRequestId;
+    setState(() {
+      _pinnedLocation = latLng;
+      _isResolvingAddress = true;
+    });
+
+    try {
+      final address = await _geocodingService.reverseGeocode(
+        latLng.latitude,
+        latLng.longitude,
+      );
+
+      if (requestId != _geocodeRequestId || !mounted) return;
+
+      setState(() {
+        _addressController.text = address;
+        _isResolvingAddress = false;
+      });
+    } catch (_) {
+      if (requestId != _geocodeRequestId || !mounted) return;
+      setState(() {
+        _isResolvingAddress = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -127,6 +159,18 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                                   LengthLimitingTextInputFormatter(300),
                                 ],
                                 onChanged: (_) => setState(() {}),
+                                suffixIcon: _isResolvingAddress
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(14),
+                                        child: SizedBox(
+                                          width: 14,
+                                          height: 14,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      )
+                                    : null,
                               ),
                             ),
                             const SizedBox(height: AppSpacing.md),
@@ -161,9 +205,8 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                                         AppOptions.defaultMapLng,
                                       ),
                                       initialZoom: 14,
-                                      onTap: (_, latLng) => setState(
-                                        () => _pinnedLocation = latLng,
-                                      ),
+                                      onTap: (_, latLng) =>
+                                          _onMapTapped(latLng),
                                     ),
                                     children: [
                                       TileLayer(
@@ -193,6 +236,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                                   MapZoomControls(controller: _mapController),
                                   Positioned(
                                     left: AppSpacing.sm,
+                                    right: AppSpacing.sm,
                                     bottom: AppSpacing.sm,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
@@ -200,28 +244,61 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                                         vertical: 6,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: context.appColors.surface,
+                                        color: context.appColors.surface
+                                            .withValues(alpha: 0.95),
                                         borderRadius: BorderRadius.circular(
                                           AppRadii.field,
                                         ),
                                         border: Border.all(
                                           color: context.appColors.fieldBorder,
                                         ),
+                                        boxShadow: <BoxShadow>[
+                                          BoxShadow(
+                                            color: Colors.black
+                                                .withValues(alpha: 0.05),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 1),
+                                          ),
+                                        ],
                                       ),
-                                      child: Text(
-                                        _pinnedLocation == null
-                                            ? 'Tap to pin your property (required)'
-                                            : 'Pinned '
-                                                  '${_pinnedLocation!.latitude.toStringAsFixed(4)}, '
-                                                  '${_pinnedLocation!.longitude.toStringAsFixed(4)}',
-                                        style: AppTextStyles.caption(context)
-                                            .copyWith(
-                                              color: _pinnedLocation != null
-                                                  ? AppColors.accent
-                                                  : context
-                                                        .appColors
-                                                        .textSecondary,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (_isResolvingAddress) ...[
+                                            const SizedBox(
+                                              width: 12,
+                                              height: 12,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 1.5,
+                                              ),
                                             ),
+                                            const SizedBox(width: 8),
+                                          ],
+                                          Expanded(
+                                            child: Text(
+                                              _pinnedLocation == null
+                                                  ? 'Tap to pin your property (required)'
+                                                  : _isResolvingAddress
+                                                      ? 'Fetching address for pin...'
+                                                      : 'Pinned: ${_addressController.text.isNotEmpty ? _addressController.text : '${_pinnedLocation!.latitude.toStringAsFixed(4)}, ${_pinnedLocation!.longitude.toStringAsFixed(4)}'}',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: AppTextStyles.caption(
+                                                context,
+                                              ).copyWith(
+                                                color: _pinnedLocation != null
+                                                    ? AppColors.accent
+                                                    : context
+                                                          .appColors
+                                                          .textSecondary,
+                                                fontWeight:
+                                                    _pinnedLocation != null
+                                                    ? FontWeight.w600
+                                                    : FontWeight.w400,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),

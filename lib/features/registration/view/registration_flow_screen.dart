@@ -67,6 +67,7 @@ class RegistrationFlowScreen extends StatelessWidget {
                 content: Text(
                   'We sent a password reset link to ${state.email}. Open it, '
                   'set a new password, then log in.',
+
                 ),
               ),
             );

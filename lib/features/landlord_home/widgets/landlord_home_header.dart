@@ -2,17 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/app_home_header.dart';
 
-/// Top header for the Tenant Home screen.
+/// Top header for the Owner / Landlord Home screen.
 ///
-/// Reuses the shared [AppHomeHeader] with `isOwner: false` to avoid duplicate code.
-class HomeHeader extends StatelessWidget {
-  const HomeHeader({
+/// Reuses the shared [AppHomeHeader] with `isOwner: true` to avoid duplicate code.
+class LandlordHomeHeader extends StatelessWidget {
+  const LandlordHomeHeader({
     required this.userName,
     this.photoUrl,
     this.isVerified = false,
-    this.isGuest = false,
-    this.hasUnreadInquiries = false,
-    this.onInquiryTap,
+    this.hasUnreadInquiries = true,
     this.now,
     super.key,
   });
@@ -20,9 +18,7 @@ class HomeHeader extends StatelessWidget {
   final String userName;
   final String? photoUrl;
   final bool isVerified;
-  final bool isGuest;
   final bool hasUnreadInquiries;
-  final VoidCallback? onInquiryTap;
   final DateTime? now;
 
   @override
@@ -31,10 +27,8 @@ class HomeHeader extends StatelessWidget {
       userName: userName,
       photoUrl: photoUrl,
       isVerified: isVerified,
-      isOwner: false,
-      isGuest: isGuest,
+      isOwner: true,
       hasUnreadInquiries: hasUnreadInquiries,
-      onInquiryTap: onInquiryTap,
       now: now,
     );
   }
