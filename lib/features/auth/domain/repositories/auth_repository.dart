@@ -36,6 +36,10 @@ abstract class AuthRepository {
 
   Future<void> signOut();
 
+  /// Deletes the signed-in, still-unverified account (profile docs + Auth
+  /// user) so its email can be registered again.
+  Future<void> deleteUnverifiedAccount();
+
   /// Re-sends the verification email to the currently signed-in user.
   Future<void> sendEmailVerification();
 

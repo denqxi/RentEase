@@ -8,7 +8,7 @@ import '../model/user_role.dart';
 
 /// Selectable card representing a [UserRole] on the "Join RentEase" screen.
 ///
-/// Features an 8-second color spread animation expanding outwards from the
+/// Features a fast, responsive color spread animation expanding outwards from the
 /// tap epicenter across the card, a gentle glow, and a smooth scale-up
 /// animation for the selection circle.
 class RoleOptionCard extends StatefulWidget {
@@ -41,10 +41,10 @@ class _RoleOptionCardState extends State<RoleOptionCard>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 8),
+      duration: const Duration(milliseconds: 300),
     );
 
-    // 8-second smooth color spread curve
+    // Smooth color spread curve
     _spreadAnimation = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutCubic,
@@ -53,13 +53,13 @@ class _RoleOptionCardState extends State<RoleOptionCard>
     // Scale up animation for the selection circle
     _radioScaleAnimation = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 0.25, curve: Curves.easeOutBack),
+      curve: Curves.easeOutBack,
     );
 
     // Subtle glow bloom and gentle fade out
     _glowAnimation = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 0.4, curve: Curves.easeOutQuad),
+      curve: Curves.easeOutQuad,
     );
 
     if (widget.selected) {

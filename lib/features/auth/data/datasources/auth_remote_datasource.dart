@@ -40,6 +40,27 @@ class AuthRemoteDataSource {
 
   Future<void> signOut() => _auth.signOut();
 
+  /// Deletes the signed-in user's profile docs, then the Auth account itself
+  /// (frees the email). Profile docs go first: once the Auth user is gone
+  /// the rules no longer let us delete them.
+  Future<void> deleteCurrentAccountAndProfile() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    final userRef =
+        _firestore.collection(FirestoreCollections.users).doc(user.uid);
+    try {
+      final batch = _firestore.batch();
+      batch.delete(_contactRef(user.uid));
+      batch.delete(userRef);
+      await batch.commit();
+    } on FirebaseException {
+      // A half-created signup may have no profile doc (rules can't evaluate
+      // a delete on it); only fail when a doc is really still there.
+      if ((await userRef.get()).exists) rethrow;
+    }
+    await user.delete();
+  }
+
   Future<void> sendEmailVerification() async {
     await _auth.currentUser?.sendEmailVerification();
   }

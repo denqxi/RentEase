@@ -140,13 +140,12 @@ class _SignInEntry extends StatelessWidget {
   }
 
   void _pushOnboarding(BuildContext context, UserRole role) {
-    Navigator.of(context).pushAndRemoveUntil(
+    Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => EmailVerificationScreen(
           isOwner: role == UserRole.landlord,
         ),
       ),
-      (_) => false,
     );
   }
 }

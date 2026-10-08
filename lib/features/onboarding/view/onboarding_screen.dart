@@ -98,8 +98,8 @@ class _OnboardingViewState extends State<_OnboardingView>
     if (!_pageController.hasClients) return;
     _pageController.animateToPage(
       page,
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeInOutCubic,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
     );
   }
 
@@ -207,7 +207,7 @@ class _HeroFrame extends StatelessWidget {
     return AnimatedContainer(
       duration: state.isLastPage
           ? AppDurations.entrance
-          : const Duration(milliseconds: 350),
+          : const Duration(milliseconds: 250),
       curve: Curves.easeInOutCubic,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),

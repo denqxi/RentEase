@@ -35,3 +35,12 @@ class AppUser extends Equatable {
   List<Object?> get props =>
       [uid, email, role, emailVerified, firstName, lastName, status];
 }
+
+/// Sign-up hit an email that already has an account which could not be
+/// resumed. [verified] is true when the signed-in check proved the account is
+/// a real, verified one; false when the password didn't match (unknown).
+class EmailAlreadyRegisteredException implements Exception {
+  const EmailAlreadyRegisteredException({required this.verified});
+
+  final bool verified;
+}

@@ -37,7 +37,7 @@ class SuccessView extends StatefulWidget {
 
 class _SuccessViewState extends State<SuccessView>
     with TickerProviderStateMixin {
-  static const Duration _componentsDuration = Duration(milliseconds: 1000);
+  static const Duration _componentsDuration = Duration(milliseconds: 550);
 
   /// Interval windows for each staggered component:
   /// 0: Title & Subtitle
@@ -47,10 +47,10 @@ class _SuccessViewState extends State<SuccessView>
   /// 4: Explore Action Button
   static const List<Interval> _intervals = <Interval>[
     Interval(0.05, 0.45, curve: Curves.easeOutCubic),
-    Interval(0.25, 0.65, curve: Curves.easeOutCubic),
-    Interval(0.40, 0.80, curve: Curves.easeOutCubic),
-    Interval(0.55, 0.92, curve: Curves.easeOutCubic),
-    Interval(0.65, 1.00, curve: Curves.easeOutCubic),
+    Interval(0.20, 0.60, curve: Curves.easeOutCubic),
+    Interval(0.35, 0.75, curve: Curves.easeOutCubic),
+    Interval(0.50, 0.90, curve: Curves.easeOutCubic),
+    Interval(0.60, 1.00, curve: Curves.easeOutCubic),
   ];
 
   late final AnimationController _lottieAnimCtrl;
@@ -67,7 +67,7 @@ class _SuccessViewState extends State<SuccessView>
     // 1. Lottie checkmark graphic animation controller
     _lottieAnimCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 700),
     );
     _lottieScale = Tween<double>(begin: 0.6, end: 1.0).animate(
       CurvedAnimation(

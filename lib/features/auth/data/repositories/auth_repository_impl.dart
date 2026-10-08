@@ -74,9 +74,63 @@ class AuthRepositoryImpl implements AuthRepository {
         lastName: lastName,
       );
     } on fb.FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        // Abandoned, unverified signup of this same person? Clear it and
+        // register again; otherwise this throws EmailAlreadyRegistered.
+        await _clearAbandonedSignUp(email: email, password: password);
+        return signUp(
+          email: email,
+          password: password,
+          firstName: firstName,
+          lastName: lastName,
+          gender: gender,
+          phone: phone,
+          role: role,
+          ageConfirmed: ageConfirmed,
+        );
+      }
       throw Exception(_messageForAuthError(e));
     }
   }
+
+  /// Called when the email is taken. Signs in with the password just typed:
+  /// - unverified (and not an admin) → it's a leftover signup; delete it.
+  /// - verified / admin → real account; sign out and report it.
+  /// - wrong password → can't tell whose it is; report it.
+  Future<void> _clearAbandonedSignUp({
+    required String email,
+    required String password,
+  }) async {
+    final fb.User user;
+    try {
+      user = (await _remote.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      ))
+          .user!;
+    } on fb.FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password' ||
+          e.code == 'invalid-credential' ||
+          e.code == 'user-not-found') {
+        throw const EmailAlreadyRegisteredException(verified: false);
+      }
+      throw Exception(_messageForAuthError(e));
+    }
+    final doc = await _remote.fetchUserDoc(user.uid);
+    if (user.emailVerified || doc?.role == 'admin') {
+      await _remote.signOut();
+      throw const EmailAlreadyRegisteredException(verified: true);
+    }
+    try {
+      await _remote.deleteCurrentAccountAndProfile();
+    } on fb.FirebaseAuthException catch (e) {
+      throw Exception(_messageForAuthError(e));
+    }
+  }
+
+  @override
+  Future<void> deleteUnverifiedAccount() =>
+      _remote.deleteCurrentAccountAndProfile();
 
   @override
   Stream<bool> watchSuspended(String uid) => _remote.watchUserStatus(uid).map(

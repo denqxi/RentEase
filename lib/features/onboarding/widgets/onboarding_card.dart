@@ -42,10 +42,10 @@ class _OnboardingCardState extends State<OnboardingCard>
   @override
   void initState() {
     super.initState();
-    // 1.4s on the first screen and last page, 350ms on intermediate pages
+    // 400ms entrance on first screen and last page, 250ms on intermediate pages
     final duration = (widget.state.currentPage == 0 || widget.state.isLastPage)
         ? AppDurations.entrance
-        : const Duration(milliseconds: 350);
+        : const Duration(milliseconds: 250);
 
     _controller = AnimationController(vsync: this, duration: duration);
 

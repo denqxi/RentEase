@@ -28,5 +28,5 @@ abstract final class AppSizes {
 class AppDurations {
   const AppDurations._();
 
-  static const Duration entrance = Duration(milliseconds: 1400);
+  static const Duration entrance = Duration(milliseconds: 400);
 }

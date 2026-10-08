@@ -92,13 +92,12 @@ class AppRouter {
                   // A fresh account is unverified: go through email
                   // verification first (it then routes into onboarding),
                   // exactly like the _SignInEntry flow in app.dart.
-                  onComplete: (role) => Navigator.of(ctx).pushAndRemoveUntil(
+                  onComplete: (role) => Navigator.of(ctx).push(
                     MaterialPageRoute<void>(
                       builder: (_) => EmailVerificationScreen(
                         isOwner: role == UserRole.landlord,
                       ),
                     ),
-                    (_) => false,
                   ),
                   onSignIn: () => Navigator.of(ctx).pop(),
                 ),

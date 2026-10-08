@@ -58,6 +58,15 @@
             <data android:scheme="mailto"/>
         </intent>
         <intent>
+            <action android:name="android.intent.action.MAIN"/>
+            <category android:name="android.intent.category.APP_EMAIL"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="android-app"/>
+        </intent>
+        <package android:name="com.google.android.gm"/>
+        <intent>
             <action android:name="android.support.customtabs.action.CustomTabsService"/>
         </intent>
     </queries>

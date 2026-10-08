@@ -138,10 +138,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       // Freshly created accounts are always unverified.
       emit(AuthEmailNotVerified(user));
       _watchSuspension(user);
+    } on EmailAlreadyRegisteredException catch (e) {
+      emit(AuthEmailAlreadyRegistered(email: event.email, verified: e.verified));
+      emit(const AuthUnauthenticated());
     } catch (e) {
       emit(AuthOperationFailure(_friendly(e)));
       emit(const AuthUnauthenticated());
     }
+  }
+
+  /// Deletes the pending, unverified account (profile + Auth user) so the
+  /// user can edit their details and register again. Returns false on failure.
+  Future<bool> deletePendingAccount() async {
+    try {
+      await _repository.deleteUnverifiedAccount();
+    } catch (_) {
+      return false;
+    }
+    add(const AuthSignOutRequested());
+    return true;
   }
 
   Future<void> _onSignOutRequested(

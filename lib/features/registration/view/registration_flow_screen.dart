@@ -49,6 +49,9 @@ class RegistrationFlowScreen extends StatelessWidget {
           final onAccountStep = currentStep == RegistrationStep.account ||
               currentStep == RegistrationStep.landlordAccount;
           if (!onAccountStep) return;
+          // The verification screen sits on top of this form now; its own
+          // auth events (resend, check) must not re-trigger this listener.
+          if (ModalRoute.of(context)?.isCurrent != true) return;
 
           if (state is AuthEmailNotVerified) {
             // Account created — hand off to email verification, which then
@@ -56,6 +59,17 @@ class RegistrationFlowScreen extends StatelessWidget {
             // owner document upload). The "You're all set" success step is
             // not shown here: it belongs after onboarding, not before it.
             onComplete(cubit.state.data.role ?? UserRole.tenant);
+          } else if (state is AuthEmailAlreadyRegistered) {
+            _showAlreadyRegisteredDialog(context, state, onSignIn);
+          } else if (state is AuthPasswordResetEmailSent) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'We sent a password reset link to ${state.email}. Open it, '
+                  'set a new password, then log in.',
+                ),
+              ),
+            );
           } else if (state is AuthOperationFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -131,4 +145,66 @@ class RegistrationFlowScreen extends StatelessWidget {
         ),
     };
   }
+}
+
+/// Shown when the email typed on the account step already has an account
+/// that couldn't be resumed (see AuthRepositoryImpl.signUp).
+void _showAlreadyRegisteredDialog(
+  BuildContext context,
+  AuthEmailAlreadyRegistered state,
+  VoidCallback onSignIn,
+) {
+  const bold = FontWeight.bold;
+  showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(
+        state.verified
+            ? 'You already have an account'
+            : 'This email is already registered',
+      ),
+      content: Text(
+        state.verified
+            ? 'This email is already registered and verified. '
+                'Please log in instead.'
+            : 'You may have already started creating an account with this '
+                'email. Log in to continue where you left off. If you never '
+                'verified your email, we\'ll take you to the verification '
+                'step. Forgot your password? Reset it using your email.',
+      ),
+      actionsAlignment: MainAxisAlignment.end,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: Text(
+            state.verified ? 'Cancel' : 'Use another email',
+            style: const TextStyle(color: Colors.grey, fontWeight: bold),
+          ),
+        ),
+        if (!state.verified)
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              context
+                  .read<AuthBloc>()
+                  .add(AuthPasswordResetRequested(email: state.email));
+            },
+            child: const Text(
+              'Reset password',
+              style: TextStyle(color: Colors.blue, fontWeight: bold),
+            ),
+          ),
+        TextButton(
+          onPressed: () {
+            Navigator.of(ctx).pop();
+            onSignIn();
+          },
+          child: const Text(
+            'Log in',
+            style: TextStyle(color: Colors.blue, fontWeight: bold),
+          ),
+        ),
+      ],
+    ),
+  );
 }

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Opens a web page (or a `tel:` dialer link). Abstract so tests can fake it.
@@ -36,31 +38,46 @@ class UrlLauncherOpener implements UrlOpener {
   }
 }
 
-/// Opens the device's default email client (e.g. Mail, Gmail) to the inbox
-/// without composing a new email.
+const MethodChannel _emailChannel = MethodChannel('com.example.rentease/email_app');
+
+/// Opens the device's Gmail or default email client directly to the inbox
+/// without opening compose or redirecting to a web browser.
 Future<bool> openEmailApp() async {
-  // On iOS, message:// opens the Mail app directly to the inbox.
-  final iosMailUri = Uri.parse('message://');
-  try {
-    if (await canLaunchUrl(iosMailUri)) {
-      return await launchUrl(iosMailUri, mode: LaunchMode.externalApplication);
-    }
-  } catch (_) {}
+  // 1. Android: use native method channel to launch the Gmail app directly
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    try {
+      final opened = await _emailChannel.invokeMethod<bool>('openEmailApp');
+      if (opened == true) return true;
+    } catch (_) {}
 
-  // General mailto: scheme with no recipient or parameters.
-  final mailtoUri = Uri(scheme: 'mailto');
-  try {
-    if (await canLaunchUrl(mailtoUri)) {
-      return await launchUrl(mailtoUri, mode: LaunchMode.externalApplication);
-    }
-    return await launchUrl(mailtoUri, mode: LaunchMode.externalApplication);
-  } catch (_) {}
-
-  // Webmail fallback
-  try {
-    final webmailUri = Uri.parse('https://mail.google.com');
-    return await launchUrl(webmailUri, mode: LaunchMode.externalApplication);
-  } catch (_) {
-    return false;
+    // Android direct Gmail app URI fallback (never opens browser)
+    try {
+      final gmailUri = Uri.parse('android-app://com.google.android.gm');
+      final opened = await launchUrl(
+        gmailUri,
+        mode: LaunchMode.externalNonBrowserApplication,
+      );
+      if (opened) return true;
+    } catch (_) {}
   }
+
+  // 2. iOS: direct app URL schemes that open the app directly to inbox without composing
+  final iosSchemes = <Uri>[
+    Uri.parse('googlegmail:///'),
+    Uri.parse('message://'),
+    Uri.parse('ms-outlook://'),
+    Uri.parse('ymail://'),
+  ];
+
+  for (final uri in iosSchemes) {
+    try {
+      if (await canLaunchUrl(uri)) {
+        final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (opened) return true;
+      }
+    } catch (_) {}
+  }
+
+  // Do not redirect to a web browser
+  return false;
 }

@@ -11,6 +11,8 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/url_opener.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../features/registration/widgets/registration_app_bar.dart';
+import '../../../../features/registration/view/registration_flow_screen.dart';
+import '../../../../features/registration/model/user_role.dart';
 import '../bloc/auth_bloc.dart';
 
 class EmailVerificationScreen extends StatefulWidget {
@@ -52,32 +54,68 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
     bloc.add(const AuthEmailVerificationCheckRequested());
   }
 
-  Future<void> _leave() async {
+  Future<void> _handleEditInfo() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Use a different account?'),
-        content: const Text(
-          'You will be signed out and returned to the sign-in screen.',
-        ),
+        title: const Text('Do you want to edit your personal information?'),
+        actionsAlignment: MainAxisAlignment.end,
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Stay'),
+            child: const Text(
+              'No',
+              style: TextStyle(
+                color: Colors.grey,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Sign out'),
+            child: const Text(
+              'Yes',
+              style: TextStyle(
+                color: Colors.blue,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
     );
     if (confirmed != true || !mounted) return;
-    context.read<AuthBloc>().add(const AuthSignOutRequested());
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      AppRouter.signIn,
-      (_) => false,
-    );
+
+    // Free the email: delete the pending profile + Auth account first.
+    final deleted = await context.read<AuthBloc>().deletePendingAccount();
+    if (!mounted) return;
+    if (!deleted) {
+      _showMessage(
+        "Couldn't clear your pending account. Please check your connection "
+        'and try again.',
+        isError: true,
+      );
+      return;
+    }
+
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => RegistrationFlowScreen(
+            onComplete: (role) => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => EmailVerificationScreen(
+                  isOwner: role == UserRole.landlord,
+                ),
+              ),
+            ),
+            onSignIn: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+    }
   }
 
   void _showMessage(String message, {bool isError = false}) {
@@ -94,7 +132,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _leave();
+        if (!didPop) _handleEditInfo();
       },
       child: BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
@@ -120,7 +158,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
               .read<AuthBloc>()
               .add(const AuthEmailVerificationResendRequested());
         },
-        onBack: _leave,
+        onBack: _handleEditInfo,
         onContinue: () => context
             .read<AuthBloc>()
             .add(const AuthEmailVerificationCheckRequested()),
@@ -345,7 +383,7 @@ class _EmailVerificationBodyState extends State<_EmailVerificationBody>
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
-                                    const SizedBox(height: AppSpacing.sm),
+                                    const SizedBox(height: AppSpacing.lg),
                                     Text(
                                       "Check your spam folder if you don't see it.",
                                       textAlign: TextAlign.center,
@@ -399,13 +437,6 @@ class _EmailVerificationBodyState extends State<_EmailVerificationBody>
                                       fontWeight: FontWeight.w600,
                                     ),
                             ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: widget.onBack,
-                          child: Text(
-                            'Use a different account',
-                            style: AppTextStyles.link(context),
                           ),
                         ),
                       ],

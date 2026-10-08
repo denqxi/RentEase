@@ -53,6 +53,22 @@ class AuthOperationFailure extends AuthState {
   List<Object?> get props => [message];
 }
 
+/// Sign-up found an existing account for [email] that can't be resumed.
+/// Transient — the UI shows a dialog, then the bloc falls back to
+/// [AuthUnauthenticated]. [verified] is true when it is a real, verified one.
+class AuthEmailAlreadyRegistered extends AuthState {
+  const AuthEmailAlreadyRegistered({
+    required this.email,
+    required this.verified,
+  });
+
+  final String email;
+  final bool verified;
+
+  @override
+  List<Object?> get props => [email, verified];
+}
+
 /// The verification email was re-sent successfully. Transient — the bloc
 /// returns to [AuthEmailNotVerified] right after.
 class AuthVerificationEmailResent extends AuthState {
