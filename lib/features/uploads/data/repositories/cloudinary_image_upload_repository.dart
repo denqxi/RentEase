@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -50,10 +53,16 @@ class CloudinaryImageUploadRepository implements ImageUploadRepository {
         'Image upload is not configured yet. Please contact support.',
       );
     }
-    final file = File(path);
+    // Web: picked path is a blob URL, so dart:io File can't read it.
+    Uint8List? webBytes;
     final int size;
     try {
-      size = await file.length();
+      if (kIsWeb) {
+        webBytes = await XFile(path).readAsBytes();
+        size = webBytes.length;
+      } else {
+        size = await File(path).length();
+      }
     } catch (_) {
       throw const ImageUploadException(
         'Could not read that image. Pick another.',
@@ -75,7 +84,15 @@ class CloudinaryImageUploadRepository implements ImageUploadRepository {
       ..fields['folder'] = _isDoc(kind)
           ? CloudinaryConfig.documentFolder
           : CloudinaryConfig.propertyPhotoFolder
-      ..files.add(await http.MultipartFile.fromPath('file', path));
+      ..files.add(
+        kIsWeb
+            ? http.MultipartFile.fromBytes(
+                'file',
+                webBytes!,
+                filename: 'upload.jpg',
+              )
+            : await http.MultipartFile.fromPath('file', path),
+      );
 
     try {
       final streamed = await _client

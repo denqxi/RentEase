@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -248,6 +249,13 @@ class ImageUploadSlot extends StatelessWidget {
                 cacheWidth: 400,
                 errorBuilder: (_, _, _) => const SizedBox.expand(),
               ))
+      : kIsWeb
+      ? Image.network(
+          slot.localPath!,
+          fit: BoxFit.cover,
+          cacheWidth: 400,
+          errorBuilder: (_, _, _) => const SizedBox.expand(),
+        )
       : Image.file(
           File(slot.localPath!),
           fit: BoxFit.cover,

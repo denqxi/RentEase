@@ -59,10 +59,13 @@ class _PricingAmenitiesScreenState extends State<PricingAmenitiesScreen> {
       return;
     }
     cubit.reset();
+    final messenger = ScaffoldMessenger.of(context);
     Navigator.of(context).pushNamedAndRemoveUntil(
-      AppRouter.matchingTransition,
+      AppRouter.landlordHome,
       (_) => false,
-      arguments: true, // owner
+    );
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Property added successfully.')),
     );
   }
 
