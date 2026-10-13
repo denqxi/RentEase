@@ -33,8 +33,8 @@ class HomeHeader extends StatelessWidget {
       isVerified: isVerified,
       isOwner: false,
       isGuest: isGuest,
-      hasUnreadInquiries: hasUnreadInquiries,
-      onInquiryTap: onInquiryTap,
+      hasUnread: hasUnreadInquiries,
+      onActionTap: onInquiryTap,
       now: now,
     );
   }

@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_svg_icons.dart';
 import '../../../shared/widgets/app_home_header.dart';
 
 /// Top header for the Owner / Landlord Home screen.
 ///
-/// Reuses the shared [AppHomeHeader] with `isOwner: true` to avoid duplicate code.
+/// Features a single full-width floating capsule container with profile avatar,
+/// greeting, owner name + badge on the left, and notification bell on the right.
 class LandlordHomeHeader extends StatelessWidget {
   const LandlordHomeHeader({
     required this.userName,
     this.photoUrl,
     this.isVerified = false,
-    this.hasUnreadInquiries = true,
+    this.hasUnreadNotifications = false,
+    this.hasUnreadInquiries = false,
+    this.onNotificationTap,
     this.now,
     super.key,
   });
@@ -18,7 +22,9 @@ class LandlordHomeHeader extends StatelessWidget {
   final String userName;
   final String? photoUrl;
   final bool isVerified;
+  final bool hasUnreadNotifications;
   final bool hasUnreadInquiries;
+  final VoidCallback? onNotificationTap;
   final DateTime? now;
 
   @override
@@ -28,7 +34,10 @@ class LandlordHomeHeader extends StatelessWidget {
       photoUrl: photoUrl,
       isVerified: isVerified,
       isOwner: true,
-      hasUnreadInquiries: hasUnreadInquiries,
+      actionSvgString: AppSvgIcons.notification,
+      actionLabel: 'Notifications',
+      hasUnread: hasUnreadNotifications || hasUnreadInquiries,
+      onActionTap: onNotificationTap,
       now: now,
     );
   }

@@ -201,6 +201,40 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
   /// Updates the live search query.
   void updateSearch(String query) => emit(state.copyWith(searchQuery: query));
 
+  /// 'available' | 'pending' | 'booked'. Only 'available' is shown to
+  /// tenants (`isAvailable` mirrors it for the matching engine's query).
+  Future<void> setVacancy(String propertyId, String status) async {
+    final repo = _properties;
+    if (repo == null) return;
+    final unlisted = state.properties.any(
+      (p) => p.propertyId == propertyId && p.adminUnlisted,
+    );
+    if (unlisted) {
+      emit(state.copyWith(errorMessage: adminUnlistedMessage));
+      return;
+    }
+    try {
+      await repo.updateProperty(propertyId, {
+        'vacancyStatus': status,
+        'isAvailable': status == 'available',
+      });
+    } catch (e) {
+      _onError(e);
+    }
+  }
+
+  /// Saves an edit; rethrows so the edit screen can show the failure.
+  Future<void> updateProperty(
+    String propertyId,
+    Map<String, dynamic> fields,
+  ) async {
+    final repo = _properties;
+    if (repo == null) return;
+    await repo.updateProperty(propertyId, fields);
+  }
+
+  void clearError() => emit(state.copyWith(clearError: true));
+
   @override
   Future<void> close() {
     _propertiesSub?.cancel();

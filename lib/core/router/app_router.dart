@@ -19,7 +19,6 @@ import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/inquiry/view/tenant_inquiries_screen.dart';
 import '../../features/owner/view/find_tenants_screen.dart';
 import '../../features/owner/view/owner_inquiries_screen.dart';
-import '../../features/owner/view/owner_properties_screen.dart';
 import '../../features/owner_onboarding/view/add_property_screen.dart';
 import '../../features/owner_onboarding/view/document_upload_screen.dart';
 import '../../features/profile/view/saved_screen.dart';
@@ -183,7 +182,7 @@ class AppRouter {
         page = const PricingAmenitiesScreen();
 
       case ownerProperties:
-        page = const OwnerPropertiesScreen();
+        page = const LandlordShell();
       case findTenants:
         page = const FindTenantsScreen();
       case ownerInquiries:

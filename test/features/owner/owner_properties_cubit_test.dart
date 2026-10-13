@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rentease/core/firestore/models/models.dart';
-import 'package:rentease/features/owner/cubit/owner_properties_cubit.dart';
+import 'package:rentease/features/landlord_home/cubit/landlord_home_cubit.dart';
 import 'package:rentease/features/owner/domain/repositories/owner_property_repository.dart';
 
 PropertyDoc _prop({bool unlisted = false}) => PropertyDoc(
@@ -52,7 +52,7 @@ void main() {
   test('setVacancy on an admin-unlisted property is blocked with a message',
       () async {
     final repo = _Repo();
-    final cubit = OwnerPropertiesCubit(ownerId: 'o1', repository: repo);
+    final cubit = LandlordHomeCubit(ownerId: 'o1', propertyRepository: repo);
     repo.props.add([_prop(unlisted: true)]);
     await Future<void>.delayed(Duration.zero);
     await cubit.setVacancy('p1', 'available');
@@ -63,7 +63,7 @@ void main() {
 
   test('setVacancy on a normal property writes', () async {
     final repo = _Repo();
-    final cubit = OwnerPropertiesCubit(ownerId: 'o1', repository: repo);
+    final cubit = LandlordHomeCubit(ownerId: 'o1', propertyRepository: repo);
     repo.props.add([_prop()]);
     await Future<void>.delayed(Duration.zero);
     await cubit.setVacancy('p1', 'booked');

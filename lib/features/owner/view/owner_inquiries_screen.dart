@@ -38,6 +38,7 @@ class OwnerInquiriesScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: context.appColors.surface,
         appBar: AppBar(
+          automaticallyImplyLeading: Navigator.of(context).canPop(),
           backgroundColor: context.appColors.surface,
           elevation: 0,
           title: Text(
@@ -124,7 +125,12 @@ class _InquiryList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (items.isEmpty) return _InboxMessage(emptyText);
     return ListView.separated(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        100,
+      ),
       itemCount: items.length,
       separatorBuilder: (_, _) => SizedBox(height: AppSpacing.sm),
       itemBuilder: (_, i) => _OwnerInquiryCard(summary: items[i]),

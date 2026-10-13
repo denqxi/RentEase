@@ -41,7 +41,6 @@ import '../features/matching/domain/services/topsis_service.dart';
 import '../features/onboarding/view/onboarding_screen.dart';
 import '../features/owner/view/find_tenants_screen.dart';
 import '../features/owner/view/owner_inquiries_screen.dart';
-import '../features/owner/view/owner_properties_screen.dart';
 import '../features/owner_onboarding/view/add_property_screen.dart';
 import '../features/owner_onboarding/view/document_upload_screen.dart';
 import '../features/owner_onboarding/view/pricing_amenities_screen.dart';
@@ -211,7 +210,6 @@ class DebugScreenViewer extends StatelessWidget {
           ),
         ),
         _Entry('Find tenants', (_) => const FindTenantsScreen()),
-        _Entry('Properties', (_) => const OwnerPropertiesScreen()),
         _Entry('Inquiries', (_) => const OwnerInquiriesScreen()),
         _Entry(
           'Activity / alerts',

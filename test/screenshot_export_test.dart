@@ -51,7 +51,6 @@ import 'package:rentease/features/landlord_matches/view/landlord_matches_screen.
 import 'package:rentease/features/onboarding/view/onboarding_screen.dart';
 import 'package:rentease/features/owner/view/find_tenants_screen.dart';
 import 'package:rentease/features/owner/view/owner_inquiries_screen.dart';
-import 'package:rentease/features/owner/view/owner_properties_screen.dart';
 import 'package:rentease/features/owner_onboarding/view/add_property_screen.dart';
 import 'package:rentease/features/owner_onboarding/view/document_upload_screen.dart';
 import 'package:rentease/features/owner_onboarding/view/pricing_amenities_screen.dart';
@@ -248,7 +247,6 @@ void main() {
     await _capture(
         tester, '53_owner_tenant_detail', const TenantDetailScreen(tenant: CompatibleTenant(matchId: 'm1', tenantId: 't1', name: 'Preview Tenant', gender: 'Female', maxBudget: 4500, bScore: 1)));
     await _capture(tester, '54_owner_find_tenants', const FindTenantsScreen());
-    await _capture(tester, '55_owner_properties', const OwnerPropertiesScreen());
     await _capture(tester, '56_owner_inquiries', const OwnerInquiriesScreen());
     await _capture(
       tester,

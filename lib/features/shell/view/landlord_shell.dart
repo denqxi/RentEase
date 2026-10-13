@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../activity/cubit/activity_cubit.dart';
 import '../../activity/data/repositories/notification_repository_impl.dart';
-import '../../activity/view/activity_screen.dart';
+import '../../owner/view/owner_inquiries_screen.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
 import '../../owner/data/repositories/find_tenants_repository_impl.dart';
@@ -60,35 +60,29 @@ class _LandlordShellView extends StatelessWidget {
     LandlordMatchesScreen(),
     // index 2 is the Add shortcut — no persistent screen needed
     SizedBox.shrink(),
-    ActivityScreen(),
+    OwnerInquiriesScreen(),
     OwnerProfileScreen(),
   ];
 
-  static List<FloatingNavBarItem> _items(int unread) => <FloatingNavBarItem>[
-    const FloatingNavBarItem(svgString: AppSvgIcons.home, label: 'Home'),
-    const FloatingNavBarItem(svgString: AppSvgIcons.save, label: 'Matches'),
-    const FloatingNavBarItem(
+  static List<FloatingNavBarItem> _items() => const <FloatingNavBarItem>[
+    FloatingNavBarItem(svgString: AppSvgIcons.home, label: 'Home'),
+    FloatingNavBarItem(svgString: AppSvgIcons.save, label: 'Matches'),
+    FloatingNavBarItem(
       svgString: AppSvgIcons.ownerAdd,
       label: 'Add',
       iconSize: 28,
       activeIconSize: 24,
     ),
     FloatingNavBarItem(
-      svgString: AppSvgIcons.notification,
-      label: 'Alerts',
-      badgeCount: unread,
-      iconSize: 22,
-      activeIconSize: 18.5,
+      svgString: AppSvgIcons.inquiry,
+      label: 'Inquiries',
     ),
-    const FloatingNavBarItem(svgString: AppSvgIcons.profile, label: 'Profile'),
+    FloatingNavBarItem(svgString: AppSvgIcons.profile, label: 'Profile'),
   ];
 
   @override
   Widget build(BuildContext context) {
     final tab = context.watch<ShellCubit>().state.tab;
-    final unread = context.select<ActivityCubit, int>(
-      (c) => c.state.unreadCount,
-    );
 
     return Scaffold(
       extendBody: true,
@@ -97,7 +91,7 @@ class _LandlordShellView extends StatelessWidget {
         children: _screens,
       ),
       bottomNavigationBar: FloatingNavBar(
-        items: _items(unread),
+        items: _items(),
         selectedIndex: tab.index,
         onTap: (i) {
           if (i == 2) {

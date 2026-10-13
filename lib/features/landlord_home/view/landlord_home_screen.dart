@@ -9,12 +9,15 @@ import '../../../core/firestore/models/models.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/pending_listing_banner.dart';
+import '../../activity/cubit/activity_cubit.dart';
+import '../../activity/view/activity_screen.dart';
 import '../widgets/landlord_home_header.dart';
 import '../cubit/landlord_home_cubit.dart';
-import '../widgets/compatible_tenants_section.dart';
+import '../../../shared/widgets/admin_unlisted_notice.dart';
+import '../../owner/view/edit_property_screen.dart';
 
-/// Owner home: greeting, the owner's real listings and a preview of
-/// compatible tenants (unranked).
+/// Owner home: property management dashboard with real listings, live
+/// availability controls, and quick actions.
 class LandlordHomeScreen extends StatefulWidget {
   const LandlordHomeScreen({super.key});
 
@@ -92,9 +95,31 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
     });
   }
 
+  Future<void> _editProperty(BuildContext context, PropertyDoc property) async {
+    final cubit = context.read<LandlordHomeCubit>();
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => EditPropertyScreen(
+          property: property,
+          onSave: (fields) =>
+              cubit.updateProperty(property.propertyId, fields),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<LandlordHomeCubit>();
+    int unreadNotifications = 0;
+    try {
+      unreadNotifications = context.select<ActivityCubit, int>(
+        (c) => c.state.unreadCount,
+      );
+    } catch (_) {
+      // In isolated tests/previews without ActivityCubit
+    }
+
     return Scaffold(
       backgroundColor: context.appColors.surface,
       body: SafeArea(
@@ -105,7 +130,20 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
             position: _entranceSlide,
             child: ScaleTransition(
               scale: _entranceScale,
-              child: BlocBuilder<LandlordHomeCubit, LandlordHomeState>(
+              child: BlocConsumer<LandlordHomeCubit, LandlordHomeState>(
+                listenWhen: (prev, curr) =>
+                    curr.errorMessage != null &&
+                    prev.errorMessage != curr.errorMessage &&
+                    curr.properties.isNotEmpty,
+                listener: (context, state) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.errorMessage!),
+                      backgroundColor: AppColors.destructive,
+                    ),
+                  );
+                  context.read<LandlordHomeCubit>().clearError();
+                },
                 builder: (context, state) {
                   return Column(
                     children: <Widget>[
@@ -116,13 +154,35 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
                           userName: state.firstName,
                           photoUrl: state.photoUrl,
                           isVerified: state.isVerified,
+                          hasUnreadNotifications: unreadNotifications > 0,
+                          onNotificationTap: () {
+                            try {
+                              final activityCubit =
+                                  context.read<ActivityCubit>();
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      BlocProvider<ActivityCubit>.value(
+                                    value: activityCubit,
+                                    child: const ActivityScreen(),
+                                  ),
+                                ),
+                              );
+                            } catch (_) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const ActivityScreen(),
+                                ),
+                              );
+                            }
+                          },
                         ),
                       ),
                       // Invisible separation between the top bar and the section below
                       const SizedBox(height: AppSpacing.xs),
                       // Scrollable section with pull-to-refresh
                       Expanded(
-                        child: state.errorMessage != null
+                        child: state.errorMessage != null && state.properties.isEmpty
                             ? _ErrorState(
                                 message: state.errorMessage!,
                                 onRetry: cubit.retry,
@@ -176,23 +236,53 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
                                           child: SizedBox(height: 32),
                                         ),
                                         SliverToBoxAdapter(
-                                          child: _PropertyListingsSection(
-                                            properties: state.properties,
+                                          child: _YourPropertiesHeader(
+                                            count: state.properties.length,
                                           ),
                                         ),
                                         const SliverToBoxAdapter(
-                                          child: SizedBox(height: AppSpacing.lg),
+                                          child: SizedBox(height: AppSpacing.sm),
                                         ),
-                                        const SliverToBoxAdapter(
-                                          child: Padding(
-                                            padding: EdgeInsets.symmetric(
+                                        if (state.properties.isEmpty)
+                                          const SliverToBoxAdapter(
+                                            child: _EmptyPropertiesView(),
+                                          )
+                                        else
+                                          SliverPadding(
+                                            padding: const EdgeInsets.symmetric(
                                               horizontal: AppSpacing.lg,
                                             ),
-                                            child: CompatibleTenantsSection(
-                                              limit: 3,
+                                            sliver: SliverList(
+                                              delegate:
+                                                  SliverChildBuilderDelegate(
+                                                (context, index) {
+                                                  final p =
+                                                      state.properties[index];
+                                                  return Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                      bottom: AppSpacing.md,
+                                                    ),
+                                                    child: _PropertyCard(
+                                                      property: p,
+                                                      onStatusChange: (status) =>
+                                                          cubit.setVacancy(
+                                                        p.propertyId,
+                                                        status,
+                                                      ),
+                                                      onEdit: () =>
+                                                          _editProperty(
+                                                        context,
+                                                        p,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                                childCount:
+                                                    state.properties.length,
+                                              ),
                                             ),
                                           ),
-                                        ),
                                         const SliverToBoxAdapter(
                                           child: SizedBox(height: AppSpacing.xl),
                                         ),
@@ -411,20 +501,14 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ── Section header ────────────────────────────────────────────────────────────
+// ── "Your Properties" header ─────────────────────────────────────────────────
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.title,
-    required this.onSeeAll,
-    this.count,
-    this.trailing,
+class _YourPropertiesHeader extends StatelessWidget {
+  const _YourPropertiesHeader({
+    required this.count,
   });
 
-  final String title;
-  final VoidCallback onSeeAll;
-  final int? count;
-  final Widget? trailing;
+  final int count;
 
   @override
   Widget build(BuildContext context) {
@@ -432,9 +516,9 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Row(
         children: <Widget>[
-          Text(
-            title,
-            style: const TextStyle(
+          const Text(
+            'Your Properties',
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -442,72 +526,29 @@ class _SectionHeader extends StatelessWidget {
               letterSpacing: -0.2,
             ),
           ),
-          if (count != null) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 7.5, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFFE2E8F0),
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                '$count',
-                style: const TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF64748B),
-                ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7.5, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFE2E8F0),
+                width: 1,
               ),
             ),
-          ],
-          const Spacer(),
-          GestureDetector(
-            onTap: onSeeAll,
-            behavior: HitTestBehavior.opaque,
             child: Text(
-              'See all',
-              style: TextStyle(
+              '$count',
+              style: const TextStyle(
                 fontFamily: 'DM Sans',
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF64748B),
               ),
             ),
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: 8),
-            trailing!,
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// ── "Your listings" horizontal carousel ──────────────────────────────────────
-
-class _PropertyListingsSection extends StatelessWidget {
-  const _PropertyListingsSection({required this.properties});
-
-  final List<PropertyDoc> properties;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        _SectionHeader(
-          title: 'Your listings',
-          count: properties.length,
-          onSeeAll: () =>
-              Navigator.of(context).pushNamed(AppRouter.ownerProperties),
-          trailing: GestureDetector(
+          const Spacer(),
+          GestureDetector(
             onTap: () => Navigator.of(context).pushNamed(AppRouter.addProperty),
             behavior: HitTestBehavior.opaque,
             child: Container(
@@ -535,101 +576,102 @@ class _PropertyListingsSection extends StatelessWidget {
               ),
             ),
           ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        if (properties.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: const Color(0xFFE2E8F0).withValues(alpha: 0.6),
-                  width: 0.75,
-                ),
-                boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: const Color(0xFF0F172A).withValues(alpha: 0.05),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  ),
-                  BoxShadow(
-                    color: const Color(0xFF0F172A).withValues(alpha: 0.02),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: <Widget>[
-                  const Text(
-                    'You have no listings yet. Add a property\nto start matching with tenants.',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF64748B),
-                      height: 1.4,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(context)
-                          .pushNamed(AppRouter.addProperty),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0F172A),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: const Text(
-                        'Add your first property',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
-        else
-          SizedBox(
-            height: 270,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              itemCount: properties.length,
-              separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
-              itemBuilder: (_, i) => _PropertyCardLarge(
-                property: properties[i],
-                seed: (properties[i].propertyId.hashCode % 5) + 1,
-              ),
-            ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-class _PropertyCardLarge extends StatelessWidget {
-  const _PropertyCardLarge({required this.property, required this.seed});
+// ── Empty properties card ────────────────────────────────────────────────────
+
+class _EmptyPropertiesView extends StatelessWidget {
+  const _EmptyPropertiesView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: const Color(0xFFE2E8F0).withValues(alpha: 0.6),
+            width: 0.75,
+          ),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          children: <Widget>[
+            const Text(
+              'You have no listings yet. Add a property\nto start managing and matching with tenants.',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 13.5,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF64748B),
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: ElevatedButton(
+                onPressed: () =>
+                    Navigator.of(context).pushNamed(AppRouter.addProperty),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F172A),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text(
+                  'Add your first property',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Vertical property card with availability controls & edit action ───────────
+
+class _PropertyCard extends StatelessWidget {
+  const _PropertyCard({
+    required this.property,
+    required this.onStatusChange,
+    required this.onEdit,
+  });
 
   final PropertyDoc property;
-  final int seed;
+  final ValueChanged<String> onStatusChange;
+  final VoidCallback onEdit;
 
   String _fmt(num value) => value
       .round()
@@ -638,28 +680,19 @@ class _PropertyCardLarge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = property.vacancyStatus;
+    final int seed = property.propertyId.hashCode % 5 + 1;
+    final String status = property.vacancyStatus;
 
     return Container(
-      width: 220,
-      height: 270,
       decoration: BoxDecoration(
         color: context.appColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0).withValues(alpha: 0.6),
-          width: 0.75,
-        ),
+        border: Border.all(color: context.appColors.fieldBorder, width: 0.5),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 5),
-          ),
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -667,73 +700,120 @@ class _PropertyCardLarge extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          // ── Photo header ──────────────────────────────────────────
           SizedBox(
-            height: 155,
+            height: 130,
             width: double.infinity,
-            child: Stack(
-              fit: StackFit.expand,
-              children: <Widget>[
-                ListingImagePlaceholder(
-                  seed: seed,
-                  photoUrl:
-                      property.photos.isEmpty ? null : property.photos.first,
-                ),
-                Positioned(
-                  top: 10,
-                  left: 10,
-                  child: _StatusBadge(status: status),
-                ),
-              ],
+            child: ListingImagePlaceholder(
+              seed: seed,
+              photoUrl:
+                  property.photos.isEmpty ? null : property.photos.first,
             ),
           ),
+
           Padding(
-            padding: const EdgeInsets.all(AppSpacing.sm + 2),
+            padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
-                  property.title,
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: context.appColors.textPrimary,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        property.title,
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: context.appColors.textPrimary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      '₱${_fmt(property.monthlyRent)}/mo',
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1B1B1B),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  '₱${_fmt(property.monthlyRent)}/mo',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.accent,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: 4),
                 Row(
                   children: <Widget>[
                     Icon(
                       Icons.location_on_outlined,
-                      size: 12,
+                      size: 13,
                       color: context.appColors.textSecondary,
                     ),
-                    const SizedBox(width: 2),
+                    const SizedBox(width: 3),
                     Expanded(
                       child: Text(
-                        property.address,
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 12,
-                          color: context.appColors.textSecondary,
-                        ),
+                        '${property.address} · ${property.amenityScore ?? property.amenityList.length} amenities',
+                        style: AppTextStyles.caption(context),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // ── Availability selector ──────────────────────────────
+                Text(
+                  'AVAILABILITY',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                    color: context.appColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                if (property.adminUnlisted)
+                  const AdminUnlistedNotice()
+                else
+                  Row(
+                    children: <Widget>[
+                      _StatusChip(
+                        label: 'Available',
+                        color: AppColors.matchHigh,
+                        isSelected: status == 'available',
+                        onTap: () => onStatusChange('available'),
+                      ),
+                      const SizedBox(width: 8),
+                      _StatusChip(
+                        label: 'Pending',
+                        color: AppColors.matchMedium,
+                        isSelected: status == 'pending',
+                        onTap: () => onStatusChange('pending'),
+                      ),
+                      const SizedBox(width: 8),
+                      _StatusChip(
+                        label: 'Booked',
+                        color: context.appColors.textSecondary,
+                        isSelected: status == 'booked',
+                        onTap: () => onStatusChange('booked'),
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: AppSpacing.md),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: AppButton(
+                    label: 'Edit details',
+                    variant: AppButtonVariant.outline,
+                    isSmall: true,
+                    onPressed: onEdit,
+                  ),
                 ),
               ],
             ),
@@ -744,44 +824,58 @@ class _PropertyCardLarge extends StatelessWidget {
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.status});
+/// Tap-to-set status chip with animated state feedback
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({
+    required this.label,
+    required this.color,
+    required this.isSelected,
+    required this.onTap,
+  });
 
-  /// 'available' | 'pending' | 'booked'
-  final String status;
+  final String label;
+  final Color color;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = switch (status) {
-      'available' => ('Available', AppColors.matchHigh),
-      'booked' => ('Booked', AppColors.indicatorInactive),
-      _ => ('Pending', AppColors.matchMedium),
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.ink.withValues(alpha: 0.60),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'DM Sans',
-              color: AppColors.onInk,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? color : context.appColors.fieldFill,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? color : context.appColors.fieldBorder,
             ),
           ),
-        ],
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (isSelected) ...[
+                const Icon(Icons.check_rounded, size: 13, color: AppColors.onInk),
+                const SizedBox(width: 3),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected
+                      ? AppColors.onInk
+                      : context.appColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

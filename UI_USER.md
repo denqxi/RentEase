@@ -76,20 +76,19 @@ This index maps the navigation flows, views, child screens, and components for *
 
 ### Root Shell & Tab Navigation
 - [SHELL:OWNER] `lib/features/shell/view/landlord_shell.dart` | Root shell for landlords/owners; hosts `IndexedStack` with 5 navigation items and sets up `LandlordHomeCubit` and `ActivityCubit`
-- [SHELL:OWNER] `lib/features/shell/widgets/floating_nav_bar.dart` | Floating nav bar with Home, Matches, quick Add (+) button, Alerts, and Profile
+- [SHELL:OWNER] `lib/features/shell/widgets/floating_nav_bar.dart` | Floating nav bar with Home, Matches, quick Add (+) button, Inquiries, and Profile
 
 ---
 
 ### Tab 1: Home Dashboard (`ShellTab.home` / Index 0)
-- [FLOW:OWNER_HOME] `lib/features/landlord_home/view/landlord_home_screen.dart` | Landlord main dashboard: stats summary (listings, occupied, inquiries, matches), "Your listings" carousel, and "Compatible tenants" preview
-- [FLOW:OWNER_HOME] `lib/features/landlord_home/widgets/compatible_tenants_section.dart` | Compatible tenants list showing unranked matching candidates
-- [FLOW:OWNER_HOME] `lib/features/landlord_home/widgets/tenant_card.dart` | Summary card for a compatible tenant (name, match badge, requirements overview)
+- [FLOW:OWNER_HOME] `lib/features/landlord_home/view/landlord_home_screen.dart` | Landlord property management dashboard: portfolio stats overview, vertical "Your Properties" list with inline availability toggles (`Available`, `Pending`, `Booked`), quick Add button, and direct edit navigation
+- [FLOW:OWNER_HOME] `lib/features/landlord_home/widgets/landlord_home_header.dart` | Single full-width floating capsule header (`AppHomeHeader`) with avatar, greeting, owner name + badge, and notification bell shortcut
 - [FLOW:OWNER_HOME] `lib/shared/widgets/pending_listing_banner.dart` | Verification status banner shown if account is pending admin approval
 
 #### Sub-Screens & Actions from Landlord Home:
-1. [FLOW:OWNER_HOME] `lib/features/landlord_home/view/tenant_detail_screen.dart` | Detailed tenant profile view (must-haves, budget, move-in date, invite to apply CTA)
-2. [FLOW:OWNER_HOME] `lib/features/owner/view/owner_properties_screen.dart` | "My properties" full list screen (manage active, paused, booked, and unlisted rentals)
-3. [FLOW:OWNER_HOME] `lib/features/owner/view/edit_property_screen.dart` | Edit existing property details, rent, photos, and rules
+1. [FLOW:OWNER_HOME] `lib/features/owner/view/edit_property_screen.dart` | Edit existing property details, rent, photos, and rules
+2. [FLOW:OWNER_HOME] `lib/features/owner_onboarding/view/add_property_screen.dart` | Shortcut to add new property listing
+3. [FLOW:OWNER_ALERTS] `lib/features/activity/view/activity_screen.dart` | Direct shortcut from the top bar header notification bell to view alerts & activity feed
 
 ---
 
@@ -112,16 +111,13 @@ This index maps the navigation flows, views, child screens, and components for *
 
 ---
 
-### Tab 3: Alerts & Activity Feed (`ShellTab.alerts` / Index 3)
-- [FLOW:OWNER_ALERTS] `lib/features/activity/view/activity_screen.dart` | Landlord activity feed showing new tenant inquiries, admin document verifications, and chat messages
-- [FLOW:OWNER_ALERTS] `lib/features/activity/widgets/activity_tile.dart` | Activity list tile
+### Tab 3: Inquiries & Messaging (`ShellTab.alerts` / Index 3)
+- [FLOW:OWNER_INQUIRY] `lib/features/owner/view/owner_inquiries_screen.dart` | Landlord inquiry management center (tabs: Incoming inquiries, Sent invites, History) directly in the bottom navigation slot (message inquiry icon)
 
 ---
 
-### Tab 4: Owner Profile & Inquiries (`ShellTab.profile` / Index 4)
+### Tab 4: Owner Profile (`ShellTab.profile` / Index 4)
 - [FLOW:OWNER_PROFILE] `lib/features/profile/view/owner_profile_screen.dart` | Landlord profile dashboard with avatar, verification status card, and menu actions
-- [FLOW:OWNER_PROFILE] `lib/features/owner/view/owner_properties_screen.dart` | Direct shortcut to "My properties" management
-- [FLOW:OWNER_PROFILE] `lib/features/owner/view/owner_inquiries_screen.dart` | Landlord inquiry management center (tabs: Incoming inquiries, Sent invites, History)
 
 #### Landlord Inquiry Handling & Chat:
 - [FLOW:OWNER_INQUIRY] `lib/features/inquiry/view/inquiry_thread_screen.dart` | Live thread container for landlord
