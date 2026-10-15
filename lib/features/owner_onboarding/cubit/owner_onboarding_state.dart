@@ -2,7 +2,7 @@ part of 'owner_onboarding_cubit.dart';
 
 enum OwnerOnboardingStatus { editing, saving, saved, failure }
 
-/// Draft of the owner's first listing, built up across the "Add property"
+/// Draft of the owner's listing, built up across the "Create listing"
 /// wizard. Nothing is written to `properties` until
 /// [OwnerOnboardingCubit.submitProperty].
 class OwnerOnboardingState extends Equatable {
@@ -11,23 +11,30 @@ class OwnerOnboardingState extends Equatable {
     this.errorMessage,
     this.verificationStatus,
     this.createdPropertyId,
-    // Step 1 — basics.
+    // Step 1 — rental type.
+    this.rentalType = 'entire_place',
+    // Step 2 — property details.
     this.title = '',
+    this.propertyName,
+    this.propertyType,
+    this.roomName,
+    this.parentPropertyId,
     this.address = '',
     this.latitude,
     this.longitude,
     this.photos = const <UploadedImage>[],
-    // Step 2 — house rules (Layer 1 property-side constraints).
+    // Step 3 — house rules (Layer 1 property-side constraints).
     this.depositAmount = 0,
     this.advanceMonths = 1,
     this.allowedGender = 'Mixed / Any',
     this.smokingAllowed = false,
     this.petsAllowed = false,
     this.curfewHours = 22,
+    // Step 4 — rent & occupants.
     this.maxOccupants = 1,
-    // Step 3 — pricing and amenities (final step; there is no owner-side
-    // TOPSIS, so no weight step).
     this.monthlyRent = 0,
+    this.isAvailable = true,
+    // Step 5 — amenities.
     this.amenities = const <String>[],
   });
 
@@ -38,7 +45,20 @@ class OwnerOnboardingState extends Equatable {
   final String? verificationStatus;
   final String? createdPropertyId;
 
+  /// 'entire_place' | 'room'.
+  final String rentalType;
+
+  /// Listing title. For a room this is generated as
+  /// `"$propertyName – $roomName"`.
   final String title;
+
+  /// Building name (rooms) or the place name (entire place).
+  final String? propertyName;
+  final String? propertyType;
+  final String? roomName;
+
+  /// Groups rooms of the same building. Null for an entire place.
+  final String? parentPropertyId;
   final String address;
   final double? latitude;
   final double? longitude;
@@ -51,11 +71,16 @@ class OwnerOnboardingState extends Equatable {
   final String allowedGender;
   final bool smokingAllowed;
   final bool petsAllowed;
-  final int curfewHours;
+
+  /// 24h hour, or null for "No curfew".
+  final int? curfewHours;
   final int maxOccupants;
 
   final int monthlyRent;
+  final bool isAvailable;
   final List<String> amenities;
+
+  bool get isRoom => rentalType == 'room';
 
   /// The pin is required — LocationMatch needs real coordinates.
   bool get isComplete =>
@@ -71,7 +96,13 @@ class OwnerOnboardingState extends Equatable {
     String? errorMessage,
     String? verificationStatus,
     String? createdPropertyId,
+    String? rentalType,
     String? title,
+    String? propertyName,
+    String? propertyType,
+    String? roomName,
+    String? parentPropertyId,
+    bool clearParentPropertyId = false,
     String? address,
     double? latitude,
     double? longitude,
@@ -82,8 +113,10 @@ class OwnerOnboardingState extends Equatable {
     bool? smokingAllowed,
     bool? petsAllowed,
     int? curfewHours,
+    bool clearCurfew = false,
     int? maxOccupants,
     int? monthlyRent,
+    bool? isAvailable,
     List<String>? amenities,
   }) {
     return OwnerOnboardingState(
@@ -91,7 +124,14 @@ class OwnerOnboardingState extends Equatable {
       errorMessage: errorMessage,
       verificationStatus: verificationStatus ?? this.verificationStatus,
       createdPropertyId: createdPropertyId ?? this.createdPropertyId,
+      rentalType: rentalType ?? this.rentalType,
       title: title ?? this.title,
+      propertyName: propertyName ?? this.propertyName,
+      propertyType: propertyType ?? this.propertyType,
+      roomName: roomName ?? this.roomName,
+      parentPropertyId: clearParentPropertyId
+          ? null
+          : (parentPropertyId ?? this.parentPropertyId),
       address: address ?? this.address,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
@@ -101,9 +141,10 @@ class OwnerOnboardingState extends Equatable {
       allowedGender: allowedGender ?? this.allowedGender,
       smokingAllowed: smokingAllowed ?? this.smokingAllowed,
       petsAllowed: petsAllowed ?? this.petsAllowed,
-      curfewHours: curfewHours ?? this.curfewHours,
+      curfewHours: clearCurfew ? null : (curfewHours ?? this.curfewHours),
       maxOccupants: maxOccupants ?? this.maxOccupants,
       monthlyRent: monthlyRent ?? this.monthlyRent,
+      isAvailable: isAvailable ?? this.isAvailable,
       amenities: amenities ?? this.amenities,
     );
   }
@@ -114,7 +155,12 @@ class OwnerOnboardingState extends Equatable {
     errorMessage,
     verificationStatus,
     createdPropertyId,
+    rentalType,
     title,
+    propertyName,
+    propertyType,
+    roomName,
+    parentPropertyId,
     address,
     latitude,
     longitude,
@@ -127,6 +173,7 @@ class OwnerOnboardingState extends Equatable {
     curfewHours,
     maxOccupants,
     monthlyRent,
+    isAvailable,
     amenities,
   ];
 }

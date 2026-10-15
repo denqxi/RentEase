@@ -9,14 +9,30 @@ class FindTenantsRemoteDataSource {
 
   final FirebaseFirestore _firestore;
 
-  /// Covered by the (ownerId, createdAt desc) index in firestore.indexes.json.
+  /// Equality-only query (no orderBy) so no composite index is needed.
+  /// Properties are sorted by createdAt descending in memory.
   Future<List<PropertyDoc>> fetchOwnerProperties(String ownerId) async {
     final snap = await _firestore
         .collection(FirestoreCollections.properties)
         .where('ownerId', isEqualTo: ownerId)
-        .orderBy('createdAt', descending: true)
         .get();
-    return snap.docs.map(PropertyDoc.fromSnapshot).toList();
+    final list = <PropertyDoc>[];
+    for (final doc in snap.docs) {
+      try {
+        list.add(PropertyDoc.fromSnapshot(doc));
+      } catch (_) {
+        // Skip malformed documents
+      }
+    }
+    list.sort((a, b) {
+      final at = a.createdAt;
+      final bt = b.createdAt;
+      if (at == null && bt == null) return 0;
+      if (at == null) return 1;
+      if (bt == null) return -1;
+      return bt.compareTo(at);
+    });
+    return list;
   }
 
   /// Equality-only filters — no composite index needed. The `ownerId`

@@ -24,4 +24,9 @@ abstract class OwnerOnboardingRepository {
 
   /// Creates the listing and returns its new document ID.
   Future<String> createProperty(PropertyDoc property);
+
+  /// All listings owned by [ownerId]; used to build the saved-property
+  /// picker and to reject duplicate room names within a property.
+  Future<List<PropertyDoc>> fetchOwnerProperties(String ownerId);
 }
+

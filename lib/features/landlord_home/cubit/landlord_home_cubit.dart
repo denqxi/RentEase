@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/firestore/models/models.dart';
@@ -77,17 +78,30 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
       );
       _refreshTenants();
     }, onError: _onError);
-    _statusSub = repo.watchVerificationStatus(ownerId).listen((status) {
-      _gotStatus = true;
-      emit(
-        state.copyWith(
-          verificationStatus: status,
-          isLoading: !_gotProperties,
-          clearError: true,
-        ),
-      );
-      _refreshTenants();
-    }, onError: _onError);
+    _statusSub = repo.watchVerificationStatus(ownerId).listen(
+      (status) {
+        _gotStatus = true;
+        emit(
+          state.copyWith(
+            verificationStatus: status,
+            isLoading: !_gotProperties,
+            clearError: true,
+          ),
+        );
+        _refreshTenants();
+      },
+      onError: (Object e) {
+        debugPrint('LandlordHomeCubit watchVerificationStatus error: $e');
+        _gotStatus = true;
+        emit(
+          state.copyWith(
+            verificationStatus: 'none',
+            isLoading: !_gotProperties,
+          ),
+        );
+        _refreshTenants();
+      },
+    );
   }
 
   /// Reloads the compatible-tenant list only when the set of available
@@ -175,6 +189,7 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
   }
 
   void _onError(Object e) {
+    debugPrint('LandlordHomeCubit stream error: $e');
     if (isClosed) return;
     emit(
       state.copyWith(

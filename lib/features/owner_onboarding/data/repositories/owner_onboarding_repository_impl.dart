@@ -27,6 +27,11 @@ class OwnerOnboardingRepositoryImpl implements OwnerOnboardingRepository {
   Future<String> createProperty(PropertyDoc property) =>
       _guard(() => _remote.createProperty(property));
 
+  @override
+  Future<List<PropertyDoc>> fetchOwnerProperties(String ownerId) =>
+      _guard(() => _remote.fetchOwnerProperties(ownerId));
+
+
   Future<T> _guard<T>(Future<T> Function() call) async {
     try {
       return await call();

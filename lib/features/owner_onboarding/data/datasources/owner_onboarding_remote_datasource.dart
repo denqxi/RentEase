@@ -72,4 +72,13 @@ class OwnerOnboardingRemoteDataSource {
     await ref.set({...property.toMap(), 'isVerified': verified});
     return ref.id;
   }
+
+  Future<List<PropertyDoc>> fetchOwnerProperties(String ownerId) async {
+    final snap = await _firestore
+        .collection(FirestoreCollections.properties)
+        .where('ownerId', isEqualTo: ownerId)
+        .get();
+    return [for (final d in snap.docs) PropertyDoc.fromSnapshot(d)];
+  }
 }
+

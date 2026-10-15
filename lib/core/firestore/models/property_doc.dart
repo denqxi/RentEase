@@ -29,7 +29,29 @@ class PropertyDoc {
     required this.amenityList,
     this.amenityScore,
     this.adminUnlisted = false,
+    this.rentalType = 'entire_place',
+    this.propertyName,
+    this.roomName,
+    this.propertyType,
+    this.parentPropertyId,
   });
+
+  /// 'entire_place' (default, also for legacy docs) | 'room'.
+  final String rentalType;
+
+  /// Building name for a room listing (e.g. "GL Boardinghouse").
+  final String? propertyName;
+
+  /// Room number/name (e.g. "Room 101"); unique per [parentPropertyId].
+  final String? roomName;
+
+  /// "House", "Apartment", "Condominium", "Studio Unit", "Other".
+  final String? propertyType;
+
+  /// Groups the rooms of one building. Null for entire places/legacy docs.
+  final String? parentPropertyId;
+
+  bool get isRoom => rentalType == 'room';
 
   /// Set only by an admin (with isAvailable=false); the owner cannot clear
   /// it or flip isAvailable back to true (firestore.rules).
@@ -80,6 +102,49 @@ class PropertyDoc {
   /// Computed: amenityList.length (0–14).
   final num? amenityScore;
 
+  static GeoPoint _parseLocation(dynamic val) {
+    if (val is GeoPoint) return val;
+    if (val is Map) {
+      final lat = (val['latitude'] as num?)?.toDouble() ?? 0.0;
+      final lng = (val['longitude'] as num?)?.toDouble() ?? 0.0;
+      return GeoPoint(lat, lng);
+    }
+    return const GeoPoint(0, 0);
+  }
+
+  static Timestamp? _parseTimestamp(dynamic val) {
+    if (val is Timestamp) return val;
+    if (val is DateTime) return Timestamp.fromDate(val);
+    if (val is String) {
+      final dt = DateTime.tryParse(val);
+      if (dt != null) return Timestamp.fromDate(dt);
+    }
+    if (val is int) {
+      return Timestamp.fromMillisecondsSinceEpoch(val);
+    }
+    return null;
+  }
+
+  static List<String> _parseStringList(dynamic val) {
+    if (val is List) {
+      return [for (final item in val) if (item != null) item.toString()];
+    }
+    return const [];
+  }
+
+  static num _parseNum(dynamic val, [num fallback = 0]) {
+    if (val is num) return val;
+    if (val is String) return num.tryParse(val) ?? fallback;
+    return fallback;
+  }
+
+  static bool _parseBool(dynamic val, [bool fallback = false]) {
+    if (val is bool) return val;
+    if (val is String) return val.toLowerCase() == 'true';
+    if (val is num) return val != 0;
+    return fallback;
+  }
+
   factory PropertyDoc.fromMap(String id, Map<String, dynamic> map) =>
       PropertyDoc(
         propertyId: id,
@@ -87,28 +152,32 @@ class PropertyDoc {
         title: map['title'] as String? ?? '',
         description: map['description'] as String?,
         address: map['address'] as String? ?? '',
-        location: map['location'] as GeoPoint? ?? const GeoPoint(0, 0),
+        location: _parseLocation(map['location']),
         geoHash: map['geoHash'] as String? ?? '',
-        photos: (map['photos'] as List?)?.cast<String>() ?? const [],
-        photoPublicIds:
-            (map['photoPublicIds'] as List?)?.cast<String>() ?? const [],
-        monthlyRent: map['monthlyRent'] as num? ?? 0,
-        depositAmount: map['depositAmount'] as num? ?? 0,
-        advanceMonths: map['advanceMonths'] as num? ?? 0,
-        isAvailable: map['isAvailable'] as bool? ?? false,
+        photos: _parseStringList(map['photos']),
+        photoPublicIds: _parseStringList(map['photoPublicIds']),
+        monthlyRent: _parseNum(map['monthlyRent'], 0),
+        depositAmount: _parseNum(map['depositAmount'], 0),
+        advanceMonths: _parseNum(map['advanceMonths'], 0),
+        isAvailable: _parseBool(map['isAvailable'], false),
         vacancyStatus: map['vacancyStatus'] as String? ?? 'available',
-        isVerified: map['isVerified'] as bool? ?? false,
-        createdAt: map['createdAt'] as Timestamp?,
-        updatedAt: map['updatedAt'] as Timestamp?,
+        isVerified: _parseBool(map['isVerified'], false),
+        createdAt: _parseTimestamp(map['createdAt']),
+        updatedAt: _parseTimestamp(map['updatedAt']),
         allowedGender: map['allowedGender'] as String? ?? '',
-        smokingAllowed: map['smokingAllowed'] as bool? ?? false,
-        petsAllowed: map['petsAllowed'] as bool? ?? false,
-        maxOccupants: map['maxOccupants'] as num? ?? 1,
-        curfewHours: map['curfewHours'] as num?,
-        hasWifi: map['hasWifi'] as bool? ?? false,
-        amenityList: (map['amenityList'] as List?)?.cast<String>() ?? const [],
-        amenityScore: map['amenityScore'] as num?,
-        adminUnlisted: map['adminUnlisted'] as bool? ?? false,
+        smokingAllowed: _parseBool(map['smokingAllowed'], false),
+        petsAllowed: _parseBool(map['petsAllowed'], false),
+        maxOccupants: _parseNum(map['maxOccupants'], 1),
+        curfewHours: map['curfewHours'] != null ? _parseNum(map['curfewHours']) : null,
+        hasWifi: _parseBool(map['hasWifi'], false),
+        amenityList: _parseStringList(map['amenityList']),
+        amenityScore: map['amenityScore'] != null ? _parseNum(map['amenityScore']) : null,
+        adminUnlisted: _parseBool(map['adminUnlisted'], false),
+        rentalType: map['rentalType'] as String? ?? 'entire_place',
+        propertyName: map['propertyName'] as String?,
+        roomName: map['roomName'] as String?,
+        propertyType: map['propertyType'] as String?,
+        parentPropertyId: map['parentPropertyId'] as String?,
       );
 
   factory PropertyDoc.fromSnapshot(
@@ -141,5 +210,10 @@ class PropertyDoc {
     'amenityList': amenityList,
     'amenityScore': amenityScore ?? amenityList.length,
     if (adminUnlisted) 'adminUnlisted': true,
+    'rentalType': rentalType,
+    if (propertyName != null) 'propertyName': propertyName,
+    if (roomName != null) 'roomName': roomName,
+    if (propertyType != null) 'propertyType': propertyType,
+    if (parentPropertyId != null) 'parentPropertyId': parentPropertyId,
   };
 }

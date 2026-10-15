@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../firestore/firestore_collections.dart';
+import '../firestore/models/property_doc.dart';
 import '../../features/admin/view/admin_login_screen.dart';
 import '../../features/admin/widgets/admin_only_gate.dart';
 import '../../features/admin/widgets/admin_providers.dart';
@@ -19,7 +20,7 @@ import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/inquiry/view/tenant_inquiries_screen.dart';
 import '../../features/owner/view/find_tenants_screen.dart';
 import '../../features/owner/view/owner_inquiries_screen.dart';
-import '../../features/owner_onboarding/view/add_property_screen.dart';
+import '../../features/owner_onboarding/view/create_listing_wizard_screen.dart';
 import '../../features/owner_onboarding/view/document_upload_screen.dart';
 import '../../features/profile/view/saved_screen.dart';
 import '../../features/shell/view/landlord_shell.dart';
@@ -175,7 +176,11 @@ class AppRouter {
       case verificationPending:
         page = const VerificationPendingScreen();
       case addProperty:
-        page = const AddPropertyScreen();
+        final args = settings.arguments;
+        page = CreateListingWizardScreen(
+          addRoomTo: args is PropertyDoc ? args : null,
+        );
+
       case propertyRules:
         page = const PropertyRulesScreen();
       case pricingAmenities:

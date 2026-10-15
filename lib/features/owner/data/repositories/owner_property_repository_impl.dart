@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/models.dart';
@@ -10,14 +11,32 @@ class OwnerPropertyRepositoryImpl implements OwnerPropertyRepository {
 
   final FirebaseFirestore _firestore;
 
-  /// Covered by the (ownerId, createdAt desc) index in firestore.indexes.json.
+  /// Equality-only query (no orderBy) so no composite index is needed.
+  /// Properties are sorted by createdAt descending in memory.
   @override
   Stream<List<PropertyDoc>> watchOwnerProperties(String ownerId) => _firestore
       .collection(FirestoreCollections.properties)
       .where('ownerId', isEqualTo: ownerId)
-      .orderBy('createdAt', descending: true)
       .snapshots()
-      .map((s) => s.docs.map(PropertyDoc.fromSnapshot).toList());
+      .map((s) {
+        final list = <PropertyDoc>[];
+        for (final doc in s.docs) {
+          try {
+            list.add(PropertyDoc.fromSnapshot(doc));
+          } catch (e, stack) {
+            debugPrint('Failed to parse property doc ${doc.id}: $e\n$stack');
+          }
+        }
+        list.sort((a, b) {
+          final at = a.createdAt;
+          final bt = b.createdAt;
+          if (at == null && bt == null) return 0;
+          if (at == null) return 1;
+          if (bt == null) return -1;
+          return bt.compareTo(at);
+        });
+        return list;
+      });
 
   @override
   Stream<String> watchVerificationStatus(String ownerId) => _firestore
