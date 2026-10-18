@@ -7,7 +7,8 @@ import '../../../core/firestore/models/models.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
-import '../../../shared/widgets/phase_badge.dart';
+import '../../landlord_home/view/tenant_detail_screen.dart';
+import '../../owner/model/compatible_tenant.dart';
 import '../../resolution/view/rating_screen.dart';
 import '../cubit/inquiry_thread_cubit.dart';
 import '../domain/services/inquiry_service.dart';
@@ -435,6 +436,34 @@ class _InquiryChatViewState extends State<InquiryChatView> {
     );
   }
 
+  void _openTenantProfile(InquiryThreadState state) {
+    if (!widget.isOwner) return;
+    final tenant = state.tenant;
+    final profile = state.tenantProfile;
+    final tenantId = tenant?.userId ?? state.inquiry?.tenantId ?? '';
+    final name = fullNameOf(
+      tenant,
+      fallback: widget.counterpartName,
+      loaded: !state.isLoading,
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => TenantDetailScreen(
+          tenant: CompatibleTenant(
+            matchId: state.inquiry?.inquiryId ?? '',
+            tenantId: tenantId,
+            name: name,
+            gender: tenant?.gender ?? '',
+            maxBudget: profile?.maxBudget ?? 0,
+            bScore: 1,
+            occupation: profile?.occupation,
+            school: profile?.school,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<InquiryThreadCubit>().state;
@@ -520,79 +549,85 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       ),
                       const SizedBox(width: 12),
 
-                      // Counterpart Initials Avatar
-                      Container(
-                        width: 42,
-                        height: 42,
-                        alignment: Alignment.center,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFEDF2F7),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          InquirySummary.initialsOf(widget.counterpartName),
-                          style: const TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-
-                      // Counterpart Name + Property Subtitle
+                      // Counterpart Initials Avatar & Name (Tappable for Owner)
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
+                        child: InkWell(
+                          onTap: widget.isOwner
+                              ? () => _openTenantProfile(state)
+                              : null,
+                          borderRadius: BorderRadius.circular(10),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            child: Row(
                               children: [
-                                Flexible(
+                                Container(
+                                  width: 42,
+                                  height: 42,
+                                  alignment: Alignment.center,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFEDF2F7),
+                                    shape: BoxShape.circle,
+                                  ),
                                   child: Text(
-                                    widget.counterpartName,
-                                    overflow: TextOverflow.ellipsis,
+                                    InquirySummary.initialsOf(widget.counterpartName),
                                     style: const TextStyle(
                                       fontFamily: 'DM Sans',
-                                      fontSize: 15.5,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w700,
                                       color: Color(0xFF0F172A),
                                     ),
                                   ),
                                 ),
-                                // CLAUDE.md verified-badge placement #4:
-                                // Phase 2 chat header, icon only — shown to
-                                // the tenant for the owner.
-                                if (!widget.isOwner && state.ownerVerified) ...[
-                                  const SizedBox(width: 4),
-                                  const Icon(
-                                    Icons.verified_rounded,
-                                    size: 15,
-                                    color: AppColors.matchHigh,
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              widget.counterpartName,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontFamily: 'DM Sans',
+                                                fontSize: 15.5,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFF0F172A),
+                                              ),
+                                            ),
+                                          ),
+                                          if (!widget.isOwner && state.ownerVerified) ...[
+                                            const SizedBox(width: 4),
+                                            const Icon(
+                                              Icons.verified_rounded,
+                                              size: 15,
+                                              color: AppColors.matchHigh,
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                      const SizedBox(height: 1),
+                                      Text(
+                                        widget.propertyTitle,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontFamily: 'DM Sans',
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 1),
-                            Text(
-                              widget.propertyTitle,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF64748B),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-
-                      // Phase 2 Pill Badge
-                      const PhaseBadge(phase: 2),
-                      const SizedBox(width: 2),
+                      const SizedBox(width: 4),
 
                       // 3-Dot More Menu
                       PopupMenuButton<String>(
@@ -618,19 +653,20 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                           if (property != null)
                             const PopupMenuItem<String>(
                               value: 'property_info',
+                              height: 38,
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.home_work_outlined,
-                                    size: 18,
+                                    size: 16,
                                     color: Color(0xFF0F172A),
                                   ),
-                                  SizedBox(width: 10),
+                                  SizedBox(width: 8),
                                   Text(
                                     'View property details',
                                     style: TextStyle(
                                       fontFamily: 'DM Sans',
-                                      fontSize: 13.5,
+                                      fontSize: 12.5,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -640,19 +676,20 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                           if (widget.isOwner && canChat && !state.isBusy)
                             const PopupMenuItem<String>(
                               value: 'mark_booked',
+                              height: 38,
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.check_circle_outline_rounded,
-                                    size: 18,
+                                    size: 16,
                                     color: AppColors.primary,
                                   ),
-                                  SizedBox(width: 10),
+                                  SizedBox(width: 8),
                                   Text(
                                     'Mark as booked',
                                     style: TextStyle(
                                       fontFamily: 'DM Sans',
-                                      fontSize: 13.5,
+                                      fontSize: 12.5,
                                       fontWeight: FontWeight.w600,
                                       color: AppColors.primary,
                                     ),
@@ -663,21 +700,22 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                           if (booked)
                             PopupMenuItem<String>(
                               value: 'rate',
+                              height: 38,
                               child: Row(
                                 children: [
                                   const Icon(
                                     Icons.star_outline_rounded,
-                                    size: 18,
+                                    size: 16,
                                     color: AppColors.primary,
                                   ),
-                                  const SizedBox(width: 10),
+                                  const SizedBox(width: 8),
                                   Text(
                                     widget.isOwner
                                         ? 'Rate ${widget.counterpartName}'
                                         : 'Rate your stay',
                                     style: const TextStyle(
                                       fontFamily: 'DM Sans',
-                                      fontSize: 13.5,
+                                      fontSize: 12.5,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -718,6 +756,16 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                           children: [
                             _DateDivider(date: threadDate),
                             const SizedBox(height: 12),
+                            if (widget.isOwner &&
+                                !InquiryService.isInvite(inquiry)) ...[
+                              _TenantProfileChatCard(
+                                tenant: state.tenant,
+                                profile: state.tenantProfile,
+                                isLoading: state.isLoading,
+                                onViewProfile: () => _openTenantProfile(state),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
                             _AcceptedStatusBanner(
                               title: widget.isOwner
                                   ? 'You accepted this inquiry — chat is open.'
@@ -756,8 +804,8 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
+                        spacing: 6,
+                        runSpacing: 6,
                         children: [
                           for (final reply
                               in widget.isOwner
@@ -773,31 +821,6 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       ),
                     ),
                   ),
-
-                  if (widget.isOwner)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 2),
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: canChat && !state.isBusy
-                              ? _confirmMarkBooked
-                              : null,
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 2),
-                            child: Text(
-                              'Mark as booked',
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF64748B),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
 
                   // Bottom Pill Input Bar + Circular Send Button
                   Padding(
@@ -1258,6 +1281,170 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
+class _TenantProfileChatCard extends StatelessWidget {
+  const _TenantProfileChatCard({
+    required this.tenant,
+    required this.profile,
+    required this.isLoading,
+    required this.onViewProfile,
+  });
+
+  final UserDoc? tenant;
+  final TenantProfileDoc? profile;
+  final bool isLoading;
+  final VoidCallback onViewProfile;
+
+  String _orDash(String? v) => (v == null || v.trim().isEmpty) ? '—' : v;
+
+  @override
+  Widget build(BuildContext context) {
+    final moveIn = profile?.moveInDate?.toDate();
+    final moveInStr = moveIn == null
+        ? '—'
+        : '${moveIn.year}-${moveIn.month.toString().padLeft(2, '0')}-${moveIn.day.toString().padLeft(2, '0')}';
+    final groupStr = '${profile?.groupSize ?? 1} person(s)';
+    final budgetStr = profile == null ? '—' : '₱${profile!.maxBudget}/mo';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.22),
+          width: 0.9,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF0F9FF),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.person_outline_rounded,
+                  size: 16,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 6),
+                const Expanded(
+                  child: Text(
+                    'Tenant Inquiry Profile',
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: onViewProfile,
+                  borderRadius: BorderRadius.circular(6),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'View full profile',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        SizedBox(width: 2),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 14,
+                          color: AppColors.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+            child: Column(
+              children: [
+                _ChatProfileRow(
+                  label: 'Name',
+                  value: fullNameOf(tenant, fallback: 'Tenant', loaded: !isLoading),
+                ),
+                _ChatProfileRow(label: 'Gender', value: _orDash(tenant?.gender)),
+                _ChatProfileRow(label: 'Occupation', value: _orDash(profile?.occupation)),
+                _ChatProfileRow(label: 'School', value: _orDash(profile?.school)),
+                _ChatProfileRow(label: 'Move-in date', value: moveInStr),
+                _ChatProfileRow(label: 'Group size', value: groupStr),
+                _ChatProfileRow(label: 'Max budget', value: budgetStr, isLast: true),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChatProfileRow extends StatelessWidget {
+  const _ChatProfileRow({
+    required this.label,
+    required this.value,
+    this.isLast = false,
+  });
+
+  final String label;
+  final String value;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _QuickReplyChip extends StatelessWidget {
   const _QuickReplyChip({required this.label, required this.onTap});
 
@@ -1269,7 +1456,7 @@ class _QuickReplyChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: const Color(0xFFF0F9FF),
           border: Border.all(
@@ -1281,7 +1468,7 @@ class _QuickReplyChip extends StatelessWidget {
           label,
           style: const TextStyle(
             fontFamily: 'DM Sans',
-            fontSize: 12.5,
+            fontSize: 11.5,
             fontWeight: FontWeight.w600,
             color: AppColors.primary,
           ),

@@ -41,11 +41,10 @@ class OwnerReviewsScreen extends StatefulWidget {
 }
 
 class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
-  bool _forceEmpty = false;
   bool _isLoading = true;
   List<_ReviewItem> _reviews = [];
-  double _avgRating = 4.8;
-  int _totalCount = 18;
+  double _avgRating = 0.0;
+  int _totalCount = 0;
 
   @override
   void initState() {
@@ -120,26 +119,11 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
       }
     }
 
-    // Default sample reviews matching prototype design (Image 3)
     if (mounted) {
       setState(() {
-        _reviews = [
-          const _ReviewItem(
-            name: 'Maria Santos',
-            date: 'Oct 12, 2026',
-            stars: 5,
-            comment:
-                'Sir Josh is very responsive and accommodating. Unit was clean and exact to pictures.',
-          ),
-          const _ReviewItem(
-            name: 'Kevin Reyes',
-            date: 'Sep 28, 2026',
-            stars: 4,
-            comment: null,
-          ),
-        ];
-        _avgRating = 4.8;
-        _totalCount = 18;
+        _reviews = [];
+        _avgRating = 0.0;
+        _totalCount = 0;
         _isLoading = false;
       });
     }
@@ -151,9 +135,8 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
     final bgColor = isDark ? context.appColors.surface : OwnerReviewsScreen.bgIceBlue;
     final cardColor = isDark ? const Color(0xFF1E1E24) : Colors.white;
     final textColor = isDark ? Colors.white : OwnerReviewsScreen.textDarkNavy;
-    const primaryCyan = OwnerReviewsScreen.primaryCyan;
 
-    final isShowingEmpty = _forceEmpty || _reviews.isEmpty;
+    final isShowingEmpty = _reviews.isEmpty;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -194,34 +177,6 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
             color: textColor,
           ),
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(
-              child: InkWell(
-                onTap: () => setState(() => _forceEmpty = !_forceEmpty),
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE0F2FE),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    _forceEmpty ? 'Show List' : 'Show Empty',
-                    style: const TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: primaryCyan,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

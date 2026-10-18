@@ -5,7 +5,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../shared/widgets/phase_badge.dart';
+import '../../landlord_home/view/tenant_detail_screen.dart';
+import '../../owner/model/compatible_tenant.dart';
 import '../../activity/data/repositories/notification_repository_impl.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../cubit/inquiry_thread_cubit.dart';
@@ -116,7 +117,34 @@ class _ThreadView extends StatelessWidget {
           subtitle: propertyTitle,
           counterpartName: counterpartName,
           property: state.property,
-          phase: 1,
+          onTapHeader: isOwner
+              ? () {
+                  final tenant = state.tenant;
+                  final profile = state.tenantProfile;
+                  final tenantId = tenant?.userId ?? inquiry.tenantId;
+                  final name = fullNameOf(
+                    tenant,
+                    fallback: counterpartName,
+                    loaded: !state.isLoading,
+                  );
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => TenantDetailScreen(
+                        tenant: CompatibleTenant(
+                          matchId: inquiry.inquiryId,
+                          tenantId: tenantId,
+                          name: name,
+                          gender: tenant?.gender ?? '',
+                          maxBudget: profile?.maxBudget ?? 0,
+                          bScore: 1,
+                          occupation: profile?.occupation,
+                          school: profile?.school,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+              : null,
           body: state.isLoading
               ? const Center(
                   child: CircularProgressIndicator(color: AppColors.primary),
@@ -139,7 +167,7 @@ class _ThreadScaffold extends StatelessWidget {
     this.subtitle,
     this.counterpartName,
     this.property,
-    this.phase,
+    this.onTapHeader,
   });
 
   final String title;
@@ -147,7 +175,7 @@ class _ThreadScaffold extends StatelessWidget {
   final String? counterpartName;
   final PropertyDoc? property;
   final Widget body;
-  final int? phase;
+  final VoidCallback? onTapHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -216,62 +244,71 @@ class _ThreadScaffold extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      if (hasHeaderDetails) ...[
-                        Container(
-                          width: 42,
-                          height: 42,
-                          alignment: Alignment.center,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFEDF2F7),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            InquirySummary.initialsOf(counterpartName!),
-                            style: const TextStyle(
-                              fontFamily: 'DM Sans',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                      ],
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              title,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 15.5,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                            if (subtitle != null) ...[
-                              const SizedBox(height: 1),
-                              Text(
-                                subtitle!,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontFamily: 'DM Sans',
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF64748B),
+                        child: InkWell(
+                          onTap: onTapHeader,
+                          borderRadius: BorderRadius.circular(10),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            child: Row(
+                              children: [
+                                if (hasHeaderDetails) ...[
+                                  Container(
+                                    width: 42,
+                                    height: 42,
+                                    alignment: Alignment.center,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFEDF2F7),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Text(
+                                      InquirySummary.initialsOf(counterpartName!),
+                                      style: const TextStyle(
+                                        fontFamily: 'DM Sans',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                ],
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        title,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontFamily: 'DM Sans',
+                                          fontSize: 15.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                      if (subtitle != null) ...[
+                                        const SizedBox(height: 1),
+                                        Text(
+                                          subtitle!,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontFamily: 'DM Sans',
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ],
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                      if (phase != null) ...[
-                        const SizedBox(width: 8),
-                        PhaseBadge(phase: phase!),
-                      ],
                       const SizedBox(width: 6),
                       const Icon(
                         Icons.more_vert_rounded,

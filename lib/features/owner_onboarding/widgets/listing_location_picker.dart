@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/app_options.dart';
 import '../../../core/services/geocoding_service.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -41,6 +41,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
   final _mapController = MapController();
   final _geocodingService = const GeocodingService();
   bool _isResolvingAddress = false;
+  bool _isLocatingCurrent = false;
   int _geocodeRequestId = 0;
 
   LatLng? get _pinnedLocation => widget.pin;
@@ -68,6 +69,191 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
       if (requestId != _geocodeRequestId || !mounted) return;
       setState(() => _isResolvingAddress = false);
       widget.onChanged(false);
+    }
+  }
+
+  Future<void> _showLocationServiceDialog() async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Location Services Turned Off',
+          style: TextStyle(
+            fontFamily: 'DM Sans',
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        content: const Text(
+          'Cannot pinpoint your location because location services are turned off on your device. Please turn them on in settings, or tap directly on the map to place your pin.',
+          style: TextStyle(fontFamily: 'DM Sans', fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              try {
+                await Geolocator.openLocationSettings();
+              } catch (_) {}
+            },
+            child: const Text(
+              'Open Settings',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showPermissionDeniedDialog() async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Location Permission Needed',
+          style: TextStyle(
+            fontFamily: 'DM Sans',
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        content: const Text(
+          'Cannot pinpoint your location because location permission is disabled. Please allow location access in your device settings, or tap directly on the map to place your pin.',
+          style: TextStyle(fontFamily: 'DM Sans', fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              try {
+                await Geolocator.openAppSettings();
+              } catch (_) {}
+            },
+            child: const Text(
+              'Open Settings',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _locateCurrentPosition() async {
+    if (_isLocatingCurrent) return;
+    setState(() => _isLocatingCurrent = true);
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        await _showLocationServiceDialog();
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Cannot pinpoint location because permission was denied. Tap the map to place your pin.',
+                ),
+                backgroundColor: Color(0xFF0F172A),
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        await _showPermissionDeniedDialog();
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw Exception('timeout'),
+      );
+
+      final latLng = LatLng(position.latitude, position.longitude);
+      _mapController.move(latLng, 16);
+      await _onMapTapped(latLng);
+    } on LocationServiceDisabledException {
+      await _showLocationServiceDialog();
+    } on PermissionDeniedException {
+      await _showPermissionDeniedDialog();
+    } catch (e) {
+      final errorStr = e.toString().toLowerCase();
+      if (errorStr.contains('locationservicedisabled') ||
+          (errorStr.contains('location service') && errorStr.contains('disabled'))) {
+        await _showLocationServiceDialog();
+      } else if (errorStr.contains('permissiondenied') ||
+          errorStr.contains('permission denied')) {
+        await _showPermissionDeniedDialog();
+      } else if (errorStr.contains('missingplugin') ||
+          errorStr.contains('no implementation found')) {
+        // Human-friendly message for PC/desktop testing or unlinked native plugin
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Cannot pinpoint location on this device. Please tap directly on the map to set your location.',
+              ),
+              backgroundColor: Color(0xFF0F172A),
+            ),
+          );
+        }
+      } else if (errorStr.contains('timeout')) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Location request timed out. Please tap directly on the map to place your pin.',
+              ),
+              backgroundColor: Color(0xFF0F172A),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Cannot pinpoint your location right now. Please tap directly on the map to set your pin.',
+              ),
+              backgroundColor: Color(0xFF0F172A),
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _isLocatingCurrent = false);
     }
   }
 
@@ -117,12 +303,6 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
           height: 164,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _pinnedLocation != null
-                  ? AppColors.accent
-                  : context.appColors.fieldBorder,
-              width: _pinnedLocation != null ? 1.5 : 1,
-            ),
           ),
           clipBehavior: Clip.antiAlias,
           child: Stack(
@@ -152,7 +332,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                           width: 40,
                           height: 40,
                           alignment: Alignment.topCenter,
-                          child: Icon(
+                          child: const Icon(
                             Icons.location_pin,
                             color: AppColors.accent,
                             size: 40,
@@ -164,63 +344,144 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
               ),
               MapZoomControls(controller: _mapController),
               Positioned(
-                left: AppSpacing.sm,
-                right: AppSpacing.sm,
-                bottom: AppSpacing.sm,
+                top: 8,
+                right: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
                   decoration: BoxDecoration(
-                    color: context.appColors.surface.withValues(alpha: 0.95),
-                    borderRadius: BorderRadius.circular(AppRadii.field),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: context.appColors.fieldBorder),
-                    boxShadow: <BoxShadow>[
+                    boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 4,
                         offset: const Offset(0, 1),
                       ),
                     ],
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_isResolvingAddress) ...[
-                        const SizedBox(
-                          width: 12,
-                          height: 12,
-                          child: CircularProgressIndicator(strokeWidth: 1.5),
+                  child: InkWell(
+                    onTap: _isLocatingCurrent ? null : _locateCurrentPosition,
+                    borderRadius: BorderRadius.circular(10),
+                    child: SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: _isLocatingCurrent
+                          ? const Center(
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            )
+                          : const Icon(
+                              Icons.my_location_rounded,
+                              size: 19,
+                              color: AppColors.primary,
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+              if (_pinnedLocation == null)
+                Positioned(
+                  left: 8,
+                  bottom: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.95),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: context.appColors.fieldBorder),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
                         ),
-                        const SizedBox(width: 8),
                       ],
-                      Expanded(
-                        child: Text(
-                          _pinnedLocation == null
-                              ? 'Tap to pin your property (required)'
-                              : _isResolvingAddress
-                              ? 'Fetching address for pin...'
-                              : 'Pinned: ${widget.addressController.text.isNotEmpty ? widget.addressController.text : '${_pinnedLocation!.latitude.toStringAsFixed(4)}, ${_pinnedLocation!.longitude.toStringAsFixed(4)}'}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.caption(context).copyWith(
-                            color: _pinnedLocation != null
-                                ? AppColors.accent
-                                : context.appColors.textSecondary,
-                            fontWeight: _pinnedLocation != null
-                                ? FontWeight.w600
-                                : FontWeight.w400,
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.lightbulb_rounded,
+                          size: 14,
+                          color: Color(0xFFEAB308),
+                        ),
+                        SizedBox(width: 5),
+                        Text(
+                          'Tap to pin your property (required)',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.normal,
+                            color: Color(0xFF475569),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (_isResolvingAddress) ...[
+          const SizedBox(height: 6),
+          const Row(
+            children: [
+              SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  color: AppColors.primary,
+                ),
+              ),
+              SizedBox(width: 6),
+              Text(
+                'Fetching location...',
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
+        ] else if (_pinnedLocation != null) ...[
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.location_on_rounded,
+                size: 14,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  'Pinned: ${widget.addressController.text.isNotEmpty ? widget.addressController.text : '${_pinnedLocation!.latitude.toStringAsFixed(4)}, ${_pinnedLocation!.longitude.toStringAsFixed(4)}'}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F172A),
                   ),
                 ),
               ),
             ],
           ),
-        ),
+        ],
       ],
     );
   }

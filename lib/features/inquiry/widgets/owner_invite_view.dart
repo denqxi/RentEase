@@ -31,7 +31,7 @@ class OwnerInviteView extends StatelessWidget {
           'declined' => (
             Icons.block_rounded,
             AppColors.destructive,
-            '$tenantName declined your invitation',
+            '$tenantName declined',
             (inquiry.declineReason?.isNotEmpty ?? false)
                 ? 'Reason: ${inquiry.declineReason}'
                 : 'You can keep looking at other compatible tenants.',
@@ -39,14 +39,14 @@ class OwnerInviteView extends StatelessWidget {
           'closed' => (
             Icons.block_rounded,
             AppColors.destructive,
-            'This invitation is closed',
+            'This inquiry is closed',
             'The listing is fully booked.',
           ),
           _ => (
             Icons.access_time_rounded,
             AppColors.primary,
             'Waiting for $tenantName to respond...',
-            'Chat unlocks once the tenant accepts your invitation.',
+            'Chat unlocks once $tenantName responds.',
           ),
         };
 
@@ -66,7 +66,7 @@ class OwnerInviteView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Invitation sent to $tenantName',
+                '$tenantName has been notified',
                 style: AppTextStyles.label(
                   context,
                 ).copyWith(color: const Color(0xFF0F172A)),

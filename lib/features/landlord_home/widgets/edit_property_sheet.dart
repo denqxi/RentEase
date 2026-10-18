@@ -44,6 +44,7 @@ Future<void> showEditPropertySheet({
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    enableDrag: false,
     backgroundColor: context.appColors.surface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -97,6 +98,7 @@ class _EditPropertySheetState extends State<_EditPropertySheet> {
   late final ImageUploadCubit _coverUpload;
   bool _saving = false;
   bool _resolving = false;
+  bool _allowPop = false;
 
   @override
   void initState() {
@@ -132,6 +134,78 @@ class _EditPropertySheetState extends State<_EditPropertySheet> {
     super.dispose();
   }
 
+  bool get _hasChanges {
+    if (_nameController.text.trim() != widget.initialName.trim()) return true;
+
+    final initialType =
+        (widget.initialType != null && widget.initialType!.trim().isNotEmpty)
+            ? widget.initialType
+            : kBuildingTypes.first;
+    if (_type != initialType) return true;
+
+    if (_addressController.text.trim() != widget.initialAddress.trim()) {
+      return true;
+    }
+
+    if (_pin == null && widget.initialLocation != null) return true;
+    if (_pin != null && widget.initialLocation == null) return true;
+    if (_pin != null && widget.initialLocation != null) {
+      if ((_pin!.latitude - widget.initialLocation!.latitude).abs() > 0.0001 ||
+          (_pin!.longitude - widget.initialLocation!.longitude).abs() > 0.0001) {
+        return true;
+      }
+    }
+
+    if (_coverUpload.state.isUploading) return true;
+    final currentImages = _coverUpload.state.images;
+    final initialUrl = widget.initialCoverPhotoUrl?.trim() ?? '';
+    if (initialUrl.isEmpty) {
+      if (currentImages.isNotEmpty) return true;
+    } else {
+      if (currentImages.isEmpty) return true;
+      if (currentImages.first.url != initialUrl) return true;
+    }
+
+    return false;
+  }
+
+  Future<bool> _confirmDiscard() async {
+    if (!_hasChanges) return true;
+
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Discard changes?',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        content: const Text(
+          'You have unsaved changes. Are you sure you want to discard them?',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.destructive,
+            ),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+
+    return discard ?? false;
+  }
+
   bool get _canSave =>
       !_saving &&
       !_resolving &&
@@ -154,122 +228,140 @@ class _EditPropertySheetState extends State<_EditPropertySheet> {
         location: _pin!,
         coverPhoto: images.isNotEmpty ? images.first : null,
       );
-      if (mounted) Navigator.of(context).pop();
+      if (!mounted) return;
+      _allowPop = true;
+      Navigator.of(context).pop();
     } catch (e) {
-      if (mounted) {
-        setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update property: $e'),
-            backgroundColor: AppColors.destructive,
-          ),
-        );
-      }
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update property: $e'),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Edit property',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: context.appColors.textPrimary,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Close',
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-            Text(
-              'Update building name, type, address, location pin, and cover photo.',
-              style: AppTextStyles.caption(context),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            LabelledField(
-              label: 'Property name',
-              child: AppTextField(
-                controller: _nameController,
-                hintText: 'e.g. GL Boardinghouse',
-                inputFormatters: [LengthLimitingTextInputFormatter(120)],
-                onChanged: (_) => setState(() {}),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            LabelledField(
-              label: 'Property type',
-              child: PropertyTypeDropdown(
-                value: _type,
-                hint: 'Select property type',
-                options: kBuildingTypes,
-                onChanged: (v) => setState(() => _type = v),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            ListingLocationPicker(
-              addressController: _addressController,
-              pin: _pin,
-              onPinChanged: (p) => setState(() => _pin = p),
-              onChanged: (resolving) => setState(() => _resolving = resolving),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            LabelledField(
-              label: 'Property cover photo',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return PopScope(
+      canPop: _allowPop || !_hasChanges,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldPop = await _confirmDiscard();
+        if (shouldPop && context.mounted) {
+          _allowPop = true;
+          Navigator.of(context).pop();
+        }
+      },
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
                 children: [
-                  BlocBuilder<ImageUploadCubit, ImageUploadState>(
-                    bloc: _coverUpload,
-                    builder: (context, state) => SizedBox(
-                      width: 112,
-                      child: ImageUploadSlot(
-                        slot: state.slots.first,
-                        emptyLabel: 'Property Cover',
-                        onPick: (src) => _coverUpload.pickAndUpload(0, src),
-                        onRetry: () => _coverUpload.retry(0),
-                        onRemove: () => _coverUpload.remove(0),
+                  Expanded(
+                    child: Text(
+                      'Edit property',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: context.appColors.textPrimary,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Add 1 cover photo for the property. Each room listing will have its own photos.',
-                    style: AppTextStyles.caption(context),
+                  IconButton(
+                    tooltip: 'Close',
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () async {
+                      final shouldPop = await _confirmDiscard();
+                      if (shouldPop && context.mounted) {
+                        _allowPop = true;
+                        Navigator.of(context).pop();
+                      }
+                    },
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            BlocBuilder<ImageUploadCubit, ImageUploadState>(
-              bloc: _coverUpload,
-              builder: (context, _) => SizedBox(
-                width: double.infinity,
-                child: AppPrimaryButton(
-                  label: _saving ? 'Saving...' : 'Save changes',
-                  onPressed: _canSave ? _handleSave : null,
+              Text(
+                'Update building name, type, address, location pin, and cover photo.',
+                style: AppTextStyles.caption(context),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              LabelledField(
+                label: 'Property name',
+                child: AppTextField(
+                  controller: _nameController,
+                  hintText: 'e.g. GL Boardinghouse',
+                  inputFormatters: [LengthLimitingTextInputFormatter(120)],
+                  onChanged: (_) => setState(() {}),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: AppSpacing.md),
+              LabelledField(
+                label: 'Property type',
+                child: PropertyTypeDropdown(
+                  value: _type,
+                  hint: 'Select property type',
+                  options: kBuildingTypes,
+                  onChanged: (v) => setState(() => _type = v),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              ListingLocationPicker(
+                addressController: _addressController,
+                pin: _pin,
+                onPinChanged: (p) => setState(() => _pin = p),
+                onChanged: (resolving) => setState(() => _resolving = resolving),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              LabelledField(
+                label: 'Property cover photo',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    BlocBuilder<ImageUploadCubit, ImageUploadState>(
+                      bloc: _coverUpload,
+                      builder: (context, state) => SizedBox(
+                        width: 112,
+                        child: ImageUploadSlot(
+                          slot: state.slots.first,
+                          emptyLabel: 'Property Cover',
+                          onPick: (src) => _coverUpload.pickAndUpload(0, src),
+                          onRetry: () => _coverUpload.retry(0),
+                          onRemove: () => _coverUpload.remove(0),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Add 1 cover photo for the property. Each room listing will have its own photos.',
+                      style: AppTextStyles.caption(context),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              BlocBuilder<ImageUploadCubit, ImageUploadState>(
+                bloc: _coverUpload,
+                builder: (context, _) => SizedBox(
+                  width: double.infinity,
+                  child: AppPrimaryButton(
+                    label: _saving ? 'Saving...' : 'Save changes',
+                    onPressed: _canSave ? _handleSave : null,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

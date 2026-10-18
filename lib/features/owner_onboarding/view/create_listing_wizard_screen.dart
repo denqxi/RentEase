@@ -236,10 +236,13 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
 
   // ── Navigation ─────────────────────────────────────────────────────────
 
+  bool get _isPresetRoom => widget.addRoomTo != null;
+  int get _minStep => _isPresetRoom ? 1 : 0;
+
   void _goTo(int step) => setState(() => _step = step);
 
   void _back() {
-    if (_step == 0) {
+    if (_step <= _minStep) {
       Navigator.of(context).maybePop();
     } else {
       _goTo(_step - 1);
@@ -380,7 +383,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
     final isLast = _step == _stepCount - 1;
 
     return PopScope(
-      canPop: _step == 0,
+      canPop: _step <= _minStep,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _back();
       },

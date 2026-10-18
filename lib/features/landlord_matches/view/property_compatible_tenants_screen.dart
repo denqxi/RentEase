@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -74,19 +75,35 @@ class _PropertyCompatibleTenantsScreenState
         .toList();
   }
 
+  String? _resolveOwnerId(BuildContext context, PropertyDoc unit) {
+    final uid = currentUidOrNull(context);
+    if (uid != null && uid.isNotEmpty) return uid;
+
+    try {
+      final authUid = FirebaseAuth.instance.currentUser?.uid;
+      if (authUid != null && authUid.isNotEmpty) return authUid;
+    } catch (_) {
+      // Ignore if Firebase is not initialized in offline preview
+    }
+
+    if (unit.ownerId.isNotEmpty) return unit.ownerId;
+    return null;
+  }
+
   Future<void> _notifySingleTenant({
     required BuildContext context,
     required CompatibleTenant tenant,
     required PropertyDoc unit,
     required String listingLabel,
   }) async {
-    final ownerId = currentUidOrNull(context);
-    if (ownerId == null) return;
     final messenger = ScaffoldMessenger.of(context);
+    final ownerId = _resolveOwnerId(context, unit);
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Notify ${tenant.name}?',
@@ -94,51 +111,75 @@ class _PropertyCompatibleTenantsScreenState
             fontFamily: 'DM Sans',
             fontSize: 17,
             fontWeight: FontWeight.w800,
+            color: Color(0xFF0F172A),
           ),
         ),
         content: Text(
-          'Send an availability invitation for "$listingLabel" to ${tenant.name}?',
+          'Notify ${tenant.name} that "$listingLabel" is available?',
           style: const TextStyle(
             fontFamily: 'DM Sans',
-            fontSize: 13,
+            fontSize: 13.5,
             color: Color(0xFF475569),
             height: 1.4,
           ),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontWeight: FontWeight.w600,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(false),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
               ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  minimumSize: const Size(100, 42),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () => Navigator.of(dialogCtx).pop(true),
+                child: const Text(
+                  'Notify',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-            ),
-            onPressed: () => Navigator.of(dialogCtx).pop(true),
-            child: const Text(
-              'Notify',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            ],
           ),
         ],
       ),
     );
 
     if (confirmed != true || !mounted) return;
+
+    if (ownerId == null) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Unable to identify owner account. Please sign in again.'),
+          backgroundColor: Color(0xFF0F172A),
+        ),
+      );
+      return;
+    }
 
     try {
       await InquiryService(
@@ -151,7 +192,7 @@ class _PropertyCompatibleTenantsScreenState
         widget.onNotifiedMatchIdsChanged?.call(_notifiedMatchIds);
         messenger.showSnackBar(
           SnackBar(
-            content: Text('Invitation sent to ${tenant.name}.'),
+            content: Text('${tenant.name} has been notified.'),
             backgroundColor: const Color(0xFF0F172A),
           ),
         );
@@ -179,9 +220,9 @@ class _PropertyCompatibleTenantsScreenState
     required String listingLabel,
     required List<CompatibleTenant> tenants,
   }) async {
-    final ownerId = currentUidOrNull(context);
-    if (ownerId == null || tenants.isEmpty) return;
+    if (tenants.isEmpty) return;
     final messenger = ScaffoldMessenger.of(context);
+    final ownerId = _resolveOwnerId(context, unit);
 
     final unnotified = tenants
         .where((t) => !_notifiedMatchIds.contains(t.matchId))
@@ -200,58 +241,84 @@ class _PropertyCompatibleTenantsScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Notify All (${unnotified.length})?',
-          style: const TextStyle(
+        title: const Text(
+          'Notify all compatible tenants?',
+          style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 17,
             fontWeight: FontWeight.w800,
+            color: Color(0xFF0F172A),
           ),
         ),
         content: Text(
-          'Send availability invitations for "$listingLabel" to ${unnotified.length} compatible tenant${unnotified.length == 1 ? '' : 's'}?',
+          'Notify all ${unnotified.length} compatible tenant${unnotified.length == 1 ? '' : 's'} that "$listingLabel" is available?',
           style: const TextStyle(
             fontFamily: 'DM Sans',
-            fontSize: 13,
+            fontSize: 13.5,
             color: Color(0xFF475569),
             height: 1.4,
           ),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontWeight: FontWeight.w600,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(false),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
               ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  minimumSize: const Size(100, 42),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () => Navigator.of(dialogCtx).pop(true),
+                child: const Text(
+                  'Notify',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-            ),
-            onPressed: () => Navigator.of(dialogCtx).pop(true),
-            child: const Text(
-              'Notify All',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            ],
           ),
         ],
       ),
     );
 
     if (confirmed != true || !mounted) return;
+
+    if (ownerId == null) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Unable to identify owner account. Please sign in again.'),
+          backgroundColor: Color(0xFF0F172A),
+        ),
+      );
+      return;
+    }
 
     setState(() => _isNotifyingAll = true);
     int sentCount = 0;
@@ -278,8 +345,8 @@ class _PropertyCompatibleTenantsScreenState
         SnackBar(
           content: Text(
             sentCount > 0
-                ? 'Invitations sent to $sentCount tenant(s).'
-                : 'All eligible compatible tenants have already been invited.',
+                ? '$sentCount compatible tenant${sentCount == 1 ? '' : 's'} have been notified.'
+                : 'All eligible compatible tenants have already been notified.',
           ),
           backgroundColor: const Color(0xFF0F172A),
         ),
@@ -987,21 +1054,12 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
         ? property.vacancyStatus
         : (property.isAvailable ? 'available' : 'booked');
     if (targetStatus == currentStatus) return;
+    final targetLabel =
+        targetStatus == 'available' ? 'Available' : 'Occupied';
 
-    final targetLabel = switch (targetStatus) {
-      'available' => 'Available',
-      'pending' => 'Pending',
-      _ => 'Occupied',
-    };
-
-    final explanation = switch (targetStatus) {
-      'available' =>
-        'Marking this listing as Available will display it in tenant search results and allow compatible tenants to send inquiries.',
-      'pending' =>
-        'Marking this listing as Pending indicates it is temporarily reserved or awaiting confirmation.',
-      _ =>
-        'Marking this listing as Occupied will hide it from public search results and prevent new tenant inquiries.',
-    };
+    final explanation = targetStatus == 'available'
+        ? 'Marking this listing as Available will display it in tenant search results and allow compatible tenants to send inquiries.'
+        : 'Marking this listing as Occupied will hide it from public search results and prevent new tenant inquiries.';
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1024,34 +1082,47 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
             height: 1.4,
           ),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontWeight: FontWeight.w600,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(false),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
               ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  minimumSize: const Size(110, 42),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () => Navigator.of(dialogCtx).pop(true),
+                child: const Text(
+                  'Confirm',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-            ),
-            onPressed: () => Navigator.of(dialogCtx).pop(true),
-            child: const Text(
-              'Confirm',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            ],
           ),
         ],
       ),
@@ -1297,17 +1368,9 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
   }
 
   Widget _buildStatusDropdown(BuildContext context, String currentStatus) {
-    final label = switch (currentStatus) {
-      'available' => 'Available',
-      'pending' => 'Pending',
-      _ => 'Occupied',
-    };
-
-    final color = switch (currentStatus) {
-      'available' => const Color(0xFF16A34A),
-      'pending' => const Color(0xFFD97706),
-      _ => const Color(0xFF475569),
-    };
+    final isAvailable = currentStatus == 'available';
+    final label = isAvailable ? 'Available' : 'Occupied';
+    final color = isAvailable ? const Color(0xFF16A34A) : const Color(0xFF475569);
 
     return PopupMenuButton<String>(
       tooltip: 'Change Rental Status',
@@ -1324,19 +1387,13 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
           value: 'available',
           label: 'Available',
           dotColor: const Color(0xFF16A34A),
-          isSelected: currentStatus == 'available',
-        ),
-        _buildPopupMenuItem(
-          value: 'pending',
-          label: 'Pending',
-          dotColor: const Color(0xFFD97706),
-          isSelected: currentStatus == 'pending',
+          isSelected: isAvailable,
         ),
         _buildPopupMenuItem(
           value: 'booked',
           label: 'Occupied',
           dotColor: const Color(0xFF64748B),
-          isSelected: currentStatus == 'booked',
+          isSelected: !isAvailable,
         ),
       ],
       child: Container(
@@ -1881,104 +1938,116 @@ class _CompatibleTenantRow extends StatelessWidget {
     final fitText =
         isHighFit ? const Color(0xFF15803D) : AppColors.primary;
 
-    return Material(
-      color: const Color(0xFFF8FAFC),
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: const Color(0xFFE2E8F0).withValues(alpha: 0.75),
-              width: 1,
+        border: Border.all(
+          color: const Color(0xFFE2E8F0).withValues(alpha: 0.75),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        child: Row(
+          children: [
+            // Tap area for Tenant Details (Initials avatar, Name + budget, Fit % badge)
+            Expanded(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onTap,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Row(
+                    children: [
+                      // Initials Circle Avatar
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          tenant.initials,
+                          style: const TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+
+                      // Name + Budget
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tenant.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A),
+                                height: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _formatBudget(tenant.maxBudget.toDouble()),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+
+                      // % Fit Pill Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: fitBg,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '$pct% fit',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: fitText,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-          child: Row(
-            children: [
-              // Initials Circle Avatar
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  tenant.initials,
-                  style: const TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
+            const SizedBox(width: 8),
 
-              // Name + Budget
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tenant.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A),
-                        height: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _formatBudget(tenant.maxBudget.toDouble()),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 6),
-
-              // % Fit Pill Badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: fitBg,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '$pct% fit',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: fitText,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-
-              // Individual Notify Button (Theme Blue BG & Text)
-              GestureDetector(
+            // Individual Notify Button (Theme Blue BG & Text, standalone InkWell)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
                 onTap: isNotified ? null : onNotify,
-                behavior: HitTestBehavior.opaque,
+                borderRadius: BorderRadius.circular(12),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -2026,14 +2095,24 @@ class _CompatibleTenantRow extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: Color(0xFF94A3B8),
+            ),
+            const SizedBox(width: 4),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(12),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    size: 18,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

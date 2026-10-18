@@ -4,11 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../shared/widgets/phase_badge.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../../inquiry/cubit/inquiry_list_cubit.dart';
 import '../../inquiry/data/repositories/inquiry_repository_impl.dart';
-import '../../inquiry/domain/services/inquiry_service.dart';
 import '../../inquiry/model/inquiry_summary.dart';
 import '../../inquiry/view/inquiry_thread_screen.dart';
 
@@ -353,8 +351,8 @@ class _OwnerInquiryTabs extends StatelessWidget {
         _InquiryList(
           items: _filter(state.sentInvitations),
           emptyText: searchQuery.trim().isNotEmpty
-              ? 'No matching sent invitations.'
-              : 'No sent invitations yet.',
+              ? 'No matching sent notifications.'
+              : 'No sent notifications yet.',
         ),
         _InquiryList(
           items: _filter(state.history),
@@ -417,54 +415,9 @@ class _OwnerInquiryCard extends StatelessWidget {
 
   final InquirySummary summary;
 
-  String _messagePreview() {
-    final latest = summary.lastMessagePreview?.trim();
-    if (latest != null && latest.isNotEmpty) return latest;
-
-    final inquiry = summary.inquiry;
-    if (InquiryService.isInvite(inquiry)) {
-      return switch (inquiry.status) {
-        'declined' => 'Tenant declined your invitation.',
-        'booked' => 'Booking confirmed for ${summary.propertyTitle}.',
-        'closed' => 'This invitation is now closed.',
-        _ =>
-          inquiry.stage == 2
-              ? 'Invitation accepted — tap to start chatting.'
-              : 'Invitation sent — waiting for tenant response.',
-      };
-    }
-
-    return switch (inquiry.status) {
-      'booked' => 'Booking confirmed for ${summary.propertyTitle}.',
-      'declined' => 'You declined this inquiry.',
-      'closed' => 'Closed — listing marked as fully booked.',
-      _ =>
-        inquiry.stage == 2
-            ? "Hi! Is this still available? I'm interested in this listing."
-            : 'Hi! Sent an inquiry — tap to review tenant summary.',
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final inquiry = summary.inquiry;
-    final phase = inquiry.stage.toInt();
-    final isInvite = InquiryService.isInvite(inquiry);
-    final resolvedLabel = switch (inquiry.status) {
-      'booked' => 'Booked',
-      'declined' => 'Declined',
-      'closed' => 'Closed',
-      _ => null,
-    };
-    final statusColor = switch (inquiry.status) {
-      'booked' => AppColors.primary,
-      'declined' => AppColors.destructive,
-      _ => const Color(0xFF64748B),
-    };
-
-    final actionLabel = resolvedLabel != null
-        ? (inquiry.status == 'booked' ? 'View & rate' : 'Open chat')
-        : (isInvite && phase == 1 ? 'View invitation' : 'Open chat');
 
     void open() => Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -475,42 +428,61 @@ class _OwnerInquiryCard extends StatelessWidget {
 
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: open,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 13),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: const Color(0xFFE2E8F0).withValues(alpha: 0.75),
+              color: const Color(0xFFE2E8F0),
+              width: 0.8,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0F172A).withValues(alpha: 0.045),
-                blurRadius: 14,
-                offset: const Offset(0, 4),
+                color: const Color(0xFF0F172A).withValues(alpha: 0.035),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Initials Avatar
-                  Container(
-                    width: 46,
-                    height: 46,
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEDF2F7),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      summary.counterpartInitials,
+              // Initials Avatar
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFEDF2F7),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  summary.counterpartInitials,
+                  style: const TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Profile Name & Property Name
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      summary.counterpartName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 15,
@@ -518,124 +490,41 @@ class _OwnerInquiryCard extends StatelessWidget {
                         color: Color(0xFF0F172A),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Tenant Name, Property Name, Message Preview
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          summary.counterpartName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF0F172A),
-                            height: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          summary.propertyTitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF64748B),
-                            height: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _messagePreview(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
-                            color: Color(0xFF64748B),
-                            height: 1.25,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-
-                  // Date + Phase / Status Pill
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        inquiryDateLabel(inquiry.updatedAt?.toDate()),
-                        style: const TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      if (resolvedLabel != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 11,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            resolvedLabel,
-                            style: TextStyle(
-                              fontFamily: 'DM Sans',
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: statusColor,
-                              height: 1.15,
-                            ),
-                          ),
-                        )
-                      else
-                        PhaseBadge(phase: phase),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Bottom Row: Chat Icon + "Open chat" + Right Chevron
-              Row(
-                children: [
-                  const Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    size: 16,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      actionLabel,
+                    const SizedBox(height: 3),
+                    Text(
+                      summary.propertyTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontFamily: 'DM Sans',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF64748B),
                       ),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+
+              // Date + Chevron >
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    inquiryDateLabel(inquiry.updatedAt?.toDate()),
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF94A3B8),
+                    ),
                   ),
+                  const SizedBox(width: 4),
                   const Icon(
                     Icons.chevron_right_rounded,
-                    size: 19,
-                    color: Color(0xFF475569),
+                    size: 20,
+                    color: Color(0xFF94A3B8),
                   ),
                 ],
               ),

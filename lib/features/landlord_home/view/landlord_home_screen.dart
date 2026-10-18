@@ -135,10 +135,8 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
 
       if (_selectedFilter == 'available') {
         if (!p.isAvailable) return false;
-      } else if (_selectedFilter == 'unavailable') {
-        if (p.isAvailable || p.vacancyStatus == 'pending') return false;
-      } else if (_selectedFilter == 'pending') {
-        if (p.vacancyStatus != 'pending') return false;
+      } else if (_selectedFilter == 'occupied' || _selectedFilter == 'unavailable') {
+        if (p.isAvailable) return false;
       }
       return true;
     }).toList();
@@ -895,15 +893,9 @@ class _ActivePropertiesHeader extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 _FilterChipButton(
-                  label: 'Unavailable',
-                  isSelected: selectedFilter == 'unavailable',
-                  onTap: () => onFilterChanged('unavailable'),
-                ),
-                const SizedBox(width: 8),
-                _FilterChipButton(
-                  label: 'Pending',
-                  isSelected: selectedFilter == 'pending',
-                  onTap: () => onFilterChanged('pending'),
+                  label: 'Occupied',
+                  isSelected: selectedFilter == 'occupied' || selectedFilter == 'unavailable',
+                  onTap: () => onFilterChanged('occupied'),
                 ),
               ],
             ),
@@ -1151,21 +1143,14 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
           ? property.vacancyStatus
           : (property.isAvailable ? 'available' : 'booked');
 
-      statusLabel = switch (effectiveStatus) {
-        'available' => 'Available',
-        'pending' => 'Pending',
-        _ => 'Booked',
-      };
-
-      statusDotColor = switch (effectiveStatus) {
-        'available' => const Color(0xFF22C55E),
-        'pending' => const Color(0xFFF59E0B),
-        _ => const Color(0xFF94A3B8),
-      };
+      statusLabel = effectiveStatus == 'available' ? 'Available' : 'Occupied';
+      statusDotColor = effectiveStatus == 'available'
+          ? const Color(0xFF22C55E)
+          : const Color(0xFF94A3B8);
     } else {
       statusLabel = availableCount > 0
           ? '$availableCount Available'
-          : 'Booked';
+          : 'Occupied';
 
       statusDotColor = availableCount > 0
           ? const Color(0xFF22C55E)
@@ -1368,43 +1353,54 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      displayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    // Address limited to ~half the card width, truncated with …
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          size: 13,
-                          color: Color(0xFF94A3B8),
-                        ),
-                        const SizedBox(width: 4),
                         Expanded(
-                          flex: 3,
-                          child: Text(
-                            property.address,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: 'DM Sans',
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF475569),
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontFamily: 'DM Sans',
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0F172A),
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.location_on_outlined,
+                                    size: 13,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      property.address,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontFamily: 'DM Sans',
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                        color: Color(0xFF475569),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                        const Expanded(flex: 2, child: SizedBox()),
+                        const SizedBox(width: 10),
+                        _buildRatingBadge(property, rooms),
                       ],
                     ),
                     const SizedBox(height: 11),
@@ -1491,6 +1487,72 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildRatingBadge(PropertyDoc property, List<PropertyDoc> rooms) {
+    num? effectiveAvg = property.avgRating;
+    num effectiveCount = property.totalRatings ?? 0;
+
+    if (property.isRoom && rooms.isNotEmpty) {
+      num sum = 0;
+      num count = 0;
+      for (final r in rooms) {
+        if (r.avgRating != null && (r.totalRatings ?? 0) > 0) {
+          sum += (r.avgRating! * (r.totalRatings ?? 1));
+          count += (r.totalRatings ?? 1);
+        }
+      }
+      if (count > 0) {
+        effectiveAvg = sum / count;
+        effectiveCount = count;
+      }
+    }
+
+    final bool hasRating = effectiveAvg != null && effectiveCount > 0;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Icon(
+          Icons.star_rounded,
+          size: 16,
+          color: Color(0xFFF59E0B),
+        ),
+        const SizedBox(width: 3.5),
+        if (hasRating) ...[
+          Text(
+            effectiveAvg.toStringAsFixed(1),
+            style: const TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(width: 2.5),
+          Text(
+            '($effectiveCount)',
+            style: const TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF64748B),
+            ),
+          ),
+        ] else ...[
+          const Text(
+            '0',
+            style: TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF64748B),
+            ),
+          ),
+        ],
+      ],
     );
   }
 

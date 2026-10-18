@@ -131,7 +131,7 @@ class _InviteView extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              error ?? 'Invitation sent to $tenantName for $sent.',
+              error ?? '$tenantName has been notified for $sent.',
             ),
             backgroundColor: error != null
                 ? AppColors.destructive

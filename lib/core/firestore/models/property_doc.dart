@@ -36,6 +36,8 @@ class PropertyDoc {
     this.parentPropertyId,
     this.propertyCoverPhoto,
     this.propertyCoverPublicId,
+    this.avgRating,
+    this.totalRatings,
   });
 
   /// 'entire_place' (default, also for legacy docs) | 'room'.
@@ -58,6 +60,12 @@ class PropertyDoc {
 
   /// Cloudinary public_id for [propertyCoverPhoto].
   final String? propertyCoverPublicId;
+
+  /// Average star rating (1.0 to 5.0) aggregated from tenant reviews.
+  final num? avgRating;
+
+  /// Total count of tenant reviews submitted for this property.
+  final num? totalRatings;
 
   /// Returns the building cover photo if set, falling back to the first listing photo.
   String? get effectiveBuildingCoverPhoto =>
@@ -194,6 +202,8 @@ class PropertyDoc {
         parentPropertyId: map['parentPropertyId'] as String?,
         propertyCoverPhoto: map['propertyCoverPhoto'] as String?,
         propertyCoverPublicId: map['propertyCoverPublicId'] as String?,
+        avgRating: map['avgRating'] != null ? _parseNum(map['avgRating']) : null,
+        totalRatings: map['totalRatings'] != null ? _parseNum(map['totalRatings']) : null,
       );
 
   factory PropertyDoc.fromSnapshot(
@@ -234,5 +244,7 @@ class PropertyDoc {
     if (propertyCoverPhoto != null) 'propertyCoverPhoto': propertyCoverPhoto,
     if (propertyCoverPublicId != null)
       'propertyCoverPublicId': propertyCoverPublicId,
+    if (avgRating != null) 'avgRating': avgRating,
+    if (totalRatings != null) 'totalRatings': totalRatings,
   };
 }

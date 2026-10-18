@@ -11,6 +11,8 @@ class RatingDoc {
     required this.stars,
     this.review,
     this.createdAt,
+    this.propertyId,
+    this.parentPropertyId,
   });
 
   /// Document ID.
@@ -29,6 +31,12 @@ class RatingDoc {
   final String? review;
   final Timestamp? createdAt;
 
+  /// References property/room that was rented.
+  final String? propertyId;
+
+  /// References parent building if this was a room rental.
+  final String? parentPropertyId;
+
   factory RatingDoc.fromMap(String id, Map<String, dynamic> map) => RatingDoc(
         ratingId: id,
         inquiryId: map['inquiryId'] as String? ?? '',
@@ -38,6 +46,8 @@ class RatingDoc {
         stars: map['stars'] as num? ?? 0,
         review: map['review'] as String?,
         createdAt: map['createdAt'] as Timestamp?,
+        propertyId: map['propertyId'] as String?,
+        parentPropertyId: map['parentPropertyId'] as String?,
       );
 
   factory RatingDoc.fromSnapshot(
@@ -52,5 +62,7 @@ class RatingDoc {
         'stars': stars,
         if (review != null) 'review': review,
         'createdAt': createdAt ?? FieldValue.serverTimestamp(),
+        if (propertyId != null) 'propertyId': propertyId,
+        if (parentPropertyId != null) 'parentPropertyId': parentPropertyId,
       };
 }

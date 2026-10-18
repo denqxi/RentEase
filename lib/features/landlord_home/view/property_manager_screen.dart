@@ -18,6 +18,7 @@ import '../../uploads/domain/entities/uploaded_image.dart';
 import '../cubit/landlord_home_cubit.dart';
 import '../widgets/edit_property_sheet.dart';
 import 'edit_entire_property_screen.dart';
+import 'property_reviews_screen.dart';
 
 /// Screen displayed when clicking an owner property card.
 ///
@@ -55,20 +56,12 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
         : (room.isAvailable ? 'available' : 'booked');
     if (targetStatus == currentStatus) return;
 
-    final targetLabel = switch (targetStatus) {
-      'available' => 'Available',
-      'pending' => 'Pending',
-      _ => 'Occupied',
-    };
+    final targetLabel =
+        targetStatus == 'available' ? 'Available' : 'Occupied';
 
-    final explanation = switch (targetStatus) {
-      'available' =>
-        'Marking this room as Available will display it in tenant search results and allow compatible tenants to send inquiries.',
-      'pending' =>
-        'Marking this room as Pending indicates it is temporarily reserved or awaiting confirmation.',
-      _ =>
-        'Marking this room as Occupied will hide it from public search results and prevent new tenant inquiries.',
-    };
+    final explanation = targetStatus == 'available'
+        ? 'Marking this room as Available will display it in tenant search results and allow compatible tenants to send inquiries.'
+        : 'Marking this room as Occupied will hide it from public search results and prevent new tenant inquiries.';
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -91,34 +84,47 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
             height: 1.4,
           ),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontWeight: FontWeight.w600,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(false),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
               ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  minimumSize: const Size(110, 42),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () => Navigator.of(dialogCtx).pop(true),
+                child: const Text(
+                  'Confirm',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-            ),
-            onPressed: () => Navigator.of(dialogCtx).pop(true),
-            child: const Text(
-              'Confirm',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            ],
           ),
         ],
       ),
@@ -935,7 +941,51 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                                   ],
                                 ),
 
-                                const SizedBox(height: 14),
+                                const SizedBox(height: 10),
+
+                                // Rating & Reviews Redirect Row
+                                InkWell(
+                                  onTap: () => PropertyReviewsScreen.open(
+                                    context,
+                                    property: currentProperty,
+                                    rooms: currentRooms,
+                                  ),
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 2),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.star_rounded,
+                                          size: 16.5,
+                                          color: Color(0xFFF59E0B),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _formatPropertyRatingLabel(
+                                            currentProperty,
+                                            currentRooms,
+                                          ),
+                                          style: const TextStyle(
+                                            fontFamily: 'DM Sans',
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 2),
+                                        const Icon(
+                                          Icons.chevron_right_rounded,
+                                          size: 16,
+                                          color: Color(0xFF94A3B8),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+
+const SizedBox(height: 14),
                                 const Divider(
                                   height: 1,
                                   thickness: 0.8,
@@ -1795,20 +1845,12 @@ class _EntirePropertyMainCard extends StatelessWidget {
         : (property.isAvailable ? 'available' : 'booked');
     if (targetStatus == currentStatus) return;
 
-    final targetLabel = switch (targetStatus) {
-      'available' => 'Available',
-      'pending' => 'Pending',
-      _ => 'Occupied',
-    };
+    final targetLabel =
+        targetStatus == 'available' ? 'Available' : 'Occupied';
 
-    final explanation = switch (targetStatus) {
-      'available' =>
-        'Marking this property as Available will display it in tenant search results and allow compatible tenants to send inquiries.',
-      'pending' =>
-        'Marking this property as Pending indicates it is temporarily reserved or awaiting confirmation.',
-      _ =>
-        'Marking this property as Occupied will hide it from public search results and prevent new tenant inquiries.',
-    };
+    final explanation = targetStatus == 'available'
+        ? 'Marking this property as Available will display it in tenant search results and allow compatible tenants to send inquiries.'
+        : 'Marking this property as Occupied will hide it from public search results and prevent new tenant inquiries.';
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1831,34 +1873,47 @@ class _EntirePropertyMainCard extends StatelessWidget {
             height: 1.4,
           ),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontWeight: FontWeight.w600,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(false),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
               ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  minimumSize: const Size(110, 42),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () => Navigator.of(dialogCtx).pop(true),
+                child: const Text(
+                  'Confirm',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-            ),
-            onPressed: () => Navigator.of(dialogCtx).pop(true),
-            child: const Text(
-              'Confirm',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            ],
           ),
         ],
       ),
@@ -2026,7 +2081,47 @@ class _EntirePropertyMainCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
+
+          // Rating & Reviews Redirect Row
+          InkWell(
+            onTap: () => PropertyReviewsScreen.open(
+              context,
+              property: property,
+            ),
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.star_rounded,
+                    size: 16.5,
+                    color: Color(0xFFF59E0B),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _formatPropertyRatingLabel(property),
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 16,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+const SizedBox(height: 14),
           const Divider(height: 1, thickness: 0.8, color: Color(0xFFF1F5F9)),
           const SizedBox(height: 14),
 
@@ -2130,17 +2225,9 @@ class _EntirePropertyMainCard extends StatelessWidget {
   }
 
   Widget _buildStatusDropdown(BuildContext context, String currentStatus) {
-    final label = switch (currentStatus) {
-      'available' => 'Available',
-      'pending' => 'Pending',
-      _ => 'Occupied',
-    };
-
-    final color = switch (currentStatus) {
-      'available' => const Color(0xFF16A34A),
-      'pending' => const Color(0xFFD97706),
-      _ => const Color(0xFF475569),
-    };
+    final isAvailable = currentStatus == 'available';
+    final label = isAvailable ? 'Available' : 'Occupied';
+    final color = isAvailable ? const Color(0xFF16A34A) : const Color(0xFF475569);
 
     return PopupMenuButton<String>(
       tooltip: 'Change Rental Status',
@@ -2157,19 +2244,13 @@ class _EntirePropertyMainCard extends StatelessWidget {
           value: 'available',
           label: 'Available',
           dotColor: const Color(0xFF16A34A),
-          isSelected: currentStatus == 'available',
-        ),
-        _buildPopupMenuItem(
-          value: 'pending',
-          label: 'Pending',
-          dotColor: const Color(0xFFD97706),
-          isSelected: currentStatus == 'pending',
+          isSelected: isAvailable,
         ),
         _buildPopupMenuItem(
           value: 'booked',
           label: 'Occupied',
           dotColor: const Color(0xFF475569),
-          isSelected: currentStatus == 'booked',
+          isSelected: !isAvailable,
         ),
       ],
       child: Container(
@@ -3355,17 +3436,9 @@ class _UnitRow extends StatelessWidget {
   }
 
   Widget _buildRoomStatusDropdown(BuildContext context, String currentStatus) {
-    final label = switch (currentStatus) {
-      'available' => 'Available',
-      'pending' => 'Pending',
-      _ => 'Occupied',
-    };
-
-    final color = switch (currentStatus) {
-      'available' => const Color(0xFF16A34A),
-      'pending' => const Color(0xFFD97706),
-      _ => const Color(0xFF475569),
-    };
+    final isAvailable = currentStatus == 'available';
+    final label = isAvailable ? 'Available' : 'Occupied';
+    final color = isAvailable ? const Color(0xFF16A34A) : const Color(0xFF475569);
 
     return PopupMenuButton<String>(
       tooltip: 'Change Room Status',
@@ -3382,19 +3455,13 @@ class _UnitRow extends StatelessWidget {
           value: 'available',
           label: 'Available',
           dotColor: const Color(0xFF16A34A),
-          isSelected: currentStatus == 'available',
-        ),
-        _buildPopupMenuItem(
-          value: 'pending',
-          label: 'Pending',
-          dotColor: const Color(0xFFD97706),
-          isSelected: currentStatus == 'pending',
+          isSelected: isAvailable,
         ),
         _buildPopupMenuItem(
           value: 'booked',
           label: 'Occupied',
           dotColor: const Color(0xFF475569),
-          isSelected: currentStatus == 'booked',
+          isSelected: !isAvailable,
         ),
       ],
       child: Container(
@@ -3477,4 +3544,27 @@ class _UnitRow extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatPropertyRatingLabel(PropertyDoc property, [List<PropertyDoc> rooms = const []]) {
+  num? avg = property.avgRating;
+  num count = property.totalRatings ?? 0;
+  if (property.isRoom && rooms.isNotEmpty) {
+    num sum = 0;
+    num total = 0;
+    for (final r in rooms) {
+      if (r.avgRating != null && (r.totalRatings ?? 0) > 0) {
+        sum += (r.avgRating! * (r.totalRatings ?? 1));
+        total += (r.totalRatings ?? 1);
+      }
+    }
+    if (total > 0) {
+      avg = sum / total;
+      count = total;
+    }
+  }
+  if (avg != null && count > 0) {
+    return ' ·  ';
+  }
+  return 'New · No reviews yet';
 }

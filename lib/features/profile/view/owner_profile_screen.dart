@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -5,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/cubit/app_theme_cubit.dart';
+import '../../../core/firestore/firestore_collections.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_svg_icon.dart';
 import '../../../shared/widgets/app_toggle.dart';
@@ -18,9 +22,23 @@ import 'account_security_screen.dart';
 import 'edit_owner_profile_screen.dart';
 import 'owner_reviews_screen.dart';
 
-class OwnerProfileScreen extends StatelessWidget {
+class OwnerProfileScreen extends StatefulWidget {
   const OwnerProfileScreen({super.key});
 
+  static const Color bgIceBlue = _OwnerProfileScreenState.bgIceBlue;
+  static const Color primaryCyan = _OwnerProfileScreenState.primaryCyan;
+  static const Color textDarkNavy = _OwnerProfileScreenState.textDarkNavy;
+  static const Color textMuted = _OwnerProfileScreenState.textMuted;
+  static const Color textMutedLight = _OwnerProfileScreenState.textMutedLight;
+  static const Color softRed = _OwnerProfileScreenState.softRed;
+
+  static List<BoxShadow> get cardShadow => _OwnerProfileScreenState.cardShadow;
+
+  @override
+  State<OwnerProfileScreen> createState() => _OwnerProfileScreenState();
+}
+
+class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
   static const Color bgIceBlue = Color(0xFFF4F9FD);
   static const Color primaryCyan = Color(0xFF00A8F0);
   static const Color textDarkNavy = Color(0xFF14213D);
@@ -75,6 +93,99 @@ class OwnerProfileScreen extends StatelessWidget {
         ),
       ];
 
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _inquiriesSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _ratingsSub;
+  String? _subscribedUid;
+  int _inquiriesCount = 0;
+  double _avgRating = 0.0;
+  int _totalReviews = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _subscribeStats();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _subscribeStats();
+  }
+
+  @override
+  void dispose() {
+    _inquiriesSub?.cancel();
+    _ratingsSub?.cancel();
+    super.dispose();
+  }
+
+  void _subscribeStats() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null || uid.isEmpty) return;
+    if (uid == _subscribedUid) return;
+    _subscribedUid = uid;
+
+    _inquiriesSub?.cancel();
+    _ratingsSub?.cancel();
+
+    try {
+      _inquiriesSub = FirebaseFirestore.instance
+          .collection(FirestoreCollections.inquiries)
+          .where('ownerId', isEqualTo: uid)
+          .snapshots()
+          .listen(
+            (snap) {
+              if (mounted) {
+                setState(() {
+                  _inquiriesCount = snap.docs.length;
+                });
+              }
+            },
+            onError: (e) {
+              debugPrint('Error streaming owner inquiries: $e');
+            },
+          );
+    } catch (e) {
+      debugPrint('Error subscribing to inquiries: $e');
+    }
+
+    try {
+      _ratingsSub = FirebaseFirestore.instance
+          .collection(FirestoreCollections.ratings)
+          .where('ratedId', isEqualTo: uid)
+          .where('raterRole', isEqualTo: 'tenant')
+          .snapshots()
+          .listen(
+            (snap) {
+              if (mounted) {
+                if (snap.docs.isEmpty) {
+                  setState(() {
+                    _avgRating = 0.0;
+                    _totalReviews = 0;
+                  });
+                } else {
+                  num totalStars = 0;
+                  for (final doc in snap.docs) {
+                    final data = doc.data();
+                    final stars = (data['stars'] as num?) ?? 0;
+                    totalStars += stars;
+                  }
+                  setState(() {
+                    _totalReviews = snap.docs.length;
+                    _avgRating = totalStars / snap.docs.length;
+                  });
+                }
+              }
+            },
+            onError: (e) {
+              debugPrint('Error streaming owner ratings: $e');
+            },
+          );
+    } catch (e) {
+      debugPrint('Error subscribing to ratings: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<AppThemeCubit>().state;
@@ -90,7 +201,7 @@ class OwnerProfileScreen extends StatelessWidget {
 
     final bgColor = isDark ? context.appColors.surface : Colors.white;
     final cardColor = isDark ? const Color(0xFF1E1E24) : Colors.white;
-    final textColor = isDark ? Colors.white : textDarkNavy;
+    final textColor = isDark ? Colors.white : OwnerProfileScreen.textDarkNavy;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -118,7 +229,7 @@ class OwnerProfileScreen extends StatelessWidget {
                 children: [
                   const SizedBox(height: 14),
 
-                  // Top Bar: "Profile" + subtitle + circular Edit button
+                  // Top Bar: "Profile" + subtitle (Edit button removed)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -144,35 +255,10 @@ class OwnerProfileScreen extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w500,
-                                color: textMuted,
+                                color: OwnerProfileScreen.textMuted,
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      InkWell(
-                        onTap: () => EditOwnerProfileScreen.open(context),
-                        borderRadius: BorderRadius.circular(21),
-                        child: Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: cardColor,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.08)
-                                  : Colors.white,
-                              width: 1.5,
-                            ),
-                            boxShadow: cardShadow,
-                          ),
-                          child: const Icon(
-                            Icons.edit_outlined,
-                            color: primaryCyan,
-                            size: 20,
-                          ),
                         ),
                       ),
                     ],
@@ -384,7 +470,7 @@ class OwnerProfileScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: BorderRadius.circular(22),
-                  boxShadow: cardShadow,
+                  boxShadow: OwnerProfileScreen.cardShadow,
                 ),
                 child: Row(
                   children: [
@@ -395,8 +481,7 @@ class OwnerProfileScreen extends StatelessWidget {
                         svgString: _portfolioHomeSvg,
                         iconBg: const Color(0xFFE0F3FE),
                         iconColor: primaryCyan,
-                        value:
-                            '${state.properties.isNotEmpty ? state.properties.length : 4}',
+                        value: '${state.properties.length}',
                         label: 'Listings',
                         onTap: () {
                           try {
@@ -422,7 +507,7 @@ class OwnerProfileScreen extends StatelessWidget {
                         svgString: AppSvgIcons.inquiry,
                         iconBg: const Color(0xFFE0F3FE),
                         iconColor: primaryCyan,
-                        value: '12',
+                        value: '$_inquiriesCount',
                         label: 'Inquiries',
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
@@ -448,8 +533,10 @@ class OwnerProfileScreen extends StatelessWidget {
                         icon: Icons.star_rounded,
                         iconBg: const Color(0xFFFEF3D6),
                         iconColor: const Color(0xFFF59E0B),
-                        value: '4.8',
-                        subCount: '(18)',
+                        value: _totalReviews > 0
+                            ? _avgRating.toStringAsFixed(1)
+                            : '0',
+                        subCount: '($_totalReviews)',
                         label: 'Reviews',
                         onTap: () => OwnerReviewsScreen.open(context),
                       ),

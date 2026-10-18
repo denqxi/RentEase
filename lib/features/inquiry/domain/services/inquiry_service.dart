@@ -574,6 +574,7 @@ class InquiryService {
         raterRole: raterIsOwner ? 'owner' : 'tenant',
         stars: stars,
         review: trimmed.isEmpty ? null : trimmed,
+        propertyId: inquiry.propertyId.isNotEmpty ? inquiry.propertyId : null,
       ),
     );
   }

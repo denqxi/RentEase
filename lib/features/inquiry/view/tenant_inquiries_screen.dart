@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../shared/widgets/phase_badge.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../cubit/inquiry_list_cubit.dart';
 import '../data/repositories/inquiry_repository_impl.dart';
@@ -451,9 +450,7 @@ class _InquiryCard extends StatelessWidget {
                       color: context.appColors.hint,
                     ),
                   ),
-                )
-              else
-                PhaseBadge(phase: phase),
+                ),
               if (date.isNotEmpty) ...<Widget>[
                 SizedBox(height: 4),
                 Text(
