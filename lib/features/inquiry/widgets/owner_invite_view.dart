@@ -20,8 +20,11 @@ class OwnerInviteView extends StatelessWidget {
     final state = context.watch<InquiryThreadCubit>().state;
     final inquiry = state.inquiry!;
     final property = state.property;
-    final tenantName = fullNameOf(state.tenant,
-        fallback: 'The tenant', loaded: !state.isLoading);
+    final tenantName = fullNameOf(
+      state.tenant,
+      fallback: 'The tenant',
+      loaded: !state.isLoading,
+    );
 
     final (IconData icon, Color iconColor, String title, String detail) =
         switch (inquiry.status) {
@@ -41,45 +44,52 @@ class OwnerInviteView extends StatelessWidget {
           ),
           _ => (
             Icons.access_time_rounded,
-            context.appColors.hint,
+            AppColors.primary,
             'Waiting for $tenantName to respond...',
             'Chat unlocks once the tenant accepts your invitation.',
           ),
         };
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
       children: [
         Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.accentSoft,
-            borderRadius: BorderRadius.circular(AppRadii.field),
+            color: const Color(0xFFF0F9FF),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.22),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Invitation sent to $tenantName',
-                style: AppTextStyles.label(context),
+                style: AppTextStyles.label(
+                  context,
+                ).copyWith(color: const Color(0xFF0F172A)),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 property == null
                     ? 'This listing is no longer available.'
                     : '${property.title} · ₱${property.monthlyRent}/mo',
-                style: AppTextStyles.body(context),
+                style: AppTextStyles.body(
+                  context,
+                ).copyWith(color: const Color(0xFF475569)),
               ),
             ],
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: 14),
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: context.appColors.fieldFill,
-            borderRadius: BorderRadius.circular(AppRadii.field),
-            border: Border.all(color: context.appColors.fieldBorder),
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           child: Column(
             children: [

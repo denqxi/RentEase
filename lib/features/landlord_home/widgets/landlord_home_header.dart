@@ -81,23 +81,41 @@ class LandlordHomeHeader extends StatelessWidget {
                 Container(
                   width: 44,
                   height: 44,
+                  padding: const EdgeInsets.all(2.0),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFE0F2FE),
-                    border: Border.all(
-                      color: const Color(0xFFBAE6FD).withValues(alpha: 0.8),
-                      width: 1.5,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: <Color>[
+                        Color(0xFF7DD3FC), // Light blue
+                        Color(0xFF00A8F0), // Blue
+                        Color(0xFF10B981), // Green
+                      ],
                     ),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: const Color(0xFF00A8F0).withValues(alpha: 0.14),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  padding: const EdgeInsets.all(2.0),
-                  child: ClipOval(
-                    child: photoUrl != null && photoUrl!.trim().isNotEmpty
-                        ? Image.network(
-                            photoUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => _defaultAvatar(),
-                          )
-                        : _defaultAvatar(),
+                  child: Container(
+                    padding: const EdgeInsets.all(1.5),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                    ),
+                    child: ClipOval(
+                      child: photoUrl != null && photoUrl!.trim().isNotEmpty
+                          ? Image.network(
+                              photoUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => _defaultAvatar(),
+                            )
+                          : _defaultAvatar(),
+                    ),
                   ),
                 ),
                 // Green online status dot

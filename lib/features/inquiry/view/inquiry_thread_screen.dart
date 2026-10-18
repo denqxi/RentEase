@@ -3,10 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/firestore/models/models.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/phase_badge.dart';
-import '../../auth/presentation/current_uid.dart';
 import '../../activity/data/repositories/notification_repository_impl.dart';
+import '../../auth/presentation/current_uid.dart';
 import '../cubit/inquiry_thread_cubit.dart';
 import '../data/repositories/inquiry_repository_impl.dart';
 import '../domain/services/inquiry_service.dart';
@@ -83,15 +84,23 @@ class _ThreadView extends StatelessWidget {
             title: 'Inquiry',
             body: state.errorMessage != null
                 ? _CenteredMessage(state.errorMessage!)
-                : const Center(child: CircularProgressIndicator()),
+                : const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ),
           );
         }
 
         final counterpartName = isOwner
-            ? fullNameOf(state.tenant,
-                fallback: 'Tenant', loaded: !state.isLoading)
-            : fullNameOf(state.owner,
-                fallback: 'Property owner', loaded: !state.isLoading);
+            ? fullNameOf(
+                state.tenant,
+                fallback: 'Tenant',
+                loaded: !state.isLoading,
+              )
+            : fullNameOf(
+                state.owner,
+                fallback: 'Property owner',
+                loaded: !state.isLoading,
+              );
         final propertyTitle = state.property?.title ?? 'Listing';
 
         if (inquiry.stage == 2) {
@@ -103,14 +112,15 @@ class _ThreadView extends StatelessWidget {
         }
 
         return _ThreadScaffold(
-          title: isOwner
-              ? (InquiryService.isInvite(inquiry)
-                    ? 'Invitation sent'
-                    : 'New inquiry')
-              : propertyTitle,
+          title: counterpartName,
+          subtitle: propertyTitle,
+          counterpartName: counterpartName,
+          property: state.property,
           phase: 1,
           body: state.isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                )
               : isOwner
               ? (InquiryService.isInvite(inquiry)
                     ? const OwnerInviteView()
@@ -123,44 +133,172 @@ class _ThreadView extends StatelessWidget {
 }
 
 class _ThreadScaffold extends StatelessWidget {
-  const _ThreadScaffold({required this.title, required this.body, this.phase});
+  const _ThreadScaffold({
+    required this.title,
+    required this.body,
+    this.subtitle,
+    this.counterpartName,
+    this.property,
+    this.phase,
+  });
 
   final String title;
+  final String? subtitle;
+  final String? counterpartName;
+  final PropertyDoc? property;
   final Widget body;
   final int? phase;
 
   @override
   Widget build(BuildContext context) {
+    final hasHeaderDetails = counterpartName != null && subtitle != null;
+
     return Scaffold(
-      backgroundColor: context.appColors.surface,
-      appBar: AppBar(
-        backgroundColor: context.appColors.surface,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new,
-            color: context.appColors.textPrimary,
-            size: 20,
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // Soft Top Sky-Blue Gradient Background
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 210,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                    colors: [
+                      const Color(0xFFD8F3FE).withValues(alpha: 0.7),
+                      const Color(0xFFEFF9FF).withValues(alpha: 0.45),
+                      Colors.white.withValues(alpha: 0.0),
+                    ],
+                    stops: const [0.0, 0.55, 1.0],
+                  ),
+                ),
+              ),
+            ),
           ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontFamily: 'DM Sans',
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: context.appColors.textPrimary,
+
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                // ── Top Header Bar ───────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 14, 8),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF0F172A,
+                                ).withValues(alpha: 0.06),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.chevron_left_rounded,
+                            color: Color(0xFF0F172A),
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      if (hasHeaderDetails) ...[
+                        Container(
+                          width: 42,
+                          height: 42,
+                          alignment: Alignment.center,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFEDF2F7),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            InquirySummary.initialsOf(counterpartName!),
+                            style: const TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                      ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              title,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            if (subtitle != null) ...[
+                              const SizedBox(height: 1),
+                              Text(
+                                subtitle!,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontFamily: 'DM Sans',
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      if (phase != null) ...[
+                        const SizedBox(width: 8),
+                        PhaseBadge(phase: phase!),
+                      ],
+                      const SizedBox(width: 6),
+                      const Icon(
+                        Icons.more_vert_rounded,
+                        color: Color(0xFF0F172A),
+                        size: 21,
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── Pinned Property Banner Card ──────────────────────────
+                if (hasHeaderDetails)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                    child: ThreadPropertyBannerCard(
+                      property: property,
+                      fallbackTitle: subtitle!,
+                    ),
+                  ),
+
+                // ── Thread Body ──────────────────────────────────────────
+                Expanded(child: body),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          if (phase != null) ...[
-            Center(child: PhaseBadge(phase: phase!)),
-            SizedBox(width: AppSpacing.md),
-          ],
         ],
       ),
-      body: body,
     );
   }
 }

@@ -46,6 +46,8 @@ class _Repo implements OwnerPropertyRepository {
   @override
   Future<void> updateProperty(String id, Map<String, dynamic> f) async =>
       updates.add(f);
+  @override
+  Future<void> deleteProperty(String id) async {}
 }
 
 void main() {

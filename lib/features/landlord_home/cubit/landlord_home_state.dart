@@ -11,6 +11,7 @@ class LandlordHomeState extends Equatable {
     this.verificationStatus,
     this.properties = const [],
     this.tenants = const [],
+    this.tenantsByProperty = const {},
     this.tenantsLoading = false,
     this.tenantsError,
     this.searchQuery = '',
@@ -31,6 +32,10 @@ class LandlordHomeState extends Equatable {
   /// Compatible (bScore = 1) tenants across the owner's available listings,
   /// alphabetical — never ranked.
   final List<CompatibleTenant> tenants;
+
+  /// Compatible tenants keyed by `propertyId` so the Matches tab can show
+  /// exact matches per room / entire property without cross-room deduplication.
+  final Map<String, List<CompatibleTenant>> tenantsByProperty;
   final bool tenantsLoading;
   final String? tenantsError;
   final String searchQuery;
@@ -54,6 +59,7 @@ class LandlordHomeState extends Equatable {
     String? verificationStatus,
     List<PropertyDoc>? properties,
     List<CompatibleTenant>? tenants,
+    Map<String, List<CompatibleTenant>>? tenantsByProperty,
     bool? tenantsLoading,
     String? tenantsError,
     bool clearTenantsError = false,
@@ -68,6 +74,7 @@ class LandlordHomeState extends Equatable {
       verificationStatus: verificationStatus ?? this.verificationStatus,
       properties: properties ?? this.properties,
       tenants: tenants ?? this.tenants,
+      tenantsByProperty: tenantsByProperty ?? this.tenantsByProperty,
       tenantsLoading: tenantsLoading ?? this.tenantsLoading,
       tenantsError: clearTenantsError
           ? null
@@ -86,6 +93,7 @@ class LandlordHomeState extends Equatable {
     verificationStatus,
     properties,
     tenants,
+    tenantsByProperty,
     tenantsLoading,
     tenantsError,
     searchQuery,

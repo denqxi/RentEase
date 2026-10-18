@@ -34,6 +34,8 @@ class PropertyDoc {
     this.roomName,
     this.propertyType,
     this.parentPropertyId,
+    this.propertyCoverPhoto,
+    this.propertyCoverPublicId,
   });
 
   /// 'entire_place' (default, also for legacy docs) | 'room'.
@@ -45,11 +47,23 @@ class PropertyDoc {
   /// Room number/name (e.g. "Room 101"); unique per [parentPropertyId].
   final String? roomName;
 
-  /// "House", "Apartment", "Condominium", "Studio Unit", "Other".
+  /// "Boarding House", "Dormitory", "Apartment", "Condo", or custom string.
   final String? propertyType;
 
   /// Groups the rooms of one building. Null for entire places/legacy docs.
   final String? parentPropertyId;
+
+  /// Dedicated cover photo URL for the parent building (separate from room photos).
+  final String? propertyCoverPhoto;
+
+  /// Cloudinary public_id for [propertyCoverPhoto].
+  final String? propertyCoverPublicId;
+
+  /// Returns the building cover photo if set, falling back to the first listing photo.
+  String? get effectiveBuildingCoverPhoto =>
+      (propertyCoverPhoto?.trim().isNotEmpty ?? false)
+          ? propertyCoverPhoto!.trim()
+          : (photos.isNotEmpty ? photos.first : null);
 
   bool get isRoom => rentalType == 'room';
 
@@ -178,6 +192,8 @@ class PropertyDoc {
         roomName: map['roomName'] as String?,
         propertyType: map['propertyType'] as String?,
         parentPropertyId: map['parentPropertyId'] as String?,
+        propertyCoverPhoto: map['propertyCoverPhoto'] as String?,
+        propertyCoverPublicId: map['propertyCoverPublicId'] as String?,
       );
 
   factory PropertyDoc.fromSnapshot(
@@ -215,5 +231,8 @@ class PropertyDoc {
     if (roomName != null) 'roomName': roomName,
     if (propertyType != null) 'propertyType': propertyType,
     if (parentPropertyId != null) 'parentPropertyId': parentPropertyId,
+    if (propertyCoverPhoto != null) 'propertyCoverPhoto': propertyCoverPhoto,
+    if (propertyCoverPublicId != null)
+      'propertyCoverPublicId': propertyCoverPublicId,
   };
 }

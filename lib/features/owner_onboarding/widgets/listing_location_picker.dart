@@ -102,18 +102,21 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                 : null,
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: 12),
         Text(
           'Set location',
           style: AppTextStyles.label(
             context,
-          ).copyWith(color: context.appColors.textSecondary),
+          ).copyWith(
+            fontSize: 13,
+            color: context.appColors.textSecondary,
+          ),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: 6),
         Container(
-          height: 180,
+          height: 164,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadii.field),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: _pinnedLocation != null
                   ? AppColors.accent

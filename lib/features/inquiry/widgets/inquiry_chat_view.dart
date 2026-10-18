@@ -6,13 +6,14 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/phase_badge.dart';
 import '../../resolution/view/rating_screen.dart';
 import '../cubit/inquiry_thread_cubit.dart';
 import '../domain/services/inquiry_service.dart';
-import 'rejected_owner_notice.dart';
 import '../model/inquiry_summary.dart';
 import 'contact_row.dart';
+import 'rejected_owner_notice.dart';
 
 /// Phase 2 — open chat between tenant and owner, shared by both sides
 /// ([isOwner] picks the perspective). Owners can mark the booking; once
@@ -47,6 +48,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
   static const _ownerQuickReplies = [
     'When can you move in?',
     'Do you have your documents ready?',
+    'Would you like to schedule a viewing?',
   ];
 
   @override
@@ -98,14 +100,14 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                 'closes the chat.',
                 style: const TextStyle(fontFamily: 'DM Sans', fontSize: 14),
               ),
-              SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.md),
               CheckboxListTile(
                 value: fillsLastVacancy,
                 onChanged: (v) =>
                     setDialogState(() => fillsLastVacancy = v ?? false),
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
-                activeColor: AppColors.accent,
+                activeColor: AppColors.primary,
                 title: const Text(
                   'This fills my last vacancy',
                   style: TextStyle(
@@ -136,7 +138,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
             child: const Text(
               'Confirm',
               style: TextStyle(
-                color: AppColors.accent,
+                color: AppColors.primary,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -174,10 +176,270 @@ class _InquiryChatViewState extends State<InquiryChatView> {
     );
   }
 
+  void _showAttachmentOptions(PropertyDoc? property, String? phone) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Quick Share',
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (property != null) ...[
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0F2FE),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.location_on_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                  title: const Text(
+                    'Share property address',
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    property.address,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _send(
+                      'Location for ${property.title}: ${property.address}',
+                    );
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0F2FE),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.payments_outlined,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                  title: const Text(
+                    'Share payment terms',
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '₱${property.monthlyRent}/mo · Deposit ₱${property.depositAmount}',
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _send(
+                      'Rent is ₱${property.monthlyRent}/mo with ₱${property.depositAmount} deposit and ${property.advanceMonths} month(s) advance.',
+                    );
+                  },
+                ),
+              ],
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F2FE),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.event_available_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                ),
+                title: const Text(
+                  'Request viewing schedule',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: const Text(
+                  'Ask for preferred date and time to visit',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _send(
+                    'Would you like to schedule a viewing? Let me know what day and time works best for you.',
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showPropertySummarySheet(PropertyDoc property) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                property.title,
+                style: const TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.location_on_rounded,
+                    size: 15,
+                    color: Color(0xFF64748B),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      property.address,
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 13,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  children: [
+                    _SheetDetailRow(
+                      label: 'Monthly Rent',
+                      value: '₱${property.monthlyRent}/mo',
+                    ),
+                    const SizedBox(height: 8),
+                    _SheetDetailRow(
+                      label: 'Deposit',
+                      value: '₱${property.depositAmount}',
+                    ),
+                    const SizedBox(height: 8),
+                    _SheetDetailRow(
+                      label: 'Advance',
+                      value: '${property.advanceMonths} month(s)',
+                    ),
+                    const SizedBox(height: 8),
+                    _SheetDetailRow(
+                      label: 'Max Occupants',
+                      value: '${property.maxOccupants} person(s)',
+                    ),
+                    const SizedBox(height: 8),
+                    _SheetDetailRow(
+                      label: 'Gender Policy',
+                      value: property.allowedGender,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<InquiryThreadCubit>().state;
     final inquiry = state.inquiry!;
+    final property = state.property;
     final booked = inquiry.status == 'booked';
     // Another tenant took the last vacancy (InquiryService.markBooked).
     final closed = inquiry.status == 'closed';
@@ -189,268 +451,719 @@ class _InquiryChatViewState extends State<InquiryChatView> {
       _scrollToBottom();
     }
 
+    final threadDate = state.messages.isNotEmpty
+        ? state.messages.first.timeStamp?.toDate()
+        : (inquiry.updatedAt?.toDate() ?? inquiry.createdAt?.toDate());
+
     return Scaffold(
-      backgroundColor: context.appColors.surface,
-      appBar: AppBar(
-        backgroundColor: context.appColors.surface,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new,
-            color: context.appColors.textPrimary,
-            size: 20,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: AppColors.accentSoft,
-              child: Text(
-                InquirySummary.initialsOf(widget.counterpartName),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: context.appColors.ink,
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // Soft Top Sky-Blue Gradient Background matching the reference UI
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 210,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                    colors: [
+                      const Color(0xFFD8F3FE).withValues(alpha: 0.7),
+                      const Color(0xFFEFF9FF).withValues(alpha: 0.45),
+                      Colors.white.withValues(alpha: 0.0),
+                    ],
+                    stops: const [0.0, 0.55, 1.0],
+                  ),
                 ),
               ),
             ),
-            SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
+          ),
+
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                // ── Custom Thread Top Header Bar ─────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 10, 8),
+                  child: Row(
                     children: [
-                      Flexible(
-                        child: Text(
-                          widget.counterpartName,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: context.appColors.textPrimary,
+                      // Circular/Rounded Back Button
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF0F172A,
+                                ).withValues(alpha: 0.06),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.chevron_left_rounded,
+                            color: Color(0xFF0F172A),
+                            size: 24,
                           ),
                         ),
                       ),
-                      // CLAUDE.md verified-badge placement #4: Phase 2 chat
-                      // header, icon only — shown to the tenant for the owner.
-                      if (!widget.isOwner && state.ownerVerified) ...[
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.verified_rounded,
-                          size: 14,
-                          color: AppColors.matchHigh,
+                      const SizedBox(width: 12),
+
+                      // Counterpart Initials Avatar
+                      Container(
+                        width: 42,
+                        height: 42,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEDF2F7),
+                          shape: BoxShape.circle,
                         ),
-                      ],
+                        child: Text(
+                          InquirySummary.initialsOf(widget.counterpartName),
+                          style: const TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+
+                      // Counterpart Name + Property Subtitle
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    widget.counterpartName,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontFamily: 'DM Sans',
+                                      fontSize: 15.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                ),
+                                // CLAUDE.md verified-badge placement #4:
+                                // Phase 2 chat header, icon only — shown to
+                                // the tenant for the owner.
+                                if (!widget.isOwner && state.ownerVerified) ...[
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.verified_rounded,
+                                    size: 15,
+                                    color: AppColors.matchHigh,
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 1),
+                            Text(
+                              widget.propertyTitle,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // Phase 2 Pill Badge
+                      const PhaseBadge(phase: 2),
+                      const SizedBox(width: 2),
+
+                      // 3-Dot More Menu
+                      PopupMenuButton<String>(
+                        icon: const Icon(
+                          Icons.more_vert_rounded,
+                          color: Color(0xFF0F172A),
+                          size: 21,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        onSelected: (value) {
+                          if (value == 'mark_booked') {
+                            _confirmMarkBooked();
+                          } else if (value == 'rate') {
+                            _openRating();
+                          } else if (value == 'property_info' &&
+                              property != null) {
+                            _showPropertySummarySheet(property);
+                          }
+                        },
+                        itemBuilder: (ctx) => [
+                          if (property != null)
+                            const PopupMenuItem<String>(
+                              value: 'property_info',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.home_work_outlined,
+                                    size: 18,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    'View property details',
+                                    style: TextStyle(
+                                      fontFamily: 'DM Sans',
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (widget.isOwner && canChat && !state.isBusy)
+                            const PopupMenuItem<String>(
+                              value: 'mark_booked',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_outline_rounded,
+                                    size: 18,
+                                    color: AppColors.primary,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    'Mark as booked',
+                                    style: TextStyle(
+                                      fontFamily: 'DM Sans',
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (booked)
+                            PopupMenuItem<String>(
+                              value: 'rate',
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.star_outline_rounded,
+                                    size: 18,
+                                    color: AppColors.primary,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    widget.isOwner
+                                        ? 'Rate ${widget.counterpartName}'
+                                        : 'Rate your stay',
+                                    style: const TextStyle(
+                                      fontFamily: 'DM Sans',
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
-                  Text(
-                    widget.propertyTitle,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.caption(context),
+                ),
+
+                // ── Pinned Property Summary Card ─────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                  child: ThreadPropertyBannerCard(
+                    property: property,
+                    fallbackTitle: widget.propertyTitle,
+                    onTap: property != null
+                        ? () => _showPropertySummarySheet(property)
+                        : null,
+                  ),
+                ),
+
+                // Shown once the other party shared their phone (accepted
+                // threads, including booked); absent otherwise.
+                ContactRow(phone: state.counterpartPhone),
+
+                // ── Chat Messages List ───────────────────────────────────
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                    itemCount: state.messages.length + 1,
+                    itemBuilder: (_, i) {
+                      if (i == 0) {
+                        return Column(
+                          children: [
+                            _DateDivider(date: threadDate),
+                            const SizedBox(height: 12),
+                            _AcceptedStatusBanner(
+                              title: widget.isOwner
+                                  ? 'You accepted this inquiry — chat is open.'
+                                  : '${widget.counterpartName} accepted your inquiry — chat is open.',
+                              subtitle:
+                                  'You can now message and exchange details.',
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        );
+                      }
+                      final message = state.messages[i - 1];
+                      return _MessageBubble(
+                        message: message,
+                        isMine: message.senderId == myId,
+                      );
+                    },
+                  ),
+                ),
+
+                // ── Bottom Controls (Booked / Closed / Quick Replies + Input)
+                if (booked)
+                  _BookedPanel(
+                    isOwner: widget.isOwner,
+                    counterpartName: widget.counterpartName,
+                    onRate: _openRating,
+                  )
+                else if (closed)
+                  _ClosedPanel(isOwner: widget.isOwner)
+                else if (state.ownerRejected)
+                  RejectedOwnerNotice(isOwner: widget.isOwner)
+                else ...[
+                  // Quick-Reply Suggestion Chips (Wrap layout matching mockup)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final reply
+                              in widget.isOwner
+                                  ? _ownerQuickReplies
+                                  : _tenantQuickReplies)
+                            _QuickReplyChip(
+                              label: reply,
+                              onTap: canChat && !state.isBusy
+                                  ? () => _send(reply)
+                                  : null,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  if (widget.isOwner)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 2),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: canChat && !state.isBusy
+                              ? _confirmMarkBooked
+                              : null,
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 2),
+                            child: Text(
+                              'Mark as booked',
+                              style: TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // Bottom Pill Input Bar + Circular Send Button
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+                    child: SafeArea(
+                      top: false,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 48,
+                              padding: const EdgeInsets.fromLTRB(6, 4, 14, 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(26),
+                              ),
+                              child: Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: canChat && !state.isBusy
+                                        ? () => _showAttachmentOptions(
+                                            property,
+                                            state.counterpartPhone,
+                                          )
+                                        : null,
+                                    child: Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Transform.rotate(
+                                        angle: 0.5,
+                                        child: const Icon(
+                                          Icons.attach_file_rounded,
+                                          size: 18,
+                                          color: Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _messageController,
+                                      enabled: canChat,
+                                      maxLength:
+                                          InquiryService.maxMessageLength,
+                                      buildCounter:
+                                          (
+                                            _, {
+                                            required currentLength,
+                                            required isFocused,
+                                            maxLength,
+                                          }) => null,
+                                      onSubmitted: _send,
+                                      textInputAction: TextInputAction.send,
+                                      style: const TextStyle(
+                                        fontFamily: 'DM Sans',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                      decoration: const InputDecoration(
+                                        hintText: 'Type a message...',
+                                        hintStyle: TextStyle(
+                                          fontFamily: 'DM Sans',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w400,
+                                          color: Color(0xFF64748B),
+                                        ),
+                                        border: InputBorder.none,
+                                        enabledBorder: InputBorder.none,
+                                        focusedBorder: InputBorder.none,
+                                        disabledBorder: InputBorder.none,
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(
+                                          vertical: 10,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          GestureDetector(
+                            onTap: canChat && !state.isBusy
+                                ? () => _send(_messageController.text)
+                                : null,
+                            child: Container(
+                              width: 46,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                color: canChat
+                                    ? AppColors.primary
+                                    : const Color(0xFFCBD5E1),
+                                shape: BoxShape.circle,
+                                boxShadow: canChat
+                                    ? [
+                                        BoxShadow(
+                                          color: AppColors.primary.withValues(
+                                            alpha: 0.28,
+                                          ),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: const Icon(
+                                Icons.send_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          Center(child: PhaseBadge(phase: 2)),
-          SizedBox(width: AppSpacing.md),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Shown once the other party shared their phone (accepted threads,
-          // including booked); absent otherwise.
-          ContactRow(phone: state.counterpartPhone),
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              itemCount: state.messages.length + 1,
-              itemBuilder: (_, i) {
-                if (i == 0) {
-                  return _SystemNote(
-                    widget.isOwner
-                        ? 'You accepted this inquiry — chat is open.'
-                        : '${widget.counterpartName} accepted your inquiry — '
-                              'chat is open.',
-                  );
-                }
-                final message = state.messages[i - 1];
-                return _MessageBubble(
-                  message: message,
-                  isMine: message.senderId == myId,
-                );
-              },
+              ],
             ),
           ),
-          if (booked)
-            _BookedPanel(
-              isOwner: widget.isOwner,
-              counterpartName: widget.counterpartName,
-              onRate: _openRating,
-            )
-          else if (closed)
-            _ClosedPanel(isOwner: widget.isOwner)
-          else if (state.ownerRejected)
-            RejectedOwnerNotice(isOwner: widget.isOwner)
-          else ...[
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.xs,
-              ),
-              child: Row(
-                children: [
-                  for (final reply
-                      in widget.isOwner
-                          ? _ownerQuickReplies
-                          : _tenantQuickReplies) ...[
-                    _QuickReplyChip(
-                      label: reply,
-                      onTap: canChat && !state.isBusy
-                          ? () => _send(reply)
-                          : null,
-                    ),
-                    SizedBox(width: AppSpacing.sm),
-                  ],
-                ],
-              ),
-            ),
-            if (widget.isOwner)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: canChat && !state.isBusy
-                        ? _confirmMarkBooked
-                        : null,
-                    child: Text(
-                      'Mark as booked',
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 13,
-                        color: context.appColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.xs,
-                AppSpacing.md,
-                AppSpacing.md,
-              ),
-              child: SafeArea(
-                top: false,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _messageController,
-                        enabled: canChat,
-                        maxLength: InquiryService.maxMessageLength,
-                        buildCounter: (_, {required currentLength,
-                                required isFocused, maxLength}) => null,
-                        onSubmitted: _send,
-                        textInputAction: TextInputAction.send,
-                        style: AppTextStyles.field(context),
-                        decoration: InputDecoration(
-                          hintText: 'Type a message...',
-                          hintStyle: AppTextStyles.field(
-                            context,
-                          ).copyWith(color: context.appColors.hint),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md,
-                            vertical: 12,
-                          ),
-                          filled: true,
-                          fillColor: context.appColors.fieldFill,
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide(
-                              color: context.appColors.fieldBorder,
-                            ),
-                          ),
-                          disabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide(
-                              color: context.appColors.fieldBorder,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: const BorderSide(
-                              color: AppColors.accent,
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: AppSpacing.sm),
-                    GestureDetector(
-                      onTap: canChat && !state.isBusy
-                          ? () => _send(_messageController.text)
-                          : null,
-                      child: CircleAvatar(
-                        radius: 22,
-                        backgroundColor: canChat
-                            ? context.appColors.ink
-                            : context.appColors.indicatorInactive,
-                        child: Icon(
-                          Icons.send_rounded,
-                          color: AppColors.onInk,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 }
 
-class _SystemNote extends StatelessWidget {
-  const _SystemNote(this.text);
+/// Pinned property summary card displayed at the top of an inquiry thread.
+class ThreadPropertyBannerCard extends StatelessWidget {
+  const ThreadPropertyBannerCard({
+    required this.property,
+    required this.fallbackTitle,
+    this.onTap,
+    super.key,
+  });
 
-  final String text;
+  final PropertyDoc? property;
+  final String fallbackTitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Center(
+    final photoUrl =
+        property?.effectiveBuildingCoverPhoto ??
+        ((property?.photos.isNotEmpty ?? false)
+            ? property!.photos.first
+            : null);
+    final title = (property?.title.trim().isNotEmpty ?? false)
+        ? property!.title.trim()
+        : fallbackTitle;
+    final address = (property?.address.trim().isNotEmpty ?? false)
+        ? property!.address.trim()
+        : 'View property details';
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.xs,
-          ),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: context.appColors.fieldFill,
-            borderRadius: BorderRadius.circular(AppSpacing.sm),
-            border: Border.all(color: context.appColors.fieldBorder, width: 0.5),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-          child: Text(
-            text,
-            style: AppTextStyles.caption(context),
-            textAlign: TextAlign.center,
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: ListingImagePlaceholder(
+                    seed: (property?.propertyId.hashCode.abs() ?? 1) + 1,
+                    photoUrl: photoUrl,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_rounded,
+                          size: 14,
+                          color: Color(0xFF64748B),
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            address,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: Color(0xFF64748B),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _DateDivider extends StatelessWidget {
+  const _DateDivider({this.date});
+
+  final DateTime? date;
+
+  String _formatDate(DateTime? dt) {
+    final d = dt ?? DateTime.now();
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[d.month - 1]} ${d.day}, ${d.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Expanded(
+          child: Divider(color: Color(0xFFE2E8F0), thickness: 1, height: 1),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            _formatDate(date),
+            style: const TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF64748B),
+            ),
+          ),
+        ),
+        const Expanded(
+          child: Divider(color: Color(0xFFE2E8F0), thickness: 1, height: 1),
+        ),
+      ],
+    );
+  }
+}
+
+class _AcceptedStatusBanner extends StatelessWidget {
+  const _AcceptedStatusBanner({
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0).withValues(alpha: 0.75),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: const Icon(
+              Icons.chat_bubble_outline_rounded,
+              color: AppColors.primary,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -462,10 +1175,21 @@ class _MessageBubble extends StatelessWidget {
   final MessageDoc message;
   final bool isMine;
 
+  String _formatTime(DateTime? dt) {
+    if (dt == null) return 'Just now';
+    final hour24 = dt.hour;
+    final hour12 = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24);
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final period = hour24 >= 12 ? 'PM' : 'AM';
+    return '$hour12:$minute $period';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final timeLabel = _formatTime(message.timeStamp?.toDate());
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         mainAxisAlignment: isMine
             ? MainAxisAlignment.end
@@ -473,28 +1197,59 @@ class _MessageBubble extends StatelessWidget {
         children: [
           Container(
             constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.72,
+              maxWidth: MediaQuery.of(context).size.width * 0.76,
             ),
-            padding: const EdgeInsets.all(AppSpacing.sm),
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
             decoration: BoxDecoration(
-              color: isMine ? context.appColors.ink : context.appColors.fieldFill,
+              color: isMine
+                  ? const Color(0xFFE0F4FE)
+                  : const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(13),
-                topRight: const Radius.circular(13),
-                bottomLeft: Radius.circular(isMine ? 13 : 4),
-                bottomRight: Radius.circular(isMine ? 4 : 13),
+                topLeft: const Radius.circular(16),
+                topRight: const Radius.circular(16),
+                bottomLeft: Radius.circular(isMine ? 16 : 4),
+                bottomRight: Radius.circular(isMine ? 4 : 16),
               ),
-              border: isMine
-                  ? null
-                  : Border.all(color: context.appColors.fieldBorder, width: 0.5),
             ),
-            child: Text(
-              message.content,
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 13,
-                color: isMine ? AppColors.onInk : context.appColors.textPrimary,
-              ),
+            child: Column(
+              crossAxisAlignment: isMine
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                Text(
+                  message.content,
+                  style: const TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF0F172A),
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      timeLabel,
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                    if (isMine) ...[
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.done_all_rounded,
+                        size: 14,
+                        color: AppColors.primary,
+                      ),
+                    ],
+                  ],
+                ),
+              ],
             ),
           ),
         ],
@@ -514,15 +1269,22 @@ class _QuickReplyChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
         decoration: BoxDecoration(
-          color: AppColors.accentSoft,
-          border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+          color: const Color(0xFFF0F9FF),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.35),
+          ),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
-          style: const TextStyle(fontSize: 12, color: AppColors.accent),
+          style: const TextStyle(
+            fontFamily: 'DM Sans',
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primary,
+          ),
         ),
       ),
     );
@@ -546,7 +1308,7 @@ class _ClosedPanel extends StatelessWidget {
               : 'This listing is now fully booked, so the chat is closed.',
           style: AppTextStyles.body(
             context,
-          ).copyWith(color: context.appColors.textSecondary),
+          ).copyWith(color: const Color(0xFF64748B)),
           textAlign: TextAlign.center,
         ),
       ),
@@ -576,7 +1338,7 @@ class _BookedPanel extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.check_circle_rounded,
                   color: AppColors.matchHigh,
                   size: 18,
@@ -590,7 +1352,7 @@ class _BookedPanel extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.sm),
             AppButton(
               label: isOwner ? 'Rate $counterpartName' : 'Rate your stay',
               variant: AppButtonVariant.outline,
@@ -599,6 +1361,39 @@ class _BookedPanel extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SheetDetailRow extends StatelessWidget {
+  const _SheetDetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'DM Sans',
+            fontSize: 13,
+            color: Color(0xFF64748B),
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontFamily: 'DM Sans',
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+      ],
     );
   }
 }

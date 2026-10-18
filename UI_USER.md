@@ -117,15 +117,14 @@ This index maps the navigation flows, views, child screens, and components for *
 ---
 
 ### Tab 4: Owner Profile (`ShellTab.profile` / Index 4)
-- [FLOW:OWNER_PROFILE] `lib/features/profile/view/owner_profile_screen.dart` | Landlord profile dashboard with avatar, verification status card, and menu actions
-
-#### Landlord Inquiry Handling & Chat:
-- [FLOW:OWNER_INQUIRY] `lib/features/inquiry/view/inquiry_thread_screen.dart` | Live thread container for landlord
-- [FLOW:OWNER_INQUIRY] `lib/features/inquiry/widgets/owner_phase1_view.dart` | Phase 1 view: Landlord reviews incoming tenant inquiry and decides to Accept or Decline
-- [FLOW:OWNER_INQUIRY] `lib/features/inquiry/widgets/owner_invite_view.dart` | Invite view: Tracks sent invites to prospective tenants
-- [FLOW:OWNER_INQUIRY] `lib/features/inquiry/widgets/inquiry_chat_view.dart` | Phase 2 view: Direct live chat with tenant after acceptance
-- [FLOW:OWNER_PROFILE] `lib/features/auth/presentation/screens/privacy_notice_screen.dart` | Privacy policy
+- [FLOW:OWNER_PROFILE] `lib/features/profile/view/owner_profile_screen.dart` | Landlord profile dashboard with avatar, verification status card (Pending, Verified, Needs revision), stats cards, and unified menu
+- [FLOW:OWNER_PROFILE] `lib/features/profile/view/edit_owner_profile_screen.dart` | Edit owner personal info: photo, first/middle/last name, phone number, and read-only email
+- [FLOW:OWNER_PROFILE] `lib/features/profile/view/owner_reviews_screen.dart` | Landlord reviews screen with aggregate star rating, review card list, and empty state
+- [FLOW:OWNER_PROFILE] `lib/features/profile/view/account_security_screen.dart` | Landlord account and security center (Change password bottom sheet, Privacy Notice, Terms & Conditions, and Delete Landlord Account confirmation bottom sheet)
 - [FLOW:OWNER_PROFILE] `lib/features/account_deletion/presentation/screens/delete_account_screen.dart` | Landlord account deletion workflow
+- [FLOW:OWNER_PROFILE] `lib/features/auth/presentation/screens/privacy_notice_screen.dart` | Privacy policy
+- [FLOW:OWNER_PROFILE] `lib/features/auth/presentation/screens/terms_and_conditions_screen.dart` | Terms and agreement
+
 
 ---
 ---

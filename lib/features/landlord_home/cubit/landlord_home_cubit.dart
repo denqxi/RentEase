@@ -122,6 +122,7 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
       emit(
         state.copyWith(
           tenants: const [],
+          tenantsByProperty: const {},
           tenantsLoading: false,
           clearTenantsError: true,
         ),
@@ -136,14 +137,27 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
         ),
       );
       if (isClosed || request != _tenantsRequest) return;
+      final byProperty = <String, List<CompatibleTenant>>{};
       final byTenant = <String, CompatibleTenant>{};
-      for (final t in lists.expand((l) => l)) {
-        byTenant.putIfAbsent(t.tenantId, () => t);
+      for (var i = 0; i < ids.length; i++) {
+        final propId = ids[i];
+        final propList = List<CompatibleTenant>.from(lists[i])
+          ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        byProperty[propId] = propList;
+        for (final t in propList) {
+          byTenant.putIfAbsent(t.tenantId, () => t);
+        }
       }
       // Unranked: alphabetical, so the order carries no fit signal.
       final sorted = byTenant.values.toList()
         ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-      emit(state.copyWith(tenants: sorted, tenantsLoading: false));
+      emit(
+        state.copyWith(
+          tenants: sorted,
+          tenantsByProperty: byProperty,
+          tenantsLoading: false,
+        ),
+      );
     } catch (_) {
       if (isClosed || request != _tenantsRequest) return;
       _tenantsKey = null;
@@ -246,6 +260,13 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
     final repo = _properties;
     if (repo == null) return;
     await repo.updateProperty(propertyId, fields);
+  }
+
+  /// Removes a listing; rethrows so the caller can surface any failure.
+  Future<void> deleteProperty(String propertyId) async {
+    final repo = _properties;
+    if (repo == null) return;
+    await repo.deleteProperty(propertyId);
   }
 
   void clearError() => emit(state.copyWith(clearError: true));

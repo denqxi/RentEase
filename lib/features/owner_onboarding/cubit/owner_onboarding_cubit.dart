@@ -136,6 +136,7 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
     required double latitude,
     required double longitude,
     required List<UploadedImage> photos,
+    UploadedImage? propertyCoverPhoto,
     required int depositAmount,
     required int advanceMonths,
     required String allowedGender,
@@ -162,6 +163,8 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
         latitude: latitude,
         longitude: longitude,
         photos: List<UploadedImage>.unmodifiable(photos),
+        propertyCoverPhoto: propertyCoverPhoto,
+        clearPropertyCoverPhoto: propertyCoverPhoto == null,
         depositAmount: depositAmount,
         advanceMonths: advanceMonths,
         allowedGender: allowedGender,
@@ -258,6 +261,9 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
         roomName: draft.isRoom ? draft.roomName : null,
         propertyType: draft.propertyType,
         parentPropertyId: draft.isRoom ? draft.parentPropertyId : null,
+        propertyCoverPhoto: draft.isRoom ? draft.propertyCoverPhoto?.url : null,
+        propertyCoverPublicId:
+            draft.isRoom ? draft.propertyCoverPhoto?.publicId : null,
       );
 
       final propertyId = await _repository.createProperty(property);

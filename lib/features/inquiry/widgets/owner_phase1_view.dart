@@ -31,35 +31,114 @@ class OwnerPhase1View extends StatelessWidget {
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
             children: [
-              Row(
+              // Status banner card matching Phase 2 style
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFFE2E8F0).withValues(alpha: 0.75),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: const Icon(
+                        Icons.mark_chat_unread_outlined,
+                        color: AppColors.primary,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            pending
+                                ? 'New inquiry received — review tenant profile.'
+                                : (inquiry.status == 'closed'
+                                      ? 'Inquiry closed.'
+                                      : 'You declined this inquiry.'),
+                            style: const TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            pending
+                                ? 'Accepting this inquiry unlocks open chat.'
+                                : 'Chat remains locked for this thread.',
+                            style: const TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Row(
                 children: [
-                  Icon(Icons.smart_toy_outlined, color: AppColors.accent, size: 12),
-                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.smart_toy_outlined,
+                    color: AppColors.primary,
+                    size: 14,
+                  ),
+                  SizedBox(width: 6),
                   Text(
                     'Tenant summary from RentEase',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
-                      fontSize: 10,
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.accent,
+                      color: AppColors.primary,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.accentSoft,
-                  borderRadius: BorderRadius.circular(AppRadii.field),
+                  color: const Color(0xFFF0F9FF),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _SummaryRow('Name', fullNameOf(tenant,
-                        fallback: 'Tenant', loaded: !state.isLoading)),
+                    _SummaryRow(
+                      'Name',
+                      fullNameOf(
+                        tenant,
+                        fallback: 'Tenant',
+                        loaded: !state.isLoading,
+                      ),
+                    ),
                     _SummaryRow('Gender', orDash(tenant?.gender)),
                     _SummaryRow('School', orDash(profile?.school)),
                     _SummaryRow('Occupation', orDash(profile?.occupation)),
@@ -77,36 +156,45 @@ class OwnerPhase1View extends StatelessWidget {
                       'Budget',
                       profile == null ? '—' : '₱${profile.maxBudget}/mo',
                     ),
-                    _SummaryRow('Smoker', profile?.isSmoker == true ? 'Yes' : 'No'),
-                    _SummaryRow('Has pet', profile?.hasPet == true ? 'Yes' : 'No'),
-                    const SizedBox(height: AppSpacing.sm),
+                    _SummaryRow(
+                      'Smoker',
+                      profile?.isSmoker == true ? 'Yes' : 'No',
+                    ),
+                    _SummaryRow(
+                      'Has pet',
+                      profile?.hasPet == true ? 'Yes' : 'No',
+                    ),
+                    const SizedBox(height: 10),
                     // An inquiry can only be created against a bScore = 1
                     // match (enforced by firestore.rules), so every tenant
                     // reaching this screen passed all of the owner's rules.
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
+                        horizontal: 10,
+                        vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.matchHigh.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(AppRadii.chip),
-                        border: Border.all(color: AppColors.matchHigh, width: 0.5),
+                        color: AppColors.matchHigh.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.matchHigh,
+                          width: 0.6,
+                        ),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.check_circle_rounded,
                             color: AppColors.matchHigh,
-                            size: 12,
+                            size: 13,
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 5),
                           Text(
                             'Passes all your rules',
                             style: TextStyle(
                               fontFamily: 'DM Sans',
-                              fontSize: 11,
+                              fontSize: 11.5,
                               fontWeight: FontWeight.w700,
                               color: AppColors.matchHigh,
                             ),
@@ -123,40 +211,41 @@ class OwnerPhase1View extends StatelessWidget {
         if (state.ownerRejected && pending)
           const RejectedOwnerNotice(isOwner: true)
         else
-        Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: SafeArea(
-            top: false,
-            child: pending
-                ? Column(
-                    children: [
-                      const ContactConsentNotice(sharedWith: 'the tenant'),
-                      const SizedBox(height: AppSpacing.sm),
-                      AppButton(
-                        label: state.isBusy ? 'Please wait...' : 'Accept',
-                        onPressed: state.isBusy
-                            ? null
-                            : () => context.read<InquiryThreadCubit>().accept(),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      AppButton(
-                        label: 'Decline',
-                        variant: AppButtonVariant.destructiveOutline,
-                        onPressed: state.isBusy
-                            ? null
-                            : () => _showDeclineDialog(context),
-                      ),
-                    ],
-                  )
-                : Text(
-                    inquiry.status == 'closed'
-                        ? 'Closed — you marked this listing fully booked.'
-                        : 'You declined this inquiry.',
-                    style: AppTextStyles.body(context),
-                    textAlign: TextAlign.center,
-                  ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: SafeArea(
+              top: false,
+              child: pending
+                  ? Column(
+                      children: [
+                        const ContactConsentNotice(sharedWith: 'the tenant'),
+                        const SizedBox(height: AppSpacing.sm),
+                        AppButton(
+                          label: state.isBusy ? 'Please wait...' : 'Accept',
+                          onPressed: state.isBusy
+                              ? null
+                              : () =>
+                                    context.read<InquiryThreadCubit>().accept(),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        AppButton(
+                          label: 'Decline',
+                          variant: AppButtonVariant.destructiveOutline,
+                          onPressed: state.isBusy
+                              ? null
+                              : () => _showDeclineDialog(context),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      inquiry.status == 'closed'
+                          ? 'Closed — you marked this listing fully booked.'
+                          : 'You declined this inquiry.',
+                      style: AppTextStyles.body(context),
+                      textAlign: TextAlign.center,
+                    ),
+            ),
           ),
-        ),
       ],
     );
   }
@@ -228,7 +317,7 @@ class _SummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 5),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -236,14 +325,14 @@ class _SummaryRow extends StatelessWidget {
             '$label: ',
             style: AppTextStyles.caption(
               context,
-            ).copyWith(color: context.appColors.textSecondary),
+            ).copyWith(color: const Color(0xFF64748B)),
           ),
           Expanded(
             child: Text(
               value,
               style: AppTextStyles.caption(context).copyWith(
-                color: context.appColors.textPrimary,
-                fontWeight: FontWeight.w600,
+                color: const Color(0xFF0F172A),
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),

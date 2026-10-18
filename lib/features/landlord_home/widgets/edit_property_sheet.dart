@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -8,27 +10,34 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../owner_onboarding/widgets/listing_form_widgets.dart';
 import '../../owner_onboarding/widgets/listing_location_picker.dart';
+import '../../uploads/data/repositories/cloudinary_image_upload_repository.dart';
+import '../../uploads/domain/entities/uploaded_image.dart';
+import '../../uploads/presentation/cubit/image_upload_cubit.dart';
+import '../../uploads/presentation/widgets/image_upload_slot.dart';
 
 const List<String> kBuildingTypes = [
   'Boarding House',
-  'House',
+  'Dormitory',
   'Apartment',
-  'Condominium',
-  'Studio Unit',
+  'Condo',
+  'Others',
 ];
 
-/// Bottom sheet to edit building/property metadata (Name, Type, Address, Map Pin).
+/// Bottom sheet to edit building/property metadata (Name, Type, Address, Map Pin, and Cover Photo).
 Future<void> showEditPropertySheet({
   required BuildContext context,
   required String initialName,
   required String? initialType,
   required String initialAddress,
   required LatLng? initialLocation,
+  String? initialCoverPhotoUrl,
+  String? initialCoverPublicId,
   required Future<void> Function({
     required String name,
     required String type,
     required String address,
     required LatLng location,
+    UploadedImage? coverPhoto,
   }) onSave,
 }) {
   return showModalBottomSheet<void>(
@@ -44,6 +53,8 @@ Future<void> showEditPropertySheet({
       initialType: initialType,
       initialAddress: initialAddress,
       initialLocation: initialLocation,
+      initialCoverPhotoUrl: initialCoverPhotoUrl,
+      initialCoverPublicId: initialCoverPublicId,
       onSave: onSave,
     ),
   );
@@ -55,6 +66,8 @@ class _EditPropertySheet extends StatefulWidget {
     required this.initialType,
     required this.initialAddress,
     required this.initialLocation,
+    this.initialCoverPhotoUrl,
+    this.initialCoverPublicId,
     required this.onSave,
   });
 
@@ -62,11 +75,14 @@ class _EditPropertySheet extends StatefulWidget {
   final String? initialType;
   final String initialAddress;
   final LatLng? initialLocation;
+  final String? initialCoverPhotoUrl;
+  final String? initialCoverPublicId;
   final Future<void> Function({
     required String name,
     required String type,
     required String address,
     required LatLng location,
+    UploadedImage? coverPhoto,
   }) onSave;
 
   @override
@@ -78,6 +94,7 @@ class _EditPropertySheetState extends State<_EditPropertySheet> {
   late final TextEditingController _addressController;
   late String? _type;
   late LatLng? _pin;
+  late final ImageUploadCubit _coverUpload;
   bool _saving = false;
   bool _resolving = false;
 
@@ -86,17 +103,32 @@ class _EditPropertySheetState extends State<_EditPropertySheet> {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName);
     _addressController = TextEditingController(text: widget.initialAddress);
-    _type = widget.initialType != null &&
-            kBuildingTypes.contains(widget.initialType)
+    _type = (widget.initialType != null && widget.initialType!.trim().isNotEmpty)
         ? widget.initialType
         : kBuildingTypes.first;
     _pin = widget.initialLocation;
+
+    final coverUrl = widget.initialCoverPhotoUrl?.trim();
+    _coverUpload = ImageUploadCubit(
+      repository: CloudinaryImageUploadRepository(),
+      kind: ImageKind.propertyPhoto,
+      slotCount: 1,
+      minRequired: 1,
+      initialImages: [
+        if (coverUrl != null && coverUrl.isNotEmpty)
+          UploadedImage(
+            url: coverUrl,
+            publicId: widget.initialCoverPublicId ?? '',
+          ),
+      ],
+    );
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _addressController.dispose();
+    _coverUpload.close();
     super.dispose();
   }
 
@@ -105,18 +137,22 @@ class _EditPropertySheetState extends State<_EditPropertySheet> {
       !_resolving &&
       _nameController.text.trim().isNotEmpty &&
       _type != null &&
+      _type!.trim().isNotEmpty &&
       _addressController.text.trim().isNotEmpty &&
-      _pin != null;
+      _pin != null &&
+      _coverUpload.state.isReady;
 
   Future<void> _handleSave() async {
     if (!_canSave) return;
     setState(() => _saving = true);
     try {
+      final images = _coverUpload.state.images;
       await widget.onSave(
         name: _nameController.text.trim(),
         type: _type!,
         address: _addressController.text.trim(),
         location: _pin!,
+        coverPhoto: images.isNotEmpty ? images.first : null,
       );
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
@@ -136,15 +172,10 @@ class _EditPropertySheetState extends State<_EditPropertySheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+        bottom: MediaQuery.viewInsetsOf(context).bottom,
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.xl,
-        ),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -153,60 +184,45 @@ class _EditPropertySheetState extends State<_EditPropertySheet> {
               children: [
                 Expanded(
                   child: Text(
-                    'Edit Property',
+                    'Edit property',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 18,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       color: context.appColors.textPrimary,
                     ),
                   ),
                 ),
                 IconButton(
+                  tooltip: 'Close',
                   icon: const Icon(Icons.close_rounded),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
             ),
-            const SizedBox(height: 2),
             Text(
-              'Update building name, type, address, and pinned location.',
+              'Update building name, type, address, location pin, and cover photo.',
               style: AppTextStyles.caption(context),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Property Name',
-              style: AppTextStyles.label(context),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            AppTextField(
-              controller: _nameController,
-              hintText: 'e.g. GL Boardinghouse',
-              onChanged: (_) => setState(() {}),
+            LabelledField(
+              label: 'Property name',
+              child: AppTextField(
+                controller: _nameController,
+                hintText: 'e.g. GL Boardinghouse',
+                inputFormatters: [LengthLimitingTextInputFormatter(120)],
+                onChanged: (_) => setState(() {}),
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
-            Text(
-              'Property Type',
-              style: AppTextStyles.label(context),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            ListingDropdown<String>(
-              value: _type,
-              hint: 'Select property type',
-              items: [
-                for (final t in kBuildingTypes)
-                  DropdownMenuItem(
-                    value: t,
-                    child: Text(
-                      t,
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        color: context.appColors.textPrimary,
-                      ),
-                    ),
-                  ),
-              ],
-              onChanged: (v) => setState(() => _type = v),
+            LabelledField(
+              label: 'Property type',
+              child: PropertyTypeDropdown(
+                value: _type,
+                hint: 'Select property type',
+                options: kBuildingTypes,
+                onChanged: (v) => setState(() => _type = v),
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
             ListingLocationPicker(
@@ -215,12 +231,42 @@ class _EditPropertySheetState extends State<_EditPropertySheet> {
               onPinChanged: (p) => setState(() => _pin = p),
               onChanged: (resolving) => setState(() => _resolving = resolving),
             ),
+            const SizedBox(height: AppSpacing.md),
+            LabelledField(
+              label: 'Property cover photo',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  BlocBuilder<ImageUploadCubit, ImageUploadState>(
+                    bloc: _coverUpload,
+                    builder: (context, state) => SizedBox(
+                      width: 112,
+                      child: ImageUploadSlot(
+                        slot: state.slots.first,
+                        emptyLabel: 'Property Cover',
+                        onPick: (src) => _coverUpload.pickAndUpload(0, src),
+                        onRetry: () => _coverUpload.retry(0),
+                        onRemove: () => _coverUpload.remove(0),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Add 1 cover photo for the property. Each room listing will have its own photos.',
+                    style: AppTextStyles.caption(context),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: AppSpacing.lg),
-            SizedBox(
-              width: double.infinity,
-              child: AppPrimaryButton(
-                label: _saving ? 'Saving...' : 'Save Changes',
-                onPressed: _canSave ? _handleSave : null,
+            BlocBuilder<ImageUploadCubit, ImageUploadState>(
+              bloc: _coverUpload,
+              builder: (context, _) => SizedBox(
+                width: double.infinity,
+                child: AppPrimaryButton(
+                  label: _saving ? 'Saving...' : 'Save changes',
+                  onPressed: _canSave ? _handleSave : null,
+                ),
               ),
             ),
           ],

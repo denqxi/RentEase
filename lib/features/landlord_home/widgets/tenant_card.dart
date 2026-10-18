@@ -14,6 +14,15 @@ class TenantCard extends StatelessWidget {
   final CompatibleTenant tenant;
   final VoidCallback? onTap;
 
+  static String _formatBudget(num budget) {
+    if (budget >= 1000) {
+      final double inK = budget / 1000.0;
+      final String s = inK.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '');
+      return '${s}k';
+    }
+    return budget.toInt().toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     final details = [
@@ -86,7 +95,7 @@ class TenantCard extends StatelessWidget {
                             .copyWith(fontSize: 12),
                       ),
                     Text(
-                      '₱${tenant.maxBudget}/mo budget',
+                      '₱${_formatBudget(tenant.maxBudget)}/mo budget',
                       style: AppTextStyles.caption(context)
                           .copyWith(fontSize: 12),
                     ),

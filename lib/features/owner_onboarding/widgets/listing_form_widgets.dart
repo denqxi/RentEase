@@ -9,8 +9,17 @@ import '../../../shared/widgets/app_toggle.dart';
 /// Small building blocks shared by the create-listing wizard steps. They reuse
 /// the existing field/pill styling so the wizard matches the rest of the app.
 
-/// Dropdown styled exactly like the existing property-rules dropdown.
-class ListingDropdown<T> extends StatelessWidget {
+/// Standard property types with Boarding House on top and Others at the bottom.
+const List<String> kStandardPropertyTypes = [
+  'Boarding House',
+  'Dormitory',
+  'Apartment',
+  'Condo',
+  'Others',
+];
+
+/// Modern custom dropdown styled after the floating card reference design.
+class ListingDropdown<T> extends StatefulWidget {
   const ListingDropdown({
     required this.value,
     required this.items,
@@ -25,38 +34,555 @@ class ListingDropdown<T> extends StatelessWidget {
   final String hint;
 
   @override
+  State<ListingDropdown<T>> createState() => _ListingDropdownState<T>();
+}
+
+class _ListingDropdownState<T> extends State<ListingDropdown<T>>
+    with SingleTickerProviderStateMixin {
+  final LayerLink _layerLink = LayerLink();
+  final GlobalKey _triggerKey = GlobalKey();
+  OverlayEntry? _overlayEntry;
+  bool _isOpen = false;
+
+  late final AnimationController _animController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 160),
+  );
+  late final Animation<double> _fadeAnim = CurvedAnimation(
+    parent: _animController,
+    curve: Curves.easeOutCubic,
+  );
+
+  @override
+  void dispose() {
+    _removeOverlay(immediate: true);
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _toggleDropdown() {
+    if (widget.onChanged == null || widget.items.isEmpty) return;
+    if (_isOpen) {
+      _closeDropdown();
+    } else {
+      _openDropdown();
+    }
+  }
+
+  void _openDropdown() {
+    FocusScope.of(context).unfocus();
+    final renderBox =
+        _triggerKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    final size = renderBox.size;
+
+    _overlayEntry = OverlayEntry(
+      builder: (overlayContext) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _closeDropdown,
+                child: const SizedBox.expand(),
+              ),
+            ),
+            CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: Offset(0, size.height + 4),
+              child: Material(
+                color: Colors.transparent,
+                child: FadeTransition(
+                  opacity: _fadeAnim,
+                  child: Container(
+                    width: size.width,
+                    constraints: const BoxConstraints(maxHeight: 280),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.11),
+                          blurRadius: 22,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 8),
+                        ),
+                        BoxShadow(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shrinkWrap: true,
+                      itemCount: widget.items.length,
+                      itemBuilder: (ctx, index) {
+                        final item = widget.items[index];
+                        final isSelected = item.value == widget.value;
+                        return InkWell(
+                          onTap: () {
+                            final selectedVal = item.value;
+                            _closeDropdown();
+                            widget.onChanged?.call(selectedVal);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 13,
+                            ),
+                            color: isSelected
+                                ? AppColors.primary.withValues(alpha: 0.06)
+                                : Colors.transparent,
+                            child: DefaultTextStyle(
+                              style: TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 14.5,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : const Color(0xFF1E293B),
+                              ),
+                              child: item.child,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+    setState(() => _isOpen = true);
+    _animController.forward(from: 0);
+  }
+
+  Future<void> _closeDropdown() async {
+    if (!_isOpen) return;
+    await _animController.reverse();
+    _removeOverlay(immediate: true);
+    if (mounted) {
+      setState(() => _isOpen = false);
+    }
+  }
+
+  void _removeOverlay({bool immediate = false}) {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    if (!immediate && mounted) {
+      setState(() => _isOpen = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<T>(
-      initialValue: value,
-      isExpanded: true,
-      hint: Text(
-        hint,
-        style: TextStyle(
-          color: context.appColors.hint,
-          fontFamily: 'DM Sans',
+    DropdownMenuItem<T>? selectedItem;
+    for (final item in widget.items) {
+      if (item.value == widget.value) {
+        selectedItem = item;
+        break;
+      }
+    }
+
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: GestureDetector(
+        key: _triggerKey,
+        onTap: _toggleDropdown,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 10,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _isOpen
+                  ? AppColors.accent
+                  : const Color(0xFFCBD5E1),
+              width: _isOpen ? 1.4 : 1.0,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: selectedItem != null
+                    ? DefaultTextStyle(
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: context.appColors.textPrimary,
+                        ),
+                        child: selectedItem.child,
+                      )
+                    : Text(
+                        widget.hint,
+                        style: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 8),
+              AnimatedRotation(
+                turns: _isOpen ? 0.5 : 0.0,
+                duration: const Duration(milliseconds: 160),
+                child: const Icon(
+                  Icons.arrow_drop_down_rounded,
+                  size: 20,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: context.appColors.fieldFill,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: 14,
+    );
+  }
+}
+
+/// Modern Property Type dropdown with preset choices ('Boarding House',
+/// 'Dormitory', 'Apartment', 'Condo', 'Others'). When 'Others' is clicked,
+/// the dropdown field switches into an inline text input with a guiding placeholder.
+class PropertyTypeDropdown extends StatefulWidget {
+  const PropertyTypeDropdown({
+    required this.value,
+    required this.onChanged,
+    this.hint = 'Select property type',
+    this.customPlaceholder = 'Type property type (e.g. Townhouse, Studio)...',
+    this.options = kStandardPropertyTypes,
+    super.key,
+  });
+
+  final String? value;
+  final ValueChanged<String?> onChanged;
+  final String hint;
+  final String customPlaceholder;
+  final List<String> options;
+
+  @override
+  State<PropertyTypeDropdown> createState() => _PropertyTypeDropdownState();
+}
+
+class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
+    with SingleTickerProviderStateMixin {
+  final LayerLink _layerLink = LayerLink();
+  final GlobalKey _triggerKey = GlobalKey();
+  final TextEditingController _customController = TextEditingController();
+  final FocusNode _customFocusNode = FocusNode();
+
+  OverlayEntry? _overlayEntry;
+  bool _isOpen = false;
+  bool _isCustomMode = false;
+
+  late final AnimationController _animController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 160),
+  );
+  late final Animation<double> _fadeAnim = CurvedAnimation(
+    parent: _animController,
+    curve: Curves.easeOutCubic,
+  );
+
+  List<String> get _presetOnly =>
+      widget.options.where((o) => o != 'Others').toList();
+
+  @override
+  void initState() {
+    super.initState();
+    _syncFromValue(widget.value);
+    _customFocusNode.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant PropertyTypeDropdown oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value && !_isCustomMode) {
+      _syncFromValue(widget.value);
+    }
+  }
+
+  void _syncFromValue(String? val) {
+    if (val != null && val.trim().isNotEmpty && !_presetOnly.contains(val)) {
+      _isCustomMode = true;
+      if (_customController.text != val) {
+        _customController.text = val;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _removeOverlay(immediate: true);
+    _animController.dispose();
+    _customController.dispose();
+    _customFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _toggleDropdown() {
+    if (_isOpen) {
+      _closeDropdown();
+    } else {
+      _openDropdown();
+    }
+  }
+
+  void _openDropdown() {
+    FocusScope.of(context).unfocus();
+    final renderBox =
+        _triggerKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    final size = renderBox.size;
+
+    _overlayEntry = OverlayEntry(
+      builder: (overlayContext) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _closeDropdown,
+                child: const SizedBox.expand(),
+              ),
+            ),
+            CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: Offset(0, size.height + 4),
+              child: Material(
+                color: Colors.transparent,
+                child: FadeTransition(
+                  opacity: _fadeAnim,
+                  child: Container(
+                    width: size.width,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.11),
+                          blurRadius: 22,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 8),
+                        ),
+                        BoxShadow(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final option in widget.options)
+                            InkWell(
+                              onTap: () => _handleSelectOption(option),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 11,
+                                ),
+                                color: (_isOptionSelected(option))
+                                    ? AppColors.primary.withValues(alpha: 0.06)
+                                    : Colors.transparent,
+                                child: Text(
+                                  option,
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 14,
+                                    fontWeight: _isOptionSelected(option)
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                    color: _isOptionSelected(option)
+                                        ? AppColors.primary
+                                        : const Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+    setState(() => _isOpen = true);
+    _animController.forward(from: 0);
+  }
+
+  bool _isOptionSelected(String option) {
+    if (option == 'Others') return _isCustomMode;
+    return !_isCustomMode && widget.value == option;
+  }
+
+  Future<void> _handleSelectOption(String option) async {
+    await _closeDropdown();
+    if (!mounted) return;
+    if (option == 'Others') {
+      setState(() {
+        _isCustomMode = true;
+        _customController.clear();
+      });
+      widget.onChanged(null);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _customFocusNode.requestFocus();
+      });
+    } else {
+      setState(() {
+        _isCustomMode = false;
+        _customController.clear();
+      });
+      widget.onChanged(option);
+    }
+  }
+
+  Future<void> _closeDropdown() async {
+    if (!_isOpen) return;
+    await _animController.reverse();
+    _removeOverlay(immediate: true);
+    if (mounted) {
+      setState(() => _isOpen = false);
+    }
+  }
+
+  void _removeOverlay({bool immediate = false}) {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    if (!immediate && mounted) {
+      setState(() => _isOpen = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isFocusedOrOpen = _isOpen || _customFocusNode.hasFocus;
+
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: AnimatedContainer(
+        key: _triggerKey,
+        duration: const Duration(milliseconds: 150),
+        padding: EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: _isCustomMode ? 2 : 10,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.field),
-          borderSide: BorderSide(color: context.appColors.fieldBorder),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isFocusedOrOpen
+                ? AppColors.accent
+                : const Color(0xFFCBD5E1),
+            width: isFocusedOrOpen ? 1.4 : 1.0,
+          ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.field),
-          borderSide: BorderSide(color: AppColors.accent, width: 1.5),
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.field),
+        child: Row(
+          children: [
+            Expanded(
+              child: _isCustomMode
+                  ? TextField(
+                      controller: _customController,
+                      focusNode: _customFocusNode,
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: context.appColors.textPrimary,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: widget.customPlaceholder,
+                        hintStyle: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF94A3B8),
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        isDense: true,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                      onChanged: (val) {
+                        final trimmed = val.trim();
+                        widget.onChanged(trimmed.isEmpty ? null : trimmed);
+                      },
+                    )
+                  : GestureDetector(
+                      onTap: _toggleDropdown,
+                      behavior: HitTestBehavior.opaque,
+                      child: Text(
+                        (widget.value != null && widget.value!.isNotEmpty)
+                            ? widget.value!
+                            : widget.hint,
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 14,
+                          fontWeight:
+                              (widget.value != null && widget.value!.isNotEmpty)
+                                  ? FontWeight.w500
+                                  : FontWeight.w400,
+                          color:
+                              (widget.value != null && widget.value!.isNotEmpty)
+                                  ? context.appColors.textPrimary
+                                  : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: _toggleDropdown,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.all(2),
+                child: AnimatedRotation(
+                  turns: _isOpen ? 0.5 : 0.0,
+                  duration: const Duration(milliseconds: 160),
+                  child: const Icon(
+                    Icons.arrow_drop_down_rounded,
+                    size: 20,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      items: items,
-      onChanged: onChanged,
     );
   }
 }
@@ -287,51 +813,158 @@ class ListingCalloutBox extends StatelessWidget {
   }
 }
 
-/// Selectable amenity pill (same as the original amenity chips).
+/// Categorized amenity sections shared across Create Listing and Edit Listing screens.
+const List<(String, List<String>)> kAmenityGroups = [
+  (
+    'Comfort & Internet',
+    ['WiFi', 'Air conditioning', 'Electric fan', 'Furnished room'],
+  ),
+  (
+    'Bathroom & Facilities',
+    [
+      'Private bathroom',
+      'Laundry facility',
+      'Kitchen or cooking area',
+      'Refrigerator access',
+    ],
+  ),
+  (
+    'Safety & Convenience',
+    [
+      'CCTV or security camera',
+      'Parking space',
+      'Study area or desk',
+      '24-hour access',
+    ],
+  ),
+  (
+    'Bills Included',
+    ['Water included in rent', 'Electricity included in rent'],
+  ),
+];
+
+/// Returns a clean outline icon for each standard amenity label.
+IconData amenityIconFor(String label) {
+  switch (label) {
+    case 'WiFi':
+      return Icons.wifi_rounded;
+    case 'Air conditioning':
+      return Icons.ac_unit_rounded;
+    case 'Electric fan':
+      return Icons.air_rounded;
+    case 'Furnished room':
+      return Icons.chair_outlined;
+    case 'Private bathroom':
+      return Icons.bathtub_outlined;
+    case 'Laundry facility':
+      return Icons.local_laundry_service_outlined;
+    case 'Kitchen or cooking area':
+      return Icons.countertops_outlined;
+    case 'Refrigerator access':
+      return Icons.kitchen_outlined;
+    case 'CCTV or security camera':
+      return Icons.videocam_outlined;
+    case 'Parking space':
+      return Icons.directions_car_outlined;
+    case 'Study area or desk':
+      return Icons.desk_outlined;
+    case '24-hour access':
+      return Icons.schedule_outlined;
+    case 'Water included in rent':
+      return Icons.water_drop_outlined;
+    case 'Electricity included in rent':
+      return Icons.bolt_outlined;
+    default:
+      return Icons.check_circle_outline_rounded;
+  }
+}
+
+/// Selectable amenity pill with a circular outline icon badge and theme-colored active state.
 class AmenityChip extends StatelessWidget {
   const AmenityChip({
     required this.label,
     required this.selected,
     required this.onTap,
+    this.showCloseIcon = true,
     super.key,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final bool showCloseIcon;
 
   @override
   Widget build(BuildContext context) {
+    final iconData = amenityIconFor(label);
+
     return Semantics(
       button: true,
       selected: selected,
       label: label,
       child: GestureDetector(
         onTap: onTap,
+        behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          height: 32,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOutCubic,
+          padding: EdgeInsets.fromLTRB(
+            5,
+            5,
+            selected && showCloseIcon ? 9 : 11,
+            5,
+          ),
           decoration: BoxDecoration(
-            color: selected ? AppColors.accentSoft : context.appColors.fieldFill,
-            borderRadius: BorderRadius.circular(20),
+            color: selected ? AppColors.accent : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: selected ? AppColors.accent : context.appColors.fieldBorder,
-              width: selected ? 1.5 : 1,
+              color: selected
+                  ? AppColors.accent
+                  : const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+              width: 1,
             ),
           ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: selected
-                    ? AppColors.accent
-                    : context.appColors.textSecondary,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? Colors.white.withValues(alpha: 0.22)
+                      : Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  iconData,
+                  size: 13,
+                  color: selected ? Colors.white : AppColors.accent,
+                ),
               ),
-            ),
+              const SizedBox(width: 7),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 12,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    color: selected ? Colors.white : const Color(0xFF1E293B),
+                    height: 1.1,
+                  ),
+                ),
+              ),
+              if (selected && showCloseIcon) ...[
+                const SizedBox(width: 6),
+                Icon(
+                  Icons.close_rounded,
+                  size: 13.5,
+                  color: Colors.white.withValues(alpha: 0.9),
+                ),
+              ],
+            ],
           ),
         ),
       ),

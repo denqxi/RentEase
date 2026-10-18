@@ -228,169 +228,202 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
-      body: SafeArea(
-        bottom: false,
-        child: FadeTransition(
-          opacity: _entranceFade,
-          child: SlideTransition(
-            position: _entranceSlide,
-            child: ScaleTransition(
-              scale: _entranceScale,
-              child: BlocConsumer<LandlordHomeCubit, LandlordHomeState>(
-                listenWhen: (prev, curr) =>
-                    curr.errorMessage != null &&
-                    prev.errorMessage != curr.errorMessage &&
-                    curr.properties.isNotEmpty,
-                listener: (context, state) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.errorMessage!),
-                      backgroundColor: AppColors.destructive,
-                    ),
-                  );
-                  context.read<LandlordHomeCubit>().clearError();
-                },
-                builder: (context, state) {
-                  return Column(
-                    children: <Widget>[
-                      // Fixed top bar — stays stationary on pull down & scroll
-                      ColoredBox(
-                        color: context.appColors.surface,
-                        child: LandlordHomeHeader(
-                          userName: state.firstName,
-                          photoUrl: state.photoUrl,
-                          isVerified: state.isVerified,
-                          hasUnreadNotifications: unreadNotifications > 0,
-                          onNotificationTap: () {
-                            try {
-                              final activityCubit = context
-                                  .read<ActivityCubit>();
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) =>
-                                      BlocProvider<ActivityCubit>.value(
-                                        value: activityCubit,
-                                        child: const ActivityScreen(),
-                                      ),
-                                ),
-                              );
-                            } catch (_) {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => const ActivityScreen(),
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                      ),
-                      // Invisible separation between the top bar and the section below
-                      const SizedBox(height: AppSpacing.xs),
-                      // Scrollable section with pull-to-refresh
-                      Expanded(
-                        child:
-                            state.errorMessage != null &&
-                                state.properties.isEmpty
-                            ? _ErrorState(
-                                message: state.errorMessage!,
-                                onRetry: cubit.retry,
-                              )
-                            : state.isLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : RefreshIndicator(
-                                color: AppColors.primary,
-                                backgroundColor: Colors.white,
-                                edgeOffset: 0,
-                                onRefresh: () async {
-                                  _ModernPropertyCard.clearCache();
-                                  await cubit.refresh();
-                                },
-                                child: CustomScrollView(
-                                  physics: const AlwaysScrollableScrollPhysics(
-                                    parent: BouncingScrollPhysics(),
-                                  ),
-                                  slivers: <Widget>[
-                                    if (state.showPendingBanner &&
-                                        !_isBannerDismissed)
-                                      SliverToBoxAdapter(
-                                        child: SizeTransition(
-                                          sizeFactor: _bannerHeight,
-                                          child: FadeTransition(
-                                            opacity: _bannerFade,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                    AppSpacing.lg,
-                                                    0,
-                                                    AppSpacing.lg,
-                                                    AppSpacing.md,
-                                                  ),
-                                              child: PendingListingBanner(
-                                                status:
-                                                    state.verificationStatus,
-                                                onClose: _dismissBanner,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    const SliverToBoxAdapter(
-                                      child: SizedBox(height: 8),
-                                    ),
-                                    SliverToBoxAdapter(
-                                      child: _StatsRow(state: state),
-                                    ),
-                                    const SliverToBoxAdapter(
-                                      child: SizedBox(height: 32),
-                                    ),
-                                    SliverToBoxAdapter(
-                                      child: _ActivePropertiesHeader(
-                                        count: state.properties.length,
-                                        searchController: _searchController,
-                                        selectedFilter: _selectedFilter,
-                                        onFilterChanged: (filter) => setState(
-                                          () => _selectedFilter = filter,
-                                        ),
-                                      ),
-                                    ),
-                                    const SliverToBoxAdapter(
-                                      child: SizedBox(height: AppSpacing.sm),
-                                    ),
-                                    if (state.properties.isEmpty)
-                                      const SliverToBoxAdapter(
-                                        child: _EmptyPropertiesView(),
-                                      )
-                                    else
-                                      SliverPadding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: AppSpacing.lg,
-                                        ),
-                                        sliver: SliverList(
-                                          delegate: SliverChildListDelegate(
-                                            _propertyItems(
-                                              context,
-                                              state.properties,
-                                              cubit,
-                                              state.tenants,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-
-                                    const SliverToBoxAdapter(
-                                      child: SizedBox(height: AppSpacing.xl),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                      ),
+      body: Stack(
+        children: <Widget>[
+          // Subtle top-right gradient — same palette as Matches screen, tight spread
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 195,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.topRight,
+                    radius: 1.05,
+                    colors: <Color>[
+                      const Color(0xFFCCF2FE).withValues(alpha: 0.72),
+                      const Color(0xFFE0F7FE).withValues(alpha: 0.42),
+                      const Color(0xFFF8FAFC).withValues(alpha: 0.0),
                     ],
-                  );
-                },
+                    stops: const <double>[0.0, 0.42, 0.92],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+          SafeArea(
+            bottom: false,
+            child: FadeTransition(
+              opacity: _entranceFade,
+              child: SlideTransition(
+                position: _entranceSlide,
+                child: ScaleTransition(
+                  scale: _entranceScale,
+                  child: BlocConsumer<LandlordHomeCubit, LandlordHomeState>(
+                    listenWhen: (prev, curr) =>
+                        curr.errorMessage != null &&
+                        prev.errorMessage != curr.errorMessage &&
+                        curr.properties.isNotEmpty,
+                    listener: (context, state) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(state.errorMessage!),
+                          backgroundColor: AppColors.destructive,
+                        ),
+                      );
+                      context.read<LandlordHomeCubit>().clearError();
+                    },
+                    builder: (context, state) {
+                      return Column(
+                        children: <Widget>[
+                          // Fixed top bar — stays stationary on pull down & scroll
+                          LandlordHomeHeader(
+                            userName: state.firstName,
+                            photoUrl: state.photoUrl,
+                            isVerified: state.isVerified,
+                            hasUnreadNotifications: unreadNotifications > 0,
+                            onNotificationTap: () {
+                              try {
+                                final activityCubit = context
+                                    .read<ActivityCubit>();
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        BlocProvider<ActivityCubit>.value(
+                                          value: activityCubit,
+                                          child: const ActivityScreen(),
+                                        ),
+                                  ),
+                                );
+                              } catch (_) {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const ActivityScreen(),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                          // Invisible separation between the top bar and the section below
+                          const SizedBox(height: AppSpacing.xs),
+                          // Scrollable section with pull-to-refresh
+                          Expanded(
+                            child:
+                                state.errorMessage != null &&
+                                    state.properties.isEmpty
+                                ? _ErrorState(
+                                    message: state.errorMessage!,
+                                    onRetry: cubit.retry,
+                                  )
+                                : state.isLoading
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : RefreshIndicator(
+                                    color: AppColors.primary,
+                                    backgroundColor: Colors.white,
+                                    edgeOffset: 0,
+                                    onRefresh: () async {
+                                      _ModernPropertyCard.clearCache();
+                                      await cubit.refresh();
+                                    },
+                                    child: CustomScrollView(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(
+                                            parent: BouncingScrollPhysics(),
+                                          ),
+                                      slivers: <Widget>[
+                                        if (state.showPendingBanner &&
+                                            !_isBannerDismissed)
+                                          SliverToBoxAdapter(
+                                            child: SizeTransition(
+                                              sizeFactor: _bannerHeight,
+                                              child: FadeTransition(
+                                                opacity: _bannerFade,
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.fromLTRB(
+                                                        AppSpacing.lg,
+                                                        0,
+                                                        AppSpacing.lg,
+                                                        AppSpacing.md,
+                                                      ),
+                                                  child: PendingListingBanner(
+                                                    status: state
+                                                        .verificationStatus,
+                                                    onClose: _dismissBanner,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        const SliverToBoxAdapter(
+                                          child: SizedBox(height: 8),
+                                        ),
+                                        SliverToBoxAdapter(
+                                          child: _StatsRow(state: state),
+                                        ),
+                                        const SliverToBoxAdapter(
+                                          child: SizedBox(height: 32),
+                                        ),
+                                        SliverToBoxAdapter(
+                                          child: _ActivePropertiesHeader(
+                                            count: state.properties.length,
+                                            searchController: _searchController,
+                                            selectedFilter: _selectedFilter,
+                                            onFilterChanged: (filter) =>
+                                                setState(
+                                                  () =>
+                                                      _selectedFilter = filter,
+                                                ),
+                                          ),
+                                        ),
+                                        const SliverToBoxAdapter(
+                                          child: SizedBox(
+                                            height: AppSpacing.sm,
+                                          ),
+                                        ),
+                                        if (state.properties.isEmpty)
+                                          const SliverToBoxAdapter(
+                                            child: _EmptyPropertiesView(),
+                                          )
+                                        else
+                                          SliverPadding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: AppSpacing.lg,
+                                            ),
+                                            sliver: SliverList(
+                                              delegate: SliverChildListDelegate(
+                                                _propertyItems(
+                                                  context,
+                                                  state.properties,
+                                                  cubit,
+                                                  state.tenants,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+
+                                        const SliverToBoxAdapter(
+                                          child: SizedBox(
+                                            height: AppSpacing.xl,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1177,9 +1210,17 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                         clipBehavior: Clip.antiAliasWithSaveLayer,
                         child: ListingImagePlaceholder(
                           seed: seed,
-                          photoUrl: property.photos.isNotEmpty
-                              ? property.photos.first
-                              : null,
+                          photoUrl: isRoom
+                              ? (rooms
+                                      .map((r) => r.propertyCoverPhoto)
+                                      .firstWhere(
+                                        (u) => u != null && u.trim().isNotEmpty,
+                                        orElse: () => null,
+                                      ) ??
+                                  property.effectiveBuildingCoverPhoto)
+                              : (property.photos.isNotEmpty
+                                  ? property.photos.first
+                                  : null),
                         ),
                       ),
                       Positioned.fill(
@@ -1287,12 +1328,12 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                             right: 10,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
+                                horizontal: 9,
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.black.withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(20),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -1380,12 +1421,12 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                         Flexible(
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 9,
-                              vertical: 5,
+                              horizontal: 10,
+                              vertical: 4.5,
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.primary.withValues(alpha: 0.10),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,

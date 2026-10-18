@@ -112,12 +112,22 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
       _step = 1;
       final id = preset.parentPropertyId;
       if (id != null && id.isNotEmpty) {
+        final existingCover = preset.effectiveBuildingCoverPhoto;
         _building = SavedBuilding(
           id: id,
           name: preset.propertyName ?? preset.title,
           type: preset.propertyType,
           address: preset.address,
           location: LatLng(preset.location.latitude, preset.location.longitude),
+          coverPhoto: existingCover != null
+              ? UploadedImage(
+                  url: existingCover,
+                  publicId: preset.propertyCoverPublicId ??
+                      (preset.photoPublicIds.isNotEmpty
+                          ? preset.photoPublicIds.first
+                          : ''),
+                )
+              : null,
         );
       }
     }
@@ -214,6 +224,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         return !_resolvingAddress &&
             _placeNameController.text.trim().isNotEmpty &&
             _placeType != null &&
+            _placeType!.trim().isNotEmpty &&
             _placeAddressController.text.trim().isNotEmpty &&
             _placePin != null;
       case 3:
@@ -244,7 +255,10 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
   }
 
   Future<void> _addNewProperty() async {
-    final created = await showNewPropertySheet(context);
+    final created = await showNewPropertySheet(
+      context,
+      repository: widget.repository,
+    );
     if (created == null || !mounted) return;
     setState(() {
       _newBuildings.add(created);
@@ -282,6 +296,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
       latitude: pin.latitude,
       longitude: pin.longitude,
       photos: _uploads.state.images,
+      propertyCoverPhoto: isRoom ? _building?.coverPhoto : null,
       depositAmount: _int(_depositController, 0),
       advanceMonths: _int(_advanceController, 1),
       allowedGender: _allowedGender,
@@ -583,13 +598,10 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         const SizedBox(height: AppSpacing.md),
         LabelledField(
           label: 'Property type',
-          child: ListingDropdown<String>(
+          child: PropertyTypeDropdown(
             value: _placeType,
-            hint: 'Select type',
-            items: [
-              for (final t in kPropertyTypes)
-                DropdownMenuItem(value: t, child: Text(t)),
-            ],
+            hint: 'Select property type',
+            options: kPropertyTypes,
             onChanged: (v) => setState(() => _placeType = v),
           ),
         ),
@@ -831,35 +843,6 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
 
   // ── Step 5 ─────────────────────────────────────────────────────────────
 
-  static const List<(String, List<String>)> _amenityGroups = [
-    (
-      'Comfort & Internet',
-      ['WiFi', 'Air conditioning', 'Electric fan', 'Furnished room'],
-    ),
-    (
-      'Bathroom & Facilities',
-      [
-        'Private bathroom',
-        'Laundry facility',
-        'Kitchen or cooking area',
-        'Refrigerator access',
-      ],
-    ),
-    (
-      'Safety & Convenience',
-      [
-        'CCTV or security camera',
-        'Parking space',
-        'Study area or desk',
-        '24-hour access',
-      ],
-    ),
-    (
-      'Bills Included',
-      ['Water included in rent', 'Electricity included in rent'],
-    ),
-  ];
-
   Widget _amenitiesStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -871,7 +854,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
             style: AppTextStyles.caption(context),
           ),
         ),
-        for (final (group, items) in _amenityGroups) ...[
+        for (final (group, items) in kAmenityGroups) ...[
           const SizedBox(height: AppSpacing.sm),
           Text(
             group,
@@ -1025,7 +1008,12 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
                   runSpacing: 6,
                   children: [
                     for (final a in amenityList)
-                      AmenityChip(label: a, selected: true, onTap: () {}),
+                      AmenityChip(
+                        label: a,
+                        selected: true,
+                        showCloseIcon: false,
+                        onTap: () {},
+                      ),
                   ],
                 ),
         ),
@@ -1043,6 +1031,8 @@ class _LockedLocationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final coverUrl = building.coverPhoto?.url;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -1052,10 +1042,36 @@ class _LockedLocationCard extends StatelessWidget {
         border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(Icons.location_pin, color: AppColors.accent, size: 20),
-          const SizedBox(width: AppSpacing.sm),
+          if (coverUrl != null && coverUrl.isNotEmpty) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                coverUrl,
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.apartment_rounded,
+                    color: AppColors.accent,
+                    size: 22,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+          ] else ...[
+            Icon(Icons.location_pin, color: AppColors.accent, size: 20),
+            const SizedBox(width: AppSpacing.sm),
+          ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1070,7 +1086,7 @@ class _LockedLocationCard extends StatelessWidget {
                 Text(
                   [
                     if (building.type != null) building.type!,
-                    'Location saved with this property',
+                    'Location & cover photo saved with this property',
                   ].join(' · '),
                   style: AppTextStyles.caption(context),
                 ),

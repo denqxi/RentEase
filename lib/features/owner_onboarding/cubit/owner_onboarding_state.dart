@@ -23,6 +23,7 @@ class OwnerOnboardingState extends Equatable {
     this.latitude,
     this.longitude,
     this.photos = const <UploadedImage>[],
+    this.propertyCoverPhoto,
     // Step 3 — house rules (Layer 1 property-side constraints).
     this.depositAmount = 0,
     this.advanceMonths = 1,
@@ -66,6 +67,9 @@ class OwnerOnboardingState extends Equatable {
   /// Uploaded listing photos (1–5), first is the cover.
   final List<UploadedImage> photos;
 
+  /// Optional building cover photo (used when creating a room in a property).
+  final UploadedImage? propertyCoverPhoto;
+
   final int depositAmount;
   final int advanceMonths;
   final String allowedGender;
@@ -107,6 +111,8 @@ class OwnerOnboardingState extends Equatable {
     double? latitude,
     double? longitude,
     List<UploadedImage>? photos,
+    UploadedImage? propertyCoverPhoto,
+    bool clearPropertyCoverPhoto = false,
     int? depositAmount,
     int? advanceMonths,
     String? allowedGender,
@@ -136,6 +142,9 @@ class OwnerOnboardingState extends Equatable {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       photos: photos ?? this.photos,
+      propertyCoverPhoto: clearPropertyCoverPhoto
+          ? null
+          : (propertyCoverPhoto ?? this.propertyCoverPhoto),
       depositAmount: depositAmount ?? this.depositAmount,
       advanceMonths: advanceMonths ?? this.advanceMonths,
       allowedGender: allowedGender ?? this.allowedGender,
@@ -165,6 +174,7 @@ class OwnerOnboardingState extends Equatable {
     latitude,
     longitude,
     photos,
+    propertyCoverPhoto,
     depositAmount,
     advanceMonths,
     allowedGender,

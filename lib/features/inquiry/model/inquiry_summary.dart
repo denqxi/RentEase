@@ -9,6 +9,7 @@ class InquirySummary extends Equatable {
     required this.inquiry,
     required this.propertyTitle,
     required this.counterpartName,
+    this.lastMessagePreview,
   });
 
   final InquiryDoc inquiry;
@@ -16,6 +17,9 @@ class InquirySummary extends Equatable {
 
   /// The owner's name on the tenant side, the tenant's on the owner side.
   final String counterpartName;
+
+  /// Latest chat message preview (if any) for inbox cards.
+  final String? lastMessagePreview;
 
   String get propertyInitials => initialsOf(propertyTitle);
   String get counterpartInitials => initialsOf(counterpartName);
@@ -35,6 +39,7 @@ class InquirySummary extends Equatable {
     inquiry.updatedAt,
     propertyTitle,
     counterpartName,
+    lastMessagePreview,
   ];
 }
 

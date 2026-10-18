@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 
-/// Inquiry phase badge â€” Phase 1 (amber) or Phase 2 (teal).
+/// Inquiry phase badge — Phase 1 or Phase 2 styled with soft theme blue.
 class PhaseBadge extends StatelessWidget {
   const PhaseBadge({required this.phase, super.key});
 
@@ -10,20 +10,20 @@ class PhaseBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPhase2 = phase == 2;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
       decoration: BoxDecoration(
-        color: isPhase2 ? AppColors.accentSoft : AppColors.warningFill,
+        color: const Color(0xFFE0F2FE),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         'Phase $phase',
-        style: TextStyle(
+        style: const TextStyle(
           fontFamily: 'DM Sans',
-          fontSize: 10,
+          fontSize: 11.5,
           fontWeight: FontWeight.w700,
-          color: isPhase2 ? AppColors.accent : AppColors.matchMedium,
+          color: AppColors.primary,
+          height: 1.15,
         ),
       ),
     );

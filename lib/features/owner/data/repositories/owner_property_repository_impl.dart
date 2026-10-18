@@ -90,4 +90,20 @@ class OwnerPropertyRepositoryImpl implements OwnerPropertyRepository {
       throw Exception(ownerPropertyErrorMessage(e.code, fields));
     }
   }
+
+  @override
+  Future<void> deleteProperty(String propertyId) async {
+    try {
+      final docRef = _firestore
+          .collection(FirestoreCollections.properties)
+          .doc(propertyId);
+      final roomsSnap = await docRef.collection('rooms').get();
+      for (final roomDoc in roomsSnap.docs) {
+        await roomDoc.reference.delete();
+      }
+      await docRef.delete();
+    } on FirebaseException catch (e) {
+      throw Exception(ownerPropertyErrorMessage(e.code, const {}));
+    }
+  }
 }

@@ -12,6 +12,7 @@ import '../../../core/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../owner_onboarding/widgets/listing_form_widgets.dart';
 import '../../registration/widgets/preference_dropdown.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -491,23 +492,37 @@ class _EditPropertyScreenState extends State<EditPropertyScreen> {
                     title: 'Amenities (${_selectedAmenities.length}/14)',
                     subtitle: 'Features available to occupants of this listing',
                   ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final amenity in AppOptions.amenities)
-                        _ChoiceChip(
-                          label: amenity,
-                          isSelected: _selectedAmenities.contains(amenity),
-                          onTap: () => setState(() {
-                            if (!_selectedAmenities.remove(amenity)) {
-                              _selectedAmenities.add(amenity);
-                            }
-                          }),
-                        ),
-                    ],
-                  ),
+                  const SizedBox(height: 8),
+                  for (final (group, items) in kAmenityGroups) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      group,
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF475569),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final amenity in items)
+                          AmenityChip(
+                            label: amenity,
+                            selected: _selectedAmenities.contains(amenity),
+                            onTap: () => setState(() {
+                              if (!_selectedAmenities.remove(amenity)) {
+                                _selectedAmenities.add(amenity);
+                              }
+                            }),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                 ],
               ),
             ),

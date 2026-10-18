@@ -48,6 +48,9 @@ class _FakeOwnerRepo implements OwnerPropertyRepository {
 
   @override
   Future<void> updateProperty(String id, Map<String, dynamic> f) async {}
+
+  @override
+  Future<void> deleteProperty(String id) async {}
 }
 
 class _FakeTenantsRepo implements FindTenantsRepository {

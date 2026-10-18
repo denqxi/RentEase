@@ -45,4 +45,7 @@ abstract class OwnerPropertyRepository {
 
   /// Partial update of one listing (plus updatedAt).
   Future<void> updateProperty(String propertyId, Map<String, dynamic> fields);
+
+  /// Removes a listing (and any rooms subcollection documents) from Firestore.
+  Future<void> deleteProperty(String propertyId);
 }

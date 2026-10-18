@@ -60,10 +60,36 @@ class InquiryListCubit extends Cubit<InquiryListState> {
         .then(
           (u) => fullNameOf(u, fallback: isOwner ? 'Tenant' : 'Property owner'),
         );
+
+    String? lastMessage;
+    if (inquiry.stage == 2) {
+      try {
+        final messages = await _repository
+            .watchMessages(inquiry.inquiryId)
+            .first
+            .timeout(const Duration(seconds: 2), onTimeout: () => const []);
+        if (messages.isNotEmpty) {
+          final sorted = [...messages]
+            ..sort(
+              (a, b) => (a.timeStamp?.millisecondsSinceEpoch ?? 0).compareTo(
+                b.timeStamp?.millisecondsSinceEpoch ?? 0,
+              ),
+            );
+          final latest = sorted.last.content.trim();
+          if (latest.isNotEmpty) {
+            lastMessage = latest;
+          }
+        }
+      } catch (_) {
+        // Ignore preview fetch errors so inbox loading is never blocked.
+      }
+    }
+
     return InquirySummary(
       inquiry: inquiry,
       propertyTitle: title,
       counterpartName: name,
+      lastMessagePreview: lastMessage,
     );
   }
 
