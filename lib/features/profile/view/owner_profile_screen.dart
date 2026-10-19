@@ -47,19 +47,9 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
   static const Color softRed = Color(0xFFF26B7A);
 
   static const String _portfolioHomeSvg = '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="68 42 258 246" fill="none">
-  <path
-    d="M89 155 C89 141 95 128 107 119 L173 69 C187 58 205 58 220 69 L286 119 C298 128 305 141 305 155 L305 225 C305 250 286 270 261 270 L133 270 C108 270 89 250 89 225 Z"
-    stroke="black"
-    stroke-width="22"
-    stroke-linecap="round"
-    stroke-linejoin="round"/>
-  <path
-    d="M156 270 V222 C156 200 174 182 197 182 C220 182 237 200 237 222 V270"
-    stroke="black"
-    stroke-width="22"
-    stroke-linecap="round"
-    stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M3.75 10.5l6.5-5.2a2.75 2.75 0 0 1 3.5 0l6.5 5.2a1.75 1.75 0 0 1 .6 1.37v6.63a2.25 2.25 0 0 1-2.25 2.25h-13A2.25 2.25 0 0 1 3.5 18.5v-6.63a1.75 1.75 0 0 1 .25-1.37z" />
+  <path d="M9.5 20.75v-5a2.5 2.5 0 0 1 5 0v5" />
 </svg>
 ''';
 
@@ -183,6 +173,86 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
           );
     } catch (e) {
       debugPrint('Error subscribing to ratings: $e');
+    }
+  }
+
+  Future<void> _confirmLogOut(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Log out?',
+          style: TextStyle(
+            fontFamily: 'DM Sans',
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+        content: const Text(
+          'Are you sure you want to log out of your account?',
+          style: TextStyle(
+            fontFamily: 'DM Sans',
+            fontSize: 13.5,
+            color: Color(0xFF475569),
+            height: 1.4,
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(false),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEF4444),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  minimumSize: const Size(100, 42),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () => Navigator.of(dialogCtx).pop(true),
+                child: const Text(
+                  'Log out',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      context.read<AuthBloc>().add(const AuthSignOutRequested());
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRouter.signIn,
+        (_) => false,
+      );
     }
   }
 
@@ -568,7 +638,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                   children: [
                     // Edit personal info
                     _buildMenuItem(
-                      icon: Icons.person_outline_rounded,
+                      svgString: AppSvgIcons.personOutline,
                       title: 'Edit personal info',
                       textColor: textColor,
                       onTap: () => EditOwnerProfileScreen.open(context),
@@ -577,7 +647,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
 
                     // My reviews
                     _buildMenuItem(
-                      icon: Icons.star_outline_rounded,
+                      svgString: AppSvgIcons.starOutline,
                       title: 'My reviews',
                       textColor: textColor,
                       trailingText: '4.8 ★',
@@ -591,7 +661,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
 
                     // Account & security
                     _buildMenuItem(
-                      icon: Icons.lock_outline_rounded,
+                      svgString: AppSvgIcons.lockOutline,
                       title: 'Account & security',
                       textColor: textColor,
                       onTap: () => AccountSecurityScreen.open(context),
@@ -610,13 +680,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                   boxShadow: cardShadow,
                 ),
                 child: InkWell(
-                  onTap: () {
-                    context.read<AuthBloc>().add(const AuthSignOutRequested());
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                      AppRouter.signIn,
-                      (_) => false,
-                    );
-                  },
+                  onTap: () => _confirmLogOut(context),
                   borderRadius: BorderRadius.circular(20),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -625,10 +689,10 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.logout_rounded,
+                          const AppSvgIcon(
+                            svgString: AppSvgIcons.logoutOutline,
                             color: softRed,
-                            size: 22,
+                            size: 21,
                           ),
                           const SizedBox(width: 14),
                           const Expanded(
@@ -642,10 +706,10 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                               ),
                             ),
                           ),
-                          const Icon(
-                            Icons.chevron_right_rounded,
+                          const AppSvgIcon(
+                            svgString: AppSvgIcons.chevronRight,
                             color: textMutedLight,
-                            size: 20,
+                            size: 16,
                           ),
                         ],
                       ),
@@ -903,12 +967,15 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
   }
 
   Widget _buildMenuItem({
-    required IconData icon,
+    IconData? icon,
+    String? svgString,
     required String title,
     required Color textColor,
+    Color? iconColor,
     String? trailingText,
     required VoidCallback onTap,
   }) {
+    final effectiveColor = iconColor ?? primaryCyan;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -916,7 +983,14 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         child: Row(
           children: [
-            Icon(icon, color: primaryCyan, size: 22),
+            if (svgString != null)
+              AppSvgIcon(
+                svgString: svgString,
+                color: effectiveColor,
+                size: 21,
+              )
+            else if (icon != null)
+              Icon(icon, color: effectiveColor, size: 21),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
@@ -941,10 +1015,10 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
               ),
               const SizedBox(width: 4),
             ],
-            const Icon(
-              Icons.chevron_right_rounded,
+            const AppSvgIcon(
+              svgString: AppSvgIcons.chevronRight,
               color: textMutedLight,
-              size: 19,
+              size: 16,
             ),
           ],
         ),
@@ -959,7 +1033,11 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
       child: Row(
         children: [
-          const Icon(Icons.dark_mode_outlined, color: primaryCyan, size: 22),
+          const AppSvgIcon(
+            svgString: AppSvgIcons.crescentMoon,
+            color: primaryCyan,
+            size: 21,
+          ),
           const SizedBox(width: 14),
           Expanded(
             child: Text(

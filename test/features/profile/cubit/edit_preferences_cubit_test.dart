@@ -147,4 +147,51 @@ void main() {
     expect(_calls, isEmpty);
     expect(cubit.state.errorMessage, isNotNull);
   });
+
+  test('saveAllPreferences writes both public and private prefs, then re-runs bilateral and TOPSIS', () async {
+    final repo = _FakeProfileRepo();
+    final cubit = await _loadedCubit(repo);
+
+    await cubit.saveAllPreferences(
+      maxBudget: 6000,
+      requiredGender: 'Female only',
+      needsWifi: true,
+      isSmoker: false,
+      hasPet: true,
+      groupSize: 2,
+      poiType: 'School',
+      poiLatLng: const GeoPoint(7.07, 125.6),
+      poiLabel: 'Ateneo de Davao',
+      maxDistanceKm: 3.5,
+      roomType: 'Solo',
+      preferredAmenities: ['WiFi', 'Air conditioning'],
+      wRent: 0.50,
+      wDistance: 0.30,
+      wAmenities: 0.20,
+    );
+
+    expect(_calls, ['update', 'updatePrefs', 'filter', 'topsis']);
+    expect(repo.lastUpdate, {
+      'maxBudget': 6000,
+      'requiredGender': 'Female only',
+      'needsWifi': true,
+      'isSmoker': false,
+      'hasPet': true,
+      'groupSize': 2,
+      'poiType': 'School',
+      'maxDistanceKm': 3.5,
+      'roomType': 'Solo',
+      'preferredAmenities': ['WiFi', 'Air conditioning'],
+    });
+    expect(repo.lastPrefsUpdate, {
+      'poiLatLng': const GeoPoint(7.07, 125.6),
+      'poiLabel': 'Ateneo de Davao',
+      'poiType': 'School',
+      'wRent': 0.50,
+      'wDistance': 0.30,
+      'wAmenities': 0.20,
+    });
+    expect(cubit.state.status, EditPreferencesStatus.saved);
+  });
 }
+

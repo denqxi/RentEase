@@ -40,7 +40,6 @@ class _OwnerInquiriesScreenState extends State<OwnerInquiriesScreen> {
   @override
   Widget build(BuildContext context) {
     final uid = currentUidOrNull(context);
-    final canPop = Navigator.of(context).canPop();
 
     return DefaultTabController(
       length: 3,
@@ -48,13 +47,28 @@ class _OwnerInquiriesScreenState extends State<OwnerInquiriesScreen> {
         backgroundColor: const Color(0xFFF8FAFC),
         body: Stack(
           children: [
-            // Soft Top-Right Wave + Gradient Background matching the reference UI
-            const Positioned(
+            // Subtle top-right gradient — matching the homescreen bg
+            Positioned(
               top: 0,
               left: 0,
               right: 0,
-              height: 230,
-              child: IgnorePointer(child: _InquiriesHeaderWaveBackground()),
+              height: 195,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: Alignment.topRight,
+                      radius: 1.05,
+                      colors: <Color>[
+                        const Color(0xFFCCF2FE).withValues(alpha: 0.70),
+                        const Color(0xFFE0F7FE).withValues(alpha: 0.35),
+                        const Color(0xFFE0F7FE).withValues(alpha: 0.0),
+                      ],
+                      stops: const <double>[0.0, 0.45, 0.88],
+                    ),
+                  ),
+                ),
+              ),
             ),
 
             SafeArea(
@@ -64,43 +78,15 @@ class _OwnerInquiriesScreenState extends State<OwnerInquiriesScreen> {
                 children: [
                   // ── Title & Subtitle Header ──────────────────────────────
                   Padding(
-                    padding: EdgeInsets.fromLTRB(
+                    padding: const EdgeInsets.fromLTRB(
                       AppSpacing.lg,
-                      canPop ? AppSpacing.sm : AppSpacing.lg,
+                      AppSpacing.lg,
                       AppSpacing.lg,
                       12,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (canPop) ...[
-                          GestureDetector(
-                            onTap: () => Navigator.of(context).pop(),
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              margin: const EdgeInsets.only(bottom: 10),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(
-                                      0xFF0F172A,
-                                    ).withValues(alpha: 0.06),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.arrow_back_ios_new_rounded,
-                                size: 16,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                          ),
-                        ],
                         const Text(
                           'Inquiries',
                           style: TextStyle(
@@ -239,77 +225,6 @@ class _OwnerInquiriesScreenState extends State<OwnerInquiriesScreen> {
       ),
     );
   }
-}
-
-class _InquiriesHeaderWaveBackground extends StatelessWidget {
-  const _InquiriesHeaderWaveBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _InquiriesWavePainter(),
-      child: const SizedBox.expand(),
-    );
-  }
-}
-
-class _InquiriesWavePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Base subtle top gradient
-    final bgRect = Offset.zero & size;
-    final bgPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topRight,
-        end: Alignment.bottomLeft,
-        colors: [
-          const Color(0xFFD8F3FE).withValues(alpha: 0.72),
-          const Color(0xFFEFF9FF).withValues(alpha: 0.45),
-          const Color(0xFFF8FAFC).withValues(alpha: 0.0),
-        ],
-        stops: const [0.0, 0.55, 1.0],
-      ).createShader(bgRect);
-    canvas.drawRect(bgRect, bgPaint);
-
-    // Decorative soft wave sweeping from top-right to middle-right
-    final wavePath = Path()
-      ..moveTo(size.width * 0.52, 0)
-      ..quadraticBezierTo(
-        size.width * 0.68,
-        size.height * 0.35,
-        size.width * 0.58,
-        size.height * 0.62,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.50,
-        size.height * 0.82,
-        size.width * 0.78,
-        size.height * 0.78,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.92,
-        size.height * 0.75,
-        size.width,
-        size.height * 0.60,
-      )
-      ..lineTo(size.width, 0)
-      ..close();
-
-    final wavePaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topRight,
-        end: Alignment.bottomLeft,
-        colors: [
-          const Color(0xFFBAE8FD).withValues(alpha: 0.55),
-          const Color(0xFFE0F4FE).withValues(alpha: 0.15),
-        ],
-      ).createShader(bgRect);
-
-    canvas.drawPath(wavePath, wavePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _OwnerInquiryTabs extends StatelessWidget {

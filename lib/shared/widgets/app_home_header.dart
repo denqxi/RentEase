@@ -227,8 +227,8 @@ class AppHomeHeader extends StatelessWidget {
                     children: <Widget>[
                       AppSvgIcon(
                         svgString: effectiveActionSvg,
-                        size: 21,
-                        color: const Color(0xFF1B1B1B),
+                        size: 20,
+                        color: const Color(0xFF334155),
                       ),
                       if (hasUnread)
                         Positioned(

@@ -70,8 +70,8 @@ class _LandlordShellView extends StatelessWidget {
     FloatingNavBarItem(
       svgString: AppSvgIcons.ownerAdd,
       label: 'Add',
-      iconSize: 28,
-      activeIconSize: 24,
+      iconSize: 23,
+      activeIconSize: 21,
     ),
     FloatingNavBarItem(
       svgString: AppSvgIcons.inquiry,

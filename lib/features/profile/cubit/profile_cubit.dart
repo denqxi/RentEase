@@ -16,11 +16,21 @@ class ProfileCubit extends Cubit<ProfileState> {
     UserRole userRole = UserRole.tenant,
     String? uid,
     InquiryRepository? repository,
-  }) : super(ProfileState(userRole: userRole)) {
+  })  : _uid = uid,
+        _repository = repository,
+        super(ProfileState(userRole: userRole)) {
     if (uid != null && repository != null) _start(uid, repository);
   }
 
+  final String? _uid;
+  final InquiryRepository? _repository;
   StreamSubscription<dynamic>? _inquiriesSub;
+
+  void refresh() {
+    if (_uid != null && _repository != null) {
+      _start(_uid, _repository);
+    }
+  }
 
   void _start(String uid, InquiryRepository repository) {
     repository

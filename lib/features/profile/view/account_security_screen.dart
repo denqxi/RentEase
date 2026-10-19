@@ -15,7 +15,9 @@ import '../../auth/presentation/screens/terms_and_conditions_screen.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
 
 class AccountSecurityScreen extends StatelessWidget {
-  const AccountSecurityScreen({super.key});
+  const AccountSecurityScreen({super.key, this.isOwner = true});
+
+  final bool isOwner;
 
   static const Color bgIceBlue = Colors.white;
   static const Color primaryCyan = Color(0xFF0094D9);
@@ -38,7 +40,7 @@ class AccountSecurityScreen extends StatelessWidget {
       ];
 
   /// Safely forwards [LandlordHomeCubit] from the calling route if available.
-  static Future<void> open(BuildContext context) {
+  static Future<void> open(BuildContext context, {bool isOwner = true}) {
     LandlordHomeCubit? cubit;
     try {
       cubit = context.read<LandlordHomeCubit>();
@@ -51,9 +53,9 @@ class AccountSecurityScreen extends StatelessWidget {
         builder: (_) => cubit != null
             ? BlocProvider<LandlordHomeCubit>.value(
                 value: cubit,
-                child: const AccountSecurityScreen(),
+                child: AccountSecurityScreen(isOwner: isOwner),
               )
-            : const AccountSecurityScreen(),
+            : AccountSecurityScreen(isOwner: isOwner),
       ),
     );
   }
@@ -78,12 +80,15 @@ class AccountSecurityScreen extends StatelessWidget {
       builder: (ctx) => BlocProvider<DeleteAccountCubit>(
         create: (_) => DeleteAccountCubit(
           uid: uid,
-          isOwner: true,
+          isOwner: isOwner,
           service: AccountDeletionService(
             repository: AccountDeletionRepositoryImpl(),
           ),
         ),
-        child: _DeleteAccountBottomSheet(listingsCount: listingsCount),
+        child: _DeleteAccountBottomSheet(
+          listingsCount: listingsCount,
+          isOwner: isOwner,
+        ),
       ),
     );
   }
@@ -665,9 +670,13 @@ class _ChangePasswordBottomSheetState
 
 // Delete Account Bottom Sheet (Matching Image 5)
 class _DeleteAccountBottomSheet extends StatefulWidget {
-  const _DeleteAccountBottomSheet({required this.listingsCount});
+  const _DeleteAccountBottomSheet({
+    required this.listingsCount,
+    this.isOwner = true,
+  });
 
   final int listingsCount;
+  final bool isOwner;
 
   @override
   State<_DeleteAccountBottomSheet> createState() =>
@@ -758,9 +767,11 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
                 const SizedBox(height: 14),
 
                 // Title
-                const Text(
-                  'Delete Landlord Account?',
-                  style: TextStyle(
+                Text(
+                  widget.isOwner
+                      ? 'Delete Landlord Account?'
+                      : 'Delete Tenant Account?',
+                  style: const TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -772,7 +783,9 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
 
                 // Subtitle
                 Text(
-                  'This permanently erases your ${widget.listingsCount} listings, verified status, and tenant communications.',
+                  widget.isOwner
+                      ? 'This permanently erases your ${widget.listingsCount} listings, verified status, and tenant communications.'
+                      : 'This permanently erases your saved properties, inquiries, and application history.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontFamily: 'DM Sans',

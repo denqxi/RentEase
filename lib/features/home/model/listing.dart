@@ -20,6 +20,13 @@ class Listing extends Equatable {
     this.isSaved = false,
     this.imageSeed = 1,
     this.photoUrl,
+    this.propertyType,
+    this.propertyName,
+    this.roomName,
+    this.photos = const [],
+    this.propertyDoc,
+    this.rating,
+    this.reviewCount,
   });
 
   final String id;
@@ -40,12 +47,38 @@ class Listing extends Equatable {
   /// to the [imageSeed] placeholder.
   final String? photoUrl;
 
+  /// Property type (e.g. Studio, Dorm, Apartment, Boarding House).
+  final String? propertyType;
+
+  /// Building or property name for room listings.
+  final String? propertyName;
+
+  /// Room or unit name (e.g. Room 101, Bed 2).
+  final String? roomName;
+
+  /// Full list of uploaded photos for carousel and photo count.
+  final List<String> photos;
+
+  /// Original Firestore PropertyDoc if loaded in-memory.
+  final PropertyDoc? propertyDoc;
+
+  /// Average user review rating (0.0 - 5.0).
+  final double? rating;
+
+  /// Total count of reviews received.
+  final int? reviewCount;
+
   /// Indicator dot color driven by [matchPercent].
   Color get matchDotColor =>
       matchPercent >= 80 ? AppColors.matchHigh : AppColors.matchMedium;
 
   /// Returns a copy with [isSaved] / [matchPercent] overridden.
-  Listing copyWith({bool? isSaved, int? matchPercent}) {
+  Listing copyWith({
+    bool? isSaved,
+    int? matchPercent,
+    String? propertyName,
+    String? roomName,
+  }) {
     return Listing(
       id: id,
       title: title,
@@ -59,6 +92,13 @@ class Listing extends Equatable {
       isSaved: isSaved ?? this.isSaved,
       imageSeed: imageSeed,
       photoUrl: photoUrl,
+      propertyType: propertyType,
+      propertyName: propertyName ?? this.propertyName,
+      roomName: roomName ?? this.roomName,
+      photos: photos,
+      propertyDoc: propertyDoc,
+      rating: rating,
+      reviewCount: reviewCount,
     );
   }
 
@@ -84,6 +124,13 @@ class Listing extends Equatable {
       matchPercent: (((match.tenantCi ?? 0) * 100).round()),
       imageSeed: imageSeed,
       photoUrl: property.photos.isNotEmpty ? property.photos.first : null,
+      propertyType: property.propertyType,
+      propertyName: property.propertyName,
+      roomName: property.roomName,
+      photos: List<String>.from(property.photos),
+      propertyDoc: property,
+      rating: property.avgRating?.toDouble(),
+      reviewCount: property.totalRatings?.toInt(),
     );
   }
 
@@ -105,6 +152,13 @@ class Listing extends Equatable {
           .toInt(),
       imageSeed: imageSeed,
       photoUrl: property.photos.isNotEmpty ? property.photos.first : null,
+      propertyType: property.propertyType,
+      propertyName: property.propertyName,
+      roomName: property.roomName,
+      photos: List<String>.from(property.photos),
+      propertyDoc: property,
+      rating: property.avgRating?.toDouble(),
+      reviewCount: property.totalRatings?.toInt(),
     );
   }
 
@@ -142,5 +196,12 @@ class Listing extends Equatable {
     isSaved,
     imageSeed,
     photoUrl,
+    propertyType,
+    propertyName,
+    roomName,
+    photos,
+    propertyDoc,
+    rating,
+    reviewCount,
   ];
 }

@@ -15,7 +15,27 @@ import 'topsis_weight_screen.dart';
 /// Captures the tenant's primary commute destination (school, workplace, or other)
 /// and their maximum comfortable travel radius in a single screen.
 class PoiSetupScreen extends StatefulWidget {
-  const PoiSetupScreen({super.key});
+  const PoiSetupScreen({
+    super.key,
+    this.isPicker = false,
+    this.initialPoiType,
+    this.initialLatLng,
+    this.initialAddress,
+    this.initialMaxKm,
+    this.onLocationConfirmed,
+  });
+
+  final bool isPicker;
+  final String? initialPoiType;
+  final LatLng? initialLatLng;
+  final String? initialAddress;
+  final double? initialMaxKm;
+  final void Function(
+    String poiType,
+    LatLng pos,
+    String address,
+    double maxKm,
+  )? onLocationConfirmed;
 
   @override
   State<PoiSetupScreen> createState() => _PoiSetupScreenState();
@@ -47,28 +67,47 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
   @override
   void initState() {
     super.initState();
-    final cubitState = context.read<TenantOnboardingCubit>().state;
-
-    // Restore previously saved state if available, or fall back to defaults
-    if (cubitState.poiType.isNotEmpty) {
-      _poiType = cubitState.poiType;
-    }
-    if (cubitState.poiLatLng != null) {
-      _markerPos = LatLng(
-        cubitState.poiLatLng!.latitude,
-        cubitState.poiLatLng!.longitude,
-      );
-      _resolvedAddress = cubitState.poiLabel ?? AppOptions.defaultMapLabel;
+    if (widget.isPicker) {
+      if (widget.initialPoiType != null && widget.initialPoiType!.isNotEmpty) {
+        _poiType = widget.initialPoiType!;
+      }
+      if (widget.initialLatLng != null) {
+        _markerPos = widget.initialLatLng;
+        _resolvedAddress = widget.initialAddress ?? AppOptions.defaultMapLabel;
+      } else {
+        _markerPos = const LatLng(
+          AppOptions.defaultMapLat,
+          AppOptions.defaultMapLng,
+        );
+        _resolvedAddress = widget.initialAddress ?? AppOptions.defaultMapLabel;
+      }
+      if (widget.initialMaxKm != null && widget.initialMaxKm! > 0) {
+        _maxKm = widget.initialMaxKm!;
+      }
     } else {
-      _markerPos = const LatLng(
-        AppOptions.defaultMapLat,
-        AppOptions.defaultMapLng,
-      );
-      _resolvedAddress = AppOptions.defaultMapLabel;
-    }
+      final cubitState = context.read<TenantOnboardingCubit>().state;
 
-    if (cubitState.maxDistanceKm > 0) {
-      _maxKm = cubitState.maxDistanceKm;
+      // Restore previously saved state if available, or fall back to defaults
+      if (cubitState.poiType.isNotEmpty) {
+        _poiType = cubitState.poiType;
+      }
+      if (cubitState.poiLatLng != null) {
+        _markerPos = LatLng(
+          cubitState.poiLatLng!.latitude,
+          cubitState.poiLatLng!.longitude,
+        );
+        _resolvedAddress = cubitState.poiLabel ?? AppOptions.defaultMapLabel;
+      } else {
+        _markerPos = const LatLng(
+          AppOptions.defaultMapLat,
+          AppOptions.defaultMapLng,
+        );
+        _resolvedAddress = AppOptions.defaultMapLabel;
+      }
+
+      if (cubitState.maxDistanceKm > 0) {
+        _maxKm = cubitState.maxDistanceKm;
+      }
     }
 
     // Dismiss map hint overlay automatically after 15 seconds
@@ -155,6 +194,12 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
         );
     final label = _resolvedAddress ?? '$_poiType location';
 
+    if (widget.isPicker) {
+      widget.onLocationConfirmed?.call(_poiType, pos, label, _maxKm);
+      Navigator.of(context).pop();
+      return;
+    }
+
     // Single unified submit to Cubit
     context.read<TenantOnboardingCubit>().savePoi(
       poiType: _poiType,
@@ -231,30 +276,43 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: 3 / 4,
-                        minHeight: 5,
-                        backgroundColor: context.appColors.indicatorInactive
-                            .withValues(alpha: 0.5),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          _primaryTeal,
+                  if (widget.isPicker) ...[
+                    const Text(
+                      'Select Destination',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: _textPrimary,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ] else ...[
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: 3 / 4,
+                          minHeight: 5,
+                          backgroundColor: context.appColors.indicatorInactive
+                              .withValues(alpha: 0.5),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            _primaryTeal,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 14),
-                  const Text(
-                    '3 / 4',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: _textSecondary,
+                    const SizedBox(width: 14),
+                    const Text(
+                      '3 / 4',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _textSecondary,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
               const SizedBox(height: 16),
@@ -777,9 +835,9 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                       ),
                     ),
                   ),
-                  child: const Text(
-                    'Save and Continue',
-                    style: TextStyle(
+                  child: Text(
+                    widget.isPicker ? 'Confirm Destination' : 'Save and Continue',
+                    style: const TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 16,
                       fontWeight: FontWeight.w700,

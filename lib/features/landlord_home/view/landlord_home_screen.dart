@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -228,7 +230,7 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
       backgroundColor: context.appColors.surface,
       body: Stack(
         children: <Widget>[
-          // Subtle top-right gradient — same palette as Matches screen, tight spread
+          // Subtle top-right gradient — spread softly across the header & upper content
           Positioned(
             top: 0,
             left: 0,
@@ -241,11 +243,11 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
                     center: Alignment.topRight,
                     radius: 1.05,
                     colors: <Color>[
-                      const Color(0xFFCCF2FE).withValues(alpha: 0.72),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.42),
-                      const Color(0xFFF8FAFC).withValues(alpha: 0.0),
+                      const Color(0xFFCCF2FE).withValues(alpha: 0.70),
+                      const Color(0xFFE0F7FE).withValues(alpha: 0.35),
+                      const Color(0xFFE0F7FE).withValues(alpha: 0.0),
                     ],
-                    stops: const <double>[0.0, 0.42, 0.92],
+                    stops: const <double>[0.0, 0.45, 0.88],
                   ),
                 ),
               ),
@@ -1306,39 +1308,50 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                           ),
                         ),
 
-                        // Bottom-right: photo count
+                        // Bottom-right: photo count (transparent glass badge)
                         if (photoCount > 0)
                           Positioned(
                             bottom: 10,
                             right: 10,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.photo_outlined,
-                                    size: 12,
-                                    color: Colors.white,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 3,
                                   ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '$photoCount',
-                                    style: const TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.28),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.35),
+                                      width: 0.6,
                                     ),
                                   ),
-                                ],
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.photo_outlined,
+                                        size: 11,
+                                        color: Colors.white,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '$photoCount',
+                                        style: const TextStyle(
+                                          fontFamily: 'DM Sans',
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
+                                          letterSpacing: -0.1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),

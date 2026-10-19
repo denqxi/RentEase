@@ -12,7 +12,9 @@ import 'inquiry_thread_screen.dart';
 
 /// Tenant inbox — the tenant's own inquiries, live from Firestore.
 class TenantInquiriesScreen extends StatelessWidget {
-  const TenantInquiriesScreen({super.key});
+  const TenantInquiriesScreen({this.showBackButton = true, super.key});
+
+  final bool showBackButton;
 
   @override
   Widget build(BuildContext context) {
@@ -28,13 +30,15 @@ class TenantInquiriesScreen extends StatelessWidget {
         isOwner: false,
         repository: InquiryRepositoryImpl(),
       ),
-      child: const _TenantInquiriesView(),
+      child: _TenantInquiriesView(showBackButton: showBackButton),
     );
   }
 }
 
 class _TenantInquiriesView extends StatefulWidget {
-  const _TenantInquiriesView();
+  const _TenantInquiriesView({this.showBackButton = true});
+
+  final bool showBackButton;
 
   @override
   State<_TenantInquiriesView> createState() => _TenantInquiriesViewState();
@@ -50,10 +54,35 @@ class _TenantInquiriesViewState extends State<_TenantInquiriesView> {
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+      body: Stack(
+        children: <Widget>[
+          // Subtle top-left gradient
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 195,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.topLeft,
+                    radius: 1.05,
+                    colors: <Color>[
+                      const Color(0xFFCCF2FE).withValues(alpha: 0.70),
+                      const Color(0xFFE0F7FE).withValues(alpha: 0.35),
+                      const Color(0xFFE0F7FE).withValues(alpha: 0.0),
+                    ],
+                    stops: const <double>[0.0, 0.45, 0.88],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
@@ -64,7 +93,7 @@ class _TenantInquiriesViewState extends State<_TenantInquiriesView> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-                  if (Navigator.of(context).canPop()) ...[
+                  if (widget.showBackButton && Navigator.of(context).canPop()) ...[
                     GestureDetector(
                       onTap: () => Navigator.of(context).pop(),
                       child: Container(
@@ -83,23 +112,40 @@ class _TenantInquiriesViewState extends State<_TenantInquiriesView> {
                       ),
                     ),
                   ],
-                  Text(
-                    'Inquiries',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: context.appColors.textPrimary,
-                      letterSpacing: -0.4,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Inquiries',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: context.appColors.textPrimary,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Track and manage your property conversations',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: context.appColors.textSecondary,
+                            height: 1.15,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const Spacer(),
                   if (activeCount > 0)
                     Container(
                       width: 22,
                       height: 22,
                       decoration: const BoxDecoration(
-                        color: AppColors.primary,
+                        color: Color(0xFF00A8F0),
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
@@ -109,7 +155,7 @@ class _TenantInquiriesViewState extends State<_TenantInquiriesView> {
                           fontFamily: 'DM Sans',
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.onInk,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -140,7 +186,9 @@ class _TenantInquiriesViewState extends State<_TenantInquiriesView> {
           ],
         ),
       ),
-    );
+    ],
+  ),
+);
   }
 }
 
@@ -213,7 +261,7 @@ class _InquiryList extends StatelessWidget {
   }
 }
 
-// â”€â”€ Segmented control â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Segmented control ────────────────────────────────────────────────────────
 
 class _SegmentedControl extends StatelessWidget {
   const _SegmentedControl({
@@ -227,12 +275,12 @@ class _SegmentedControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 40,
+      height: 44,
       decoration: BoxDecoration(
-        color: context.appColors.fieldFill,
-        borderRadius: BorderRadius.circular(20),
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(22),
       ),
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(4),
       child: Row(
         children: <Widget>[
           _SegTab(
@@ -270,12 +318,12 @@ class _SegTab extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(
-            color: isSelected ? context.appColors.surface : Colors.transparent,
+            color: isSelected ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
             boxShadow: isSelected
                 ? <BoxShadow>[
                     BoxShadow(
-                      color: AppColors.scrim.withValues(alpha: 0.08),
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.06),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -287,12 +335,12 @@ class _SegTab extends StatelessWidget {
             label,
             style: TextStyle(
               fontFamily: 'DM Sans',
-              fontSize: 13,
+              fontSize: 13.5,
               fontWeight:
                   isSelected ? FontWeight.w700 : FontWeight.w500,
               color: isSelected
-                  ? context.appColors.textPrimary
-                  : context.appColors.textSecondary,
+                  ? const Color(0xFF0F172A)
+                  : const Color(0xFF64748B),
             ),
           ),
         ),
@@ -301,7 +349,7 @@ class _SegTab extends StatelessWidget {
   }
 }
 
-// â”€â”€ Shared inquiry card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Shared inquiry card ──────────────────────────────────────────────────────
 
 class _InquiryCard extends StatelessWidget {
   const _InquiryCard({
@@ -334,30 +382,36 @@ class _InquiryCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       decoration: BoxDecoration(
-        color: context.appColors.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: <BoxShadow>[
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 0.8,
+        ),
+        boxShadow: [
           BoxShadow(
-            color: AppColors.scrim.withValues(alpha: 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.035),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          // Avatar
+          // Initials Avatar
           Container(
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: isResolved ? context.appColors.fieldFill : AppColors.accentSoft,
+              color: isResolved
+                  ? const Color(0xFFEDF2F7)
+                  : const Color(0xFFE0F2FE),
               shape: BoxShape.circle,
             ),
-            alignment: Alignment.center,
             child: Text(
               propertyInitials,
               style: TextStyle(
@@ -365,104 +419,117 @@ class _InquiryCard extends StatelessWidget {
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: isResolved
-                    ? context.appColors.textSecondary
-                    : AppColors.accent,
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF00A8F0),
               ),
             ),
           ),
-          SizedBox(width: AppSpacing.md),
+          const SizedBox(width: 12),
           // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 Text(
                   propertyName,
-                  style: TextStyle(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
                     fontFamily: 'DM Sans',
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: context.appColors.textPrimary,
+                    color: Color(0xFF0F172A),
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   ownerName,
-                  style: TextStyle(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
                     fontFamily: 'DM Sans',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: context.appColors.textSecondary,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF64748B),
                   ),
                 ),
-                SizedBox(height: 3),
+                const SizedBox(height: 4),
                 if (isResolved)
                   Text(
                     resolvedStatus == 'Booked'
                         ? 'Tap to rate your stay'
                         : 'Completed',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: context.appColors.hint,
+                      color: Color(0xFF94A3B8),
                     ),
+                  )
+                else if (isInvitation)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const <Widget>[
+                      Icon(
+                        Icons.notifications_rounded,
+                        size: 15,
+                        color: Color(0xFF00A8F0),
+                      ),
+                      SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          'Property available',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF00A8F0),
+                          ),
+                        ),
+                      ),
+                    ],
                   )
                 else
                   Text(
-                    isPhase1
-                        ? (isInvitation
-                              ? 'Invitation - respond'
-                              : 'Awaiting response')
-                        : 'Chat open',
+                    isPhase1 ? 'Awaiting response' : 'Chat open',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: isPhase1
                           ? AppColors.matchMedium
-                          : AppColors.accent,
+                          : const Color(0xFF00A8F0),
                     ),
                   ),
               ],
             ),
           ),
+          const SizedBox(width: 10),
           // Trailing
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              if (isResolved)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: context.appColors.fieldFill,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    resolvedStatus!,
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: context.appColors.hint,
-                    ),
-                  ),
-                ),
-              if (date.isNotEmpty) ...<Widget>[
-                SizedBox(height: 4),
+              if (date.isNotEmpty)
                 Text(
                   date,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: 'DM Sans',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                    color: context.appColors.hint,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF94A3B8),
                   ),
                 ),
-              ],
+              const SizedBox(height: 8),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: Color(0xFF94A3B8),
+              ),
             ],
           ),
         ],

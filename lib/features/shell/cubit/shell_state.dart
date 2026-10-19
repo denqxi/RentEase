@@ -4,17 +4,17 @@ part of 'shell_cubit.dart';
 /// 0: home
 /// 1: search / matches
 /// 2: saved / center action
-/// 3: alerts
+/// 3: inquiries
 /// 4: profile
 enum ShellTab {
   home,
   search,
   saved,
-  alerts,
+  inquiries,
   profile;
 
   /// Backwards-compatible aliases.
-  static const ShellTab inquiries = saved;
+  static const ShellTab alerts = inquiries;
   static const ShellTab extra = profile;
 }
 

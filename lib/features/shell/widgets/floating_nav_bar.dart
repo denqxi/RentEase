@@ -39,22 +39,24 @@ class FloatingNavBar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onTap;
 
-  static const double _outerD  = 70.0;
-  static const double _innerD  = 54.0;
-  static const double _barH    = 52.0;
-  static const double _totalH  = 86.0;
-  static const double _barTopPx = _totalH - _barH; // 34
-  static const double _inactiveY = 0.40;
+  static const double _outerD  = 62.0;
+  static const double _innerD  = 48.0;
+  static const double _barH    = 46.0;
+  static const double _totalH  = 70.0;
+  static const double _barTopPx = _totalH - _barH; // 24
+  static const double _inactiveY = 0.34;
 
   @override
   Widget build(BuildContext context) {
-    final double bottomInset = MediaQuery.of(context).padding.bottom;
+    final double rawBottomInset = MediaQuery.of(context).padding.bottom;
+    final double bottomInset = rawBottomInset > 0 ? rawBottomInset : 4.0;
 
     return SizedBox(
       height: _totalH + bottomInset,
       child: Stack(
+        clipBehavior: Clip.none,
         children: <Widget>[
-          // White bar — extends all the way down through the bottom
+          // Background bar — extends all the way down through the bottom
           // safe-area inset so no page content shows through beneath it.
           Positioned(
             left: 0,
@@ -74,21 +76,26 @@ class FloatingNavBar extends StatelessWidget {
               ),
             ),
           ),
-          // Nav items — kept above the unsafe zone
+          // Nav items — responsive width centering for wider displays (tablets/landscape)
           Positioned(
             left: 0,
             right: 0,
             top: 0,
             bottom: bottomInset,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: List.generate(
-                items.length,
-                (i) => Expanded(
-                  child: _NavItem(
-                    data: items[i],
-                    selected: i == selectedIndex,
-                    onTap: () => onTap(i),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: List.generate(
+                    items.length,
+                    (i) => Expanded(
+                      child: _NavItem(
+                        data: items[i],
+                        selected: i == selectedIndex,
+                        onTap: () => onTap(i),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -167,7 +174,7 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: <Widget>[
-                        _buildIcon(color: const Color(0xFF1B1B1B), active: false),
+                        _buildIcon(color: const Color(0xFF334155), active: false),
                         if (widget.data.badgeCount > 0)
                           Positioned(
                             right: -2,
@@ -255,14 +262,20 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   _buildIcon(color: AppColors.onInk, active: true),
-                  const SizedBox(height: 2),
-                  Text(
-                    widget.data.label,
-                    style: const TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.onInk,
+                  const SizedBox(height: 1.5),
+                  MediaQuery.withClampedTextScaling(
+                    maxScaleFactor: 1.15,
+                    child: Text(
+                      widget.data.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onInk,
+                        height: 1.1,
+                      ),
                     ),
                   ),
                 ],
@@ -275,19 +288,21 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
   }
 
   Widget _buildIcon({required Color color, required bool active}) {
-    final double defaultSize = active ? 20.0 : 24.0;
+    final double defaultSize = active ? 18.0 : 20.0;
     final double size = active
         ? (widget.data.activeIconSize ??
             (widget.data.iconSize != null
-                ? widget.data.iconSize! * (20.0 / 24.0)
+                ? widget.data.iconSize!
                 : defaultSize))
         : (widget.data.iconSize ?? defaultSize);
+    final double strokeWidth = active ? 1.75 : 1.35;
 
     if (widget.data.svgString != null) {
       return AppSvgIcon(
         svgString: widget.data.svgString!,
         size: size,
         color: color,
+        strokeWidth: strokeWidth,
         semanticLabel: widget.data.label,
       );
     }

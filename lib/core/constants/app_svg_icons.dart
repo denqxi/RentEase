@@ -1,51 +1,59 @@
 /// Outline SVG icons used across the app navigation and UI.
 abstract final class AppSvgIcons {
-  /// Home / dashboard icon (24x24 viewBox outline, 1.75 stroke).
+  /// Home / dashboard icon (24x24 viewBox outline, 1.35 stroke).
   static const String home = '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
   <path d="M19 8.71l-5.333 -4.148a2.666 2.666 0 0 0 -3.274 0l-5.334 4.148a2.665 2.665 0 0 0 -1.029 2.105v7.2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-7.2c0 -.823 -.38 -1.6 -1.03 -2.105" />
   <path d="M16 15c-2.21 1.333 -5.792 1.333 -8 0" />
 </svg>''';
 
-  /// Search / magnifying glass icon (24x24 viewBox outline, 1.75 stroke).
+  /// Building / house icon for map pins and properties near button (Tabler-style house).
+  static const String mapBuildingHouse = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M5 12l-2 0l9 -9l9 9l-2 0" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>''';
+
+  /// Search / magnifying glass icon (24x24 viewBox outline, 1.35 stroke).
   static const String search = '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
   <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
   <path d="M21 21l-6 -6" />
 </svg>''';
 
-  /// Inquiry / chat message bubble icon (24x24 viewBox outline, 1.75 stroke).
+  /// Inquiry / chat message bubble icon (24x24 viewBox outline, 1.35 stroke).
   static const String inquiry = '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
   <path d="M8 9h8" />
   <path d="M8 13h6" />
   <path d="M18 3a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-4.724l-5.276 3v-3h-2a4 4 0 0 1 -4 -4v-8a4 4 0 0 1 4 -4z" />
 </svg>''';
 
-  /// Save / heart outline icon (24x24 viewBox outline, 1.75 stroke).
+  /// Save / heart outline icon (24x24 viewBox outline, 1.35 stroke).
   static const String save = '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
   <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
 </svg>''';
 
-  /// Owner add / create property plus-in-circle icon (24x24 viewBox outline, 1.5 stroke).
+  /// Owner add / create property plus-in-circle icon (24x24 viewBox outline, 1.35 stroke).
   static const String ownerAdd = '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
   <circle cx="12" cy="12" r="10" />
   <path d="M12 8v8" />
   <path d="M8 12h8" />
 </svg>''';
 
-  /// Notification / bell outline icon (24x24 viewBox outline, 1.75 stroke).
+  /// Notification / bell outline icon (24x24 viewBox outline, 1.35 stroke).
   static const String notification = '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" />
+  <path d="M9 17v1a3 3 0 0 0 6 0v-1" />
 </svg>''';
 
-  /// Profile / user outline icon (24x24 viewBox outline, 1.75 stroke).
+  /// Profile / user outline icon (24x24 viewBox outline, 1.35 stroke).
   static const String profile = '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
   <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
   <circle cx="12" cy="7" r="4" />
 </svg>''';
@@ -100,4 +108,154 @@ abstract final class AppSvgIcons {
   <path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1z" />
   <path d="M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1z" />
 </svg>''';
+
+  /// Modern iOS-style person / profile outline icon with curved contours (1.35 stroke).
+  static const String personOutline = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="7.25" r="3.75" />
+  <path d="M4.75 20c0-3.6 3.25-6.5 7.25-6.5s7.25 2.9 7.25 6.5" />
+</svg>''';
+
+  /// Modern iOS-style star outline icon with rounded curved vertices (1.35 stroke).
+  static const String starOutline = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 2.75l2.76 5.59 6.17.9-4.46 4.35 1.05 6.14L12 16.84l-5.52 2.9 1.05-6.15-4.46-4.34 6.17-.9L12 2.75z" />
+</svg>''';
+
+  /// Modern iOS-style sliders / preferences icon with circular nodes and rounded tracks (1.35 stroke).
+  static const String preferencesSliders = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M3.5 6h7.5m3.5 0h6" />
+  <circle cx="13" cy="6" r="2" />
+  <path d="M3.5 12h3m3.5 0h10.5" />
+  <circle cx="8" cy="12" r="2" />
+  <path d="M3.5 18h11m3.5 0h2.5" />
+  <circle cx="16" cy="18" r="2" />
+</svg>''';
+
+  /// Modern iOS-style leaderboard / ranking podium bars with rounded pill caps (1.35 stroke).
+  static const String rankingBars = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="3.75" y="13" width="4.5" height="7.5" rx="2" />
+  <rect x="9.75" y="4.5" width="4.5" height="16" rx="2" />
+  <rect x="15.75" y="9" width="4.5" height="11.5" rx="2" />
+</svg>''';
+
+  /// Modern iOS-style crescent moon outline icon with smooth curves (1.35 stroke).
+  static const String crescentMoon = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M20.2 14.7A8.25 8.25 0 0 1 9.3 3.8a8.25 8.25 0 1 0 10.9 10.9z" />
+</svg>''';
+
+  /// Modern iOS-style padlock icon with rounded body, curved shackle (1.35 stroke).
+  static const String lockOutline = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="4.5" y="10" width="15" height="10.5" rx="3.5" ry="3.5" />
+  <path d="M8 10V6.5a4 4 0 0 1 8 0V10" />
+  <circle cx="12" cy="15.25" r="1.1" fill="currentColor" stroke="none" />
+</svg>''';
+
+  /// Modern iOS-style logout / exit door icon with rounded curves (1.35 stroke).
+  static const String logoutOutline = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M15 3.75h3a2.5 2.5 0 0 1 2.5 2.5v11.5a2.5 2.5 0 0 1-2.5 2.5h-3" />
+  <path d="M10.5 16.5l4.5-4.5-4.5-4.5" />
+  <path d="M15 12H3.5" />
+</svg>''';
+
+  /// Modern iOS-style subtle chevron right with rounded caps (1.35 stroke).
+  static const String chevronRight = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M9.5 17.5l5-5-5-5" />
+</svg>''';
+
+  /// Owner property type building icon (24x24 viewBox outline, 1.35 stroke).
+  static const String propertyType = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M3 21l18 0" />
+  <path d="M5 21v-14l8 -4v18" />
+  <path d="M19 21v-10l-6 -4" />
+  <path d="M9 9l0 .01" />
+  <path d="M9 12l0 .01" />
+  <path d="M9 15l0 .01" />
+  <path d="M9 18l0 .01" />
+</svg>''';
+
+  /// Rent and Capacity icon (24x24 viewBox outline, 1.40 stroke).
+  static const String rentAndCapacity = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.40" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12" />
+  <path d="M20 12v4h-4a2 2 0 0 1 0 -4h4" />
+</svg>''';
+
+  /// House Rules icon (24x24 viewBox outline, 1.40 stroke).
+  static const String houseRules = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.40" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+  <path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" />
+  <path d="M9 12l.01 0" />
+  <path d="M13 12l2 0" />
+  <path d="M9 16l.01 0" />
+  <path d="M13 16l2 0" />
+</svg>''';
+
+  /// Amenities icon (24x24 viewBox outline, 1.40 stroke).
+  static const String amenities = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.40" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+  <path d="M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+  <path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+  <path d="M14 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+</svg>''';
+
+  /// Update preferences / equalizer sliders icon (24x24 viewBox outline, 1.25 stroke).
+  static const String updatePreferences = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path d="M4 6l8 0" />
+  <path d="M16 6l4 0" />
+  <path d="M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path d="M4 12l2 0" />
+  <path d="M10 12l10 0" />
+  <path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path d="M4 18l11 0" />
+  <path d="M19 18l1 0" />
+</svg>''';
+
+  /// Explore / compass icon (24x24 viewBox outline, 1.25 stroke).
+  static const String exploreListings = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M8 16l2 -6l6 -2l-2 6l-6 2" />
+  <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+  <path d="M12 3l0 2" />
+  <path d="M12 19l0 2" />
+  <path d="M3 12l2 0" />
+  <path d="M19 12l2 0" />
+</svg>''';
+
+  /// Location pin icon (24x24 viewBox outline, 1.40 stroke).
+  static const String location = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.40" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 21c-4.5 -4.5 -8 -8.5 -8 -12.5a8 8 0 1 1 16 0c0 4 -3.5 8 -8 12.5z" />
+  <circle cx="12" cy="8.5" r="3" />
+</svg>''';
+
+  /// Map with pin icon (24x24 viewBox outline, 2.0 stroke).
+  static const String mapPinned = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 18.5l-3 -1.5l-6 3v-13l6 -3l6 3l6 -3v7.5" />
+  <path d="M9 4v13" />
+  <path d="M15 7v5.5" />
+  <path d="M21.121 20.121a3 3 0 1 0 -4.242 0c.418 .419 1.125 1.045 2.121 1.879c1.051 -.89 1.759 -1.516 2.121 -1.879z" />
+  <path d="M19 18v.01" />
+</svg>''';
+
+  /// Navigation route to destination pin icon (24x24 viewBox outline, 2.1 stroke).
+  static const String routeToDestination = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 18l-2 -4l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5l-2.901 8.034" />
+  <path d="M21.121 20.121a3 3 0 1 0 -4.242 0c.418 .419 1.125 1.045 2.121 1.879c1.051 -.89 1.759 -1.516 2.121 -1.879z" />
+  <path d="M19 18v.01" />
+</svg>''';
 }
+

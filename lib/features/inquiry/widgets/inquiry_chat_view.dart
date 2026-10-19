@@ -8,6 +8,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../landlord_home/view/tenant_detail_screen.dart';
+import '../../landlord_home/view/owner_detail_screen.dart';
 import '../../owner/model/compatible_tenant.dart';
 import '../../resolution/view/rating_screen.dart';
 import '../cubit/inquiry_thread_cubit.dart';
@@ -212,7 +213,87 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                 ),
               ),
               const SizedBox(height: 8),
-              if (property != null) ...[
+              if (widget.isOwner) ...[
+                if (property != null) ...[
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F2FE),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.location_on_rounded,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                    title: const Text(
+                      'Share property address',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      property.address,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      _send(
+                        'Location for ${property.title}: ${property.address}',
+                      );
+                    },
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F2FE),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.payments_outlined,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                    title: const Text(
+                      'Share payment terms',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '₱${property.monthlyRent}/mo · Deposit ₱${property.depositAmount}',
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      _send(
+                        'Rent is ₱${property.monthlyRent}/mo with ₱${property.depositAmount} deposit and ${property.advanceMonths} month(s) advance.',
+                      );
+                    },
+                  ),
+                ],
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Container(
@@ -223,24 +304,22 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
-                      Icons.location_on_rounded,
+                      Icons.event_available_rounded,
                       color: AppColors.primary,
                       size: 20,
                     ),
                   ),
                   title: const Text(
-                    'Share property address',
+                    'Request viewing schedule',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  subtitle: Text(
-                    property.address,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                  subtitle: const Text(
+                    'Ask for preferred date and time to visit',
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
                       color: Color(0xFF64748B),
@@ -249,10 +328,11 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   onTap: () {
                     Navigator.of(ctx).pop();
                     _send(
-                      'Location for ${property.title}: ${property.address}',
+                      'Would you like to schedule a viewing? Let me know what day and time works best for you.',
                     );
                   },
                 ),
+              ] else ...[
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Container(
@@ -263,22 +343,22 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
-                      Icons.payments_outlined,
+                      Icons.event_available_rounded,
                       color: AppColors.primary,
                       size: 20,
                     ),
                   ),
                   title: const Text(
-                    'Share payment terms',
+                    'Request viewing schedule',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  subtitle: Text(
-                    '₱${property.monthlyRent}/mo · Deposit ₱${property.depositAmount}',
-                    style: const TextStyle(
+                  subtitle: const Text(
+                    'Ask the owner for a property visit',
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
                       color: Color(0xFF64748B),
@@ -287,49 +367,125 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   onTap: () {
                     Navigator.of(ctx).pop();
                     _send(
-                      'Rent is ₱${property.monthlyRent}/mo with ₱${property.depositAmount} deposit and ${property.advanceMonths} month(s) advance.',
+                      'Hello! I would like to schedule a viewing for ${property?.title ?? "the property"}. When would be a convenient time to visit?',
+                    );
+                  },
+                ),
+                if (property != null)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F2FE),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.directions_outlined,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                    title: const Text(
+                      'Ask for directions & landmarks',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Inquire about nearest landmarks or commute',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      _send(
+                        'Could you share the nearest landmarks or directions to ${property.title}?',
+                      );
+                    },
+                  ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0F2FE),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.assignment_outlined,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                  title: const Text(
+                    'Ask about move-in requirements',
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Inquire about required IDs or deposit guidelines',
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _send(
+                      'What are the requirements and initial payment needed before move-in?',
                     );
                   },
                 ),
               ],
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE0F2FE),
-                    borderRadius: BorderRadius.circular(12),
+              if (phone != null && phone.trim().isNotEmpty)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0F2FE),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.phone_outlined,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.event_available_rounded,
-                    color: AppColors.primary,
-                    size: 20,
+                  title: const Text(
+                    'Share contact number',
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
+                  subtitle: Text(
+                    phone,
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _send('You can also reach me at $phone.');
+                  },
                 ),
-                title: const Text(
-                  'Request viewing schedule',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: const Text(
-                  'Ask for preferred date and time to visit',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 12,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _send(
-                    'Would you like to schedule a viewing? Let me know what day and time works best for you.',
-                  );
-                },
-              ),
             ],
           ),
         ),
@@ -436,33 +592,51 @@ class _InquiryChatViewState extends State<InquiryChatView> {
     );
   }
 
-  void _openTenantProfile(InquiryThreadState state) {
-    if (!widget.isOwner) return;
-    final tenant = state.tenant;
-    final profile = state.tenantProfile;
-    final tenantId = tenant?.userId ?? state.inquiry?.tenantId ?? '';
-    final name = fullNameOf(
-      tenant,
-      fallback: widget.counterpartName,
-      loaded: !state.isLoading,
-    );
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => TenantDetailScreen(
-          tenant: CompatibleTenant(
-            matchId: state.inquiry?.inquiryId ?? '',
-            tenantId: tenantId,
-            name: name,
-            gender: tenant?.gender ?? '',
-            maxBudget: profile?.maxBudget ?? 0,
-            bScore: 1,
-            occupation: profile?.occupation,
-            school: profile?.school,
+  void _openCounterpartProfile(InquiryThreadState state) {
+    if (widget.isOwner) {
+      final tenant = state.tenant;
+      final profile = state.tenantProfile;
+      final tenantId = tenant?.userId ?? state.inquiry?.tenantId ?? '';
+      final name = fullNameOf(
+        tenant,
+        fallback: widget.counterpartName,
+        loaded: !state.isLoading,
+      );
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => TenantDetailScreen(
+            tenant: CompatibleTenant(
+              matchId: state.inquiry?.inquiryId ?? '',
+              tenantId: tenantId,
+              name: name,
+              gender: tenant?.gender ?? '',
+              maxBudget: profile?.maxBudget ?? 0,
+              bScore: 1,
+              occupation: profile?.occupation,
+              school: profile?.school,
+            ),
+            user: tenant,
+            profile: profile,
+            phone: state.counterpartPhone,
+            showInviteButton: false,
           ),
         ),
-      ),
-    );
+      );
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => OwnerDetailScreen(
+            owner: state.owner,
+            property: state.property,
+            fallbackName: widget.counterpartName,
+            phone: state.counterpartPhone,
+            isVerified: state.ownerVerified,
+          ),
+        ),
+      );
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -552,9 +726,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       // Counterpart Initials Avatar & Name (Tappable for Owner)
                       Expanded(
                         child: InkWell(
-                          onTap: widget.isOwner
-                              ? () => _openTenantProfile(state)
-                              : null,
+                          onTap: () => _openCounterpartProfile(state),
                           borderRadius: BorderRadius.circular(10),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 2),
@@ -756,16 +928,6 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                           children: [
                             _DateDivider(date: threadDate),
                             const SizedBox(height: 12),
-                            if (widget.isOwner &&
-                                !InquiryService.isInvite(inquiry)) ...[
-                              _TenantProfileChatCard(
-                                tenant: state.tenant,
-                                profile: state.tenantProfile,
-                                isLoading: state.isLoading,
-                                onViewProfile: () => _openTenantProfile(state),
-                              ),
-                              const SizedBox(height: 8),
-                            ],
                             _AcceptedStatusBanner(
                               title: widget.isOwner
                                   ? 'You accepted this inquiry — chat is open.'
@@ -1281,169 +1443,6 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
-class _TenantProfileChatCard extends StatelessWidget {
-  const _TenantProfileChatCard({
-    required this.tenant,
-    required this.profile,
-    required this.isLoading,
-    required this.onViewProfile,
-  });
-
-  final UserDoc? tenant;
-  final TenantProfileDoc? profile;
-  final bool isLoading;
-  final VoidCallback onViewProfile;
-
-  String _orDash(String? v) => (v == null || v.trim().isEmpty) ? '—' : v;
-
-  @override
-  Widget build(BuildContext context) {
-    final moveIn = profile?.moveInDate?.toDate();
-    final moveInStr = moveIn == null
-        ? '—'
-        : '${moveIn.year}-${moveIn.month.toString().padLeft(2, '0')}-${moveIn.day.toString().padLeft(2, '0')}';
-    final groupStr = '${profile?.groupSize ?? 1} person(s)';
-    final budgetStr = profile == null ? '—' : '₱${profile!.maxBudget}/mo';
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.22),
-          width: 0.9,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF0F9FF),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.person_outline_rounded,
-                  size: 16,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 6),
-                const Expanded(
-                  child: Text(
-                    'Tenant Inquiry Profile',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-                InkWell(
-                  onTap: onViewProfile,
-                  borderRadius: BorderRadius.circular(6),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'View full profile',
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                        SizedBox(width: 2),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          size: 14,
-                          color: AppColors.primary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-            child: Column(
-              children: [
-                _ChatProfileRow(
-                  label: 'Name',
-                  value: fullNameOf(tenant, fallback: 'Tenant', loaded: !isLoading),
-                ),
-                _ChatProfileRow(label: 'Gender', value: _orDash(tenant?.gender)),
-                _ChatProfileRow(label: 'Occupation', value: _orDash(profile?.occupation)),
-                _ChatProfileRow(label: 'School', value: _orDash(profile?.school)),
-                _ChatProfileRow(label: 'Move-in date', value: moveInStr),
-                _ChatProfileRow(label: 'Group size', value: groupStr),
-                _ChatProfileRow(label: 'Max budget', value: budgetStr, isLast: true),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ChatProfileRow extends StatelessWidget {
-  const _ChatProfileRow({
-    required this.label,
-    required this.value,
-    this.isLast = false,
-  });
-
-  final String label;
-  final String value;
-  final bool isLast;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : 5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF64748B),
-            ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _QuickReplyChip extends StatelessWidget {
   const _QuickReplyChip({required this.label, required this.onTap});

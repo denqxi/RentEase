@@ -232,7 +232,10 @@ class _TenantCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => TenantDetailScreen(tenant: tenant),
+          builder: (_) => TenantDetailScreen(
+            tenant: tenant,
+            showInviteButton: true,
+          ),
         ),
       ),
       child: Container(

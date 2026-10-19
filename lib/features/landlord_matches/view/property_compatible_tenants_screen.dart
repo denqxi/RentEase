@@ -572,6 +572,7 @@ class _PropertyCompatibleTenantsScreenState
                         MaterialPageRoute<void>(
                           builder: (_) => TenantDetailScreen(
                             tenant: tenant,
+                            showInviteButton: true,
                           ),
                         ),
                       );

@@ -212,7 +212,11 @@ class HomeRepositoryImpl implements HomeRepository {
   ) async {
     final property = await _remote.fetchProperty(propertyId);
     if (property == null || !property.isAvailable) return null;
-    return _propertyMap(property, null, null, null);
+    final (owner, ownerProfile) = await (
+      _remote.fetchUser(property.ownerId),
+      _remote.fetchOwnerProfile(property.ownerId),
+    ).wait;
+    return _propertyMap(property, null, owner, ownerProfile);
   }
 
   @override
@@ -235,9 +239,17 @@ class HomeRepositoryImpl implements HomeRepository {
     return {
       'propertyId': property.propertyId,
       'ownerId': property.ownerId,
+      'owner': owner,
+      'ownerProfile': ownerProfile,
+      'ownerPhotoUrl': owner?.profilePhoto,
+      'ownerPhone': owner?.phone,
       // Needed to open an inquiry for this exact pairing (InquiryService).
       'matchId': match?.matchId,
       'title': property.title,
+      'propertyName': property.propertyName,
+      'roomName': property.roomName,
+      'propertyType': property.propertyType,
+      'rentalType': property.rentalType,
       'photoUrl': property.photos.isNotEmpty ? property.photos.first : null,
       'photos': List<String>.from(property.photos),
       'address': property.address,
@@ -252,6 +264,8 @@ class HomeRepositoryImpl implements HomeRepository {
       'allowedGender': property.allowedGender,
       'smokingAllowed': property.smokingAllowed,
       'petsAllowed': property.petsAllowed,
+      'maxOccupants': property.maxOccupants,
+      'hasWifi': property.hasWifi,
       'curfewHours': property.curfewHours,
       'depositAmount': property.depositAmount,
       'advanceMonths': property.advanceMonths,

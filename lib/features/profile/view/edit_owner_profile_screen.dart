@@ -7,12 +7,16 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/cloudinary_config.dart';
 import '../../../core/cubit/app_theme_cubit.dart';
 import '../../../core/firestore/firestore_collections.dart';
+import '../../home/cubit/home_cubit.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
 import '../../uploads/data/repositories/cloudinary_image_upload_repository.dart';
 import '../../uploads/domain/entities/uploaded_image.dart';
+import '../cubit/profile_cubit.dart';
 
-class EditOwnerProfileScreen extends StatefulWidget {
-  const EditOwnerProfileScreen({super.key});
+class EditProfileScreen extends StatefulWidget {
+  const EditProfileScreen({super.key, this.isOwner = true});
+
+  final bool isOwner;
 
   static const Color bgIceBlue = Colors.white;
   static const Color primaryCyan = Color(0xFF00A8F0);
@@ -33,29 +37,54 @@ class EditOwnerProfileScreen extends StatefulWidget {
         ),
       ];
 
-  static Future<void> open(BuildContext context) {
-    LandlordHomeCubit? cubit;
+  static Future<void> open(BuildContext context, {bool isOwner = true}) {
+    LandlordHomeCubit? landlordCubit;
+    ProfileCubit? profileCubit;
+    HomeCubit? homeCubit;
     try {
-      cubit = context.read<LandlordHomeCubit>();
+      landlordCubit = context.read<LandlordHomeCubit>();
     } catch (_) {}
+    try {
+      profileCubit = context.read<ProfileCubit>();
+    } catch (_) {}
+    try {
+      homeCubit = context.read<HomeCubit>();
+    } catch (_) {}
+
+    Widget child = EditProfileScreen(isOwner: isOwner);
+    if (landlordCubit != null) {
+      child = BlocProvider<LandlordHomeCubit>.value(
+        value: landlordCubit,
+        child: child,
+      );
+    }
+    if (profileCubit != null) {
+      child = BlocProvider<ProfileCubit>.value(
+        value: profileCubit,
+        child: child,
+      );
+    }
+    if (homeCubit != null) {
+      child = BlocProvider<HomeCubit>.value(
+        value: homeCubit,
+        child: child,
+      );
+    }
 
     return Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => cubit != null
-            ? BlocProvider<LandlordHomeCubit>.value(
-                value: cubit,
-                child: const EditOwnerProfileScreen(),
-              )
-            : const EditOwnerProfileScreen(),
+        builder: (_) => child,
       ),
     );
   }
 
   @override
-  State<EditOwnerProfileScreen> createState() => _EditOwnerProfileScreenState();
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditOwnerProfileScreenState extends State<EditOwnerProfileScreen> {
+typedef EditOwnerProfileScreen = EditProfileScreen;
+
+class _EditProfileScreenState extends State<EditProfileScreen> {
   final _firstNameController = TextEditingController();
   final _middleNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -226,6 +255,12 @@ class _EditOwnerProfileScreenState extends State<EditOwnerProfileScreen> {
       if (mounted) {
         try {
           context.read<LandlordHomeCubit>().refresh();
+        } catch (_) {}
+        try {
+          context.read<ProfileCubit>().refresh();
+        } catch (_) {}
+        try {
+          context.read<HomeCubit>().refresh();
         } catch (_) {}
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile updated successfully.')),
@@ -415,8 +450,8 @@ class _EditOwnerProfileScreenState extends State<EditOwnerProfileScreen> {
                     const SizedBox(height: 6),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Padding(
+                      children: [
+                        const Padding(
                           padding: EdgeInsets.only(top: 1),
                           child: Icon(
                             Icons.info_outline_rounded,
@@ -424,14 +459,16 @@ class _EditOwnerProfileScreenState extends State<EditOwnerProfileScreen> {
                             color: primaryCyan,
                           ),
                         ),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'Shared with a tenant only after you accept their inquiry.',
-                            style: TextStyle(
+                            widget.isOwner
+                                ? 'Shared with a tenant only after you accept their inquiry.'
+                                : 'Used for communication with landlords and property managers.',
+                            style: const TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 12,
-                              color: EditOwnerProfileScreen.textMuted,
+                              color: EditProfileScreen.textMuted,
                             ),
                           ),
                         ),

@@ -5,7 +5,6 @@ import '../../../features/registration/model/user_role.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../activity/cubit/activity_cubit.dart';
 import '../../activity/data/repositories/notification_repository_impl.dart';
-import '../../activity/view/activity_screen.dart';
 import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../../home/cubit/home_cubit.dart';
@@ -21,6 +20,7 @@ import '../../matching/domain/services/topsis_service.dart';
 import '../../profile/cubit/profile_cubit.dart';
 import '../../saved/data/repositories/saved_listings_repository_impl.dart';
 import '../../profile/view/profile_screen.dart';
+import '../../inquiry/view/tenant_inquiries_screen.dart';
 import '../../../core/constants/app_svg_icons.dart';
 import '../cubit/shell_cubit.dart';
 import '../widgets/floating_nav_bar.dart';
@@ -96,11 +96,11 @@ class _ShellView extends StatelessWidget {
     HomeScreen(),
     SearchScreen(),
     SavedScreen(showBackButton: false),
-    ActivityScreen(),
+    TenantInquiriesScreen(showBackButton: false),
     ProfileScreen(),
   ];
 
-  static List<FloatingNavBarItem> _items(int unread) => <FloatingNavBarItem>[
+  static List<FloatingNavBarItem> _items(int unreadInquiries) => <FloatingNavBarItem>[
     const FloatingNavBarItem(svgString: AppSvgIcons.home, label: 'Home'),
     const FloatingNavBarItem(svgString: AppSvgIcons.search, label: 'Search'),
     const FloatingNavBarItem(
@@ -108,11 +108,9 @@ class _ShellView extends StatelessWidget {
       label: 'Saved',
     ),
     FloatingNavBarItem(
-      svgString: AppSvgIcons.notification,
-      label: 'Alerts',
-      badgeCount: unread,
-      iconSize: 22,
-      activeIconSize: 18.5,
+      svgString: AppSvgIcons.inquiry,
+      label: 'Inquiries',
+      badgeCount: unreadInquiries,
     ),
     const FloatingNavBarItem(svgString: AppSvgIcons.profile, label: 'Profile'),
   ];
@@ -120,8 +118,8 @@ class _ShellView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tab = context.watch<ShellCubit>().state.tab;
-    final unread = context.select<ActivityCubit, int>(
-      (c) => c.state.unreadCount,
+    final inquiryCount = context.select<ProfileCubit, int>(
+      (c) => c.state.inquiryCount,
     );
 
     return BlocListener<HomeCubit, HomeState>(
@@ -136,7 +134,7 @@ class _ShellView extends StatelessWidget {
         extendBody: true,
         body: IndexedStack(index: tab.index, children: _screens),
         bottomNavigationBar: FloatingNavBar(
-          items: _items(unread),
+          items: _items(inquiryCount),
           selectedIndex: tab.index,
           onTap: (i) {
             final isGuest =

@@ -1,18 +1,16 @@
-import '../../../core/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../shared/widgets/app_button.dart';
-import '../../../shared/widgets/verified_badge.dart';
+import '../../../core/firestore/models/property_doc.dart';
+import '../../../core/utils/date_utils.dart';
 import '../cubit/inquiry_thread_cubit.dart';
 import '../domain/services/inquiry_service.dart';
-import 'contact_consent_notice.dart';
 import 'rejected_owner_notice.dart';
 
 /// Tenant side of Phase 1: the auto-sent house rules and terms (built live
 /// from the property doc, not stored as messages), and the chat locked
-/// until the owner accepts. CLAUDE.md verified-badge placement #3.
+/// until the owner accepts.
 class TenantPhase1View extends StatelessWidget {
   const TenantPhase1View({super.key});
 
@@ -36,181 +34,94 @@ class TenantPhase1View extends StatelessWidget {
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
             children: [
-              _Bubble(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // ── Property Information Card ──────────────────────────────
+              _PropertyInformationCard(property: property),
+              const SizedBox(height: 12),
+
+              // ── Invitation or Status Card ──────────────────────────────
+              if (awaitingMyAnswer) ...[
+                _InvitationNotificationCard(
+                  propertyTitle: property?.title ?? 'this property',
+                ),
+                const SizedBox(height: 14),
+                const _PhonePrivacyNotice(),
+                const SizedBox(height: 14),
+                _ActionButtons(
+                  isBusy: state.isBusy,
+                  onAccept: () => context.read<InquiryThreadCubit>().accept(),
+                  onDecline: () => _confirmDecline(context),
+                ),
+              ] else if (ownerCantReply) ...[
+                const RejectedOwnerNotice(isOwner: false),
+              ] else ...[
+                _StatusNoticeCard(
+                  ended: ended,
+                  closed: closed,
+                  declined: declined,
+                  invite: invite,
+                  declineReason: inquiry.declineReason,
+                ),
+                const SizedBox(height: 14),
+                const _PhonePrivacyNotice(),
+              ],
+            ],
+          ),
+        ),
+
+        // ── Locked Input Bar (Messaging unavailable) ────────────────────
+        if (!ownerCantReply)
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Container(
+                height: 48,
+                padding: const EdgeInsets.fromLTRB(6, 4, 14, 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(26),
+                ),
+                child: Row(
                   children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.access_time,
-                          color: AppColors.tenantTextCyan,
-                          size: 13,
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Transform.rotate(
+                        angle: 0.5,
+                        child: const Icon(
+                          Icons.attach_file_rounded,
+                          size: 18,
+                          color: Color(0xFF94A3B8),
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Auto info from RentEase',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.tenantTextCyan,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    if (property == null)
-                      _line(context, 'This listing is no longer available.')
-                    else ...[
-                      _line(context, 'Gender policy: ${property.allowedGender}'),
-                      _line(
-                        context,
-                        'Curfew: ${formatCurfew(property.curfewHours)}',
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Messaging unavailable',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 13,
+                          color: Color(0xFF94A3B8),
+                        ),
                       ),
-                      _line(
-                        context,
-                        'Deposit: ₱${property.depositAmount} · Advance: '
-                        '${property.advanceMonths} '
-                        '${property.advanceMonths == 1 ? 'month' : 'months'}',
-                      ),
-                      _line(context, 'Monthly rent: ₱${property.monthlyRent}'),
-                    ],
-                    const SizedBox(height: 6),
-                    VerifiedBadge(isVerified: state.ownerVerified, isSmall: true),
+                    ),
+                    const Icon(
+                      Icons.send_rounded,
+                      color: Color(0xFFCBD5E1),
+                      size: 20,
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-              _Bubble(
-                child: _line(
-                  context,
-                  invite
-                      ? 'The owner invited you because you passed all of their rules '
-                            'and their property fits your requirements.'
-                      : 'Your profile has been sent to the owner.',
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (awaitingMyAnswer)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Column(
-              children: [
-                const ContactConsentNotice(sharedWith: 'the owner'),
-                const SizedBox(height: 8),
-                AppButton(
-                  label: state.isBusy ? 'Please wait...' : 'Accept invitation',
-                  onPressed: state.isBusy
-                      ? null
-                      : () => context.read<InquiryThreadCubit>().accept(),
-                ),
-                const SizedBox(height: 8),
-                AppButton(
-                  label: 'Decline',
-                  variant: AppButtonVariant.destructiveOutline,
-                  onPressed: state.isBusy
-                      ? null
-                      : () => _confirmDecline(context),
-                ),
-              ],
-            ),
-          )
-        else if (ownerCantReply)
-          const RejectedOwnerNotice(isOwner: false)
-        else
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: context.appColors.fieldFill,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: context.appColors.fieldBorder),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                ended ? Icons.block_rounded : Icons.access_time_rounded,
-                color: ended ? AppColors.destructive : context.appColors.hint,
-                size: 32,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                closed
-                    ? 'This listing is now fully booked'
-                    : declined
-                    ? (invite
-                          ? 'You declined this invitation'
-                          : 'The owner declined this inquiry')
-                    : 'Waiting for owner response...',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: context.appColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                closed
-                    ? 'You can keep browsing your other matches.'
-                    : declined && invite
-                    ? 'You can keep browsing your other matches.'
-                    : declined
-                    ? (inquiry.declineReason?.isNotEmpty ?? false)
-                          ? 'Reason: ${inquiry.declineReason}'
-                          : 'You can keep browsing your other matches.'
-                    : 'Chat unlocks after the owner accepts your inquiry.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.appColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        // Locked input — CLAUDE.md: Phase 1 chat input disabled until the
-        // owner accepts.
-        if (!ownerCantReply)
-        IgnorePointer(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: SafeArea(
-              top: false,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: context.appColors.fieldFill,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: context.appColors.fieldBorder,
-                        ),
-                      ),
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Message locked...',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: context.appColors.hint,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(Icons.send_rounded, color: AppColors.disabled, size: 22),
-                ],
-              ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -242,33 +153,391 @@ class TenantPhase1View extends StatelessWidget {
     );
     if (confirmed == true) await cubit.decline(null);
   }
-
-  Widget _line(BuildContext context, String text) => Text(
-    text,
-    style: TextStyle(fontSize: 13, color: context.appColors.textPrimary),
-  );
 }
 
-class _Bubble extends StatelessWidget {
-  const _Bubble({required this.child});
+// ── Property Information Card ────────────────────────────────────────────────
 
-  final Widget child;
+class _PropertyInformationCard extends StatelessWidget {
+  const _PropertyInformationCard({required this.property});
+
+  final PropertyDoc? property;
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: const BoxDecoration(
-          color: AppColors.tenantFillBlue,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(12),
-            topRight: Radius.circular(12),
-            bottomRight: Radius.circular(12),
+    final p = property;
+    final advanceText = p == null
+        ? '—'
+        : p.advanceMonths > 0
+            ? '₱${(p.monthlyRent * p.advanceMonths).toInt()}'
+            : 'None';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F9FF),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFBAE6FD).withValues(alpha: 0.6),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.info_outline_rounded,
+                color: Color(0xFF0284C7),
+                size: 18,
+              ),
+              const SizedBox(width: 6),
+              const Expanded(
+                child: Text(
+                  'Property information',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0284C7),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3.5,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.access_time_rounded,
+                      color: Color(0xFFD97706),
+                      size: 12,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'Awaiting response',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFD97706),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (p == null)
+            const Text(
+              'This listing is no longer available.',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 13,
+                color: Color(0xFF64748B),
+              ),
+            )
+          else ...[
+            _row(
+              'Gender policy:',
+              p.allowedGender.isNotEmpty ? p.allowedGender : 'Mixed / Any',
+            ),
+            _row('Curfew:', formatCurfew(p.curfewHours)),
+            _row('Deposit:', '₱${p.depositAmount}'),
+            _row('Advance:', advanceText),
+            _row('Monthly rent:', '₱${p.monthlyRent}', isLast: true),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _row(String label, String value, {bool isLast = false}) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 105,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 13,
+                color: Color(0xFF475569),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Invitation Notification Card ─────────────────────────────────────────────
+
+class _InvitationNotificationCard extends StatelessWidget {
+  const _InvitationNotificationCard({required this.propertyTitle});
+
+  final String propertyTitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F9FF),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFBAE6FD).withValues(alpha: 0.6),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.notifications_rounded,
+            color: Color(0xFF00A8F0),
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'The owner of $propertyTitle has notified you that their property is available and matches your preferences.',
+                  style: const TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 13,
+                    height: 1.4,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Interested? Send an inquiry to connect with the owner.',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 12.5,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Phone Privacy Notice ─────────────────────────────────────────────────────
+
+class _PhonePrivacyNotice extends StatelessWidget {
+  const _PhonePrivacyNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Transform.rotate(
+          angle: 0.1,
+          child: const Icon(
+            Icons.phone_rounded,
+            color: Color(0xFF00A8F0),
+            size: 18,
           ),
         ),
-        child: child,
+        const SizedBox(width: 10),
+        const Expanded(
+          child: Text(
+            'Your phone number will be shared with the owner once your inquiry is accepted.',
+            style: TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 12,
+              height: 1.35,
+              color: Color(0xFF64748B),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Action Buttons ───────────────────────────────────────────────────────────
+
+class _ActionButtons extends StatelessWidget {
+  const _ActionButtons({
+    required this.isBusy,
+    required this.onAccept,
+    required this.onDecline,
+  });
+
+  final bool isBusy;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Material(
+          color: const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            onTap: isBusy ? null : onAccept,
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              height: 48,
+              alignment: Alignment.center,
+              child: isBusy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Send inquiry',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            onTap: isBusy ? null : onDecline,
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              height: 48,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: const Color(0xFF00A8F0),
+                  width: 1.5,
+                ),
+              ),
+              child: const Text(
+                'Not interested',
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF00A8F0),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Status Notice Card (When tenant initiated or inquiry ended) ──────────────
+
+class _StatusNoticeCard extends StatelessWidget {
+  const _StatusNoticeCard({
+    required this.ended,
+    required this.closed,
+    required this.declined,
+    required this.invite,
+    this.declineReason,
+  });
+
+  final bool ended;
+  final bool closed;
+  final bool declined;
+  final bool invite;
+  final String? declineReason;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            ended ? Icons.block_rounded : Icons.access_time_rounded,
+            color: ended ? AppColors.destructive : const Color(0xFF00A8F0),
+            size: 30,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            closed
+                ? 'This listing is now fully booked'
+                : declined
+                    ? (invite
+                        ? 'You declined this invitation'
+                        : 'The owner declined this inquiry')
+                    : 'Waiting for owner response...',
+            style: const TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            closed
+                ? 'You can keep browsing your other matches.'
+                : declined && invite
+                    ? 'You can keep browsing your other matches.'
+                    : declined
+                        ? (declineReason?.isNotEmpty ?? false)
+                            ? 'Reason: $declineReason'
+                            : 'You can keep browsing your other matches.'
+                        : 'Chat unlocks after the owner accepts your inquiry.',
+            style: const TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 12,
+              color: Color(0xFF64748B),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

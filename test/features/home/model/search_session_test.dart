@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rentease/features/home/model/search_session.dart';
+import 'package:rentease/features/matching/domain/entities/mismatch_reason.dart';
 
 Map<String, dynamic> _listing(
   String id, {
@@ -55,6 +56,118 @@ void main() {
       expect(original.containsKey('budgetExcess'), isFalse);
     });
   });
+
+  group('SearchSession.evaluate', () {
+    const session = SearchSession(
+      maxBudget: 5200,
+      maxDistanceKm: 5,
+      groupSize: 1,
+    );
+
+    test('promotes non-matches that satisfy the session filter to matches', () {
+      final nonMatch = {
+        'propertyId': 'p1',
+        'monthlyRent': 3500,
+        'distance': 2.0,
+        'maxOccupants': 1,
+        'isNonMatch': true,
+        'bScore': 0,
+        'mismatchReasons': [
+          const MismatchReason(MismatchKind.overCapacity, 1),
+        ],
+      };
+
+      final result = session.evaluate(
+        matching: [],
+        nonMatches: [nonMatch],
+      );
+
+      expect(result.matches.length, 1);
+      expect(result.others.length, 0);
+      final promoted = result.matches.first;
+      expect(promoted['isNonMatch'], isFalse);
+      expect(promoted['isFilterMatch'], isTrue);
+      expect(promoted['mismatchReasons'], isEmpty);
+      expect(promoted['bScore'], 0);
+      expect(promoted['isOutsidePreference'], isFalse);
+    });
+
+    test('updates mismatch reasons for non-matches still failing constraints', () {
+      final nonMatch = {
+        'propertyId': 'p2',
+        'monthlyRent': 6000,
+        'distance': 2.0,
+        'maxOccupants': 1,
+        'isNonMatch': true,
+        'bScore': 0,
+        'mismatchReasons': [
+          const MismatchReason(MismatchKind.overCapacity, 1),
+          const MismatchReason(MismatchKind.overBudget, 2000),
+        ],
+      };
+
+      final result = session.evaluate(
+        matching: [],
+        nonMatches: [nonMatch],
+      );
+
+      expect(result.matches.length, 0);
+      expect(result.others.length, 1);
+      final updated = result.others.first;
+      expect(updated['isNonMatch'], isTrue);
+      // overCapacity is resolved because groupSize is 1 and maxOccupants is 1.
+      // overBudget remains, updated to 800 (6000 - 5200).
+      final reasons = (updated['mismatchReasons'] as List).cast<MismatchReason>();
+      expect(reasons.length, 1);
+      expect(reasons.first.kind, MismatchKind.overBudget);
+      expect(reasons.first.amount, 800);
+    });
+
+    test('moves matches failing explicit group size into others with reason', () {
+      const groupSession = SearchSession(
+        maxBudget: 6000,
+        maxDistanceKm: 5,
+        groupSize: 3,
+      );
+
+      final match = {
+        'propertyId': 'm1',
+        'monthlyRent': 4000,
+        'distance': 2.0,
+        'maxOccupants': 1,
+        'isNonMatch': false,
+        'bScore': 1,
+      };
+
+      final result = groupSession.evaluate(
+        matching: [match],
+        nonMatches: [],
+      );
+
+      expect(result.matches.length, 0);
+      expect(result.others.length, 1);
+      final demoted = result.others.first;
+      expect(demoted['isNonMatch'], isTrue);
+      final reasons = (demoted['mismatchReasons'] as List).cast<MismatchReason>();
+      expect(reasons.first.kind, MismatchKind.overCapacity);
+      expect(reasons.first.amount, 2);
+    });
+  });
+
+  group('SearchSession.copyWith', () {
+    test('copies with updated fields while preserving others', () {
+      const session = SearchSession(
+        maxBudget: 5000,
+        maxDistanceKm: 3,
+        roomType: 'Solo',
+      );
+      final updated = session.copyWith(maxBudget: 7000);
+      expect(updated.maxBudget, 7000);
+      expect(updated.maxDistanceKm, 3);
+      expect(updated.roomType, 'Solo');
+    });
+  });
+
 
   group('matchesSearchQuery', () {
     final listing = _listing(

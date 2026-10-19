@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1193,8 +1195,21 @@ class _EntirePropertyPhotoCarousel extends StatefulWidget {
 
 class _EntirePropertyPhotoCarouselState
     extends State<_EntirePropertyPhotoCarousel> {
+  late final PageController _pageController;
   int _selectedPhotoIndex = 0;
   bool _isUploading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   void _showError(String message) {
     if (!mounted) return;
@@ -1359,101 +1374,127 @@ class _EntirePropertyPhotoCarouselState
     final safeIndex = photoCount > 0
         ? _selectedPhotoIndex.clamp(0, photoCount - 1)
         : 0;
-    final currentPhoto = photoCount > 0 ? photos[safeIndex] : null;
     final canAddMore = photoCount < CloudinaryConfig.maxPropertyPhotos;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Main Large Rounded Image (Tap to zoom full-screen & remove)
-        GestureDetector(
-          onTap: currentPhoto != null
-              ? () => _openFullScreenGallery(safeIndex)
-              : null,
-          child: Container(
-            height: 210,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              color: const Color(0xFFF1F5F9),
-            ),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  clipBehavior: Clip.antiAliasWithSaveLayer,
-                  child: currentPhoto != null
-                      ? Image.network(
-                          currentPhoto,
-                          fit: BoxFit.cover,
-                          filterQuality: FilterQuality.medium,
-                          errorBuilder: (_, _, _) => ListingImagePlaceholder(
-                            seed: widget.seed,
-                            photoUrl: null,
-                          ),
-                        )
-                      : ListingImagePlaceholder(
-                          seed: widget.seed,
-                          photoUrl: null,
-                        ),
-                ),
-
-                // Subtle outline border overlay on top so corners are razor-sharp
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Top Right Photo Count Badge
-                if (photoCount > 0)
-                  Positioned(
-                    top: 10,
-                    right: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.65),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.photo_library_outlined,
-                            size: 11,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            photoCount > 1
-                                ? '${safeIndex + 1} / $photoCount'
-                                : '$photoCount',
-                            style: const TextStyle(
-                              fontFamily: 'DM Sans',
-                              color: Colors.white,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w600,
+        // Main Large Rounded Image (Swipeable PageView)
+        Container(
+          height: 210,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: const Color(0xFFF1F5F9),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                clipBehavior: Clip.antiAliasWithSaveLayer,
+                child: photoCount > 0
+                    ? PageView.builder(
+                        controller: _pageController,
+                        itemCount: photoCount,
+                        onPageChanged: (index) {
+                          setState(() => _selectedPhotoIndex = index);
+                        },
+                        itemBuilder: (context, index) {
+                          final photoUrl = photos[index];
+                          return GestureDetector(
+                            onTap: () => _openFullScreenGallery(index),
+                            child: Image.network(
+                              photoUrl,
+                              fit: BoxFit.cover,
+                              filterQuality: FilterQuality.medium,
+                              errorBuilder: (_, _, _) =>
+                                  ListingImagePlaceholder(
+                                seed: widget.seed,
+                                photoUrl: null,
+                              ),
                             ),
-                          ),
-                        ],
+                          );
+                        },
+                      )
+                    : ListingImagePlaceholder(
+                        seed: widget.seed,
+                        photoUrl: null,
+                      ),
+              ),
+
+              // Subtle outline border overlay on top so corners are razor-sharp
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+                        width: 1,
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+              ),
+
+              // Bottom Right Photo Count Badge (transparent glass)
+              if (photoCount > 0)
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6.5,
+                          vertical: 2.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.28),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.35),
+                            width: 0.6,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.photo_outlined,
+                              size: 10.5,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 3.5),
+                            Text(
+                              photoCount > 1
+                                  ? '${safeIndex + 1} / $photoCount'
+                                  : '$photoCount',
+                              style: const TextStyle(
+                                fontFamily: 'DM Sans',
+                                color: Colors.white,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
 
@@ -1472,7 +1513,14 @@ class _EntirePropertyPhotoCarouselState
                 final thumbUrl = photos[index];
 
                 return GestureDetector(
-                  onTap: () => setState(() => _selectedPhotoIndex = index),
+                  onTap: () {
+                    setState(() => _selectedPhotoIndex = index);
+                    _pageController.animateToPage(
+                      index,
+                      duration: const Duration(milliseconds: 280),
+                      curve: Curves.easeInOut,
+                    );
+                  },
                   child: SizedBox(
                     width: 56,
                     height: 56,

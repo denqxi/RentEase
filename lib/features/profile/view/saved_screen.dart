@@ -40,10 +40,35 @@ class _SavedScreenState extends State<SavedScreen> {
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+      body: Stack(
+        children: <Widget>[
+          // Subtle top-right gradient
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 195,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.topRight,
+                    radius: 1.05,
+                    colors: <Color>[
+                      const Color(0xFFCCF2FE).withValues(alpha: 0.70),
+                      const Color(0xFFE0F7FE).withValues(alpha: 0.35),
+                      const Color(0xFFE0F7FE).withValues(alpha: 0.0),
+                    ],
+                    stops: const <double>[0.0, 0.45, 0.88],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
             // â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -74,17 +99,34 @@ class _SavedScreenState extends State<SavedScreen> {
                     ),
                     const SizedBox(width: AppSpacing.md),
                   ],
-                  Text(
-                    'Saved',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: context.appColors.textPrimary,
-                      letterSpacing: -0.4,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Saved',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: context.appColors.textPrimary,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Properties you bookmarked for later',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: context.appColors.textSecondary,
+                            height: 1.15,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const Spacer(),
                   if (saved.isNotEmpty)
                     Text(
                       '${saved.length} ${saved.length == 1 ? 'property' : 'properties'}',
@@ -118,15 +160,22 @@ class _SavedScreenState extends State<SavedScreen> {
                       itemBuilder: (ctx, i) => _SavedCard(
                         listing: saved[i],
                         onUnsave: () => cubit.toggleSaved(saved[i].id),
-                        onOpen: () =>
-                            openPropertyDetail(ctx, cubit, saved[i].id),
+                        onOpen: () => openPropertyDetail(
+                          ctx,
+                          cubit,
+                          saved[i].id,
+                          initialListing: saved[i],
+                          initialPropertyDoc: saved[i].propertyDoc,
+                        ),
                       ),
                     ),
             ),
           ],
         ),
       ),
-    );
+    ],
+  ),
+);
   }
 }
 

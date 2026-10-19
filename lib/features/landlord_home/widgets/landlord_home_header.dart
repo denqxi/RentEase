@@ -223,8 +223,8 @@ class LandlordHomeHeader extends StatelessWidget {
                     clipBehavior: Clip.none,
                     alignment: Alignment.center,
                     children: <Widget>[
-                      const Icon(
-                        Icons.notifications_none_rounded,
+                      const AppSvgIcon(
+                        svgString: AppSvgIcons.notification,
                         size: 20,
                         color: Color(0xFF334155),
                       ),

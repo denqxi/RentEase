@@ -9,6 +9,7 @@ class AppSvgIcon extends StatelessWidget {
     this.size = 24.0,
     this.color,
     this.semanticLabel,
+    this.strokeWidth,
     super.key,
   });
 
@@ -24,11 +25,21 @@ class AppSvgIcon extends StatelessWidget {
   /// Optional semantic label for screen readers.
   final String? semanticLabel;
 
+  /// Optional stroke width override to dynamically customize outline thickness.
+  final double? strokeWidth;
+
   @override
   Widget build(BuildContext context) {
+    final String effectiveSvg = strokeWidth != null
+        ? svgString.replaceAll(
+            RegExp(r'stroke-width="[^"]*"'),
+            'stroke-width="$strokeWidth"',
+          )
+        : svgString;
+
     if (color == null) {
       return SvgPicture.string(
-        svgString,
+        effectiveSvg,
         width: size,
         height: size,
         semanticsLabel: semanticLabel,
@@ -36,7 +47,7 @@ class AppSvgIcon extends StatelessWidget {
     }
 
     return SvgPicture.string(
-      svgString,
+      effectiveSvg,
       width: size,
       height: size,
       semanticsLabel: semanticLabel,

@@ -50,7 +50,10 @@ class CompatibleTenantsSection extends StatelessWidget {
               tenant: t,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => TenantDetailScreen(tenant: t),
+                  builder: (_) => TenantDetailScreen(
+                    tenant: t,
+                    showInviteButton: true,
+                  ),
                 ),
               ),
             ),

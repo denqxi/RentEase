@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -112,6 +113,72 @@ class EditPreferencesCubit extends Cubit<EditPreferencesState> {
           profile: profile,
         ),
       );
+    } catch (e) {
+      _fail(e);
+    }
+  }
+
+  /// Atomically saves all tenant rental preferences (must-haves, commute,
+  /// amenities, and priorities), runs bilateral filtering, and re-computes TOPSIS.
+  Future<void> saveAllPreferences({
+    required num maxBudget,
+    required String requiredGender,
+    required bool needsWifi,
+    required bool isSmoker,
+    required bool hasPet,
+    required int groupSize,
+    required String poiType,
+    required GeoPoint poiLatLng,
+    required String poiLabel,
+    required double maxDistanceKm,
+    required String roomType,
+    required List<String> preferredAmenities,
+    required double wRent,
+    required double wDistance,
+    required double wAmenities,
+  }) async {
+    if (maxBudget <= 0) {
+      _fail(Exception('Enter a monthly budget above ₱0.'));
+      return;
+    }
+    if ((wRent + wDistance + wAmenities - 1).abs() > 1e-4) {
+      _fail(Exception('Your priorities must add up to exactly 100%.'));
+      return;
+    }
+
+    final profile = state.profile;
+    emit(EditPreferencesState(status: EditPreferencesStatus.saving, profile: profile));
+    try {
+      // 1. Update public profile fields
+      await _repository.updateFields(uid, {
+        'maxBudget': maxBudget,
+        'requiredGender': requiredGender,
+        'needsWifi': needsWifi,
+        'isSmoker': isSmoker,
+        'hasPet': hasPet,
+        'groupSize': groupSize,
+        'poiType': poiType,
+        'maxDistanceKm': maxDistanceKm,
+        'roomType': roomType,
+        'preferredAmenities': preferredAmenities,
+      });
+
+      // 2. Update private preferences (POI location, label, and TOPSIS weights)
+      await _repository.updatePrefs(uid, {
+        'poiLatLng': poiLatLng,
+        'poiLabel': poiLabel,
+        'poiType': poiType,
+        'wRent': wRent,
+        'wDistance': wDistance,
+        'wAmenities': wAmenities,
+      });
+
+      // 3. Re-run bilateral filtering & TOPSIS ranking engine
+      await _filteringService.runFiltering(uid);
+      await _topsisService.computeTOPSIS(uid);
+
+      if (isClosed) return;
+      emit(EditPreferencesState(status: EditPreferencesStatus.saved, profile: profile));
     } catch (e) {
       _fail(e);
     }

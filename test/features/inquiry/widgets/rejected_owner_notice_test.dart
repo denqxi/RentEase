@@ -101,7 +101,7 @@ void main() {
       const TenantPhase1View(),
     );
     expect(find.text(InquiryService.rejectedOwnerTenantNote), findsOneWidget);
-    expect(find.text('Message locked...'), findsNothing);
+    expect(find.text('Messaging unavailable'), findsNothing);
     expect(find.text(InquiryService.rejectedOwnerMessage), findsNothing);
   });
 
@@ -111,6 +111,6 @@ void main() {
       InquiryThreadState(isLoading: false, inquiry: _inquiry()),
       const TenantPhase1View(),
     );
-    expect(find.text('Message locked...'), findsOneWidget);
+    expect(find.text('Messaging unavailable'), findsOneWidget);
   });
 }

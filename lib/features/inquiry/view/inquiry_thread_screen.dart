@@ -6,6 +6,7 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../landlord_home/view/tenant_detail_screen.dart';
+import '../../landlord_home/view/owner_detail_screen.dart';
 import '../../owner/model/compatible_tenant.dart';
 import '../../activity/data/repositories/notification_repository_impl.dart';
 import '../../auth/presentation/current_uid.dart';
@@ -117,34 +118,50 @@ class _ThreadView extends StatelessWidget {
           subtitle: propertyTitle,
           counterpartName: counterpartName,
           property: state.property,
-          onTapHeader: isOwner
-              ? () {
-                  final tenant = state.tenant;
-                  final profile = state.tenantProfile;
-                  final tenantId = tenant?.userId ?? inquiry.tenantId;
-                  final name = fullNameOf(
-                    tenant,
-                    fallback: counterpartName,
-                    loaded: !state.isLoading,
-                  );
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => TenantDetailScreen(
-                        tenant: CompatibleTenant(
-                          matchId: inquiry.inquiryId,
-                          tenantId: tenantId,
-                          name: name,
-                          gender: tenant?.gender ?? '',
-                          maxBudget: profile?.maxBudget ?? 0,
-                          bScore: 1,
-                          occupation: profile?.occupation,
-                          school: profile?.school,
-                        ),
-                      ),
+          onTapHeader: () {
+            if (isOwner) {
+              final tenant = state.tenant;
+              final profile = state.tenantProfile;
+              final tenantId = tenant?.userId ?? inquiry.tenantId;
+              final name = fullNameOf(
+                tenant,
+                fallback: counterpartName,
+                loaded: !state.isLoading,
+              );
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => TenantDetailScreen(
+                    tenant: CompatibleTenant(
+                      matchId: inquiry.inquiryId,
+                      tenantId: tenantId,
+                      name: name,
+                      gender: tenant?.gender ?? '',
+                      maxBudget: profile?.maxBudget ?? 0,
+                      bScore: 1,
+                      occupation: profile?.occupation,
+                      school: profile?.school,
                     ),
-                  );
-                }
-              : null,
+                    user: tenant,
+                    profile: profile,
+                    phone: state.counterpartPhone,
+                    showInviteButton: false,
+                  ),
+                ),
+              );
+            } else {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => OwnerDetailScreen(
+                    owner: state.owner,
+                    property: state.property,
+                    fallbackName: counterpartName,
+                    phone: state.counterpartPhone,
+                    isVerified: state.ownerVerified,
+                  ),
+                ),
+              );
+            }
+          },
           body: state.isLoading
               ? const Center(
                   child: CircularProgressIndicator(color: AppColors.primary),

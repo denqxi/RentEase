@@ -35,18 +35,18 @@ class MismatchReason {
   /// Fuller sentence for the detail screen.
   String get detailLabel => switch (kind) {
     MismatchKind.overBudget =>
-      'Rent is ₱${_money(amount ?? 0)} over your maximum budget',
+      'Rent is ₱${_money(amount ?? 0)} higher than your max budget',
     MismatchKind.genderPolicy =>
-      "The gender policy differs from the one you require",
+      'Gender rules differ from your preference',
     MismatchKind.tenantGenderNotAllowed =>
-      "This property's gender policy does not accept your gender",
-    MismatchKind.smoking => 'You smoke, but smoking is not allowed here',
-    MismatchKind.pets => 'You have a pet, but pets are not allowed here',
+      'This property is not open to your gender',
+    MismatchKind.smoking => 'Smoking is not allowed here',
+    MismatchKind.pets => 'Pets are not allowed here',
     MismatchKind.overCapacity =>
-      'Your group is ${amount ?? 0} over the maximum occupants',
-    MismatchKind.noWifi => 'You need WiFi, but this property has none',
+      'Group size exceeds allowed limit (by ${amount ?? 0})',
+    MismatchKind.noWifi => 'No WiFi internet available',
     MismatchKind.tooFar =>
-      '${_km(amount ?? 0)} km beyond your maximum distance',
+      '${_km(amount ?? 0)} km farther than your commute limit',
   };
 
   /// Rounded up so a tiny overage never displays as "0.0".
