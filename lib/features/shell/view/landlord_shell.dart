@@ -64,10 +64,10 @@ class _LandlordShellView extends StatelessWidget {
     OwnerProfileScreen(),
   ];
 
-  static List<FloatingNavBarItem> _items() => const <FloatingNavBarItem>[
-    FloatingNavBarItem(svgString: AppSvgIcons.home, label: 'Home'),
-    FloatingNavBarItem(svgString: AppSvgIcons.save, label: 'Matches'),
-    FloatingNavBarItem(
+  static List<FloatingNavBarItem> _items([int unreadInquiries = 0]) => <FloatingNavBarItem>[
+    const FloatingNavBarItem(svgString: AppSvgIcons.home, label: 'Home'),
+    const FloatingNavBarItem(svgString: AppSvgIcons.save, label: 'Matches'),
+    const FloatingNavBarItem(
       svgString: AppSvgIcons.ownerAdd,
       label: 'Add',
       iconSize: 23,
@@ -76,13 +76,17 @@ class _LandlordShellView extends StatelessWidget {
     FloatingNavBarItem(
       svgString: AppSvgIcons.inquiry,
       label: 'Inquiries',
+      badgeCount: unreadInquiries,
     ),
-    FloatingNavBarItem(svgString: AppSvgIcons.profile, label: 'Profile'),
+    const FloatingNavBarItem(svgString: AppSvgIcons.profile, label: 'Profile'),
   ];
 
   @override
   Widget build(BuildContext context) {
     final tab = context.watch<ShellCubit>().state.tab;
+    final unreadInquiries = context.select<ActivityCubit, int>(
+      (c) => c.state.unreadInquiriesCount,
+    );
 
     return Scaffold(
       extendBody: true,
@@ -91,7 +95,7 @@ class _LandlordShellView extends StatelessWidget {
         children: _screens,
       ),
       bottomNavigationBar: FloatingNavBar(
-        items: _items(),
+        items: _items(unreadInquiries),
         selectedIndex: tab.index,
         onTap: (i) {
           if (i == 2) {

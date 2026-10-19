@@ -60,6 +60,7 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
   final _mapController = MapController();
   LatLng _markerPos = const LatLng(AppOptions.defaultMapLat, AppOptions.defaultMapLng);
   String _resolvedAddress = AppOptions.defaultMapLabel;
+  bool _isAddressExpanded = false;
   double _maxKm = 3.0;
   List<Map<String, dynamic>> _suggestions = const [];
 
@@ -1007,13 +1008,30 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
                       ),
                     ),
                     const SizedBox(height: 1),
-                    Text(
-                      _resolvedAddress,
-                      style: const TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: _textPrimary,
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        setState(() {
+                          _isAddressExpanded = !_isAddressExpanded;
+                        });
+                      },
+                      child: AnimatedSize(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          _resolvedAddress,
+                          maxLines: _isAddressExpanded ? null : 1,
+                          overflow: _isAddressExpanded
+                              ? TextOverflow.visible
+                              : TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: _textPrimary,
+                          ),
+                        ),
                       ),
                     ),
                   ],

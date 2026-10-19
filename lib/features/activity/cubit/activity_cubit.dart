@@ -55,6 +55,45 @@ class ActivityCubit extends Cubit<ActivityState> {
     if (_repository != null && uid != null) _watch(uid);
   }
 
+  /// Marks a single item as read immediately.
+  Future<void> markItemRead(String notifId) async {
+    if (notifId.isEmpty) return;
+    final item = state.items.where((i) => i.id == notifId).firstOrNull;
+    if (item == null || item.isRead) return;
+    emit(
+      state.copyWith(
+        items: state.items.map((i) => i.id == notifId ? i.copyWith(isRead: true) : i).toList(),
+      ),
+    );
+    try {
+      await _repository?.markRead([notifId]);
+    } catch (_) {
+      // Stream restores if write fails
+    }
+  }
+
+  /// Marks all notifications associated with an inquiry as read immediately.
+  Future<void> markInquiryRead(String inquiryId) async {
+    if (inquiryId.isEmpty) return;
+    final unreadNotifIds = state.items
+        .where((i) => i.relatedId == inquiryId && !i.isRead)
+        .map((i) => i.id)
+        .toList();
+    if (unreadNotifIds.isEmpty) return;
+    emit(
+      state.copyWith(
+        items: state.items
+            .map((i) => i.relatedId == inquiryId ? i.copyWith(isRead: true) : i)
+            .toList(),
+      ),
+    );
+    try {
+      await _repository?.markRead(unreadNotifIds);
+    } catch (_) {
+      // Stream restores if write fails
+    }
+  }
+
   /// Marks every item as read and clears the bell badge.
   Future<void> markAllRead() async {
     final unreadIds = [

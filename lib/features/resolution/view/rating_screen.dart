@@ -69,14 +69,25 @@ class _RatingScreenState extends State<RatingScreen> {
       return;
     }
     setState(() => _submitting = true);
-    final ok = await onSubmit(_starRating, _reviewController.text);
-    if (!mounted) return;
-    setState(() => _submitting = false);
-    if (!ok) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Thanks — your rating was submitted.')),
-    );
-    Navigator.of(context).pop();
+    try {
+      final ok = await onSubmit(_starRating, _reviewController.text);
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      if (!ok) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Thanks — your rating was submitted.')),
+      );
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
+    }
   }
 
   @override
@@ -89,7 +100,32 @@ class _RatingScreenState extends State<RatingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 48),
+              const SizedBox(height: 12),
+              // Top Bar with Back Button
+              Align(
+                alignment: Alignment.centerLeft,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFFE2E8F0),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back_rounded,
+                      size: 19,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               // Owner view: tenant initials avatar. Tenant view: check circle.
               CircleAvatar(
                 radius: 44,

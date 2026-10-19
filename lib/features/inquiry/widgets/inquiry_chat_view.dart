@@ -7,6 +7,7 @@ import '../../../core/firestore/models/models.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
+import '../../home/view/property_detail_screen.dart';
 import '../../landlord_home/view/tenant_detail_screen.dart';
 import '../../landlord_home/view/owner_detail_screen.dart';
 import '../../owner/model/compatible_tenant.dart';
@@ -156,6 +157,14 @@ class _InquiryChatViewState extends State<InquiryChatView> {
 
   void _openRating() {
     final cubit = context.read<InquiryThreadCubit>();
+    Future<bool> handleRatingSubmit(int stars, String review) async {
+      final ok = await cubit.submitRating(stars: stars, review: review);
+      if (!ok && cubit.state.errorMessage != null) {
+        throw Exception(cubit.state.errorMessage);
+      }
+      return ok;
+    }
+
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => widget.isOwner
@@ -166,13 +175,13 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                 ),
                 moveInLabel: widget.propertyTitle,
                 onSubmit: (stars, review) =>
-                    cubit.submitRating(stars: stars, review: review),
+                    handleRatingSubmit(stars, review),
               )
             : RatingScreen(
                 subjectName: widget.propertyTitle,
                 moveInLabel: 'Hosted by ${widget.counterpartName}',
                 onSubmit: (stars, review) =>
-                    cubit.submitRating(stars: stars, review: review),
+                    handleRatingSubmit(stars, review),
               ),
       ),
     );
@@ -493,100 +502,12 @@ class _InquiryChatViewState extends State<InquiryChatView> {
     );
   }
 
-  void _showPropertySummarySheet(PropertyDoc property) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFCBD5E1),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                property.title,
-                style: const TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.location_on_rounded,
-                    size: 15,
-                    color: Color(0xFF64748B),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      property.address,
-                      style: const TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 13,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Column(
-                  children: [
-                    _SheetDetailRow(
-                      label: 'Monthly Rent',
-                      value: '₱${property.monthlyRent}/mo',
-                    ),
-                    const SizedBox(height: 8),
-                    _SheetDetailRow(
-                      label: 'Deposit',
-                      value: '₱${property.depositAmount}',
-                    ),
-                    const SizedBox(height: 8),
-                    _SheetDetailRow(
-                      label: 'Advance',
-                      value: '${property.advanceMonths} month(s)',
-                    ),
-                    const SizedBox(height: 8),
-                    _SheetDetailRow(
-                      label: 'Max Occupants',
-                      value: '${property.maxOccupants} person(s)',
-                    ),
-                    const SizedBox(height: 8),
-                    _SheetDetailRow(
-                      label: 'Gender Policy',
-                      value: property.allowedGender,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+  void _openPropertyDetail(PropertyDoc property) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PropertyDetailScreen(
+          propertyId: property.propertyId,
+          initialPropertyDoc: property,
         ),
       ),
     );
@@ -818,7 +739,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                             _openRating();
                           } else if (value == 'property_info' &&
                               property != null) {
-                            _showPropertySummarySheet(property);
+                            _openPropertyDetail(property);
                           }
                         },
                         itemBuilder: (ctx) => [
@@ -907,7 +828,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     property: property,
                     fallbackTitle: widget.propertyTitle,
                     onTap: property != null
-                        ? () => _showPropertySummarySheet(property)
+                        ? () => _openPropertyDetail(property)
                         : null,
                   ),
                 ),
@@ -1143,11 +1064,25 @@ class ThreadPropertyBannerCard extends StatelessWidget {
         ? property!.address.trim()
         : 'View property details';
 
+    final effectiveOnTap = onTap ??
+        (property != null
+            ? () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => PropertyDetailScreen(
+                      propertyId: property!.propertyId,
+                      initialPropertyDoc: property,
+                    ),
+                  ),
+                );
+              }
+            : null);
+
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        onTap: onTap,
+        onTap: effectiveOnTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(10),
@@ -1547,39 +1482,6 @@ class _BookedPanel extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _SheetDetailRow extends StatelessWidget {
-  const _SheetDetailRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontFamily: 'DM Sans',
-            fontSize: 13,
-            color: Color(0xFF64748B),
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontFamily: 'DM Sans',
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF0F172A),
-          ),
-        ),
-      ],
     );
   }
 }

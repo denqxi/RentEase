@@ -1,12 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/firestore/firestore_collections.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../core/utils/date_utils.dart';
 
 /// Detail view for a property owner / landlord (tenant perspective).
 /// Displays host information, contact details, and listing overview.
-class OwnerDetailScreen extends StatelessWidget {
+class OwnerDetailScreen extends StatefulWidget {
   const OwnerDetailScreen({
+    this.ownerId,
     this.owner,
     this.ownerProfile,
     this.property,
@@ -16,6 +19,7 @@ class OwnerDetailScreen extends StatelessWidget {
     super.key,
   });
 
+  final String? ownerId;
   final UserDoc? owner;
   final OwnerProfileDoc? ownerProfile;
   final PropertyDoc? property;
@@ -23,27 +27,103 @@ class OwnerDetailScreen extends StatelessWidget {
   final String? phone;
   final bool isVerified;
 
+  @override
+  State<OwnerDetailScreen> createState() => _OwnerDetailScreenState();
+}
+
+class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
+  UserDoc? _owner;
+  OwnerProfileDoc? _ownerProfile;
+  bool _isVerified = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _owner = widget.owner;
+    _ownerProfile = widget.ownerProfile;
+    _isVerified =
+        widget.isVerified || (_ownerProfile?.verificationStatus == 'verified');
+    if (_owner == null || _ownerProfile == null) {
+      _loadOwnerData();
+    }
+  }
+
+  Future<void> _loadOwnerData() async {
+    final uid = widget.ownerId ??
+        widget.owner?.userId ??
+        widget.property?.ownerId;
+    if (uid == null || uid.isEmpty) return;
+
+    try {
+      final futures = <Future<void>>[];
+      if (_owner == null) {
+        futures.add(
+          FirebaseFirestore.instance
+              .collection(FirestoreCollections.users)
+              .doc(uid)
+              .get()
+              .then((snap) {
+            if (snap.exists && mounted) {
+              setState(() {
+                _owner = UserDoc.fromSnapshot(snap);
+              });
+            }
+          }),
+        );
+      }
+      if (_ownerProfile == null) {
+        futures.add(
+          FirebaseFirestore.instance
+              .collection(FirestoreCollections.ownerProfiles)
+              .doc(uid)
+              .get()
+              .then((snap) {
+            if (snap.exists && mounted) {
+              setState(() {
+                _ownerProfile = OwnerProfileDoc.fromSnapshot(snap);
+                if (_ownerProfile?.verificationStatus == 'verified') {
+                  _isVerified = true;
+                }
+              });
+            }
+          }),
+        );
+      }
+      await Future.wait(futures);
+    } catch (_) {}
+  }
+
   String get _displayName {
-    final o = owner;
-    if (o == null) return fallbackName;
+    final o = _owner;
+    if (o == null) return widget.fallbackName;
     final name = '${o.firstName} ${o.lastName}'.trim();
-    return name.isNotEmpty ? name : fallbackName;
+    return name.isNotEmpty ? name : widget.fallbackName;
   }
 
   String get _initials {
-    final parts = _displayName.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+    final parts =
+        _displayName.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
     final inits = parts.take(2).map((p) => p[0].toUpperCase()).join();
     return inits.isEmpty ? '?' : inits;
   }
 
+  String _formatMemberSince(DateTime? dt) {
+    if (dt == null) return 'RentEase';
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${months[dt.month - 1]} ${dt.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final photoUrl = owner?.profilePhoto;
-    final phoneText = (phone != null && phone!.trim().isNotEmpty)
-        ? phone!.trim()
-        : (owner?.phone.isNotEmpty == true ? owner!.phone : 'Shared in chat');
-    final emailText = owner?.email.isNotEmpty == true ? owner!.email : '—';
-    final p = property;
+    final photoUrl = _owner?.profilePhoto;
+    final phoneText = (widget.phone != null && widget.phone!.trim().isNotEmpty)
+        ? widget.phone!.trim()
+        : (_owner?.phone.isNotEmpty == true ? _owner!.phone : 'Shared in chat');
+    final emailText = _owner?.email.isNotEmpty == true ? _owner!.email : '—';
+    final p = widget.property;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -207,12 +287,12 @@ class OwnerDetailScreen extends StatelessWidget {
                                           vertical: 3.5,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: isVerified
+                                          color: _isVerified
                                               ? const Color(0xFFEFF6FF)
                                               : const Color(0xFFF1F5F9),
                                           borderRadius: BorderRadius.circular(20),
                                           border: Border.all(
-                                            color: isVerified
+                                            color: _isVerified
                                                 ? const Color(0xFF38BDF8)
                                                 : const Color(0xFFCBD5E1),
                                             width: 0.8,
@@ -222,22 +302,22 @@ class OwnerDetailScreen extends StatelessWidget {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Icon(
-                                              isVerified
+                                              _isVerified
                                                   ? Icons.verified_rounded
                                                   : Icons.shield_outlined,
                                               size: 13,
-                                              color: isVerified
+                                              color: _isVerified
                                                   ? const Color(0xFF0284C7)
                                                   : const Color(0xFF64748B),
                                             ),
                                             const SizedBox(width: 4),
                                             Text(
-                                              isVerified ? 'Verified Owner' : 'Property Host',
+                                              _isVerified ? 'Verified Owner' : 'Property Host',
                                               style: TextStyle(
                                                 fontFamily: 'DM Sans',
                                                 fontSize: 11.5,
                                                 fontWeight: FontWeight.w700,
-                                                color: isVerified
+                                                color: _isVerified
                                                     ? const Color(0xFF0369A1)
                                                     : const Color(0xFF475569),
                                               ),
@@ -246,9 +326,11 @@ class OwnerDetailScreen extends StatelessWidget {
                                         ),
                                       ),
                                       const SizedBox(height: 4),
-                                      const Text(
-                                        'Verified boarding house host on RentEase',
-                                        style: TextStyle(
+                                      Text(
+                                        _isVerified
+                                            ? 'Verified boarding house host on RentEase'
+                                            : 'Registered property host on RentEase',
+                                        style: const TextStyle(
                                           fontFamily: 'DM Sans',
                                           fontSize: 11.5,
                                           color: Color(0xFF64748B),
@@ -290,14 +372,32 @@ class OwnerDetailScreen extends StatelessWidget {
                         _cardWrapper([
                           _detailRow(
                             label: 'Verification',
-                            value: isVerified ? 'Identity Verified' : 'Registered Host',
+                            value: _isVerified ? 'Identity Verified' : 'Registered Host',
                           ),
                           _divider(),
                           _detailRow(
                             label: 'Role',
                             value: 'Property Landlord / Host',
-                            isLast: true,
                           ),
+                          _divider(),
+                          _detailRow(
+                            label: 'Member since',
+                            value: _formatMemberSince(_owner?.createdAt?.toDate()),
+                          ),
+                          if ((_ownerProfile?.propertyCount ?? 0) > 0) ...[
+                            _divider(),
+                            _detailRow(
+                              label: 'Properties listed',
+                              value: '${_ownerProfile!.propertyCount} ${_ownerProfile!.propertyCount == 1 ? 'property' : 'properties'}',
+                            ),
+                          ],
+                          if ((_ownerProfile?.totalRatings ?? 0) > 0) ...[
+                            _divider(),
+                            _detailRow(
+                              label: 'Host rating',
+                              value: '★ ${(_ownerProfile?.avgRating ?? 0.0).toStringAsFixed(1)} (${_ownerProfile!.totalRatings} ${_ownerProfile!.totalRatings == 1 ? 'review' : 'reviews'})',
+                            ),
+                          ],
                         ]),
 
                         if (p != null) ...[

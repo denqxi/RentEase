@@ -70,6 +70,39 @@ class InquiryDoc {
           DocumentSnapshot<Map<String, dynamic>> doc) =>
       InquiryDoc.fromMap(doc.id, doc.data() ?? const {});
 
+  InquiryDoc copyWith({
+    String? inquiryId,
+    String? matchId,
+    String? tenantId,
+    String? ownerId,
+    String? propertyId,
+    num? tenantCiSnapshot,
+    num? stage,
+    String? initiatedBy,
+    String? status,
+    String? ownerDecision,
+    String? declineReason,
+    bool? autoInfoSent,
+    Timestamp? createdAt,
+    Timestamp? updatedAt,
+  }) =>
+      InquiryDoc(
+        inquiryId: inquiryId ?? this.inquiryId,
+        matchId: matchId ?? this.matchId,
+        tenantId: tenantId ?? this.tenantId,
+        ownerId: ownerId ?? this.ownerId,
+        propertyId: propertyId ?? this.propertyId,
+        tenantCiSnapshot: tenantCiSnapshot ?? this.tenantCiSnapshot,
+        stage: stage ?? this.stage,
+        initiatedBy: initiatedBy ?? this.initiatedBy,
+        status: status ?? this.status,
+        ownerDecision: ownerDecision ?? this.ownerDecision,
+        declineReason: declineReason ?? this.declineReason,
+        autoInfoSent: autoInfoSent ?? this.autoInfoSent,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+
   Map<String, dynamic> toMap() => {
         'matchId': matchId,
         'tenantId': tenantId,

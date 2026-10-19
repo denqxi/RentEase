@@ -12,7 +12,12 @@
           "package_name": "com.example.rentease"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "374112218940-qgcse8qofkc3635jvs09gg5rukh69uvb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBfRl1uNhiXvY7KjlJagAQGEKVqAN6_LpE"
@@ -20,7 +25,49 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "374112218940-qgcse8qofkc3635jvs09gg5rukh69uvb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:374112218940:android:5cbeb1c9b1e11782903839",
+        "android_client_info": {
+          "package_name": "com.rentease.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "374112218940-tq4rfrlj96mhmthtq8cfppsknfi3bfnc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rentease.app",
+            "certificate_hash": "e68bcb3a4d64e57d80480547fb12189a3067cca9"
+          }
+        },
+        {
+          "client_id": "374112218940-qgcse8qofkc3635jvs09gg5rukh69uvb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfRl1uNhiXvY7KjlJagAQGEKVqAN6_LpE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "374112218940-qgcse8qofkc3635jvs09gg5rukh69uvb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

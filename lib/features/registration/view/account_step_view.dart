@@ -22,6 +22,7 @@ class AccountStepView extends StatefulWidget {
 class _AccountStepViewState extends State<AccountStepView> {
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
+  late final TextEditingController _emailController;
   late final TextEditingController _phoneController;
   late final ScrollController _scrollController;
   late final FocusNode _passwordFocusNode;
@@ -41,6 +42,7 @@ class _AccountStepViewState extends State<AccountStepView> {
     final data = context.read<RegistrationCubit>().state.data;
     _firstNameController = TextEditingController(text: data.firstName);
     _lastNameController = TextEditingController(text: data.lastName);
+    _emailController = TextEditingController(text: data.email);
     _phoneController = TextEditingController(
       text: _formatInitialPhone(data.phone),
     );
@@ -59,6 +61,7 @@ class _AccountStepViewState extends State<AccountStepView> {
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _emailController.dispose();
     _phoneController.dispose();
     _scrollController.dispose();
     _passwordFocusNode.dispose();
@@ -116,10 +119,27 @@ class _AccountStepViewState extends State<AccountStepView> {
         Validators.required(data.gender, field: 'Gender') != null ||
         Validators.email(data.email) != null ||
         Validators.phone(data.phone) != null ||
-        Validators.password(data.password) != null;
+        (!data.isGoogleAuth && Validators.password(data.password) != null);
 
     if (hasErrors) {
       setState(() => _showErrors = true);
+      return;
+    }
+
+    if (data.isGoogleAuth) {
+      context.read<AuthBloc>().add(
+            AuthGoogleSignUpRequested(
+              uid: data.googleUid,
+              email: data.email.trim(),
+              firstName: data.firstName.trim(),
+              lastName: data.lastName.trim(),
+              gender: data.gender,
+              phone: data.phone.trim(),
+              role: 'tenant',
+              profilePhoto: data.googlePhotoUrl,
+              ageConfirmed: data.ageConfirmed,
+            ),
+          );
       return;
     }
 
@@ -164,6 +184,58 @@ class _AccountStepViewState extends State<AccountStepView> {
             : null,
       ),
       fields: <Widget>[
+        if (data.isGoogleAuth)
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF86EFAC), width: 1),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFDCFCE7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF16A34A),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Authenticated with Google',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: Color(0xFF166534),
+                        ),
+                      ),
+                      Text(
+                        data.email,
+                        style: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 12,
+                          color: Color(0xFF15803D),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         LabeledTextField(
           label: 'First name',
           hint: 'Jane',
@@ -196,6 +268,8 @@ class _AccountStepViewState extends State<AccountStepView> {
         LabeledTextField(
           label: 'Email',
           hint: 'jane@email.com',
+          controller: _emailController,
+          readOnly: data.isGoogleAuth,
           keyboardType: TextInputType.emailAddress,
           onChanged: cubit.updateEmail,
           errorText: _showErrors ? Validators.email(data.email) : null,
@@ -216,23 +290,25 @@ class _AccountStepViewState extends State<AccountStepView> {
           },
           errorText: _getPhoneError(data.phone, _phoneController.text),
         ),
-        LabeledTextField(
-          label: 'Password',
-          hint: '12–16 characters',
-          focusNode: _passwordFocusNode,
-          obscureText: _obscurePassword,
-          onToggleObscure: () =>
-              setState(() => _obscurePassword = !_obscurePassword),
-          onChanged: (v) {
-            cubit.updatePassword(v);
-            setState(() => _password = v);
-            if (v.isNotEmpty) {
-              _scrollToBottom();
-            }
-          },
-          errorText: _showErrors ? Validators.password(data.password) : null,
-        ),
-        PasswordRequirements(password: _password),
+        if (!data.isGoogleAuth) ...[
+          LabeledTextField(
+            label: 'Password',
+            hint: '12–16 characters',
+            focusNode: _passwordFocusNode,
+            obscureText: _obscurePassword,
+            onToggleObscure: () =>
+                setState(() => _obscurePassword = !_obscurePassword),
+            onChanged: (v) {
+              cubit.updatePassword(v);
+              setState(() => _password = v);
+              if (v.isNotEmpty) {
+                _scrollToBottom();
+              }
+            },
+            errorText: _showErrors ? Validators.password(data.password) : null,
+          ),
+          PasswordRequirements(password: _password),
+        ],
       ],
     );
   }

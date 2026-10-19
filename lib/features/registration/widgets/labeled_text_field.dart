@@ -26,8 +26,13 @@ class LabeledTextField extends StatelessWidget {
     this.errorText,
     this.inputFormatters,
     this.textCapitalization = TextCapitalization.none,
+    this.readOnly = false,
+    this.enabled = true,
     super.key,
   });
+
+  final bool readOnly;
+  final bool enabled;
 
   /// Whether to permanently show the prefix text even when unfocused and empty.
   final bool alwaysShowPrefix;
@@ -89,6 +94,8 @@ class LabeledTextField extends StatelessWidget {
           child: TextField(
             controller: controller,
             focusNode: focusNode,
+            readOnly: readOnly,
+            enabled: enabled,
             onChanged: onChanged,
             keyboardType: keyboardType,
             textCapitalization: textCapitalization,
@@ -160,7 +167,7 @@ class LabeledTextField extends StatelessWidget {
               fillColor: context.appColors.fieldFill,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: 14,
+                vertical: 11,
               ),
               errorText: errorText,
               errorStyle: const TextStyle(color: AppColors.destructive, fontSize: 12),

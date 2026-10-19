@@ -23,6 +23,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthEmailVerificationCheckRequested>(_onVerificationCheckRequested);
     on<AuthPasswordResetRequested>(_onPasswordResetRequested);
     on<AuthSuspensionDetected>(_onSuspensionDetected);
+    on<AuthGoogleSignInRequested>(_onGoogleSignInRequested);
+    on<AuthGoogleSignUpRequested>(_onGoogleSignUpRequested);
   }
 
   /// Shown on the sign-in screen after an admin suspends the account.
@@ -230,6 +232,55 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _repository.sendPasswordResetEmail(email: event.email);
       emit(AuthPasswordResetEmailSent(event.email));
       emit(const AuthUnauthenticated());
+    } catch (e) {
+      emit(AuthOperationFailure(_friendly(e)));
+      emit(const AuthUnauthenticated());
+    }
+  }
+
+  Future<void> _onGoogleSignInRequested(
+    AuthGoogleSignInRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+    try {
+      final result = await _repository.signInWithGoogle();
+      if (result.isNewUser) {
+        emit(AuthGoogleUserNeedsRegistration(result));
+        return;
+      }
+      final user = result.user;
+      if (await _rejectIfSuspended(user, emit)) return;
+      emit(user.emailVerified ? AuthAuthenticated(user) : AuthEmailNotVerified(user));
+      _watchSuspension(user);
+    } catch (e) {
+      final msg = _friendly(e);
+      if (msg != 'Google sign-in was cancelled.') {
+        emit(AuthOperationFailure(msg));
+      }
+      emit(const AuthUnauthenticated());
+    }
+  }
+
+  Future<void> _onGoogleSignUpRequested(
+    AuthGoogleSignUpRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+    try {
+      final user = await _repository.completeGoogleSignUp(
+        uid: event.uid,
+        email: event.email,
+        firstName: event.firstName,
+        lastName: event.lastName,
+        gender: event.gender,
+        phone: event.phone,
+        role: event.role,
+        profilePhoto: event.profilePhoto,
+        ageConfirmed: event.ageConfirmed,
+      );
+      emit(AuthAuthenticated(user));
+      _watchSuspension(user);
     } catch (e) {
       emit(AuthOperationFailure(_friendly(e)));
       emit(const AuthUnauthenticated());

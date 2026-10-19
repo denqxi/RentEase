@@ -64,23 +64,23 @@ class _RecommendedSectionState extends State<RecommendedSection> {
                     isGuest ? 'Just listed' : 'Recommended for you',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: context.appColors.textPrimary,
-                      letterSpacing: -0.2,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w500,
+                      color: context.appColors.textSecondary,
                       height: 1.15,
                     ),
                   ),
-                  const SizedBox(height: 1),
+                  const SizedBox(height: 2),
                   Text(
                     isGuest
                         ? 'Top 3 featured properties'
                         : 'Your top 3 property matches',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w400,
-                      color: context.appColors.textSecondary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: context.appColors.textPrimary,
+                      letterSpacing: -0.2,
                       height: 1.15,
                     ),
                   ),

@@ -60,6 +60,28 @@ class RegistrationCubit extends Cubit<RegistrationState> {
     emit(state.copyWith(data: state.data.copyWith(role: role)));
   }
 
+  void initFromGoogle({
+    required String uid,
+    required String email,
+    required String firstName,
+    required String lastName,
+    String? photoUrl,
+  }) {
+    emit(
+      state.copyWith(
+        data: state.data.copyWith(
+          isGoogleAuth: true,
+          googleUid: uid,
+          email: email,
+          firstName: firstName,
+          lastName: lastName,
+          fullName: '$firstName $lastName'.trim(),
+          googlePhotoUrl: photoUrl,
+        ),
+      ),
+    );
+  }
+
   // ── Account step ───────────────────────────────────────────────────────────
 
   void updateFirstName(String value) =>

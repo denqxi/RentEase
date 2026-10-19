@@ -160,6 +160,95 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<GoogleSignInResult> signInWithGoogle() async {
+    try {
+      final credential = await _remote.signInWithGoogle();
+      final fbUser = credential.user!;
+      final doc = await _remote.fetchUserDoc(fbUser.uid);
+
+      if (doc == null || doc.role.isEmpty) {
+        // Brand new user: not registered with a role yet
+        final displayName = fbUser.displayName ?? '';
+        final parts = displayName.trim().split(RegExp(r'\s+'));
+        final firstName = parts.isNotEmpty ? parts.first : '';
+        final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+
+        final appUser = AppUser(
+          uid: fbUser.uid,
+          email: fbUser.email ?? '',
+          role: '',
+          emailVerified: true,
+          firstName: firstName.isNotEmpty ? firstName : null,
+          lastName: lastName.isNotEmpty ? lastName : null,
+        );
+
+        return GoogleSignInResult(
+          user: appUser,
+          isNewUser: true,
+          displayName: displayName.isNotEmpty ? displayName : null,
+          photoUrl: fbUser.photoURL,
+        );
+      }
+
+      // Existing registered user
+      try {
+        await _remote.touchLastLogin(fbUser.uid);
+      } catch (_) {}
+      final appUser = await _toAppUser(fbUser);
+      return GoogleSignInResult(
+        user: appUser,
+        isNewUser: false,
+        displayName: fbUser.displayName,
+        photoUrl: fbUser.photoURL,
+      );
+    } on fb.FirebaseAuthException catch (e) {
+      if (e.code == 'ERROR_ABORTED_BY_USER') {
+        throw Exception('Google sign-in was cancelled.');
+      }
+      throw Exception(_messageForAuthError(e));
+    }
+  }
+
+  @override
+  Future<AppUser> completeGoogleSignUp({
+    required String uid,
+    required String email,
+    required String firstName,
+    required String lastName,
+    required String gender,
+    required String phone,
+    required String role,
+    String? profilePhoto,
+    bool ageConfirmed = false,
+  }) async {
+    if (!ageConfirmed) {
+      throw Exception(AppStrings.ageConfirmationRequired);
+    }
+    await _remote.createUserDoc(
+      UserDoc(
+        userId: uid,
+        firstName: firstName,
+        lastName: lastName,
+        gender: gender,
+        role: role,
+        status: 'active',
+        profilePhoto: profilePhoto,
+        confirmAgeNow: true,
+      ),
+      contact: UserContactDoc(phone: phone, email: email),
+    );
+    return AppUser(
+      uid: uid,
+      email: email,
+      role: role,
+      emailVerified: true,
+      firstName: firstName,
+      lastName: lastName,
+      status: 'active',
+    );
+  }
+
+  @override
   Future<void> signOut() => _remote.signOut();
 
   @override

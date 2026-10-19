@@ -20,7 +20,7 @@ class FormStepLayout extends StatelessWidget {
     this.padding = const EdgeInsets.fromLTRB(20, 16, 20, 16),
     this.fieldSpacing = 12.0,
     this.headerSpacing = 16.0,
-    this.buttonHeight = 52.0,
+    this.buttonHeight = 47.0,
     this.buttonRadius = 12.0,
     super.key,
   });

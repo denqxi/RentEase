@@ -15,6 +15,20 @@ class ActivityState extends Equatable {
   /// Number of unread items — drives the Alerts tab badge.
   int get unreadCount => items.where((i) => !i.isRead).length;
 
+  /// Set of inquiry IDs that currently have unread notifications.
+  Set<String> get unreadInquiryIds => items
+      .where((i) =>
+          !i.isRead &&
+          (i.relatedType == 'inquiry' ||
+              i.category == ActivityCategory.inquiries))
+      .map((i) => i.relatedId)
+      .whereType<String>()
+      .where((id) => id.isNotEmpty)
+      .toSet();
+
+  /// Total count of inquiries with unread notifications — drives the Inquiries tab dot.
+  int get unreadInquiriesCount => unreadInquiryIds.length;
+
   ActivityState copyWith({List<ActivityItem>? items}) {
     return ActivityState(items: items ?? this.items);
   }

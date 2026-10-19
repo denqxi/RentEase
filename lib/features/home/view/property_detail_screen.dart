@@ -11,6 +11,7 @@ import '../../../core/firestore/tenant_profile_loader.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/app_svg_icons.dart';
+import '../../../core/firestore/firestore_collections.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../shared/widgets/app_svg_icon.dart';
@@ -239,22 +240,124 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   Future<void> _loadAsyncDetailsIfNeeded() async {
     final cubit = widget.homeCubit;
     final propId = (_property['propertyId'] as String?) ?? widget.propertyId;
-    if (cubit == null || propId == null || propId.isEmpty) return;
+    if (propId == null || propId.isEmpty) return;
 
-    // If we already have the complete detail map with ownerName and amenityList, skip
-    final bool hasCompleteDetails =
+    final bool hasOwner = _property['owner'] != null &&
         _property['ownerName'] != null &&
-        _property['ownerName'] != 'Property Owner' &&
-        _property.containsKey('amenityList') &&
+        _property['ownerName'] != 'Property Owner';
+    final bool hasAmenities = _property.containsKey('amenityList') &&
         (_property['amenityList'] as List).isNotEmpty;
 
-    if (hasCompleteDetails) return;
+    if (hasOwner && hasAmenities) return;
 
     setState(() => _isLoadingDetails = true);
     try {
-      final detail = await cubit.loadPropertyDetail(propId);
+      Map<String, dynamic>? detail;
+      if (cubit != null) {
+        detail = await cubit.loadPropertyDetail(propId);
+      }
+
+      detail ??= {};
+
+      PropertyDoc? pDoc = widget.initialPropertyDoc ??
+          (_property['propertyDoc'] as PropertyDoc?);
+      if (pDoc == null || !detail.containsKey('title')) {
+        final snap = await FirebaseFirestore.instance
+            .collection(FirestoreCollections.properties)
+            .doc(propId)
+            .get();
+        if (snap.exists) {
+          pDoc = PropertyDoc.fromSnapshot(snap);
+          detail.addAll({
+            'propertyId': propId,
+            'ownerId': pDoc.ownerId,
+            'title': pDoc.title,
+            'propertyName': pDoc.propertyName,
+            'roomName': pDoc.roomName,
+            'propertyType': pDoc.propertyType ?? 'Boarding House',
+            'photoUrl': pDoc.photos.isNotEmpty
+                ? pDoc.photos.first
+                : pDoc.propertyCoverPhoto,
+            'photos': List<String>.from(pDoc.photos),
+            'address': pDoc.address,
+            'monthlyRent': pDoc.monthlyRent,
+            'depositAmount': pDoc.depositAmount,
+            'advanceMonths': pDoc.advanceMonths,
+            'isVerified': pDoc.isVerified,
+            'allowedGender': pDoc.allowedGender,
+            'smokingAllowed': pDoc.smokingAllowed,
+            'petsAllowed': pDoc.petsAllowed,
+            'curfewHours': pDoc.curfewHours,
+            'maxOccupants': pDoc.maxOccupants,
+            'amenityList': pDoc.amenityList,
+            'bScore': pDoc.isAvailable ? 1 : 0,
+            'isAvailable': pDoc.isAvailable,
+            'latitude': pDoc.location.latitude,
+            'longitude': pDoc.location.longitude,
+            'avgRating': pDoc.avgRating ?? 0.0,
+            'totalRatings': pDoc.totalRatings ?? 0,
+            'propertyDoc': pDoc,
+          });
+        }
+      }
+
+      // Ensure Owner information is always fetched and populated
+      final ownerId = (detail['ownerId'] as String?) ??
+          (_property['ownerId'] as String?) ??
+          pDoc?.ownerId;
+
+      if (ownerId != null && ownerId.isNotEmpty) {
+        try {
+          final ownerSnap = await FirebaseFirestore.instance
+              .collection(FirestoreCollections.users)
+              .doc(ownerId)
+              .get();
+          if (ownerSnap.exists) {
+            final u = UserDoc.fromSnapshot(ownerSnap);
+            final name = '${u.firstName} ${u.lastName}'.trim();
+            final parts = name.split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+            final inits = parts.take(2).map((p) => p[0].toUpperCase()).join();
+
+            detail['owner'] = u;
+            if (name.isNotEmpty) {
+              detail['ownerName'] = name;
+            }
+            detail['ownerPhotoUrl'] = u.profilePhoto;
+            detail['ownerInitials'] = inits.isNotEmpty ? inits : 'PO';
+            if (u.phone.isNotEmpty) {
+              detail['ownerPhone'] = u.phone;
+            }
+            if (u.createdAt != null) {
+              final dt = u.createdAt!.toDate();
+              const months = [
+                'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+              ];
+              detail['memberSince'] = '${months[dt.month - 1]} ${dt.year}';
+            }
+          }
+        } catch (e) {
+          debugPrint('Error fetching owner user: $e');
+        }
+
+        try {
+          final opSnap = await FirebaseFirestore.instance
+              .collection(FirestoreCollections.ownerProfiles)
+              .doc(ownerId)
+              .get();
+          if (opSnap.exists) {
+            final op = OwnerProfileDoc.fromSnapshot(opSnap);
+            detail['ownerProfile'] = op;
+            detail['isVerified'] = op.verificationStatus == 'verified';
+            detail['propertyCount'] = op.propertyCount ?? 1;
+          }
+        } catch (e) {
+          debugPrint('Error fetching owner profile: $e');
+        }
+      }
+
       if (!mounted) return;
-      if (detail != null) {
+      if (detail.isNotEmpty) {
         setState(() {
           final wasNonMatch = _property['isNonMatch'];
           final wasFilterMatch = _property['isFilterMatch'];
@@ -266,7 +369,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
 
           _property = {
             ..._property,
-            ...detail,
+            ...detail!,
             if (wasNonMatch != null) ...{'isNonMatch': wasNonMatch},
             if (wasFilterMatch != null) ...{'isFilterMatch': wasFilterMatch},
             if (sessionReasons != null) ...{'mismatchReasons': sessionReasons},
@@ -1725,7 +1828,7 @@ class _PropertyPhotoGallerySectionState
 // MAIN OVERVIEW CARD (NAME, LOCATION, REVIEWS REDIRECT, RENT)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _PropertyMainOverviewCard extends StatelessWidget {
+class _PropertyMainOverviewCard extends StatefulWidget {
   const _PropertyMainOverviewCard({
     required this.displayName,
     required this.displayType,
@@ -1742,6 +1845,13 @@ class _PropertyMainOverviewCard extends StatelessWidget {
   final PropertyDoc propertyDoc;
   final VoidCallback? onAddressTap;
 
+  @override
+  State<_PropertyMainOverviewCard> createState() => _PropertyMainOverviewCardState();
+}
+
+class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
+  bool _isAddressExpanded = false;
+
   static String _fmt(num value) => value
       .round()
       .toString()
@@ -1756,6 +1866,13 @@ class _PropertyMainOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayName = widget.displayName;
+    final displayType = widget.displayType;
+    final address = widget.address;
+    final monthlyRent = widget.monthlyRent;
+    final propertyDoc = widget.propertyDoc;
+    final onAddressTap = widget.onAddressTap;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -1794,16 +1911,17 @@ class _PropertyMainOverviewCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // Address Row with Theme Blue Pin (Clickable to Map View)
-          InkWell(
-            onTap: onAddressTap,
-            borderRadius: BorderRadius.circular(6),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
+          // Address Row with Theme Blue Pin (Click address to show full / hide, Click Map to open Map View)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Pin Icon (Taps to open Map View)
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onAddressTap,
+                  child: const Padding(
                     padding: EdgeInsets.only(top: 1.5),
                     child: Icon(
                       Icons.location_on_outlined,
@@ -1811,28 +1929,71 @@ class _PropertyMainOverviewCard extends StatelessWidget {
                       color: AppColors.primary,
                     ),
                   ),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: Text(
-                      address,
-                      softWrap: true,
-                      style: const TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF64748B),
-                        height: 1.4,
+                ),
+                const SizedBox(width: 5),
+
+                // Address Text: 1 line with ellipsis by default, tap to expand to full, tap again to hide
+                Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      setState(() {
+                        _isAddressExpanded = !_isAddressExpanded;
+                      });
+                    },
+                    child: AnimatedSize(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                        address,
+                        maxLines: _isAddressExpanded ? null : 1,
+                        overflow: _isAddressExpanded
+                            ? TextOverflow.visible
+                            : TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF64748B),
+                          height: 1.4,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    size: 16,
-                    color: Color(0xFF94A3B8),
+                ),
+                const SizedBox(width: 6),
+
+                // Map navigation link (plain blue text, no badge)
+                if (onAddressTap != null)
+                  InkWell(
+                    onTap: onAddressTap,
+                    borderRadius: BorderRadius.circular(6),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Map',
+                            style: TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          SizedBox(width: 2),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ],
-              ),
+              ],
             ),
           ),
           const SizedBox(height: 10),
@@ -2210,6 +2371,7 @@ class _HostInformationCard extends StatelessWidget {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => OwnerDetailScreen(
+                  ownerId: (property['ownerId'] as String?) ?? propertyDoc?.ownerId,
                   owner: owner,
                   ownerProfile: ownerProfile,
                   property: propertyDoc,

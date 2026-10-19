@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/tenant_private_prefs_doc.dart';
@@ -10,12 +12,17 @@ import '../../../../core/firestore/models/user_doc.dart';
 /// Thin wrapper around the Firebase Auth + Firestore SDKs. No business
 /// logic lives here — [AuthRepositoryImpl] maps results/errors.
 class AuthRemoteDataSource {
-  AuthRemoteDataSource({fb.FirebaseAuth? auth, FirebaseFirestore? firestore})
-      : _auth = auth ?? fb.FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance;
+  AuthRemoteDataSource({
+    fb.FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
+    GoogleSignIn? googleSignIn,
+  })  : _auth = auth ?? fb.FirebaseAuth.instance,
+        _firestore = firestore ?? FirebaseFirestore.instance,
+        _googleSignIn = googleSignIn ?? GoogleSignIn();
 
   final fb.FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
+  final GoogleSignIn _googleSignIn;
 
   fb.User? get currentFirebaseUser => _auth.currentUser;
 
@@ -38,7 +45,34 @@ class AuthRemoteDataSource {
     return _auth.signInWithEmailAndPassword(email: email, password: password);
   }
 
-  Future<void> signOut() => _auth.signOut();
+  Future<fb.UserCredential> signInWithGoogle() async {
+    if (kIsWeb) {
+      final googleProvider = fb.GoogleAuthProvider();
+      return _auth.signInWithPopup(googleProvider);
+    }
+    final googleUser = await _googleSignIn.signIn();
+    if (googleUser == null) {
+      throw fb.FirebaseAuthException(
+        code: 'ERROR_ABORTED_BY_USER',
+        message: 'Google sign-in was cancelled.',
+      );
+    }
+    final googleAuth = await googleUser.authentication;
+    final credential = fb.GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+    return _auth.signInWithCredential(credential);
+  }
+
+  Future<void> signOut() async {
+    if (!kIsWeb) {
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+    }
+    await _auth.signOut();
+  }
 
   /// Deletes the signed-in user's profile docs, then the Auth account itself
   /// (frees the email). Profile docs go first: once the Auth user is gone

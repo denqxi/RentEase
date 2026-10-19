@@ -47,5 +47,33 @@ abstract class AuthRepository {
   /// `emailVerified` flag.
   Future<bool> reloadAndCheckEmailVerified();
 
+  Future<GoogleSignInResult> signInWithGoogle();
+
+  Future<AppUser> completeGoogleSignUp({
+    required String uid,
+    required String email,
+    required String firstName,
+    required String lastName,
+    required String gender,
+    required String phone,
+    required String role,
+    String? profilePhoto,
+    bool ageConfirmed = false,
+  });
+
   Future<void> sendPasswordResetEmail({required String email});
+}
+
+class GoogleSignInResult {
+  const GoogleSignInResult({
+    required this.user,
+    required this.isNewUser,
+    this.displayName,
+    this.photoUrl,
+  });
+
+  final AppUser user;
+  final bool isNewUser;
+  final String? displayName;
+  final String? photoUrl;
 }

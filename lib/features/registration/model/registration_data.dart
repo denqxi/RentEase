@@ -11,6 +11,9 @@ import 'user_role.dart';
 class RegistrationData extends Equatable {
   const RegistrationData({
     this.role,
+    this.isGoogleAuth = false,
+    this.googleUid = '',
+    this.googlePhotoUrl,
     // Tenant account step.
     this.firstName = '',
     this.lastName = '',
@@ -62,6 +65,11 @@ class RegistrationData extends Equatable {
 
   // Role.
   final UserRole? role;
+
+  // Google OAuth data
+  final bool isGoogleAuth;
+  final String googleUid;
+  final String? googlePhotoUrl;
 
   // ── Tenant account step ──────────────────────────────────────────────────
   final String firstName;
@@ -125,6 +133,9 @@ class RegistrationData extends Equatable {
 
   RegistrationData copyWith({
     UserRole? role,
+    bool? isGoogleAuth,
+    String? googleUid,
+    String? googlePhotoUrl,
     // Tenant account.
     String? firstName,
     String? lastName,
@@ -175,6 +186,9 @@ class RegistrationData extends Equatable {
   }) {
     return RegistrationData(
       role: role ?? this.role,
+      isGoogleAuth: isGoogleAuth ?? this.isGoogleAuth,
+      googleUid: googleUid ?? this.googleUid,
+      googlePhotoUrl: googlePhotoUrl ?? this.googlePhotoUrl,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       gender: gender ?? this.gender,
@@ -221,6 +235,9 @@ class RegistrationData extends Equatable {
   @override
   List<Object?> get props => <Object?>[
         role,
+        isGoogleAuth,
+        googleUid,
+        googlePhotoUrl,
         firstName,
         lastName,
         gender,

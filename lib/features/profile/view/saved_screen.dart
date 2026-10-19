@@ -4,11 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../features/home/cubit/home_cubit.dart';
-import '../../../features/home/model/listing.dart';
-import '../../../shared/widgets/listing_image_placeholder.dart';
+import '../../../features/home/widgets/listing_card_large.dart';
 import '../../../features/home/widgets/nearby_section.dart'
     show openPropertyDetail;
-import '../../../shared/widgets/match_badge.dart';
 
 class SavedScreen extends StatefulWidget {
   const SavedScreen({this.showBackButton = true, super.key});
@@ -149,7 +147,7 @@ class _SavedScreenState extends State<SavedScreen> {
                   ? _ErrorState(onRetry: cubit.loadSaved)
                   : saved.isEmpty
                   ? const _EmptyState()
-                  : ListView.builder(
+                  : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(
                         AppSpacing.lg,
                         0,
@@ -157,17 +155,21 @@ class _SavedScreenState extends State<SavedScreen> {
                         100,
                       ),
                       itemCount: saved.length,
-                      itemBuilder: (ctx, i) => _SavedCard(
-                        listing: saved[i],
-                        onUnsave: () => cubit.toggleSaved(saved[i].id),
-                        onOpen: () => openPropertyDetail(
-                          ctx,
-                          cubit,
-                          saved[i].id,
-                          initialListing: saved[i],
-                          initialPropertyDoc: saved[i].propertyDoc,
-                        ),
-                      ),
+                      separatorBuilder: (_, _) => const SizedBox(height: 14),
+                      itemBuilder: (ctx, i) {
+                        final listing = saved[i].copyWith(isSaved: true);
+                        return ListingCardLarge(
+                          listing: listing,
+                          onSavedToggle: () => cubit.toggleSaved(listing.id),
+                          onTap: () => openPropertyDetail(
+                            ctx,
+                            cubit,
+                            listing.id,
+                            initialListing: listing,
+                            initialPropertyDoc: listing.propertyDoc,
+                          ),
+                        );
+                      },
                     ),
             ),
           ],
@@ -258,172 +260,4 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// â”€â”€ Saved card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-class _SavedCard extends StatelessWidget {
-  const _SavedCard({
-    required this.listing,
-    required this.onUnsave,
-    required this.onOpen,
-  });
-
-  final Listing listing;
-  final VoidCallback onUnsave;
-  final VoidCallback onOpen;
-
-  String _fmt(int v) => v.toString().replaceAllMapped(
-    RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-    (m) => '${m[1]},',
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onOpen,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: context.appColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: AppColors.scrim.withValues(alpha: 0.06),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // Image with match badge + unsave button
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-              child: SizedBox(
-                height: 140,
-                width: double.infinity,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: <Widget>[
-                    ListingImagePlaceholder(
-                      seed: listing.imageSeed,
-                      photoUrl: listing.photoUrl,
-                    ),
-                    // Match badge â€” top left
-                    Positioned(
-                      top: 10,
-                      left: 10,
-                      child: listing.matchPercent > 0
-                          ? MatchBadge(
-                              percent: listing.matchPercent,
-                              showLabel: true,
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                    // Unsave button â€” top right
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: GestureDetector(
-                        onTap: onUnsave,
-                        child: Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: AppColors.onInk.withValues(alpha: 0.92),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.favorite_rounded,
-                            color: AppColors.destructive,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Card body
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          listing.title,
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: context.appColors.textPrimary,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Row(
-                          children: <Widget>[
-                            Icon(
-                              Icons.location_on_outlined,
-                              size: 12,
-                              color: context.appColors.textSecondary,
-                            ),
-                            SizedBox(width: 3),
-                            Expanded(
-                              child: Text(
-                                listing.location,
-                                style: TextStyle(
-                                  fontFamily: 'DM Sans',
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  color: context.appColors.textSecondary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.md),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: <Widget>[
-                      Text(
-                        '₱${_fmt(listing.pricePerMonth)}',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.accent,
-                        ),
-                      ),
-                      Text(
-                        '/mo',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: context.appColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

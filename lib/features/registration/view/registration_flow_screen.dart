@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../auth/domain/repositories/auth_repository.dart';
 import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../cubit/registration_cubit.dart';
 import '../model/registration_step.dart';
@@ -28,16 +29,34 @@ class RegistrationFlowScreen extends StatelessWidget {
   const RegistrationFlowScreen({
     required this.onComplete,
     required this.onSignIn,
+    this.initialGoogleResult,
     super.key,
   });
 
   final ValueChanged<UserRole> onComplete;
   final VoidCallback onSignIn;
+  final GoogleSignInResult? initialGoogleResult;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<RegistrationCubit>(
-      create: (_) => RegistrationCubit(),
+      create: (_) {
+        final cubit = RegistrationCubit();
+        final google = initialGoogleResult;
+        if (google != null) {
+          final parts = (google.displayName ?? '').trim().split(RegExp(r'\s+'));
+          final firstName = parts.isNotEmpty ? parts.first : '';
+          final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+          cubit.initFromGoogle(
+            uid: google.user.uid,
+            email: google.user.email,
+            firstName: firstName,
+            lastName: lastName,
+            photoUrl: google.photoUrl,
+          );
+        }
+        return cubit;
+      },
       child: BlocListener<AuthBloc, AuthState>(
         // The account/landlordAccount step dispatches AuthSignUpRequested
         // directly (see AccountStepView/LandlordAccountStepView) — once it
@@ -53,7 +72,11 @@ class RegistrationFlowScreen extends StatelessWidget {
           // auth events (resend, check) must not re-trigger this listener.
           if (ModalRoute.of(context)?.isCurrent != true) return;
 
-          if (state is AuthEmailNotVerified) {
+          if (state is AuthAuthenticated) {
+            if (cubit.state.data.isGoogleAuth) {
+              onComplete(cubit.state.data.role ?? UserRole.tenant);
+            }
+          } else if (state is AuthEmailNotVerified) {
             // Account created — hand off to email verification, which then
             // leads into the role's onboarding (tenant hard constraints /
             // owner document upload). The "You're all set" success step is
@@ -87,34 +110,41 @@ class RegistrationFlowScreen extends StatelessWidget {
               buildWhen: (previous, current) => previous.step != current.step,
               builder: (context, state) {
                 final cubit = context.read<RegistrationCubit>();
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.lg,
-                        AppSpacing.md,
-                        AppSpacing.lg,
-                        0,
-                      ),
-                      child: RegistrationAppBar(
-                        onBack: state.step == RegistrationStep.role
-                            ? onSignIn
-                            : cubit.back,
-                        stepNumber: state.step.formStepNumber,
-                        stepCount: state.formStepCount,
-                      ),
-                    ),
-                    Expanded(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 250),
-                        child: KeyedSubtree(
-                          key: ValueKey<RegistrationStep>(state.step),
-                          child: _viewForStep(state.step, context),
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (constraints.maxHeight <= 100) {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            AppSpacing.md,
+                            AppSpacing.lg,
+                            0,
+                          ),
+                          child: RegistrationAppBar(
+                            onBack: state.step == RegistrationStep.role
+                                ? onSignIn
+                                : cubit.back,
+                            stepNumber: state.step.formStepNumber,
+                            stepCount: state.formStepCount,
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
+                        Expanded(
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 250),
+                            child: KeyedSubtree(
+                              key: ValueKey<RegistrationStep>(state.step),
+                              child: _viewForStep(state.step, context),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             ),

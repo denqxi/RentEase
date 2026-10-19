@@ -123,8 +123,9 @@ class _RoleSelectionViewState extends State<RoleSelectionView>
                       ),
                     ),
                   ],
-                  subtitle:
-                      'Select how you want to use RentEase to personalize your experience.',
+                  subtitle: state.data.isGoogleAuth
+                      ? 'Select your role to complete setting up your account ().'
+                      : 'Select how you want to use RentEase to personalize your experience.',
                 ),
               ),
             ),

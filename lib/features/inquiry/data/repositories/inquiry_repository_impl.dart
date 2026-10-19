@@ -99,8 +99,18 @@ class InquiryRepositoryImpl implements InquiryRepository {
       _guard(() => _remote.addMessage(inquiryId, message));
 
   @override
-  Future<void> createRating(RatingDoc rating) =>
-      _guard(() => _remote.createRating(rating));
+  Future<void> createRating(RatingDoc rating) async {
+    try {
+      await _remote.createRating(rating);
+    } on FirebaseException catch (e) {
+      throw Exception(switch (e.code) {
+        'permission-denied' =>
+          'Unable to submit rating. Please ensure the booking is confirmed and your account is active.',
+        'unavailable' => 'Network error. Check your connection and try again.',
+        _ => e.message ?? 'Something went wrong. Please try again.',
+      });
+    }
+  }
 
   @override
   Future<bool> hasRated({required String inquiryId, required String raterId}) =>

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/firestore/models/property_doc.dart';
 import '../../../core/utils/date_utils.dart';
+import '../../home/view/property_detail_screen.dart';
 import '../cubit/inquiry_thread_cubit.dart';
 import '../domain/services/inquiry_service.dart';
 import 'rejected_owner_notice.dart';
@@ -171,93 +172,118 @@ class _PropertyInformationCard extends StatelessWidget {
             ? '₱${(p.monthlyRent * p.advanceMonths).toInt()}'
             : 'None';
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F9FF),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFBAE6FD).withValues(alpha: 0.6),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.info_outline_rounded,
-                color: Color(0xFF0284C7),
-                size: 18,
-              ),
-              const SizedBox(width: 6),
-              const Expanded(
-                child: Text(
-                  'Property information',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0284C7),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3.5,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.access_time_rounded,
-                      color: Color(0xFFD97706),
-                      size: 12,
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: p != null
+            ? () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => PropertyDetailScreen(
+                      propertyId: p.propertyId,
+                      initialPropertyDoc: p,
                     ),
-                    SizedBox(width: 4),
-                    Text(
-                      'Awaiting response',
+                  ),
+                )
+            : null,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0F9FF),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFFBAE6FD).withValues(alpha: 0.6),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    color: Color(0xFF0284C7),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  const Expanded(
+                    child: Text(
+                      'Property information',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontFamily: 'DM Sans',
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFD97706),
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0284C7),
                       ),
                     ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3.5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.access_time_rounded,
+                          color: Color(0xFFD97706),
+                          size: 12,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'Awaiting response',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFD97706),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (p != null) ...[
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF0284C7),
+                      size: 18,
+                    ),
                   ],
-                ),
+                ],
               ),
+              const SizedBox(height: 12),
+              if (p == null)
+                const Text(
+                  'This listing is no longer available.',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 13,
+                    color: Color(0xFF64748B),
+                  ),
+                )
+              else ...[
+                _row(
+                  'Gender policy:',
+                  p.allowedGender.isNotEmpty ? p.allowedGender : 'Mixed / Any',
+                ),
+                _row('Curfew:', formatCurfew(p.curfewHours)),
+                _row('Deposit:', '₱${p.depositAmount}'),
+                _row('Advance:', advanceText),
+                _row('Monthly rent:', '₱${p.monthlyRent}', isLast: true),
+              ],
             ],
           ),
-          const SizedBox(height: 12),
-          if (p == null)
-            const Text(
-              'This listing is no longer available.',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 13,
-                color: Color(0xFF64748B),
-              ),
-            )
-          else ...[
-            _row(
-              'Gender policy:',
-              p.allowedGender.isNotEmpty ? p.allowedGender : 'Mixed / Any',
-            ),
-            _row('Curfew:', formatCurfew(p.curfewHours)),
-            _row('Deposit:', '₱${p.depositAmount}'),
-            _row('Advance:', advanceText),
-            _row('Monthly rent:', '₱${p.monthlyRent}', isLast: true),
-          ],
-        ],
+        ),
       ),
     );
   }

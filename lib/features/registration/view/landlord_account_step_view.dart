@@ -22,6 +22,7 @@ class LandlordAccountStepView extends StatefulWidget {
 
 class _LandlordAccountStepViewState extends State<LandlordAccountStepView> {
   late final TextEditingController _fullNameController;
+  late final TextEditingController _emailController;
   late final TextEditingController _phoneController;
   late final ScrollController _scrollController;
   late final FocusNode _passwordFocusNode;
@@ -39,6 +40,7 @@ class _LandlordAccountStepViewState extends State<LandlordAccountStepView> {
     super.initState();
     final data = context.read<RegistrationCubit>().state.data;
     _fullNameController = TextEditingController(text: data.fullName);
+    _emailController = TextEditingController(text: data.email);
     _phoneController = TextEditingController(
       text: _formatInitialPhone(data.phone),
     );
@@ -56,6 +58,7 @@ class _LandlordAccountStepViewState extends State<LandlordAccountStepView> {
   @override
   void dispose() {
     _fullNameController.dispose();
+    _emailController.dispose();
     _phoneController.dispose();
     _scrollController.dispose();
     _passwordFocusNode.dispose();
@@ -112,7 +115,7 @@ class _LandlordAccountStepViewState extends State<LandlordAccountStepView> {
         Validators.required(data.gender, field: 'Gender') != null ||
         Validators.email(data.email) != null ||
         Validators.phone(data.phone) != null ||
-        Validators.password(data.password) != null;
+        (!data.isGoogleAuth && Validators.password(data.password) != null);
 
     if (hasErrors) {
       setState(() => _showErrors = true);
@@ -125,6 +128,23 @@ class _LandlordAccountStepViewState extends State<LandlordAccountStepView> {
     final parts = data.fullName.trim().split(RegExp(r'\s+'));
     final firstName = parts.isNotEmpty ? parts.first : '';
     final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+
+    if (data.isGoogleAuth) {
+      context.read<AuthBloc>().add(
+            AuthGoogleSignUpRequested(
+              uid: data.googleUid,
+              email: data.email.trim(),
+              firstName: firstName,
+              lastName: lastName,
+              gender: data.gender,
+              phone: data.phone.trim(),
+              role: 'owner',
+              profilePhoto: data.googlePhotoUrl,
+              ageConfirmed: data.ageConfirmed,
+            ),
+          );
+      return;
+    }
 
     context.read<AuthBloc>().add(
           AuthSignUpRequested(
@@ -167,6 +187,58 @@ class _LandlordAccountStepViewState extends State<LandlordAccountStepView> {
             : null,
       ),
       fields: <Widget>[
+        if (data.isGoogleAuth)
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF86EFAC), width: 1),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFDCFCE7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF16A34A),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Authenticated with Google',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: Color(0xFF166534),
+                        ),
+                      ),
+                      Text(
+                        data.email,
+                        style: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 12,
+                          color: Color(0xFF15803D),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         LabeledTextField(
           label: 'Full name',
           hint: 'John Smith',
@@ -188,6 +260,8 @@ class _LandlordAccountStepViewState extends State<LandlordAccountStepView> {
         LabeledTextField(
           label: 'Email',
           hint: 'john@email.com',
+          controller: _emailController,
+          readOnly: data.isGoogleAuth,
           keyboardType: TextInputType.emailAddress,
           onChanged: cubit.updateEmail,
           errorText: _showErrors ? Validators.email(data.email) : null,
@@ -208,23 +282,25 @@ class _LandlordAccountStepViewState extends State<LandlordAccountStepView> {
           },
           errorText: _getPhoneError(data.phone, _phoneController.text),
         ),
-        LabeledTextField(
-          label: 'Password',
-          hint: '12–16 characters',
-          focusNode: _passwordFocusNode,
-          obscureText: _obscurePassword,
-          onToggleObscure: () =>
-              setState(() => _obscurePassword = !_obscurePassword),
-          onChanged: (v) {
-            cubit.updatePassword(v);
-            setState(() => _password = v);
-            if (v.isNotEmpty) {
-              _scrollToBottom();
-            }
-          },
-          errorText: _showErrors ? Validators.password(data.password) : null,
-        ),
-        PasswordRequirements(password: _password),
+        if (!data.isGoogleAuth) ...[
+          LabeledTextField(
+            label: 'Password',
+            hint: '12–16 characters',
+            focusNode: _passwordFocusNode,
+            obscureText: _obscurePassword,
+            onToggleObscure: () =>
+                setState(() => _obscurePassword = !_obscurePassword),
+            onChanged: (v) {
+              cubit.updatePassword(v);
+              setState(() => _password = v);
+              if (v.isNotEmpty) {
+                _scrollToBottom();
+              }
+            },
+            errorText: _showErrors ? Validators.password(data.password) : null,
+          ),
+          PasswordRequirements(password: _password),
+        ],
       ],
     );
   }

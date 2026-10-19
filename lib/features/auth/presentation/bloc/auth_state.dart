@@ -89,3 +89,13 @@ class AuthPasswordResetEmailSent extends AuthState {
 class AuthSuspended extends AuthState {
   const AuthSuspended();
 }
+
+/// Google sign-in succeeded, but this user doesn't have an account/role in RentEase yet.
+class AuthGoogleUserNeedsRegistration extends AuthState {
+  const AuthGoogleUserNeedsRegistration(this.googleResult);
+
+  final GoogleSignInResult googleResult;
+
+  @override
+  List<Object?> get props => [googleResult.user.uid];
+}

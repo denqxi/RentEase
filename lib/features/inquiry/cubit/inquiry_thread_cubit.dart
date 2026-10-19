@@ -126,13 +126,19 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
         : _service.decline(inquiry: i, ownerId: uid, reason: reason),
   );
 
-  Future<bool> markBooked({bool fillsLastVacancy = false}) => _run(
-    (i) => _service.markBooked(
-      inquiry: i,
-      ownerId: uid,
-      fillsLastVacancy: fillsLastVacancy,
-    ),
-  );
+  Future<bool> markBooked({bool fillsLastVacancy = false}) async {
+    final ok = await _run(
+      (i) => _service.markBooked(
+        inquiry: i,
+        ownerId: uid,
+        fillsLastVacancy: fillsLastVacancy,
+      ),
+    );
+    if (ok && state.inquiry != null && !isClosed) {
+      emit(state.copyWith(inquiry: state.inquiry!.copyWith(status: 'booked')));
+    }
+    return ok;
+  }
 
   Future<bool> sendMessage(String text) => _run(
     (i) => _service.sendMessage(inquiry: i, senderId: uid, content: text),

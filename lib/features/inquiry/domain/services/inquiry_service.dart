@@ -20,8 +20,15 @@ class InquiryException implements Exception {
 /// paths, SDK text) is replaced by a generic message instead of leaking.
 String inquiryErrorMessage(Object e) {
   if (e is InquiryException) return e.message;
-  if (e is FirebaseException && e.code == 'permission-denied') {
-    return "You don't have permission to do that.";
+  if (e is FirebaseException) {
+    if (e.code == 'permission-denied') {
+      return "You don't have permission to do that.";
+    }
+    return e.message ?? 'Something went wrong. Please try again.';
+  }
+  final s = e.toString();
+  if (s.startsWith('Exception: ')) {
+    return s.substring(11);
   }
   return 'Something went wrong. Please try again.';
 }
@@ -548,18 +555,30 @@ class InquiryService {
     required int stars,
     String? review,
   }) async {
-    if (inquiry.status != 'booked') {
+    var currentInquiry = inquiry;
+    if (currentInquiry.status != 'booked') {
+      try {
+        final fresh = await _repository
+            .watchInquiry(inquiry.inquiryId)
+            .first
+            .timeout(const Duration(seconds: 2));
+        if (fresh != null) {
+          currentInquiry = fresh;
+        }
+      } catch (_) {}
+    }
+    if (currentInquiry.status != 'booked') {
       throw const InquiryException('You can rate once the booking is confirmed.');
     }
     if (stars < 1 || stars > 5) {
       throw const InquiryException('Pick between 1 and 5 stars.');
     }
-    final raterIsOwner = raterId == inquiry.ownerId;
-    if (!raterIsOwner && raterId != inquiry.tenantId) {
+    final raterIsOwner = raterId == currentInquiry.ownerId;
+    if (!raterIsOwner && raterId != currentInquiry.tenantId) {
       throw const InquiryException('You are not part of this inquiry.');
     }
     if (await _repository.hasRated(
-      inquiryId: inquiry.inquiryId,
+      inquiryId: currentInquiry.inquiryId,
       raterId: raterId,
     )) {
       throw const InquiryException('You already rated this booking.');
@@ -567,14 +586,14 @@ class InquiryService {
     final trimmed = _capped(review, maxReviewLength);
     await _repository.createRating(
       RatingDoc(
-        ratingId: '',
-        inquiryId: inquiry.inquiryId,
+        ratingId: '${currentInquiry.inquiryId}_$raterId',
+        inquiryId: currentInquiry.inquiryId,
         raterId: raterId,
-        ratedId: ratedIdFor(inquiry, raterIsOwner: raterIsOwner),
+        ratedId: ratedIdFor(currentInquiry, raterIsOwner: raterIsOwner),
         raterRole: raterIsOwner ? 'owner' : 'tenant',
         stars: stars,
         review: trimmed.isEmpty ? null : trimmed,
-        propertyId: inquiry.propertyId.isNotEmpty ? inquiry.propertyId : null,
+        propertyId: currentInquiry.propertyId.isNotEmpty ? currentInquiry.propertyId : null,
       ),
     );
   }

@@ -2,10 +2,30 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/firestore/firestore_collections.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../inquiry/widgets/invite_button.dart';
 import '../../owner/model/compatible_tenant.dart';
 import '../../owner_onboarding/widgets/listing_form_widgets.dart';
+
+/// One review given by an owner/landlord to this tenant.
+class _TenantReviewItem {
+  const _TenantReviewItem({
+    required this.raterName,
+    required this.stars,
+    required this.date,
+    this.comment,
+    this.propertyTitle,
+    this.raterInitials = 'L',
+  });
+
+  final String raterName;
+  final int stars;
+  final String date;
+  final String? comment;
+  final String? propertyTitle;
+  final String raterInitials;
+}
 
 /// Detail view for a compatible tenant (owner perspective).
 /// Displays personal information, contact details, and living preferences.
@@ -35,13 +55,145 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
   UserDoc? _user;
   TenantProfileDoc? _profile;
 
+  bool _isLoadingReviews = true;
+  List<_TenantReviewItem> _reviews = const [];
+  double _avgRating = 0.0;
+  int _totalReviews = 0;
+
   @override
   void initState() {
     super.initState();
     _user = widget.user;
     _profile = widget.profile;
+    if (_profile != null) {
+      _avgRating = (_profile!.avgRating ?? 0.0).toDouble();
+      _totalReviews = (_profile!.totalRatings ?? 0).toInt();
+    }
     if (_profile == null || _user == null) {
       _loadData();
+    }
+    _loadReviews();
+  }
+
+  Future<void> _loadReviews() async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final snap = await firestore
+          .collection(FirestoreCollections.ratings)
+          .where('ratedId', isEqualTo: widget.tenant.tenantId)
+          .where('raterRole', isEqualTo: 'owner')
+          .get();
+
+      if (snap.docs.isNotEmpty) {
+        final raterIds = snap.docs
+            .map((d) => d.data()['raterId'] as String?)
+            .whereType<String>()
+            .toSet();
+
+        final userDocs = await Future.wait(
+          raterIds.map((id) =>
+              firestore.collection(FirestoreCollections.users).doc(id).get()),
+        );
+
+        final namesMap = <String, String>{};
+        for (final doc in userDocs) {
+          if (doc.exists) {
+            final d = doc.data() ?? {};
+            final name =
+                '${d['firstName'] ?? ''} ${d['lastName'] ?? ''}'.trim();
+            namesMap[doc.id] = name.isNotEmpty ? name : 'Property Owner';
+          }
+        }
+
+        final propIds = snap.docs
+            .map((d) => d.data()['propertyId'] as String?)
+            .whereType<String>()
+            .where((id) => id.isNotEmpty)
+            .toSet();
+
+        final propDocs = await Future.wait(
+          propIds.map((id) => firestore
+              .collection(FirestoreCollections.properties)
+              .doc(id)
+              .get()),
+        );
+
+        final propsMap = <String, String>{};
+        for (final doc in propDocs) {
+          if (doc.exists) {
+            final d = doc.data() ?? {};
+            propsMap[doc.id] = (d['title'] as String?) ?? 'Listing';
+          }
+        }
+
+        final loaded = <_TenantReviewItem>[];
+        num totalStars = 0;
+
+        final sortedDocs =
+            List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(snap.docs)
+              ..sort((a, b) {
+                final aTime = a.data()['createdAt'] as Timestamp?;
+                final bTime = b.data()['createdAt'] as Timestamp?;
+                if (aTime == null && bTime == null) return 0;
+                if (aTime == null) return 1;
+                if (bTime == null) return -1;
+                return bTime.compareTo(aTime);
+              });
+
+        for (final doc in sortedDocs) {
+          final rating = RatingDoc.fromSnapshot(doc);
+          totalStars += rating.stars;
+
+          final rName = namesMap[rating.raterId] ?? 'Property Owner';
+          final parts = rName.split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+          final initials = parts.take(2).map((p) => p[0].toUpperCase()).join();
+
+          String dateStr = 'Recent';
+          final at = rating.createdAt?.toDate();
+          if (at != null) {
+            const months = [
+              'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+            ];
+            dateStr = '${months[at.month - 1]} ${at.day}, ${at.year}';
+          }
+
+          loaded.add(
+            _TenantReviewItem(
+              raterName: rName,
+              stars: rating.stars.toInt(),
+              date: dateStr,
+              comment: rating.review?.trim(),
+              propertyTitle: rating.propertyId != null
+                  ? propsMap[rating.propertyId]
+                  : null,
+              raterInitials: initials.isNotEmpty ? initials : 'O',
+            ),
+          );
+        }
+
+        if (mounted) {
+          setState(() {
+            _reviews = loaded;
+            _totalReviews = loaded.length;
+            _avgRating = totalStars / loaded.length;
+            _isLoadingReviews = false;
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading tenant ratings: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        if (_reviews.isEmpty) {
+          _totalReviews = (_profile?.totalRatings ?? 0).toInt();
+          _avgRating = (_profile?.avgRating ?? 0.0).toDouble();
+        }
+        _isLoadingReviews = false;
+      });
     }
   }
 
@@ -52,13 +204,17 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
       if (_profile == null) {
         futures.add(
           firestore
-              .collection('tenantProfiles')
+              .collection(FirestoreCollections.tenantProfiles)
               .doc(widget.tenant.tenantId)
               .get()
               .then((snap) {
             if (snap.exists && mounted) {
               setState(() {
                 _profile = TenantProfileDoc.fromSnapshot(snap);
+                if (_reviews.isEmpty && _totalReviews == 0) {
+                  _totalReviews = (_profile?.totalRatings ?? 0).toInt();
+                  _avgRating = (_profile?.avgRating ?? 0.0).toDouble();
+                }
               });
             }
           }),
@@ -67,7 +223,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
       if (_user == null) {
         futures.add(
           firestore
-              .collection('users')
+              .collection(FirestoreCollections.users)
               .doc(widget.tenant.tenantId)
               .get()
               .then((snap) {
@@ -280,39 +436,115 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 5),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 3.5,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFECFDF5),
-                                          borderRadius: BorderRadius.circular(20),
-                                          border: Border.all(
-                                            color: const Color(0xFF10B981),
-                                            width: 0.8,
-                                          ),
-                                        ),
-                                        child: const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.check_circle_rounded,
-                                              size: 13,
-                                              color: Color(0xFF10B981),
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 3.5,
                                             ),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              'Compatible Match',
-                                              style: TextStyle(
-                                                fontFamily: 'DM Sans',
-                                                fontSize: 11.5,
-                                                fontWeight: FontWeight.w700,
-                                                color: Color(0xFF059669),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFECFDF5),
+                                              borderRadius: BorderRadius.circular(20),
+                                              border: Border.all(
+                                                color: const Color(0xFF10B981),
+                                                width: 0.8,
                                               ),
                                             ),
-                                          ],
-                                        ),
+                                            child: const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.check_circle_rounded,
+                                                  size: 13,
+                                                  color: Color(0xFF10B981),
+                                                ),
+                                                SizedBox(width: 4),
+                                                Text(
+                                                  'Compatible Match',
+                                                  style: TextStyle(
+                                                    fontFamily: 'DM Sans',
+                                                    fontSize: 11.5,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Color(0xFF059669),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          if (_totalReviews > 0)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 9,
+                                                vertical: 3.5,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFFEF3C7),
+                                                borderRadius: BorderRadius.circular(20),
+                                                border: Border.all(
+                                                  color: const Color(0xFFF59E0B),
+                                                  width: 0.8,
+                                                ),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(
+                                                    Icons.star_rounded,
+                                                    size: 14,
+                                                    color: Color(0xFFD97706),
+                                                  ),
+                                                  const SizedBox(width: 3.5),
+                                                  Text(
+                                                    '${_avgRating.toStringAsFixed(1)} ($_totalReviews)',
+                                                    style: const TextStyle(
+                                                      fontFamily: 'DM Sans',
+                                                      fontSize: 11.5,
+                                                      fontWeight: FontWeight.w700,
+                                                      color: Color(0xFFB45309),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                          else if (!_isLoadingReviews)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 9,
+                                                vertical: 3.5,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFF1F5F9),
+                                                borderRadius: BorderRadius.circular(20),
+                                                border: Border.all(
+                                                  color: const Color(0xFFCBD5E1),
+                                                  width: 0.8,
+                                                ),
+                                              ),
+                                              child: const Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.star_outline_rounded,
+                                                    size: 13,
+                                                    color: Color(0xFF64748B),
+                                                  ),
+                                                  SizedBox(width: 3.5),
+                                                  Text(
+                                                    'No ratings yet',
+                                                    style: TextStyle(
+                                                      fontFamily: 'DM Sans',
+                                                      fontSize: 11.5,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Color(0xFF64748B),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                        ],
                                       ),
                                       const SizedBox(height: 4),
                                       const Text(
@@ -368,7 +600,12 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
 
                         const SizedBox(height: 20),
 
-                        // ── Section 3: Living & Rental Preferences ───────────
+                        // ── Section 3: Landlord Ratings & Reviews ───────────
+                        _buildRatingsSection(),
+
+                        const SizedBox(height: 20),
+
+                        // ── Section 4: Living & Rental Preferences ───────────
                         _sectionTitle(Icons.tune_rounded, 'Rental & living preferences'),
                         const SizedBox(height: 8),
                         _cardWrapper([
@@ -521,6 +758,315 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRatingsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(Icons.star_rounded, 'Landlord ratings & reviews'),
+        const SizedBox(height: 8),
+        if (_isLoadingReviews)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+            ),
+            child: const Center(
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFF00A8F0),
+                ),
+              ),
+            ),
+          )
+        else if (_reviews.isEmpty && _totalReviews == 0)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE0F2FE),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.rate_review_outlined,
+                    size: 22,
+                    color: Color(0xFF00A8F0),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'No landlord reviews yet',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'This tenant has not received ratings or feedback from previous landlords yet. Once a stay is completed, feedback will appear here.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.025),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Summary Header ──
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 22,
+                              color: Color(0xFFD97706),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _avgRating.toStringAsFixed(1),
+                              style: const TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFFB45309),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: List.generate(5, (index) {
+                                final isFilled = index < _avgRating.round();
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 2),
+                                  child: Icon(
+                                    isFilled
+                                        ? Icons.star_rounded
+                                        : Icons.star_outline_rounded,
+                                    size: 16,
+                                    color: isFilled
+                                        ? const Color(0xFFF59E0B)
+                                        : const Color(0xFFCBD5E1),
+                                  ),
+                                );
+                              }),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Based on $_totalReviews landlord review${_totalReviews == 1 ? '' : 's'}',
+                              style: const TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_reviews.isNotEmpty) ...[
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  // ── Review items list ──
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    itemCount: _reviews.length,
+                    separatorBuilder: (context, index) =>
+                        const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                    itemBuilder: (ctx, i) {
+                      final review = _reviews[i];
+                      return Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Header: Avatar, Name, Property title, Date
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: const Color(0xFFE0F2FE),
+                                  child: Text(
+                                    review.raterInitials,
+                                    style: const TextStyle(
+                                      fontFamily: 'DM Sans',
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF00A8F0),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        review.raterName,
+                                        style: const TextStyle(
+                                          fontFamily: 'DM Sans',
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                      if (review.propertyTitle != null) ...[
+                                        const SizedBox(height: 1),
+                                        Text(
+                                          'Stayed at ${review.propertyTitle!}',
+                                          style: const TextStyle(
+                                            fontFamily: 'DM Sans',
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                Text(
+                                  review.date,
+                                  style: const TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 11.5,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            // Star rating
+                            Row(
+                              children: List.generate(5, (sIndex) {
+                                final isFilled = sIndex < review.stars;
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 2),
+                                  child: Icon(
+                                    isFilled
+                                        ? Icons.star_rounded
+                                        : Icons.star_outline_rounded,
+                                    size: 15,
+                                    color: isFilled
+                                        ? const Color(0xFFF59E0B)
+                                        : const Color(0xFFCBD5E1),
+                                  ),
+                                );
+                              }),
+                            ),
+                            // Review comment
+                            if (review.comment != null &&
+                                review.comment!.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: const Color(0xFFE2E8F0),
+                                    width: 0.6,
+                                  ),
+                                ),
+                                child: Text(
+                                  review.comment!,
+                                  style: const TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 12.5,
+                                    height: 1.4,
+                                    color: Color(0xFF334155),
+                                  ),
+                                ),
+                              ),
+                            ] else ...[
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Rated without written comment',
+                                style: TextStyle(
+                                  fontFamily: 'DM Sans',
+                                  fontSize: 11.5,
+                                  fontStyle: FontStyle.italic,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+      ],
     );
   }
 

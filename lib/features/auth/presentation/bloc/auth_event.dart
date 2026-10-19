@@ -81,3 +81,44 @@ class AuthPasswordResetRequested extends AuthEvent {
 class AuthSuspensionDetected extends AuthEvent {
   const AuthSuspensionDetected();
 }
+
+class AuthGoogleSignInRequested extends AuthEvent {
+  const AuthGoogleSignInRequested();
+}
+
+class AuthGoogleSignUpRequested extends AuthEvent {
+  const AuthGoogleSignUpRequested({
+    required this.uid,
+    required this.email,
+    required this.firstName,
+    required this.lastName,
+    required this.gender,
+    required this.phone,
+    required this.role,
+    this.profilePhoto,
+    this.ageConfirmed = false,
+  });
+
+  final String uid;
+  final String email;
+  final String firstName;
+  final String lastName;
+  final String gender;
+  final String phone;
+  final String role;
+  final String? profilePhoto;
+  final bool ageConfirmed;
+
+  @override
+  List<Object?> get props => [
+        uid,
+        email,
+        firstName,
+        lastName,
+        gender,
+        phone,
+        role,
+        profilePhoto,
+        ageConfirmed,
+      ];
+}

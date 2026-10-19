@@ -135,22 +135,39 @@ class InquiryRemoteDataSource {
 
   // Deterministic ID (one rating per inquiry + rater): a double-tap that slips
   // past the hasRated check becomes an update, which firestore.rules deny.
-  Future<void> createRating(RatingDoc rating) => _firestore
-      .collection(FirestoreCollections.ratings)
-      .doc('${rating.inquiryId}_${rating.raterId}')
-      .set(rating.toMap());
+  Future<void> createRating(RatingDoc rating) async {
+    final map = rating.toMap();
+    try {
+      await _firestore
+          .collection(FirestoreCollections.ratings)
+          .doc('${rating.inquiryId}_${rating.raterId}')
+          .set(map);
+    } on FirebaseException catch (e) {
+      // If deployed rules have not whitelisted propertyId yet, retry with legacy schema
+      if (e.code == 'permission-denied' &&
+          (map.containsKey('propertyId') || map.containsKey('parentPropertyId'))) {
+        final legacyMap = Map<String, dynamic>.from(map)
+          ..remove('propertyId')
+          ..remove('parentPropertyId');
+        await _firestore
+            .collection(FirestoreCollections.ratings)
+            .doc('${rating.inquiryId}_${rating.raterId}')
+            .set(legacyMap);
+        return;
+      }
+      rethrow;
+    }
+  }
 
   Future<bool> hasRated({
     required String inquiryId,
     required String raterId,
   }) async {
-    final snap = await _firestore
+    final docSnap = await _firestore
         .collection(FirestoreCollections.ratings)
-        .where('inquiryId', isEqualTo: inquiryId)
-        .where('raterId', isEqualTo: raterId)
-        .limit(1)
+        .doc('${inquiryId}_$raterId')
         .get();
-    return snap.docs.isNotEmpty;
+    return docSnap.exists;
   }
 
   DocumentReference<Map<String, dynamic>> _share(String inquiryId, String role) =>

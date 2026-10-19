@@ -146,6 +146,16 @@ class _SignInEntry extends StatelessWidget {
   }
 
   void _pushOnboarding(BuildContext context, UserRole role) {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        role == UserRole.landlord
+            ? AppRouter.documentUpload
+            : AppRouter.hardConstraints,
+        (_) => false,
+      );
+      return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => EmailVerificationScreen(

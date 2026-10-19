@@ -19,8 +19,8 @@ abstract final class AppRadii {
 
 /// Fixed component sizes shared across screens.
 abstract final class AppSizes {
-  static const double buttonHeight = 56;
-  static const double fieldHeight = 50;
+  static const double buttonHeight = 50;
+  static const double fieldHeight = 45;
 }
 
 /// Shared animation timings. Screen entrance animations (staggered fade/slide

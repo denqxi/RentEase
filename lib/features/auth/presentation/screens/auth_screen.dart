@@ -10,6 +10,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../registration/model/user_role.dart';
+import '../../../registration/view/registration_flow_screen.dart';
 import '../../domain/entities/auth.dart';
 import '../bloc/auth_bloc.dart';
 import 'email_verification_screen.dart';
@@ -177,6 +178,23 @@ class _SignInScreenState extends State<SignInScreen>
 
         if (state is AuthAuthenticated) {
           widget.onSignIn?.call(state.user);
+        } else if (state is AuthGoogleUserNeedsRegistration) {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => RegistrationFlowScreen(
+                initialGoogleResult: state.googleResult,
+                onComplete: (role) {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    role == UserRole.landlord
+                        ? AppRouter.documentUpload
+                        : AppRouter.hardConstraints,
+                    (_) => false,
+                  );
+                },
+                onSignIn: () => Navigator.of(context).pop(),
+              ),
+            ),
+          );
         } else if (state is AuthEmailNotVerified) {
           // Send them to the verification screen (resend/check) instead of
           // leaving them stuck on sign-in with no way to resend. Admins
@@ -327,7 +345,7 @@ class _SignInCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.73,
+        maxHeight: MediaQuery.of(context).size.height * 0.92,
       ),
       decoration: BoxDecoration(
         color: context.appColors.surface,
@@ -347,7 +365,7 @@ class _SignInCard extends StatelessWidget {
           AppSpacing.lg,
           AppSpacing.lg,
           AppSpacing.lg,
-          0,
+          AppSpacing.md,
         ),
         child: SafeArea(
           top: false,
@@ -360,18 +378,18 @@ class _SignInCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const _SignInLogoRow(),
-                    SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: 12),
                     Text(
                       'Sign In',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
-                        fontSize: 24,
+                        fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: context.appColors.textPrimary,
                         letterSpacing: -0.3,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       'Continue your rental journey with RentEase.',
                       style: AppTextStyles.body(context).copyWith(
@@ -399,7 +417,7 @@ class _SignInCard extends StatelessWidget {
                   ),
                 ),
               ],
-              SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: 18),
               SlideTransition(
                 position: fieldsSlide,
                 child: _SignInFields(
@@ -413,7 +431,7 @@ class _SignInCard extends StatelessWidget {
                   forgotPasswordCountdown: forgotPasswordCountdown,
                 ),
               ),
-              SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: 18),
               SlideTransition(
                 position: buttonsSlide,
                 child: AppPrimaryButton(
@@ -421,13 +439,13 @@ class _SignInCard extends StatelessWidget {
                   onPressed: isLoading ? null : (onSignIn ?? () {}),
                 ),
               ),
-              SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: 18),
               SlideTransition(
                 position: socialSlide,
                 child: Column(
                   children: [
                     const _OrDivider(),
-                    SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: 14),
                     Row(
                       children: [
                         const Expanded(child: _GoogleButton()),
@@ -435,12 +453,12 @@ class _SignInCard extends StatelessWidget {
                         const Expanded(child: _GuestButton()),
                       ],
                     ),
-                    SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: 18),
                     _CreateAccountRow(onCreateAccount: onCreateAccount),
                   ],
                 ),
               ),
-              SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -515,15 +533,15 @@ class _SignInFields extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _FieldLabel(label: 'Email address'),
-        SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: 6),
         _AuthTextField(
           controller: emailController,
           hintText: 'Enter your email',
           keyboardType: TextInputType.emailAddress,
         ),
-        SizedBox(height: AppSpacing.md),
+        const SizedBox(height: 14),
         const _FieldLabel(label: 'Password'),
-        SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: 6),
         _AuthTextField(
           controller: passwordController,
           hintText: 'Enter your password',
@@ -543,7 +561,7 @@ class _SignInFields extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(height: AppSpacing.md),
+        const SizedBox(height: 12),
         _RememberForgotRow(
           rememberMe: rememberMe,
           onChanged: onRememberMeChanged,
@@ -601,10 +619,10 @@ class _AuthTextField extends StatelessWidget {
               )
             : null,
         suffixIconConstraints:
-            const BoxConstraints(minWidth: 40, minHeight: 40),
+            const BoxConstraints(minWidth: 36, minHeight: 36),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
-          vertical: 14,
+          vertical: 11,
         ),
         filled: true,
         fillColor: context.appColors.fieldFill,
@@ -713,11 +731,14 @@ class _GoogleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = context.watch<AuthBloc>().state is AuthLoading;
     return SizedBox(
       width: double.infinity,
       height: AppSizes.fieldHeight,
       child: OutlinedButton(
-        onPressed: () {},
+        onPressed: isLoading
+            ? null
+            : () => context.read<AuthBloc>().add(const AuthGoogleSignInRequested()),
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: context.appColors.fieldBorder),
           shape: RoundedRectangleBorder(
@@ -733,7 +754,7 @@ class _GoogleButton extends StatelessWidget {
               height: 20,
               child: CustomPaint(painter: _GoogleLogoPainter()),
             ),
-            SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.sm),
             Text(
               'Google',
               style: AppTextStyles.body(context).copyWith(

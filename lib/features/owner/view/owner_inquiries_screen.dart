@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../activity/cubit/activity_cubit.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../../inquiry/cubit/inquiry_list_cubit.dart';
 import '../../inquiry/data/repositories/inquiry_repository_impl.dart';
@@ -40,6 +41,48 @@ class _OwnerInquiriesScreenState extends State<OwnerInquiriesScreen> {
   @override
   Widget build(BuildContext context) {
     final uid = currentUidOrNull(context);
+    if (uid == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF8FAFC),
+        body: _InboxMessage('Sign in to see your inquiries.'),
+      );
+    }
+
+    return BlocProvider(
+      create: (_) => InquiryListCubit(
+        uid: uid,
+        isOwner: true,
+        repository: InquiryRepositoryImpl(),
+      ),
+      child: _OwnerInquiriesView(
+        searchController: _searchController,
+      ),
+    );
+  }
+}
+
+class _OwnerInquiriesView extends StatelessWidget {
+  const _OwnerInquiriesView({required this.searchController});
+
+  final TextEditingController searchController;
+
+  @override
+  Widget build(BuildContext context) {
+    final activityState = context.watch<ActivityCubit?>()?.state;
+    final unreadInquiryIds =
+        activityState?.unreadInquiryIds ?? const <String>{};
+    final int unreadCount = unreadInquiryIds.length;
+    final state = context.watch<InquiryListCubit>().state;
+
+    final hasIncomingDot = state.incoming.any(
+      (s) => unreadInquiryIds.contains(s.inquiry.inquiryId),
+    );
+    final hasSentDot = state.sentInvitations.any(
+      (s) => unreadInquiryIds.contains(s.inquiry.inquiryId),
+    );
+    final hasHistoryDot = state.history.any(
+      (s) => unreadInquiryIds.contains(s.inquiry.inquiryId),
+    );
 
     return DefaultTabController(
       length: 3,
@@ -76,7 +119,7 @@ class _OwnerInquiriesScreenState extends State<OwnerInquiriesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Title & Subtitle Header ──────────────────────────────
+                  // ── Title & Subtitle Header with Top-Right Badge ──────────
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.lg,
@@ -84,30 +127,64 @@ class _OwnerInquiriesScreenState extends State<OwnerInquiriesScreen> {
                       AppSpacing.lg,
                       12,
                     ),
-                    child: Column(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Inquiries',
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A),
-                            letterSpacing: -0.6,
-                            height: 1.15,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'Inquiries',
+                                style: TextStyle(
+                                  fontFamily: 'DM Sans',
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0F172A),
+                                  letterSpacing: -0.6,
+                                  height: 1.15,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Messages from potential tenants',
+                                style: TextStyle(
+                                  fontFamily: 'DM Sans',
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Messages from potential tenants',
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF64748B),
+                        if (unreadCount > 0) ...[
+                          const SizedBox(width: 12),
+                          Container(
+                            constraints: const BoxConstraints(
+                              minWidth: 24,
+                              minHeight: 24,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF00A8F0),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '$unreadCount',
+                              style: const TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -122,27 +199,45 @@ class _OwnerInquiriesScreenState extends State<OwnerInquiriesScreen> {
                         ),
                       ),
                     ),
-                    child: const TabBar(
+                    child: TabBar(
                       indicatorColor: AppColors.primary,
                       indicatorWeight: 2.5,
                       indicatorSize: TabBarIndicatorSize.tab,
                       dividerColor: Colors.transparent,
                       labelColor: AppColors.primary,
-                      unselectedLabelColor: Color(0xFF64748B),
-                      labelStyle: TextStyle(
+                      unselectedLabelColor: const Color(0xFF64748B),
+                      labelStyle: const TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
-                      unselectedLabelStyle: TextStyle(
+                      unselectedLabelStyle: const TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                       tabs: [
-                        Tab(height: 42, text: 'Incoming'),
-                        Tab(height: 42, text: 'Sent'),
-                        Tab(height: 42, text: 'History'),
+                        Tab(
+                          height: 42,
+                          child: _TabWithDot(
+                            label: 'Incoming',
+                            hasDot: hasIncomingDot,
+                          ),
+                        ),
+                        Tab(
+                          height: 42,
+                          child: _TabWithDot(
+                            label: 'Sent',
+                            hasDot: hasSentDot,
+                          ),
+                        ),
+                        Tab(
+                          height: 42,
+                          child: _TabWithDot(
+                            label: 'History',
+                            hasDot: hasHistoryDot,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -162,7 +257,7 @@ class _OwnerInquiriesScreenState extends State<OwnerInquiriesScreen> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: TextField(
-                        controller: _searchController,
+                        controller: searchController,
                         style: const TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 13.5,
@@ -182,9 +277,9 @@ class _OwnerInquiriesScreenState extends State<OwnerInquiriesScreen> {
                             color: Color(0xFF475569),
                             size: 21,
                           ),
-                          suffixIcon: _searchController.text.isNotEmpty
+                          suffixIcon: searchController.text.isNotEmpty
                               ? IconButton(
-                                  onPressed: _searchController.clear,
+                                  onPressed: searchController.clear,
                                   icon: const Icon(
                                     Icons.close_rounded,
                                     size: 18,
@@ -204,18 +299,10 @@ class _OwnerInquiriesScreenState extends State<OwnerInquiriesScreen> {
 
                   // ── Tab Content ──────────────────────────────────────────
                   Expanded(
-                    child: uid == null
-                        ? const _InboxMessage('Sign in to see your inquiries.')
-                        : BlocProvider(
-                            create: (_) => InquiryListCubit(
-                              uid: uid,
-                              isOwner: true,
-                              repository: InquiryRepositoryImpl(),
-                            ),
-                            child: _OwnerInquiryTabs(
-                              searchQuery: _searchController.text,
-                            ),
-                          ),
+                    child: _OwnerInquiryTabs(
+                      searchQuery: searchController.text,
+                      unreadInquiryIds: unreadInquiryIds,
+                    ),
                   ),
                 ],
               ),
@@ -227,10 +314,46 @@ class _OwnerInquiriesScreenState extends State<OwnerInquiriesScreen> {
   }
 }
 
+class _TabWithDot extends StatelessWidget {
+  const _TabWithDot({
+    required this.label,
+    required this.hasDot,
+  });
+
+  final String label;
+  final bool hasDot;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(label),
+        if (hasDot) ...[
+          const SizedBox(width: 5),
+          Container(
+            width: 7,
+            height: 7,
+            decoration: const BoxDecoration(
+              color: Color(0xFF00A8F0),
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 class _OwnerInquiryTabs extends StatelessWidget {
-  const _OwnerInquiryTabs({required this.searchQuery});
+  const _OwnerInquiryTabs({
+    required this.searchQuery,
+    this.unreadInquiryIds = const <String>{},
+  });
 
   final String searchQuery;
+  final Set<String> unreadInquiryIds;
 
   List<InquirySummary> _filter(List<InquirySummary> list) {
     final q = searchQuery.trim().toLowerCase();
@@ -259,18 +382,21 @@ class _OwnerInquiryTabs extends StatelessWidget {
       children: [
         _InquiryList(
           items: _filter(state.incoming),
+          unreadInquiryIds: unreadInquiryIds,
           emptyText: searchQuery.trim().isNotEmpty
               ? 'No matching incoming inquiries.'
               : 'No incoming inquiries yet.',
         ),
         _InquiryList(
           items: _filter(state.sentInvitations),
+          unreadInquiryIds: unreadInquiryIds,
           emptyText: searchQuery.trim().isNotEmpty
               ? 'No matching sent notifications.'
               : 'No sent notifications yet.',
         ),
         _InquiryList(
           items: _filter(state.history),
+          unreadInquiryIds: unreadInquiryIds,
           emptyText: searchQuery.trim().isNotEmpty
               ? 'No matching past inquiries.'
               : 'No past inquiries yet.',
@@ -303,10 +429,15 @@ class _InboxMessage extends StatelessWidget {
 }
 
 class _InquiryList extends StatelessWidget {
-  const _InquiryList({required this.items, required this.emptyText});
+  const _InquiryList({
+    required this.items,
+    required this.emptyText,
+    this.unreadInquiryIds = const <String>{},
+  });
 
   final List<InquirySummary> items;
   final String emptyText;
+  final Set<String> unreadInquiryIds;
 
   @override
   Widget build(BuildContext context) {
@@ -320,26 +451,42 @@ class _InquiryList extends StatelessWidget {
       ),
       itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (_, i) => _OwnerInquiryCard(summary: items[i]),
+      itemBuilder: (_, i) {
+        final summary = items[i];
+        final isUnread = unreadInquiryIds.contains(summary.inquiry.inquiryId);
+        return _OwnerInquiryCard(
+          summary: summary,
+          isUnread: isUnread,
+        );
+      },
     );
   }
 }
 
 class _OwnerInquiryCard extends StatelessWidget {
-  const _OwnerInquiryCard({required this.summary});
+  const _OwnerInquiryCard({
+    required this.summary,
+    this.isUnread = false,
+  });
 
   final InquirySummary summary;
+  final bool isUnread;
 
   @override
   Widget build(BuildContext context) {
     final inquiry = summary.inquiry;
 
-    void open() => Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) =>
-            InquiryThreadScreen(inquiryId: inquiry.inquiryId, isOwner: true),
-      ),
-    );
+    void open() {
+      try {
+        context.read<ActivityCubit>().markInquiryRead(inquiry.inquiryId);
+      } catch (_) {}
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              InquiryThreadScreen(inquiryId: inquiry.inquiryId, isOwner: true),
+        ),
+      );
+    }
 
     return Material(
       color: Colors.white,
@@ -353,12 +500,14 @@ class _OwnerInquiryCard extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: const Color(0xFFE2E8F0),
-              width: 0.8,
+              color: isUnread ? const Color(0xFFBAE6FD) : const Color(0xFFE2E8F0),
+              width: isUnread ? 1.2 : 0.8,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0F172A).withValues(alpha: 0.035),
+                color: isUnread
+                    ? const Color(0xFF00A8F0).withValues(alpha: 0.07)
+                    : const Color(0xFF0F172A).withValues(alpha: 0.035),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -372,17 +521,17 @@ class _OwnerInquiryCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFEDF2F7),
+                decoration: BoxDecoration(
+                  color: isUnread ? const Color(0xFFE0F7FE) : const Color(0xFFEDF2F7),
                   shape: BoxShape.circle,
                 ),
                 child: Text(
                   summary.counterpartInitials,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
+                    fontWeight: isUnread ? FontWeight.w800 : FontWeight.w700,
+                    color: const Color(0xFF0F172A),
                   ),
                 ),
               ),
@@ -398,11 +547,11 @@ class _OwnerInquiryCard extends StatelessWidget {
                       summary.counterpartName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A),
+                        fontWeight: isUnread ? FontWeight.w800 : FontWeight.w700,
+                        color: const Color(0xFF0F172A),
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -410,11 +559,11 @@ class _OwnerInquiryCard extends StatelessWidget {
                       summary.propertyTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF64748B),
+                        fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
+                        color: isUnread ? const Color(0xFF1E293B) : const Color(0xFF64748B),
                       ),
                     ),
                   ],
@@ -422,20 +571,31 @@ class _OwnerInquiryCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
 
-              // Date + Chevron >
+              // Date + Chevron + Unread Dot
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     inquiryDateLabel(inquiry.updatedAt?.toDate()),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF94A3B8),
+                      fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
+                      color: isUnread ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
                     ),
                   ),
                   const SizedBox(width: 4),
+                  if (isUnread) ...[
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF00A8F0),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
                   const Icon(
                     Icons.chevron_right_rounded,
                     size: 20,

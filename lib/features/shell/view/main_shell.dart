@@ -118,8 +118,8 @@ class _ShellView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tab = context.watch<ShellCubit>().state.tab;
-    final inquiryCount = context.select<ProfileCubit, int>(
-      (c) => c.state.inquiryCount,
+    final unreadInquiries = context.select<ActivityCubit, int>(
+      (c) => c.state.unreadInquiriesCount,
     );
 
     return BlocListener<HomeCubit, HomeState>(
@@ -134,7 +134,7 @@ class _ShellView extends StatelessWidget {
         extendBody: true,
         body: IndexedStack(index: tab.index, children: _screens),
         bottomNavigationBar: FloatingNavBar(
-          items: _items(inquiryCount),
+          items: _items(unreadInquiries),
           selectedIndex: tab.index,
           onTap: (i) {
             final isGuest =

@@ -8,6 +8,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../landlord_home/view/tenant_detail_screen.dart';
 import '../../landlord_home/view/owner_detail_screen.dart';
 import '../../owner/model/compatible_tenant.dart';
+import '../../activity/cubit/activity_cubit.dart';
 import '../../activity/data/repositories/notification_repository_impl.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../cubit/inquiry_thread_cubit.dart';
@@ -41,6 +42,9 @@ class InquiryThreadScreen extends StatelessWidget {
         body: _CenteredMessage('Sign in to view this inquiry.'),
       );
     }
+    try {
+      context.read<ActivityCubit>().markInquiryRead(inquiryId);
+    } catch (_) {}
     final repository = InquiryRepositoryImpl();
     return BlocProvider(
       create: (_) => InquiryThreadCubit(

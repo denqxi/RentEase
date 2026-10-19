@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
 import '../../../core/constants/app_colors.dart';
@@ -8,7 +10,11 @@ import '../../../core/constants/app_svg_icons.dart';
 import '../../../shared/widgets/app_svg_icon.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../cubit/home_cubit.dart';
+import '../model/navigation_models.dart';
+import '../services/navigation_service.dart';
 import '../widgets/listing_card_large.dart';
+import '../widgets/live_navigation_bottom_bar.dart';
+import '../widgets/live_user_puck.dart';
 import 'property_detail_screen.dart';
 
 /// Google Maps light-mode aesthetic color matrix filter applied directly to
@@ -74,6 +80,22 @@ class _MapViewScreenState extends State<MapViewScreen> {
   int? _selectedIndex;
   Map<String, dynamic>? _lastSelectedProperty;
 
+  // ── Live Navigation State ──────────────────────────────────────────────────
+  final _navigationService = NavigationService();
+  bool _isNavigating = false;
+  bool _isLoadingRoute = false;
+  RoutePlan? _currentRoutePlan;
+  RouteProfile _currentProfile = RouteProfile.driving;
+  LatLng? _userLocation;
+  double? _userHeading;
+  StreamSubscription<Position>? _positionSubscription;
+  bool _isCameraTrackingUser = true;
+
+  // In-memory route plan cache keyed by "originLat,originLng_destLat,destLng_profile"
+  final Map<String, RoutePlan> _routePlanCache = {};
+
+
+
   @override
   void initState() {
     super.initState();
@@ -93,8 +115,185 @@ class _MapViewScreenState extends State<MapViewScreen> {
 
   @override
   void dispose() {
+    _positionSubscription?.cancel();
     _mapController.dispose();
     super.dispose();
+  }
+
+  /// Begins Google Maps-style live turn-by-turn navigation to [property].
+  Future<void> _startNavigation(Map<String, dynamic> property) async {
+    final destLat = (property['latitude'] as num?)?.toDouble();
+    final destLng = (property['longitude'] as num?)?.toDouble();
+    if (destLat == null || destLng == null || destLat == 0.0 || destLng == 0.0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Property coordinates are unavailable for navigation',
+            style: TextStyle(fontFamily: 'DM Sans'),
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    final destination = LatLng(destLat, destLng);
+
+    setState(() {
+      _isNavigating = true;
+      _isLoadingRoute = true;
+      _isCameraTrackingUser = true;
+    });
+
+    // 1. Resolve starting origin: strictly use tenant's saved POI if available; fallback to user GPS or Davao default
+    LatLng origin;
+    if (widget.poi != null) {
+      origin = widget.poi!;
+    } else {
+      origin = const LatLng(AppOptions.defaultMapLat, AppOptions.defaultMapLng);
+      try {
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+        if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+          final pos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              timeLimit: Duration(seconds: 4),
+            ),
+          );
+          origin = LatLng(pos.latitude, pos.longitude);
+          _userLocation = origin;
+          _userHeading = pos.heading > 0 ? pos.heading : null;
+        }
+      } catch (_) {
+        // Fallback to origin
+      }
+    }
+
+    if (!mounted) return;
+    _userLocation ??= origin;
+
+    // 2. Fetch OSRM road route geometry (served instantly from in-memory cache if previously queried)
+    final cacheKey =
+        '${origin.latitude.toStringAsFixed(4)},${origin.longitude.toStringAsFixed(4)}_${destination.latitude.toStringAsFixed(4)},${destination.longitude.toStringAsFixed(4)}_${_currentProfile.name}';
+    RoutePlan? plan = _routePlanCache[cacheKey];
+    if (plan == null) {
+      plan = await _navigationService.fetchRoute(
+        origin: origin,
+        destination: destination,
+        profile: _currentProfile,
+      );
+      if (plan != null) {
+        _routePlanCache[cacheKey] = plan;
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _isLoadingRoute = false;
+      _currentRoutePlan = plan;
+    });
+
+    // 3. Fit initial camera bounds between POI origin and property
+    if (plan != null && plan.points.length >= 2) {
+      try {
+        final bounds = LatLngBounds.fromPoints(plan.points);
+        _mapController.fitCamera(
+          CameraFit.bounds(
+            bounds: bounds,
+            padding: const EdgeInsets.only(top: 80, bottom: 260, left: 45, right: 45),
+          ),
+        );
+      } catch (_) {
+        _mapController.move(origin, 15.0);
+      }
+    }
+
+    // Cancel any previous live position subscription: in-app view is a POI preview
+    _positionSubscription?.cancel();
+    _positionSubscription = null;
+  }
+
+  Future<void> _onProfileChanged(RouteProfile newProfile) async {
+    if (_currentProfile == newProfile) return;
+    setState(() {
+      _currentProfile = newProfile;
+      _isLoadingRoute = true;
+    });
+
+    final active = _lastSelectedProperty;
+    if (active == null) {
+      setState(() => _isLoadingRoute = false);
+      return;
+    }
+
+    final destLat = (active['latitude'] as num?)?.toDouble() ?? 0.0;
+    final destLng = (active['longitude'] as num?)?.toDouble() ?? 0.0;
+    final dest = LatLng(destLat, destLng);
+    final origin = widget.poi ?? _userLocation ?? const LatLng(AppOptions.defaultMapLat, AppOptions.defaultMapLng);
+
+    final cacheKey =
+        '${origin.latitude.toStringAsFixed(4)},${origin.longitude.toStringAsFixed(4)}_${dest.latitude.toStringAsFixed(4)},${dest.longitude.toStringAsFixed(4)}_${newProfile.name}';
+    RoutePlan? plan = _routePlanCache[cacheKey];
+    if (plan == null) {
+      plan = await _navigationService.fetchRoute(
+        origin: origin,
+        destination: dest,
+        profile: newProfile,
+      );
+      if (plan != null) {
+        _routePlanCache[cacheKey] = plan;
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _isLoadingRoute = false;
+      _currentRoutePlan = plan;
+    });
+
+    if (plan != null && plan.points.length >= 2) {
+      try {
+        final bounds = LatLngBounds.fromPoints(plan.points);
+        _mapController.fitCamera(
+          CameraFit.bounds(
+            bounds: bounds,
+            padding: const EdgeInsets.only(top: 80, bottom: 260, left: 45, right: 45),
+          ),
+        );
+      } catch (_) {}
+    }
+  }
+
+  void _exitNavigation() {
+    _positionSubscription?.cancel();
+    _positionSubscription = null;
+    setState(() {
+      _isNavigating = false;
+      _isLoadingRoute = false;
+      _currentRoutePlan = null;
+    });
+
+    // Re-center on property with default viewing offset
+    if (_lastSelectedProperty != null) {
+      final lat = (_lastSelectedProperty!['latitude'] as num?)?.toDouble() ?? 0.0;
+      final lng = (_lastSelectedProperty!['longitude'] as num?)?.toDouble() ?? 0.0;
+      if (lat != 0.0 && lng != 0.0) {
+        _mapController.move(LatLng(lat - 0.0035, lng), 15.5);
+      }
+    }
+  }
+
+  void _launchGoogleMaps() {
+    if (_lastSelectedProperty == null) return;
+    final lat = (_lastSelectedProperty!['latitude'] as num?)?.toDouble() ?? 0.0;
+    final lng = (_lastSelectedProperty!['longitude'] as num?)?.toDouble() ?? 0.0;
+    _navigationService.launchExternalGoogleMaps(
+      destination: LatLng(lat, lng),
+      origin: null, // Left null so Google Maps uses device's live GPS location for real-time guidance
+      profile: _currentProfile,
+    );
   }
 
   LatLng _resolveInitialCenter() {
@@ -195,33 +394,72 @@ class _MapViewScreenState extends State<MapViewScreen> {
         ? properties[_selectedIndex!]
         : _lastSelectedProperty;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: Stack(
-        children: [
-          // ── Edge-to-Edge Interactive Map with Google Maps Light Filter ──
-          Positioned.fill(
-            child: FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: _resolveInitialCenter(),
-                initialZoom: _selectedIndex != null ? 15.5 : 13.5,
-                // Tapping empty map space dismisses selected property card.
-                onTap: (_, _) => _dismissSelection(),
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.rentease.app',
-                  tileBuilder: (context, tileWidget, tile) {
-                    return ColorFiltered(
-                      colorFilter: _kOsmGoogleMapsLightFilter,
-                      child: tileWidget,
-                    );
+    return PopScope(
+      canPop: !_isNavigating,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _isNavigating) {
+          _exitNavigation();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: Stack(
+          children: [
+            // ── Edge-to-Edge Interactive Map with Google Maps Light Filter ──
+            Positioned.fill(
+              child: FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: _resolveInitialCenter(),
+                  initialZoom: _selectedIndex != null ? 15.5 : 13.5,
+                  // Tapping empty map space dismisses selected property card.
+                  onTap: (_, _) => _dismissSelection(),
+                  onPositionChanged: (camera, hasGesture) {
+                    if (hasGesture && _isNavigating && _isCameraTrackingUser) {
+                      setState(() {
+                        _isCameraTrackingUser = false;
+                      });
+                    }
                   },
                 ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.rentease.app',
+                    tileBuilder: (context, tileWidget, tile) {
+                      return ColorFiltered(
+                        colorFilter: _kOsmGoogleMapsLightFilter,
+                        child: tileWidget,
+                      );
+                    },
+                  ),
 
-                MarkerLayer(
+                  // ── Live Navigation Route Polyline with Google Maps Casing ──
+                  if (_isNavigating &&
+                      _currentRoutePlan != null &&
+                      _currentRoutePlan!.points.length >= 2)
+                    PolylineLayer(
+                      polylines: [
+                        // Base casing polyline (darker blue border for contrast)
+                        Polyline(
+                          points: _currentRoutePlan!.points,
+                          strokeWidth: 7.5,
+                          color: const Color(0xFF1557B0),
+                          strokeCap: StrokeCap.round,
+                          strokeJoin: StrokeJoin.round,
+                        ),
+                        // Inner route polyline (vibrant Google Maps navigation blue)
+                        Polyline(
+                          points: _currentRoutePlan!.points,
+                          strokeWidth: 5.0,
+                          color: const Color(0xFF1A73E8),
+                          strokeCap: StrokeCap.round,
+                          strokeJoin: StrokeJoin.round,
+                        ),
+                      ],
+                    ),
+
+                  MarkerLayer(
                   markers: [
                     // Tenant POI marker — exactly anchored to widget.poi!
                     if (widget.poi != null &&
@@ -435,13 +673,25 @@ class _MapViewScreenState extends State<MapViewScreen> {
                           ),
                         ),
                       ),
+
+                    // Live Navigation User Puck with Heading Cone (only shown if navigating without a POI)
+                    if (_isNavigating && widget.poi == null && _userLocation != null)
+                      Marker(
+                        point: _userLocation!,
+                        width: 52,
+                        height: 52,
+                        alignment: Alignment.center,
+                        child: LiveUserPuck(
+                          heading: _userHeading,
+                        ),
+                      ),
                   ],
                 ),
               ],
             ),
           ),
 
-          // ── Top Bar: Compact Back Button, 13sp Title & Symmetrical Top Padding ──
+          // ── Top Bar: Compact Back Button Pill (Consistent UX) ─────────
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             left: 20,
@@ -453,7 +703,13 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: () => Navigator.of(context).pop(),
+                    onTap: () {
+                      if (_isNavigating) {
+                        _exitNavigation();
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                    },
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
                       height: 38,
@@ -469,18 +725,18 @@ class _MapViewScreenState extends State<MapViewScreen> {
                           ),
                         ],
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.chevron_left,
                             size: 20,
                             color: Color(0xFF0F172A),
                           ),
-                          SizedBox(width: 4),
+                          const SizedBox(width: 4),
                           Text(
-                            'Map view',
-                            style: TextStyle(
+                            _isNavigating ? 'Route preview' : 'Map view',
+                            style: const TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
@@ -494,40 +750,40 @@ class _MapViewScreenState extends State<MapViewScreen> {
                   ),
                 ),
 
-                // Current Location Button (centers to user POI or initial center)
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      final center = _resolveInitialCenter();
-                      _mapController.move(center, 14.5);
-                    },
-                    borderRadius: BorderRadius.circular(19),
-                    child: Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.my_location_rounded,
-                        size: 18,
-                        color: Color(0xFF0284C7),
+                  // Current Location Button (centers to user POI or initial center)
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        final center = _resolveInitialCenter();
+                        _mapController.move(center, 14.5);
+                      },
+                      borderRadius: BorderRadius.circular(19),
+                      child: Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.my_location_rounded,
+                          size: 18,
+                          color: Color(0xFF0284C7),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
           // ── Zoom Controls (Clean minimal pill on the right side) ─────────
           Positioned(
@@ -579,7 +835,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
           ),
 
           // ── Screen 1: Clean, Compact Bottom Button ───────────────────────
-          if (!widget.isSinglePropertyMode && _selectedIndex == null)
+          if (!_isNavigating && !widget.isSinglePropertyMode && _selectedIndex == null)
             Positioned(
               left: 20,
               right: 20,
@@ -632,7 +888,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
             ),
 
           // ── Screen 3: Selected Property Preview Bottom Card ───────────────
-          if (_selectedIndex != null && activeProperty != null)
+          if (!_isNavigating && _selectedIndex != null && activeProperty != null)
             Positioned(
               left: 0,
               right: 0,
@@ -644,11 +900,72 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 initialPropertyId: widget.initialPropertyId,
                 poi: widget.poi,
                 fmt: _fmt,
+                onDirectionsTap: () => _startNavigation(activeProperty),
+              ),
+            ),
+
+          // ── Route Preview: Fit Route Bounds Floating Button ─────────────
+          if (_isNavigating && _currentRoutePlan != null && _currentRoutePlan!.points.length >= 2)
+            Positioned(
+              right: 16,
+              bottom: 235 + MediaQuery.of(context).padding.bottom,
+              child: Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                elevation: 3,
+                shadowColor: Colors.black.withValues(alpha: 0.15),
+                child: InkWell(
+                  onTap: () {
+                    try {
+                      final bounds = LatLngBounds.fromPoints(_currentRoutePlan!.points);
+                      _mapController.fitCamera(
+                        CameraFit.bounds(
+                          bounds: bounds,
+                          padding: const EdgeInsets.only(top: 80, bottom: 260, left: 45, right: 45),
+                        ),
+                      );
+                    } catch (_) {}
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.crop_free_rounded,
+                      size: 20,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // ── Route Preview: Bottom Trip Summary & Mode Bar ──────────────
+          if (_isNavigating)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: LiveNavigationBottomBar(
+                routePlan: _currentRoutePlan,
+                currentProfile: _currentProfile,
+                isLoadingRoute: _isLoadingRoute,
+                onProfileChanged: _onProfileChanged,
+                onExit: _exitNavigation,
+                onLaunchGoogleMaps: _launchGoogleMaps,
+                destinationName: (activeProperty?['propertyName'] as String?) ??
+                    (activeProperty?['title'] as String?) ??
+                    'Destination',
+                destinationAddress: (activeProperty?['address'] as String?) ?? 'Davao City',
+                originName: widget.poiLabel ?? 'Your POI',
+                originAddress: 'Davao City',
               ),
             ),
         ],
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -1328,6 +1645,7 @@ class _PropertyPreviewBottomCard extends StatefulWidget {
     required this.initialPropertyId,
     required this.fmt,
     this.poi,
+    this.onDirectionsTap,
   });
 
   final Map<String, dynamic> property;
@@ -1336,6 +1654,7 @@ class _PropertyPreviewBottomCard extends StatefulWidget {
   final String? initialPropertyId;
   final String Function(num) fmt;
   final LatLng? poi;
+  final VoidCallback? onDirectionsTap;
 
   @override
   State<_PropertyPreviewBottomCard> createState() => _PropertyPreviewBottomCardState();
@@ -1609,22 +1928,26 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                       height: 42,
                       child: OutlinedButton.icon(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Directions feature coming soon',
-                                style: TextStyle(fontFamily: 'DM Sans'),
+                          if (widget.onDirectionsTap != null) {
+                            widget.onDirectionsTap!();
+                          } else {
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Directions feature coming soon',
+                                  style: TextStyle(fontFamily: 'DM Sans'),
+                                ),
+                                duration: Duration(seconds: 2),
                               ),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
+                            );
+                          }
                         },
                         icon: const AppSvgIcon(
-                          svgString: AppSvgIcons.routeToDestination,
+                          svgString: AppSvgIcons.googleMaps,
                           size: 16.5,
                           color: AppColors.primary,
-                          strokeWidth: 2.1,
+                          strokeWidth: 2.0,
                         ),
                         label: const Text(
                           'Directions',
