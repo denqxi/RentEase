@@ -647,10 +647,14 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
 
                     // My reviews
                     _buildMenuItem(
-                      svgString: AppSvgIcons.starOutline,
+                      icon: Icons.star_rounded,
+                      iconColor: const Color(0xFFF59E0B),
                       title: 'My reviews',
                       textColor: textColor,
-                      trailingText: '4.8 ★',
+                      trailingText: _totalReviews > 0
+                          ? '${_avgRating.toStringAsFixed(1)} ★'
+                          : 'No reviews yet',
+                      trailingTextColor: const Color(0xFF0F172A),
                       onTap: () => OwnerReviewsScreen.open(context),
                     ),
                     _buildDivider(),
@@ -973,6 +977,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     required Color textColor,
     Color? iconColor,
     String? trailingText,
+    Color? trailingTextColor,
     required VoidCallback onTap,
   }) {
     final effectiveColor = iconColor ?? primaryCyan;
@@ -1006,11 +1011,11 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
             if (trailingText != null) ...[
               Text(
                 trailingText,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 13.5,
                   fontWeight: FontWeight.w700,
-                  color: primaryCyan,
+                  color: trailingTextColor ?? primaryCyan,
                 ),
               ),
               const SizedBox(width: 4),

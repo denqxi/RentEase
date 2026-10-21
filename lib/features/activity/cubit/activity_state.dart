@@ -20,7 +20,13 @@ class ActivityState extends Equatable {
       .where((i) =>
           !i.isRead &&
           (i.relatedType == 'inquiry' ||
-              i.category == ActivityCategory.inquiries))
+              i.rawType == 'inquiry' ||
+              i.rawType == 'inquiry_accepted' ||
+              i.rawType == 'inquiry_declined' ||
+              i.rawType == 'invitation' ||
+              i.rawType == 'invitation_accepted' ||
+              i.rawType == 'invitation_declined' ||
+              i.rawType == 'message'))
       .map((i) => i.relatedId)
       .whereType<String>()
       .where((id) => id.isNotEmpty)

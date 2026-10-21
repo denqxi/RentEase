@@ -584,17 +584,27 @@ class InquiryService {
       throw const InquiryException('You already rated this booking.');
     }
     final trimmed = _capped(review, maxReviewLength);
+    final ratedId = ratedIdFor(currentInquiry, raterIsOwner: raterIsOwner);
     await _repository.createRating(
       RatingDoc(
         ratingId: '${currentInquiry.inquiryId}_$raterId',
         inquiryId: currentInquiry.inquiryId,
         raterId: raterId,
-        ratedId: ratedIdFor(currentInquiry, raterIsOwner: raterIsOwner),
+        ratedId: ratedId,
         raterRole: raterIsOwner ? 'owner' : 'tenant',
         stars: stars,
         review: trimmed.isEmpty ? null : trimmed,
         propertyId: currentInquiry.propertyId.isNotEmpty ? currentInquiry.propertyId : null,
       ),
+    );
+    await _notify(
+      recipientId: ratedId,
+      type: 'rating',
+      title: raterIsOwner
+          ? 'Your landlord gave you a $stars-star rating'
+          : 'A tenant rated your property with $stars stars',
+      body: trimmed.isNotEmpty ? trimmed : 'A new rating has been added to your profile.',
+      inquiryId: currentInquiry.inquiryId,
     );
   }
 

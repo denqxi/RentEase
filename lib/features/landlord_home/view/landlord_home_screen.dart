@@ -293,14 +293,14 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
                                     builder: (_) =>
                                         BlocProvider<ActivityCubit>.value(
                                           value: activityCubit,
-                                          child: const ActivityScreen(),
+                                          child: const ActivityScreen(isOwner: true),
                                         ),
                                   ),
                                 );
                               } catch (_) {
                                 Navigator.of(context).push(
                                   MaterialPageRoute<void>(
-                                    builder: (_) => const ActivityScreen(),
+                                    builder: (_) => const ActivityScreen(isOwner: true),
                                   ),
                                 );
                               }

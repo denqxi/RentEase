@@ -30,11 +30,18 @@ class NotificationRepositoryImpl implements NotificationRepository {
   @override
   Future<void> markRead(List<String> notifIds) async {
     if (notifIds.isEmpty) return;
-    final batch = _firestore.batch();
-    for (final id in notifIds) {
-      batch.update(_col.doc(id), {'isRead': true});
+    const chunkSize = 450;
+    for (var i = 0; i < notifIds.length; i += chunkSize) {
+      final chunk = notifIds.sublist(
+        i,
+        i + chunkSize > notifIds.length ? notifIds.length : i + chunkSize,
+      );
+      final batch = _firestore.batch();
+      for (final id in chunk) {
+        batch.update(_col.doc(id), {'isRead': true});
+      }
+      await batch.commit();
     }
-    await batch.commit();
   }
 
   @override

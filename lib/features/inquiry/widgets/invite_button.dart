@@ -144,7 +144,7 @@ class _InviteView extends StatelessWidget {
         // Absent, never disabled, when there is nothing to invite to.
         if (!state.canInvite) return const SizedBox.shrink();
         return AppButton(
-          label: state.isSending ? 'Sending...' : 'Invite',
+          label: state.isSending ? 'Notifying...' : 'Notify',
           variant: compact ? AppButtonVariant.outline : AppButtonVariant.primary,
           isSmall: compact,
           isFullWidth: !compact,

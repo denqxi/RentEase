@@ -96,7 +96,14 @@ class _ThreadView extends StatelessWidget {
           );
         }
 
-        final counterpartName = isOwner
+        final currentUid = currentUidOrNull(context);
+        final effectiveIsOwner = (currentUid != null && inquiry.ownerId == currentUid)
+            ? true
+            : (currentUid != null && inquiry.tenantId == currentUid)
+                ? false
+                : isOwner;
+
+        final counterpartName = effectiveIsOwner
             ? fullNameOf(
                 state.tenant,
                 fallback: 'Tenant',
@@ -111,7 +118,7 @@ class _ThreadView extends StatelessWidget {
 
         if (inquiry.stage == 2) {
           return InquiryChatView(
-            isOwner: isOwner,
+            isOwner: effectiveIsOwner,
             counterpartName: counterpartName,
             propertyTitle: propertyTitle,
           );
@@ -123,7 +130,7 @@ class _ThreadView extends StatelessWidget {
           counterpartName: counterpartName,
           property: state.property,
           onTapHeader: () {
-            if (isOwner) {
+            if (effectiveIsOwner) {
               final tenant = state.tenant;
               final profile = state.tenantProfile;
               final tenantId = tenant?.userId ?? inquiry.tenantId;
@@ -170,7 +177,7 @@ class _ThreadView extends StatelessWidget {
               ? const Center(
                   child: CircularProgressIndicator(color: AppColors.primary),
                 )
-              : isOwner
+              : effectiveIsOwner
               ? (InquiryService.isInvite(inquiry)
                     ? const OwnerInviteView()
                     : const OwnerPhase1View())

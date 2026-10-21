@@ -201,7 +201,7 @@ class LandlordHomeHeader extends StatelessWidget {
                   } else {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => const ActivityScreen(),
+                        builder: (_) => const ActivityScreen(isOwner: true),
                       ),
                     );
                   }

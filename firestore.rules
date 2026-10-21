@@ -775,7 +775,7 @@ service cloud.firestore {
         && request.resource.data.isRead == false
         && request.resource.data.type in
              ['inquiry', 'inquiry_accepted', 'inquiry_declined', 'message',
-              'invitation', 'invitation_accepted', 'invitation_declined']
+              'invitation', 'invitation_accepted', 'invitation_declined', 'rating']
         && request.resource.data.relatedType == 'inquiry'
         && request.resource.data.recipientId != request.auth.uid
         // Chat alerts are one rolling doc per inquiry+recipient (no message text).

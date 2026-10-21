@@ -1,3 +1,4 @@
+import '../widgets/collapsible_detail_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -516,10 +517,10 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                                 vertical: 3.5,
                                               ),
                                               decoration: BoxDecoration(
-                                                color: const Color(0xFFF1F5F9),
+                                                color: const Color(0xFFFEF3C7),
                                                 borderRadius: BorderRadius.circular(20),
                                                 border: Border.all(
-                                                  color: const Color(0xFFCBD5E1),
+                                                  color: const Color(0xFFFDE68A),
                                                   width: 0.8,
                                                 ),
                                               ),
@@ -527,9 +528,9 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
                                                   Icon(
-                                                    Icons.star_outline_rounded,
+                                                    Icons.star_rounded,
                                                     size: 13,
-                                                    color: Color(0xFF64748B),
+                                                    color: Color(0xFFF59E0B),
                                                   ),
                                                   SizedBox(width: 3.5),
                                                   Text(
@@ -538,7 +539,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                                       fontFamily: 'DM Sans',
                                                       fontSize: 11.5,
                                                       fontWeight: FontWeight.w600,
-                                                      color: Color(0xFF64748B),
+                                                      color: Color(0xFFB45309),
                                                     ),
                                                   ),
                                                 ],
@@ -563,71 +564,83 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
 
                         // ── Section 1: Contact Information ──────────────────
-                        _sectionTitle(Icons.contact_phone_outlined, 'Contact details'),
-                        const SizedBox(height: 8),
-                        _cardWrapper([
-                          _detailRow(
-                            icon: Icons.phone_outlined,
-                            label: 'Phone',
-                            value: phoneText,
+                        CollapsibleDetailCard(
+                          icon: Icons.contact_phone_outlined,
+                          title: 'Contact details',
+                          child: Column(
+                            children: [
+                              _detailRow(
+                                icon: Icons.phone_outlined,
+                                label: 'Phone',
+                                value: phoneText,
+                              ),
+                              _divider(),
+                              _detailRow(
+                                icon: Icons.mail_outline_rounded,
+                                label: 'Email',
+                                value: emailText,
+                                isLast: true,
+                              ),
+                            ],
                           ),
-                          _divider(),
-                          _detailRow(
-                            icon: Icons.mail_outline_rounded,
-                            label: 'Email',
-                            value: emailText,
-                            isLast: true,
-                          ),
-                        ]),
+                        ),
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 12),
 
                         // ── Section 2: Personal Profile ─────────────────────
-                        _sectionTitle(Icons.person_outline_rounded, 'Personal details'),
-                        const SizedBox(height: 8),
-                        _cardWrapper([
-                          _detailRow(label: 'Gender', value: genderText),
-                          _divider(),
-                          _detailRow(label: 'Occupation', value: occupationText),
-                          _divider(),
-                          _detailRow(label: 'School / Workplace', value: schoolText),
-                          _divider(),
-                          _detailRow(label: 'Group size', value: groupSizeText, isLast: true),
-                        ]),
+                        CollapsibleDetailCard(
+                          icon: Icons.person_outline_rounded,
+                          title: 'Personal details',
+                          child: Column(
+                            children: [
+                              _detailRow(label: 'Gender', value: genderText),
+                              _divider(),
+                              _detailRow(label: 'Occupation', value: occupationText),
+                              _divider(),
+                              _detailRow(label: 'School / Workplace', value: schoolText),
+                              _divider(),
+                              _detailRow(label: 'Group size', value: groupSizeText, isLast: true),
+                            ],
+                          ),
+                        ),
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 12),
 
-                        // ── Section 3: Landlord Ratings & Reviews ───────────
+                        // ── Section 3: Living & Rental Preferences ───────────
+                        CollapsibleDetailCard(
+                          icon: Icons.tune_rounded,
+                          title: 'Rental & living preferences',
+                          child: Column(
+                            children: [
+                              _detailRow(label: 'Maximum budget', value: budgetText),
+                              _divider(),
+                              _detailRow(label: 'Target move-in', value: moveInText),
+                              _divider(),
+                              _detailRow(label: 'Room preference', value: roomTypeText),
+                              _divider(),
+                              _detailRow(label: 'Smoking policy', value: smokingText),
+                              _divider(),
+                              _detailRow(label: 'Pet policy', value: petText),
+                              _divider(),
+                              _detailRow(label: 'Internet', value: wifiText),
+                              if (profile?.preferredAmenities?.isNotEmpty ?? false) ...[
+                                _divider(),
+                                _amenitiesRow(
+                                  label: 'Preferred amenities',
+                                  amenities: profile!.preferredAmenities!,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // ── Section 4: Landlord Ratings & Reviews (at the bottom) ───
                         _buildRatingsSection(),
-
-                        const SizedBox(height: 20),
-
-                        // ── Section 4: Living & Rental Preferences ───────────
-                        _sectionTitle(Icons.tune_rounded, 'Rental & living preferences'),
-                        const SizedBox(height: 8),
-                        _cardWrapper([
-                          _detailRow(label: 'Maximum budget', value: budgetText),
-                          _divider(),
-                          _detailRow(label: 'Target move-in', value: moveInText),
-                          _divider(),
-                          _detailRow(label: 'Room preference', value: roomTypeText),
-                          _divider(),
-                          _detailRow(label: 'Smoking policy', value: smokingText),
-                          _divider(),
-                          _detailRow(label: 'Pet policy', value: petText),
-                          _divider(),
-                          _detailRow(label: 'Internet', value: wifiText),
-                          if (profile?.preferredAmenities?.isNotEmpty ?? false) ...[
-                            _divider(),
-                            _amenitiesRow(
-                              label: 'Preferred amenities',
-                              amenities: profile!.preferredAmenities!,
-                            ),
-                          ],
-                        ]),
 
                         // ── Optional Invite Button (only if showInviteButton is true) ──
                         if (widget.showInviteButton) ...[
@@ -647,43 +660,6 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _sectionTitle(IconData icon, String title) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: const Color(0xFF00A8F0)),
-        const SizedBox(width: 6),
-        Text(
-          title,
-          style: const TextStyle(
-            fontFamily: 'DM Sans',
-            fontSize: 13.5,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF0F172A),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _cardWrapper(List<Widget> children) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.025),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(children: children),
     );
   }
 
@@ -762,311 +738,330 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
   }
 
   Widget _buildRatingsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionTitle(Icons.star_rounded, 'Landlord ratings & reviews'),
-        const SizedBox(height: 8),
-        if (_isLoadingReviews)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
-            ),
-            child: const Center(
-              child: SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Color(0xFF00A8F0),
-                ),
+    Widget? badge;
+    if (_totalReviews > 0) {
+      badge = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF3C7),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
+            const SizedBox(width: 3),
+            Text(
+              '${_avgRating.toStringAsFixed(1)} ($_totalReviews)',
+              style: const TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFFB45309),
               ),
             ),
-          )
-        else if (_reviews.isEmpty && _totalReviews == 0)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+          ],
+        ),
+      );
+    } else if (!_isLoadingReviews) {
+      badge = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF3C7),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.star_rounded, size: 13, color: Color(0xFFF59E0B)),
+            SizedBox(width: 3),
+            Text(
+              'No ratings yet',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFB45309),
+              ),
             ),
-            child: Column(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE0F2FE),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.rate_review_outlined,
-                    size: 22,
+          ],
+        ),
+      );
+    }
+
+    return CollapsibleDetailCard(
+      icon: Icons.star_rounded,
+      iconColor: const Color(0xFFF59E0B),
+      title: 'Landlord ratings & reviews',
+      badgeWidget: badge,
+      child: _isLoadingReviews
+          ? const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
                     color: Color(0xFF00A8F0),
                   ),
                 ),
-                const SizedBox(height: 10),
-                const Text(
-                  'No landlord reviews yet',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'This tenant has not received ratings or feedback from previous landlords yet. Once a stay is completed, feedback will appear here.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 12,
-                    color: Color(0xFF64748B),
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          )
-        else
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.025),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Summary Header ──
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+              ),
+            )
+          : (_reviews.isEmpty && _totalReviews == 0)
+              ? Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+                  child: Column(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                        width: 48,
+                        height: 48,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFEF3C7),
+                          shape: BoxShape.circle,
                         ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF3C7),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.star_rounded,
-                              size: 22,
-                              color: Color(0xFFD97706),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _avgRating.toStringAsFixed(1),
-                              style: const TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFFB45309),
-                              ),
-                            ),
-                          ],
+                        child: const Icon(
+                          Icons.star_rounded,
+                          size: 26,
+                          color: Color(0xFFF59E0B),
                         ),
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: List.generate(5, (index) {
-                                final isFilled = index < _avgRating.round();
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 2),
-                                  child: Icon(
-                                    isFilled
-                                        ? Icons.star_rounded
-                                        : Icons.star_outline_rounded,
-                                    size: 16,
-                                    color: isFilled
-                                        ? const Color(0xFFF59E0B)
-                                        : const Color(0xFFCBD5E1),
-                                  ),
-                                );
-                              }),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              'Based on $_totalReviews landlord review${_totalReviews == 1 ? '' : 's'}',
-                              style: const TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF64748B),
-                              ),
-                            ),
-                          ],
+                      const SizedBox(height: 10),
+                      const Text(
+                        'No landlord reviews yet',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'This tenant has not received ratings or feedback from previous landlords yet. Once a stay is completed, feedback will appear here.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                          height: 1.35,
                         ),
                       ),
                     ],
                   ),
-                ),
-                if (_reviews.isNotEmpty) ...[
-                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                  // ── Review items list ──
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
-                    itemCount: _reviews.length,
-                    separatorBuilder: (context, index) =>
-                        const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                    itemBuilder: (ctx, i) {
-                      final review = _reviews[i];
-                      return Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Header: Avatar, Name, Property title, Date
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Summary Header
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: const Color(0xFFE0F2FE),
-                                  child: Text(
-                                    review.raterInitials,
-                                    style: const TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF00A8F0),
-                                    ),
-                                  ),
+                                const Icon(
+                                  Icons.star_rounded,
+                                  size: 22,
+                                  color: Color(0xFFF59E0B),
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        review.raterName,
-                                        style: const TextStyle(
-                                          fontFamily: 'DM Sans',
-                                          fontSize: 13.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF0F172A),
-                                        ),
-                                      ),
-                                      if (review.propertyTitle != null) ...[
-                                        const SizedBox(height: 1),
-                                        Text(
-                                          'Stayed at ${review.propertyTitle!}',
-                                          style: const TextStyle(
-                                            fontFamily: 'DM Sans',
-                                            fontSize: 11.5,
-                                            fontWeight: FontWeight.w500,
-                                            color: Color(0xFF64748B),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
+                                const SizedBox(width: 4),
                                 Text(
-                                  review.date,
+                                  _avgRating.toStringAsFixed(1),
                                   style: const TextStyle(
                                     fontFamily: 'DM Sans',
-                                    fontSize: 11.5,
-                                    color: Color(0xFF94A3B8),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFFB45309),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
-                            // Star rating
-                            Row(
-                              children: List.generate(5, (sIndex) {
-                                final isFilled = sIndex < review.stars;
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 2),
-                                  child: Icon(
-                                    isFilled
-                                        ? Icons.star_rounded
-                                        : Icons.star_outline_rounded,
-                                    size: 15,
-                                    color: isFilled
-                                        ? const Color(0xFFF59E0B)
-                                        : const Color(0xFFCBD5E1),
-                                  ),
-                                );
-                              }),
-                            ),
-                            // Review comment
-                            if (review.comment != null &&
-                                review.comment!.isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF8FAFC),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: const Color(0xFFE2E8F0),
-                                    width: 0.6,
-                                  ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: List.generate(5, (index) {
+                                    final isFilled = index < _avgRating.round();
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 2),
+                                      child: Icon(
+                                        isFilled
+                                            ? Icons.star_rounded
+                                            : Icons.star_outline_rounded,
+                                        size: 16,
+                                        color: isFilled
+                                            ? const Color(0xFFF59E0B)
+                                            : const Color(0xFFCBD5E1),
+                                      ),
+                                    );
+                                  }),
                                 ),
-                                child: Text(
-                                  review.comment!,
+                                const SizedBox(height: 3),
+                                Text(
+                                  'Based on $_totalReviews landlord review${_totalReviews == 1 ? '' : 's'}',
                                   style: const TextStyle(
                                     fontFamily: 'DM Sans',
-                                    fontSize: 12.5,
-                                    height: 1.4,
-                                    color: Color(0xFF334155),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF64748B),
                                   ),
                                 ),
-                              ),
-                            ] else ...[
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Rated without written comment',
-                                style: TextStyle(
-                                  fontFamily: 'DM Sans',
-                                  fontSize: 11.5,
-                                  fontStyle: FontStyle.italic,
-                                  color: Color(0xFF94A3B8),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_reviews.isNotEmpty) ...[
+                      const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                      ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        itemCount: _reviews.length,
+                        separatorBuilder: (context, index) =>
+                            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                        itemBuilder: (ctx, i) {
+                          final review = _reviews[i];
+                          return Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: const Color(0xFFE0F2FE),
+                                      child: Text(
+                                        review.raterInitials,
+                                        style: const TextStyle(
+                                          fontFamily: 'DM Sans',
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF00A8F0),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            review.raterName,
+                                            style: const TextStyle(
+                                              fontFamily: 'DM Sans',
+                                              fontSize: 13.5,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                          if (review.propertyTitle != null) ...[
+                                            const SizedBox(height: 1),
+                                            Text(
+                                              'Stayed at ${review.propertyTitle!}',
+                                              style: const TextStyle(
+                                                fontFamily: 'DM Sans',
+                                                fontSize: 11.5,
+                                                fontWeight: FontWeight.w500,
+                                                color: Color(0xFF64748B),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    Text(
+                                      review.date,
+                                      style: const TextStyle(
+                                        fontFamily: 'DM Sans',
+                                        fontSize: 11.5,
+                                        color: Color(0xFF94A3B8),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ],
-            ),
-          ),
-      ],
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: List.generate(5, (sIndex) {
+                                    final isFilled = sIndex < review.stars;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 2),
+                                      child: Icon(
+                                        isFilled
+                                            ? Icons.star_rounded
+                                            : Icons.star_outline_rounded,
+                                        size: 15,
+                                        color: isFilled
+                                            ? const Color(0xFFF59E0B)
+                                            : const Color(0xFFCBD5E1),
+                                      ),
+                                    );
+                                  }),
+                                ),
+                                if (review.comment != null &&
+                                    review.comment!.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF8FAFC),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: const Color(0xFFE2E8F0),
+                                        width: 0.6,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      review.comment!,
+                                      style: const TextStyle(
+                                        fontFamily: 'DM Sans',
+                                        fontSize: 12.5,
+                                        height: 1.4,
+                                        color: Color(0xFF334155),
+                                      ),
+                                    ),
+                                  ),
+                                ] else ...[
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    'Rated without written comment',
+                                    style: TextStyle(
+                                      fontFamily: 'DM Sans',
+                                      fontSize: 11.5,
+                                      fontStyle: FontStyle.italic,
+                                      color: Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ],
+                ),
     );
   }
 

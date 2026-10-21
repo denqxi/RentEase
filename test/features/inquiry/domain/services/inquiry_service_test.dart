@@ -424,10 +424,16 @@ void main() {
       await svc.sendMessage(inquiry: active, senderId: _tenant, content: 'Hi');
       await svc.sendMessage(inquiry: active, senderId: _owner, content: 'Hello');
 
+      final booked = _inquiry(stage: 2, ownerDecision: 'accepted', status: 'booked');
+      await svc.submitRating(inquiry: booked, raterId: _tenant, stars: 5);
+      await svc.submitRating(inquiry: booked, raterId: _owner, stars: 4);
+
       expect(notes.created.map((n) => (n.type, n.recipientId)).toList(), [
         ('inquiry', _owner),
         ('inquiry_accepted', _tenant),
         ('inquiry_declined', _tenant),
+        ('rating', _owner),
+        ('rating', _tenant),
       ]);
       expect(notes.upserted.map((n) => (n.type, n.recipientId)).toList(), [
         ('message', _owner),
