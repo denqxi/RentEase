@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/input_formatters.dart';
 import '../../../core/utils/validators.dart';
 import '../../auth/presentation/bloc/auth_bloc.dart';
@@ -189,9 +190,9 @@ class _AccountStepViewState extends State<AccountStepView> {
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
+              color: AppColors.greenFill,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF86EFAC), width: 1),
+              border: Border.all(color: AppColors.matchHigh, width: 1),
             ),
             child: Row(
               children: [
@@ -199,12 +200,12 @@ class _AccountStepViewState extends State<AccountStepView> {
                   width: 32,
                   height: 32,
                   decoration: const BoxDecoration(
-                    color: Color(0xFFDCFCE7),
+                    color: AppColors.greenFill,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.check_circle_rounded,
-                    color: Color(0xFF16A34A),
+                    color: AppColors.matchHigh,
                     size: 20,
                   ),
                 ),
@@ -219,7 +220,7 @@ class _AccountStepViewState extends State<AccountStepView> {
                           fontFamily: 'DM Sans',
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
-                          color: Color(0xFF166534),
+                          color: AppColors.greenPrimary,
                         ),
                       ),
                       Text(
@@ -227,7 +228,7 @@ class _AccountStepViewState extends State<AccountStepView> {
                         style: const TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12,
-                          color: Color(0xFF15803D),
+                          color: AppColors.greenPrimary,
                         ),
                       ),
                     ],

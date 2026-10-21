@@ -21,7 +21,7 @@ abstract final class AppTheme {
       elevation: 0,
       scrolledUnderElevation: 0,
       systemOverlayStyle: const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
+        statusBarColor: AppColors.transparent,
         statusBarIconBrightness: Brightness.light,
       ),
       iconTheme: const IconThemeData(color: AppColors.onInk),
@@ -85,7 +85,7 @@ abstract final class AppTheme {
       elevation: 0,
       scrolledUnderElevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
+        statusBarColor: AppColors.transparent,
         statusBarIconBrightness: Brightness.dark,
       ),
       iconTheme: IconThemeData(color: AppColors.textPrimary),
@@ -140,7 +140,7 @@ abstract final class AppTheme {
     checkboxTheme: CheckboxThemeData(
       fillColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) return AppColors.primary;
-        return Colors.transparent;
+        return AppColors.transparent;
       }),
       side: const BorderSide(color: AppColors.hint, width: 1.5),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),

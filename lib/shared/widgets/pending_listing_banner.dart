@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_svg_icons.dart';
 import '../../core/router/app_router.dart';
+import '../../core/constants/app_colors.dart';
 import 'app_svg_icon.dart';
 
 /// Shown to non-verified owners.
@@ -69,23 +70,23 @@ class _PendingListingBannerState extends State<PendingListingBanner>
     final rejected = widget.status == 'rejected';
 
     final Color bgColor = rejected
-        ? const Color(0xFFFEF2F2)
-        : const Color(0xFFFFFDF5);
+        ? AppColors.redFill50
+        : AppColors.amberFill50;
     final Color borderColor = rejected
-        ? const Color(0xFFFECACA)
-        : const Color(0xFFFDE68A).withValues(alpha: 0.9);
+        ? AppColors.destructive
+        : AppColors.amberBorder200.withValues(alpha: 0.9);
     final Color accentColor = rejected
-        ? const Color(0xFFDC2626)
-        : const Color(0xFFD97706);
+        ? AppColors.red600
+        : AppColors.amber600;
     final Color titleColor = rejected
-        ? const Color(0xFF991B1B)
-        : const Color(0xFF92400E);
+        ? AppColors.red800
+        : AppColors.amber800;
     final Color textColor = rejected
-        ? const Color(0xFFB91C1C)
-        : const Color(0xFF92400E);
+        ? AppColors.red700
+        : AppColors.amber800;
     final Color linkColor = rejected
-        ? const Color(0xFF7F1D1D)
-        : const Color(0xFF78350F);
+        ? AppColors.red900
+        : AppColors.amber900;
 
     final String title = rejected
         ? 'Verification not approved'
@@ -117,7 +118,7 @@ class _PendingListingBannerState extends State<PendingListingBanner>
                     width: 26,
                     height: 26,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEE2E2),
+                      color: AppColors.redFill100,
                       borderRadius: BorderRadius.circular(7),
                     ),
                     child: Center(
@@ -132,7 +133,7 @@ class _PendingListingBannerState extends State<PendingListingBanner>
                     width: 26,
                     height: 26,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
+                      color: AppColors.warningFill,
                       borderRadius: BorderRadius.circular(7),
                     ),
                     child: Center(
@@ -141,7 +142,7 @@ class _PendingListingBannerState extends State<PendingListingBanner>
                         child: const AppSvgIcon(
                           svgString: AppSvgIcons.hourglass,
                           size: 15,
-                          color: Color(0xFFD97706),
+                          color: AppColors.amber600,
                         ),
                       ),
                     ),

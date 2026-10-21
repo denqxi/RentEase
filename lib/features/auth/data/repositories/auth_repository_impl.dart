@@ -153,7 +153,7 @@ class AuthRepositoryImpl implements AuthRepository {
       try {
         await _remote.touchLastLogin(fbUser.uid);
       } catch (_) {}
-      return _toAppUser(fbUser);
+      return await _toAppUser(fbUser);
     } on fb.FirebaseAuthException catch (e) {
       throw Exception(_messageForAuthError(e));
     }

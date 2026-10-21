@@ -376,7 +376,13 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             if (wasOutside != null) ...{'isOutsidePreference': wasOutside},
             if (bExcess != null) ...{'budgetExcess': bExcess},
             if (dExcess != null) ...{'distanceExcess': dExcess},
-            if (bScore != null && wasNonMatch == false && wasFilterMatch != true) ...{'bScore': bScore},
+            // Never let the availability-derived fallback re-enable a
+            // property that was passed in with bScore 0 (Send Inquiry must
+            // stay absent).
+            if (bScore != null &&
+                ((wasNonMatch == false && wasFilterMatch != true) ||
+                    (bScore is num && bScore == 0)))
+              ...{'bScore': bScore},
           };
           _isLoadingDetails = false;
         });

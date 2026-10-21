@@ -287,7 +287,12 @@ service cloud.firestore {
             && (!('poiType' in d) || d.poiType is string)
             && (!('wRent' in d) || (d.wRent is number && d.wRent >= 0 && d.wRent <= 1))
             && (!('wDistance' in d) || (d.wDistance is number && d.wDistance >= 0 && d.wDistance <= 1))
-            && (!('wAmenities' in d) || (d.wAmenities is number && d.wAmenities >= 0 && d.wAmenities <= 1));
+            && (!('wAmenities' in d) || (d.wAmenities is number && d.wAmenities >= 0 && d.wAmenities <= 1))
+            // CLAUDE.md: wRent + wDistance + wAmenities must equal 1.0 whenever
+            // all three are stored (request.resource is the merged doc).
+            && (!d.keys().hasAll(['wRent', 'wDistance', 'wAmenities'])
+                || (d.wRent + d.wDistance + d.wAmenities >= 0.999
+                    && d.wRent + d.wDistance + d.wAmenities <= 1.001));
         }
         allow read: if isSelf(userId) || isAdmin();
         allow create, update: if isSelf(userId) && notSuspended()

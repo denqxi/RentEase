@@ -81,7 +81,7 @@ class TenantPhase1View extends StatelessWidget {
                 height: 48,
                 padding: const EdgeInsets.fromLTRB(6, 4, 14, 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                  color: AppColors.fieldFill,
                   borderRadius: BorderRadius.circular(26),
                 ),
                 child: Row(
@@ -90,7 +90,7 @@ class TenantPhase1View extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: const BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surface,
                         shape: BoxShape.circle,
                       ),
                       child: Transform.rotate(
@@ -98,7 +98,7 @@ class TenantPhase1View extends StatelessWidget {
                         child: const Icon(
                           Icons.attach_file_rounded,
                           size: 18,
-                          color: Color(0xFF94A3B8),
+                          color: AppColors.hint,
                         ),
                       ),
                     ),
@@ -109,13 +109,13 @@ class TenantPhase1View extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 13,
-                          color: Color(0xFF94A3B8),
+                          color: AppColors.hint,
                         ),
                       ),
                     ),
                     const Icon(
                       Icons.send_rounded,
-                      color: Color(0xFFCBD5E1),
+                      color: AppColors.indicatorInactive,
                       size: 20,
                     ),
                   ],
@@ -190,10 +190,10 @@ class _PropertyInformationCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFF0F9FF),
+            color: AppColors.accentSoft,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: const Color(0xFFBAE6FD).withValues(alpha: 0.6),
+              color: AppColors.accentSoft.withValues(alpha: 0.6),
             ),
           ),
           child: Column(
@@ -203,7 +203,7 @@ class _PropertyInformationCard extends StatelessWidget {
                 children: [
                   const Icon(
                     Icons.info_outline_rounded,
-                    color: Color(0xFF0284C7),
+                    color: AppColors.primary,
                     size: 18,
                   ),
                   const SizedBox(width: 6),
@@ -216,7 +216,7 @@ class _PropertyInformationCard extends StatelessWidget {
                         fontFamily: 'DM Sans',
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF0284C7),
+                        color: AppColors.primary,
                       ),
                     ),
                   ),
@@ -227,7 +227,7 @@ class _PropertyInformationCard extends StatelessWidget {
                       vertical: 3.5,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
+                      color: AppColors.amberFill,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Row(
@@ -235,7 +235,7 @@ class _PropertyInformationCard extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.access_time_rounded,
-                          color: Color(0xFFD97706),
+                          color: AppColors.matchMedium,
                           size: 12,
                         ),
                         SizedBox(width: 4),
@@ -245,7 +245,7 @@ class _PropertyInformationCard extends StatelessWidget {
                             fontFamily: 'DM Sans',
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFFD97706),
+                            color: AppColors.matchMedium,
                           ),
                         ),
                       ],
@@ -255,7 +255,7 @@ class _PropertyInformationCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     const Icon(
                       Icons.chevron_right_rounded,
-                      color: Color(0xFF0284C7),
+                      color: AppColors.primary,
                       size: 18,
                     ),
                   ],
@@ -268,7 +268,7 @@ class _PropertyInformationCard extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,
-                    color: Color(0xFF64748B),
+                    color: AppColors.textSecondary,
                   ),
                 )
               else ...[
@@ -301,7 +301,7 @@ class _PropertyInformationCard extends StatelessWidget {
               style: const TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
-                color: Color(0xFF475569),
+                color: AppColors.textSecondary,
               ),
             ),
           ),
@@ -312,7 +312,7 @@ class _PropertyInformationCard extends StatelessWidget {
                 fontFamily: 'DM Sans',
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF0F172A),
+                color: AppColors.textPrimary,
               ),
             ),
           ),
@@ -334,10 +334,10 @@ class _InvitationNotificationCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F9FF),
+        color: AppColors.accentSoft,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFBAE6FD).withValues(alpha: 0.6),
+          color: AppColors.accentSoft.withValues(alpha: 0.6),
         ),
       ),
       child: Row(
@@ -345,7 +345,7 @@ class _InvitationNotificationCard extends StatelessWidget {
         children: [
           const Icon(
             Icons.notifications_rounded,
-            color: Color(0xFF00A8F0),
+            color: AppColors.primary,
             size: 24,
           ),
           const SizedBox(width: 12),
@@ -359,7 +359,7 @@ class _InvitationNotificationCard extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 13,
                     height: 1.4,
-                    color: Color(0xFF1E293B),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -368,7 +368,7 @@ class _InvitationNotificationCard extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12.5,
-                    color: Color(0xFF64748B),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -394,7 +394,7 @@ class _PhonePrivacyNotice extends StatelessWidget {
           angle: 0.1,
           child: const Icon(
             Icons.phone_rounded,
-            color: Color(0xFF00A8F0),
+            color: AppColors.primary,
             size: 18,
           ),
         ),
@@ -406,7 +406,7 @@ class _PhonePrivacyNotice extends StatelessWidget {
               fontFamily: 'DM Sans',
               fontSize: 12,
               height: 1.35,
-              color: Color(0xFF64748B),
+              color: AppColors.textSecondary,
             ),
           ),
         ),
@@ -433,7 +433,7 @@ class _ActionButtons extends StatelessWidget {
     return Column(
       children: [
         Material(
-          color: const Color(0xFF0F172A),
+          color: AppColors.textPrimary,
           borderRadius: BorderRadius.circular(14),
           child: InkWell(
             onTap: isBusy ? null : onAccept,
@@ -446,7 +446,7 @@ class _ActionButtons extends StatelessWidget {
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: AppColors.surface,
                         strokeWidth: 2,
                       ),
                     )
@@ -456,7 +456,7 @@ class _ActionButtons extends StatelessWidget {
                         fontFamily: 'DM Sans',
                         fontSize: 14.5,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: AppColors.surface,
                       ),
                     ),
             ),
@@ -464,7 +464,7 @@ class _ActionButtons extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Material(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
           child: InkWell(
             onTap: isBusy ? null : onDecline,
@@ -475,7 +475,7 @@ class _ActionButtons extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: const Color(0xFF00A8F0),
+                  color: AppColors.primary,
                   width: 1.5,
                 ),
               ),
@@ -485,7 +485,7 @@ class _ActionButtons extends StatelessWidget {
                   fontFamily: 'DM Sans',
                   fontSize: 14.5,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF00A8F0),
+                  color: AppColors.primary,
                 ),
               ),
             ),
@@ -518,15 +518,15 @@ class _StatusNoticeCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: AppColors.fieldFill,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.fieldBorder),
       ),
       child: Column(
         children: [
           Icon(
             ended ? Icons.block_rounded : Icons.access_time_rounded,
-            color: ended ? AppColors.destructive : const Color(0xFF00A8F0),
+            color: ended ? AppColors.destructive : AppColors.primary,
             size: 30,
           ),
           const SizedBox(height: 8),
@@ -542,7 +542,7 @@ class _StatusNoticeCard extends StatelessWidget {
               fontFamily: 'DM Sans',
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF0F172A),
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
@@ -559,7 +559,7 @@ class _StatusNoticeCard extends StatelessWidget {
             style: const TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 12,
-              color: Color(0xFF64748B),
+              color: AppColors.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),

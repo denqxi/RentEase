@@ -23,7 +23,7 @@ class MatchCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: AppColors.ink.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -62,7 +62,7 @@ class MatchCard extends StatelessWidget {
                     vertical: 2.5,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.60),
+                    color: AppColors.ink.withValues(alpha: 0.60),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -71,12 +71,12 @@ class MatchCard extends StatelessWidget {
                       ShaderMask(
                         shaderCallback: (Rect bounds) => const LinearGradient(
                           colors: [
-                            Color(0xFFFF3366), // vibrant pink/rose
-                            Color(0xFFFF9900), // vivid orange
-                            Color(0xFFFFDD00), // bright yellow
-                            Color(0xFF00E676), // neon green
-                            Color(0xFF00D2FF), // cyan / bright blue
-                            Color(0xFF9D00FF), // vivid violet
+                            AppColors.destructive,
+                            AppColors.matchMedium,
+                            AppColors.amberBorder,
+                            AppColors.matchHigh,
+                            AppColors.primary,
+                            AppColors.ownerPrimary,
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -85,7 +85,7 @@ class MatchCard extends StatelessWidget {
                         child: const Icon(
                           Icons.auto_awesome,
                           size: 10.5,
-                          color: Colors.white,
+                          color: AppColors.onInk,
                         ),
                       ),
                       const SizedBox(width: 3.5),
@@ -95,7 +95,7 @@ class MatchCard extends StatelessWidget {
                           fontFamily: 'DM Sans',
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: AppColors.onInk,
                           letterSpacing: 0.1,
                         ),
                       ),

@@ -1,3 +1,4 @@
+import '../../../core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -29,10 +30,10 @@ class NotificationTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: isUnread ? const Color(0xFFF0F9FF) : Colors.white,
+        color: isUnread ? AppColors.accentSoft : AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isUnread ? const Color(0xFFBAE6FD) : const Color(0xFFE2E8F0),
+          color: isUnread ? AppColors.accentSoft : AppColors.fieldBorder,
           width: isUnread ? 1.0 : 0.8,
         ),
       ),
@@ -88,7 +89,7 @@ class NotificationTile extends StatelessWidget {
                           fontFamily: 'DM Sans',
                           fontSize: 13.5,
                           fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
-                          color: const Color(0xFF0F172A),
+                          color: AppColors.textPrimary,
                           height: 1.3,
                         ),
                       ),
@@ -103,7 +104,7 @@ class NotificationTile extends StatelessWidget {
                           style: const TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 12,
-                            color: Color(0xFF64748B),
+                            color: AppColors.textSecondary,
                             height: 1.3,
                           ),
                         ),
@@ -116,8 +117,8 @@ class NotificationTile extends StatelessWidget {
                           fontSize: 11,
                           fontWeight: isUnread ? FontWeight.w600 : FontWeight.w400,
                           color: isUnread
-                              ? const Color(0xFF00A8F0)
-                              : const Color(0xFF94A3B8),
+                              ? AppColors.primary
+                              : AppColors.hint,
                         ),
                       ),
                     ],
@@ -133,7 +134,7 @@ class NotificationTile extends StatelessWidget {
                       width: 9,
                       height: 9,
                       decoration: const BoxDecoration(
-                        color: Color(0xFF00A8F0),
+                        color: AppColors.primary,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -152,35 +153,35 @@ class NotificationTile extends StatelessWidget {
     if (raw == 'rating' || item.type == ActivityType.rating) {
       return (
         Icons.star_rounded,
-        const Color(0xFFF59E0B),
-        const Color(0xFFFEF3C7),
+        AppColors.matchMedium,
+        AppColors.amberFill,
       );
     }
     if (raw.contains('invitation')) {
       return (
         Icons.door_front_door_outlined,
-        const Color(0xFF10B981),
-        const Color(0xFFD1FAE5),
+        AppColors.matchHigh,
+        AppColors.greenFill,
       );
     }
     if (raw == 'message') {
       return (
         Icons.chat_bubble_outline_rounded,
-        const Color(0xFF6366F1),
-        const Color(0xFFEEF2FF),
+        AppColors.accent,
+        AppColors.accentSoft,
       );
     }
     if (raw.contains('inquiry')) {
       return (
         Icons.mail_outline_rounded,
-        const Color(0xFF0284C7),
-        const Color(0xFFE0F2FE),
+        AppColors.primary,
+        AppColors.accentSoft,
       );
     }
     return (
       Icons.notifications_none_rounded,
-      const Color(0xFF0EA5E9),
-      const Color(0xFFE0F2FE),
+      AppColors.primary,
+      AppColors.accentSoft,
     );
   }
 }

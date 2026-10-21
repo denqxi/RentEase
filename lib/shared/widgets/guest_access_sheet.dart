@@ -19,7 +19,7 @@ class GuestAccessSheet extends StatelessWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       builder: (_) => const GuestAccessSheet(),
     );
   }

@@ -13,7 +13,7 @@ class PhaseBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0F2FE),
+        color: AppColors.skyFill,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
