@@ -66,7 +66,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
             child: const Text(
               'No',
               style: TextStyle(
-                color: Colors.grey,
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -76,7 +76,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
             child: const Text(
               'Yes',
               style: TextStyle(
-                color: Colors.blue,
+                color: AppColors.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),

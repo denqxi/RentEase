@@ -40,10 +40,10 @@ class OwnerPhase1View extends StatelessWidget {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: AppColors.fieldFill,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFFE2E8F0).withValues(alpha: 0.75),
+                    color: AppColors.fieldBorder.withValues(alpha: 0.75),
                   ),
                 ),
                 child: Row(
@@ -52,9 +52,9 @@ class OwnerPhase1View extends StatelessWidget {
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surface,
                         shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        border: Border.all(color: AppColors.fieldBorder),
                       ),
                       child: const Icon(
                         Icons.mark_chat_unread_outlined,
@@ -77,7 +77,7 @@ class OwnerPhase1View extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -89,7 +89,7 @@ class OwnerPhase1View extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 12,
                               fontWeight: FontWeight.w400,
-                              color: Color(0xFF64748B),
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -122,7 +122,7 @@ class OwnerPhase1View extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F9FF),
+                  color: AppColors.accentSoft,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: AppColors.primary.withValues(alpha: 0.2),
@@ -325,13 +325,13 @@ class _SummaryRow extends StatelessWidget {
             '$label: ',
             style: AppTextStyles.caption(
               context,
-            ).copyWith(color: const Color(0xFF64748B)),
+            ).copyWith(color: AppColors.textSecondary),
           ),
           Expanded(
             child: Text(
               value,
               style: AppTextStyles.caption(context).copyWith(
-                color: const Color(0xFF0F172A),
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.w700,
               ),
             ),

@@ -209,7 +209,7 @@ void _showAlreadyRegisteredDialog(
           onPressed: () => Navigator.of(ctx).pop(),
           child: Text(
             state.verified ? 'Cancel' : 'Use another email',
-            style: const TextStyle(color: Colors.grey, fontWeight: bold),
+            style: const TextStyle(color: AppColors.textSecondary, fontWeight: bold),
           ),
         ),
         if (!state.verified)
@@ -222,7 +222,7 @@ void _showAlreadyRegisteredDialog(
             },
             child: const Text(
               'Reset password',
-              style: TextStyle(color: Colors.blue, fontWeight: bold),
+              style: TextStyle(color: AppColors.primary, fontWeight: bold),
             ),
           ),
         TextButton(
@@ -232,7 +232,7 @@ void _showAlreadyRegisteredDialog(
           },
           child: const Text(
             'Log in',
-            style: TextStyle(color: Colors.blue, fontWeight: bold),
+            style: TextStyle(color: AppColors.primary, fontWeight: bold),
           ),
         ),
       ],

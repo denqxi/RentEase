@@ -5,6 +5,7 @@ import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../features/activity/view/activity_screen.dart';
+import '../../core/constants/app_colors.dart';
 import 'app_svg_icon.dart';
 
 /// Top header for Home screens (shared across Tenant and Landlord/Owner).
@@ -66,20 +67,20 @@ class AppHomeHeader extends StatelessWidget {
         height: 52,
         padding: const EdgeInsets.fromLTRB(5, 5, 12, 5),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: const Color(0xFFE2E8F0).withValues(alpha: 0.6),
+            color: AppColors.slate200.withValues(alpha: 0.6),
             width: 1,
           ),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
+              color: AppColors.scrim.withValues(alpha: 0.06),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
+              color: AppColors.scrim.withValues(alpha: 0.02),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -100,9 +101,9 @@ class AppHomeHeader extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: <Color>[
-                        Color(0xFF2563EB), // Blue
-                        Color(0xFF38BDF8), // Light Blue
-                        Color(0xFF34D399), // Subtle Green
+                        AppColors.blue600, // Blue
+                        AppColors.sky400, // Light Blue
+                        AppColors.emerald400, // Subtle Green
                       ],
                       stops: <double>[0.0, 0.50, 1.0],
                     ),
@@ -111,7 +112,7 @@ class AppHomeHeader extends StatelessWidget {
                   child: Container(
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white,
+                      color: AppColors.surface,
                     ),
                     padding: const EdgeInsets.all(1.5),
                     child: ClipOval(
@@ -133,9 +134,9 @@ class AppHomeHeader extends StatelessWidget {
                     width: 10,
                     height: 10,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981),
+                      color: AppColors.emerald500,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
+                      border: Border.all(color: AppColors.surface, width: 1.5),
                     ),
                   ),
                 ),
@@ -155,7 +156,7 @@ class AppHomeHeader extends StatelessWidget {
                       fontFamily: 'DM Sans',
                       fontSize: 11.5,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF94A3B8),
+                      color: AppColors.slate400,
                       height: 1.0,
                     ),
                     maxLines: 1,
@@ -172,7 +173,7 @@ class AppHomeHeader extends StatelessWidget {
                             fontFamily: 'DM Sans',
                             fontSize: 16.0,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A),
+                            color: AppColors.slate900,
                             letterSpacing: -0.2,
                             height: 1.15,
                           ),
@@ -228,7 +229,7 @@ class AppHomeHeader extends StatelessWidget {
                       AppSvgIcon(
                         svgString: effectiveActionSvg,
                         size: 20,
-                        color: const Color(0xFF334155),
+                        color: AppColors.slate700,
                       ),
                       if (hasUnread)
                         Positioned(
@@ -238,10 +239,10 @@ class AppHomeHeader extends StatelessWidget {
                             width: 8.5,
                             height: 8.5,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF43F5E),
+                              color: AppColors.rose500,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Colors.white,
+                                color: AppColors.surface,
                                 width: 1.5,
                               ),
                             ),
@@ -268,7 +269,7 @@ class AppHomeHeader extends StatelessWidget {
       errorBuilder: (_, _, _) => const Icon(
         Icons.person_rounded,
         size: 22,
-        color: Color(0xFF94A3B8),
+        color: AppColors.slate400,
       ),
     );
   }

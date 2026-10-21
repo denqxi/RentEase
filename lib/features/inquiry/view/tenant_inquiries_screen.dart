@@ -72,9 +72,9 @@ class _TenantInquiriesViewState extends State<_TenantInquiriesView> {
                     center: Alignment.topLeft,
                     radius: 1.05,
                     colors: <Color>[
-                      const Color(0xFFCCF2FE).withValues(alpha: 0.70),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.35),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.0),
+                      AppColors.accentSoft.withValues(alpha: 0.70),
+                      AppColors.accentSoft.withValues(alpha: 0.35),
+                      AppColors.accentSoft.withValues(alpha: 0.0),
                     ],
                     stops: const <double>[0.0, 0.45, 0.88],
                   ),
@@ -155,7 +155,7 @@ class _TenantInquiriesViewState extends State<_TenantInquiriesView> {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00A8F0),
+                        color: AppColors.primary,
                         borderRadius: BorderRadius.circular(11),
                       ),
                       alignment: Alignment.center,
@@ -165,7 +165,7 @@ class _TenantInquiriesViewState extends State<_TenantInquiriesView> {
                           fontFamily: 'DM Sans',
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: AppColors.surface,
                         ),
                       ),
                     ),
@@ -312,7 +312,7 @@ class _SegmentedControl extends StatelessWidget {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: AppColors.fieldFill,
         borderRadius: BorderRadius.circular(22),
       ),
       padding: const EdgeInsets.all(4),
@@ -357,12 +357,12 @@ class _SegTab extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected ? AppColors.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
             boxShadow: isSelected
                 ? <BoxShadow>[
                     BoxShadow(
-                      color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                      color: AppColors.textPrimary.withValues(alpha: 0.06),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -382,8 +382,8 @@ class _SegTab extends StatelessWidget {
                   fontWeight:
                       isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: isSelected
-                      ? const Color(0xFF0F172A)
-                      : const Color(0xFF64748B),
+                      ? AppColors.textPrimary
+                      : AppColors.textSecondary,
                 ),
               ),
               if (hasDot) ...[
@@ -392,7 +392,7 @@ class _SegTab extends StatelessWidget {
                   width: 7,
                   height: 7,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF00A8F0),
+                    color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -442,17 +442,17 @@ class _InquiryCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isUnread ? const Color(0xFFBAE6FD) : const Color(0xFFE2E8F0),
+          color: isUnread ? AppColors.accentSoft : AppColors.fieldBorder,
           width: isUnread ? 1.2 : 0.8,
         ),
         boxShadow: [
           BoxShadow(
             color: isUnread
-                ? const Color(0xFF00A8F0).withValues(alpha: 0.07)
-                : const Color(0xFF0F172A).withValues(alpha: 0.035),
+                ? AppColors.primary.withValues(alpha: 0.07)
+                : AppColors.textPrimary.withValues(alpha: 0.035),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -468,10 +468,10 @@ class _InquiryCard extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: isUnread
-                  ? const Color(0xFFE0F7FE)
+                  ? AppColors.accentSoft
                   : (isResolved
-                      ? const Color(0xFFEDF2F7)
-                      : const Color(0xFFE0F2FE)),
+                      ? AppColors.fieldFill
+                      : AppColors.accentSoft),
               shape: BoxShape.circle,
             ),
             child: Text(
@@ -481,8 +481,8 @@ class _InquiryCard extends StatelessWidget {
                 fontSize: 15,
                 fontWeight: isUnread ? FontWeight.w800 : FontWeight.w700,
                 color: isResolved
-                    ? const Color(0xFF64748B)
-                    : const Color(0xFF00A8F0),
+                    ? AppColors.textSecondary
+                    : AppColors.primary,
               ),
             ),
           ),
@@ -501,7 +501,7 @@ class _InquiryCard extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 15,
                     fontWeight: isUnread ? FontWeight.w800 : FontWeight.w700,
-                    color: const Color(0xFF0F172A),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -514,8 +514,8 @@ class _InquiryCard extends StatelessWidget {
                     fontSize: 12.5,
                     fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
                     color: isUnread
-                        ? const Color(0xFF1E293B)
-                        : const Color(0xFF64748B),
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -528,7 +528,7 @@ class _InquiryCard extends StatelessWidget {
                       fontFamily: 'DM Sans',
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF94A3B8),
+                      color: AppColors.hint,
                     ),
                   )
                 else if (isInvitation)
@@ -538,7 +538,7 @@ class _InquiryCard extends StatelessWidget {
                       const Icon(
                         Icons.notifications_rounded,
                         size: 15,
-                        color: Color(0xFF00A8F0),
+                        color: AppColors.primary,
                       ),
                       const SizedBox(width: 4),
                       Flexible(
@@ -550,7 +550,7 @@ class _InquiryCard extends StatelessWidget {
                             fontFamily: 'DM Sans',
                             fontSize: 12,
                             fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
-                            color: const Color(0xFF00A8F0),
+                            color: AppColors.primary,
                           ),
                         ),
                       ),
@@ -565,7 +565,7 @@ class _InquiryCard extends StatelessWidget {
                       fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
                       color: isPhase1
                           ? AppColors.matchMedium
-                          : const Color(0xFF00A8F0),
+                          : AppColors.primary,
                     ),
                   ),
               ],
@@ -586,8 +586,8 @@ class _InquiryCard extends StatelessWidget {
                     fontSize: 11.5,
                     fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
                     color: isUnread
-                        ? const Color(0xFF0F172A)
-                        : const Color(0xFF94A3B8),
+                        ? AppColors.textPrimary
+                        : AppColors.hint,
                   ),
                 ),
               const SizedBox(height: 8),
@@ -599,7 +599,7 @@ class _InquiryCard extends StatelessWidget {
                       width: 8,
                       height: 8,
                       decoration: const BoxDecoration(
-                        color: Color(0xFF00A8F0),
+                        color: AppColors.primary,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -608,7 +608,7 @@ class _InquiryCard extends StatelessWidget {
                   const Icon(
                     Icons.chevron_right_rounded,
                     size: 20,
-                    color: Color(0xFF94A3B8),
+                    color: AppColors.hint,
                   ),
                 ],
               ),

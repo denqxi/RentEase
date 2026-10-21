@@ -190,7 +190,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
   void _showAttachmentOptions(PropertyDoc? property, String? phone) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -206,7 +206,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFCBD5E1),
+                    color: AppColors.indicatorInactive,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -218,7 +218,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   fontFamily: 'DM Sans',
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -230,7 +230,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE0F2FE),
+                        color: AppColors.accentSoft,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -254,7 +254,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       style: const TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12,
-                        color: Color(0xFF64748B),
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     onTap: () {
@@ -270,7 +270,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE0F2FE),
+                        color: AppColors.accentSoft,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -292,7 +292,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       style: const TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12,
-                        color: Color(0xFF64748B),
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     onTap: () {
@@ -309,7 +309,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE0F2FE),
+                      color: AppColors.accentSoft,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -331,7 +331,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
-                      color: Color(0xFF64748B),
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   onTap: () {
@@ -348,7 +348,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE0F2FE),
+                      color: AppColors.accentSoft,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -370,7 +370,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
-                      color: Color(0xFF64748B),
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   onTap: () {
@@ -387,7 +387,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE0F2FE),
+                        color: AppColors.accentSoft,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -409,7 +409,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12,
-                        color: Color(0xFF64748B),
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     onTap: () {
@@ -425,7 +425,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE0F2FE),
+                      color: AppColors.accentSoft,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -447,7 +447,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
-                      color: Color(0xFF64748B),
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   onTap: () {
@@ -465,7 +465,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE0F2FE),
+                      color: AppColors.accentSoft,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -487,7 +487,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     style: const TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
-                      color: Color(0xFF64748B),
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   onTap: () {
@@ -580,7 +580,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
         : (inquiry.updatedAt?.toDate() ?? inquiry.createdAt?.toDate());
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       body: Stack(
         children: [
           // Soft Top Sky-Blue Gradient Background matching the reference UI
@@ -596,9 +596,9 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     begin: Alignment.topRight,
                     end: Alignment.bottomLeft,
                     colors: [
-                      const Color(0xFFD8F3FE).withValues(alpha: 0.7),
-                      const Color(0xFFEFF9FF).withValues(alpha: 0.45),
-                      Colors.white.withValues(alpha: 0.0),
+                      AppColors.accentSoft.withValues(alpha: 0.7),
+                      AppColors.accentSoft.withValues(alpha: 0.45),
+                      AppColors.surface.withValues(alpha: 0.0),
                     ],
                     stops: const [0.0, 0.55, 1.0],
                   ),
@@ -623,7 +623,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                           width: 38,
                           height: 38,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.surface,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -637,7 +637,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                           ),
                           child: const Icon(
                             Icons.chevron_left_rounded,
-                            color: Color(0xFF0F172A),
+                            color: AppColors.textPrimary,
                             size: 24,
                           ),
                         ),
@@ -658,7 +658,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                   height: 42,
                                   alignment: Alignment.center,
                                   decoration: const BoxDecoration(
-                                    color: Color(0xFFEDF2F7),
+                                    color: AppColors.fieldFill,
                                     shape: BoxShape.circle,
                                   ),
                                   child: Text(
@@ -667,7 +667,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                       fontFamily: 'DM Sans',
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF0F172A),
+                                      color: AppColors.textPrimary,
                                     ),
                                   ),
                                 ),
@@ -687,7 +687,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                                 fontFamily: 'DM Sans',
                                                 fontSize: 15.5,
                                                 fontWeight: FontWeight.w700,
-                                                color: Color(0xFF0F172A),
+                                                color: AppColors.textPrimary,
                                               ),
                                             ),
                                           ),
@@ -709,7 +709,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                           fontFamily: 'DM Sans',
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w500,
-                                          color: Color(0xFF64748B),
+                                          color: AppColors.textSecondary,
                                         ),
                                       ),
                                     ],
@@ -726,7 +726,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       PopupMenuButton<String>(
                         icon: const Icon(
                           Icons.more_vert_rounded,
-                          color: Color(0xFF0F172A),
+                          color: AppColors.textPrimary,
                           size: 21,
                         ),
                         shape: RoundedRectangleBorder(
@@ -752,7 +752,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                   Icon(
                                     Icons.home_work_outlined,
                                     size: 16,
-                                    color: Color(0xFF0F172A),
+                                    color: AppColors.textPrimary,
                                   ),
                                   SizedBox(width: 8),
                                   Text(
@@ -917,7 +917,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                               height: 48,
                               padding: const EdgeInsets.fromLTRB(6, 4, 14, 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9),
+                                color: AppColors.fieldFill,
                                 borderRadius: BorderRadius.circular(26),
                               ),
                               child: Row(
@@ -933,7 +933,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                       width: 36,
                                       height: 36,
                                       decoration: const BoxDecoration(
-                                        color: Colors.white,
+                                        color: AppColors.surface,
                                         shape: BoxShape.circle,
                                       ),
                                       child: Transform.rotate(
@@ -941,7 +941,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                         child: const Icon(
                                           Icons.attach_file_rounded,
                                           size: 18,
-                                          color: Color(0xFF64748B),
+                                          color: AppColors.textSecondary,
                                         ),
                                       ),
                                     ),
@@ -966,7 +966,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                         fontFamily: 'DM Sans',
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
-                                        color: Color(0xFF0F172A),
+                                        color: AppColors.textPrimary,
                                       ),
                                       decoration: const InputDecoration(
                                         hintText: 'Type a message...',
@@ -974,7 +974,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                           fontFamily: 'DM Sans',
                                           fontSize: 14,
                                           fontWeight: FontWeight.w400,
-                                          color: Color(0xFF64748B),
+                                          color: AppColors.textSecondary,
                                         ),
                                         border: InputBorder.none,
                                         enabledBorder: InputBorder.none,
@@ -1002,7 +1002,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                               decoration: BoxDecoration(
                                 color: canChat
                                     ? AppColors.primary
-                                    : const Color(0xFFCBD5E1),
+                                    : AppColors.indicatorInactive,
                                 shape: BoxShape.circle,
                                 boxShadow: canChat
                                     ? [
@@ -1018,7 +1018,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                               ),
                               child: const Icon(
                                 Icons.send_rounded,
-                                color: Colors.white,
+                                color: AppColors.surface,
                                 size: 20,
                               ),
                             ),
@@ -1079,7 +1079,7 @@ class ThreadPropertyBannerCard extends StatelessWidget {
             : null);
 
     return Material(
-      color: Colors.white,
+      color: AppColors.surface,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: effectiveOnTap,
@@ -1089,11 +1089,11 @@ class ThreadPropertyBannerCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+              color: AppColors.fieldBorder.withValues(alpha: 0.8),
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                color: AppColors.textPrimary.withValues(alpha: 0.04),
                 blurRadius: 12,
                 offset: const Offset(0, 3),
               ),
@@ -1125,7 +1125,7 @@ class ThreadPropertyBannerCard extends StatelessWidget {
                         fontFamily: 'DM Sans',
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -1134,7 +1134,7 @@ class ThreadPropertyBannerCard extends StatelessWidget {
                         const Icon(
                           Icons.location_on_rounded,
                           size: 14,
-                          color: Color(0xFF64748B),
+                          color: AppColors.textSecondary,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
@@ -1146,7 +1146,7 @@ class ThreadPropertyBannerCard extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 12.5,
                               fontWeight: FontWeight.w400,
-                              color: Color(0xFF64748B),
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ),
@@ -1159,7 +1159,7 @@ class ThreadPropertyBannerCard extends StatelessWidget {
               const Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: Color(0xFF64748B),
+                color: AppColors.textSecondary,
               ),
             ],
           ),
@@ -1198,7 +1198,7 @@ class _DateDivider extends StatelessWidget {
     return Row(
       children: [
         const Expanded(
-          child: Divider(color: Color(0xFFE2E8F0), thickness: 1, height: 1),
+          child: Divider(color: AppColors.fieldBorder, thickness: 1, height: 1),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1208,12 +1208,12 @@ class _DateDivider extends StatelessWidget {
               fontFamily: 'DM Sans',
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF64748B),
+              color: AppColors.textSecondary,
             ),
           ),
         ),
         const Expanded(
-          child: Divider(color: Color(0xFFE2E8F0), thickness: 1, height: 1),
+          child: Divider(color: AppColors.fieldBorder, thickness: 1, height: 1),
         ),
       ],
     );
@@ -1234,10 +1234,10 @@ class _AcceptedStatusBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: AppColors.fieldFill,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFE2E8F0).withValues(alpha: 0.75),
+          color: AppColors.fieldBorder.withValues(alpha: 0.75),
         ),
       ),
       child: Row(
@@ -1246,9 +1246,9 @@ class _AcceptedStatusBanner extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface,
               shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: AppColors.fieldBorder),
             ),
             child: const Icon(
               Icons.chat_bubble_outline_rounded,
@@ -1267,7 +1267,7 @@ class _AcceptedStatusBanner extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1277,7 +1277,7 @@ class _AcceptedStatusBanner extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: Color(0xFF64748B),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -1322,8 +1322,8 @@ class _MessageBubble extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
             decoration: BoxDecoration(
               color: isMine
-                  ? const Color(0xFFE0F4FE)
-                  : const Color(0xFFF1F5F9),
+                  ? AppColors.accentSoft
+                  : AppColors.fieldFill,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
                 topRight: const Radius.circular(16),
@@ -1342,7 +1342,7 @@ class _MessageBubble extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF0F172A),
+                    color: AppColors.textPrimary,
                     height: 1.35,
                   ),
                 ),
@@ -1356,7 +1356,7 @@ class _MessageBubble extends StatelessWidget {
                         fontFamily: 'DM Sans',
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF64748B),
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     if (isMine) ...[
@@ -1392,7 +1392,7 @@ class _QuickReplyChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: const Color(0xFFF0F9FF),
+          color: AppColors.accentSoft,
           border: Border.all(
             color: AppColors.primary.withValues(alpha: 0.35),
           ),
@@ -1429,7 +1429,7 @@ class _ClosedPanel extends StatelessWidget {
               : 'This listing is now fully booked, so the chat is closed.',
           style: AppTextStyles.body(
             context,
-          ).copyWith(color: const Color(0xFF64748B)),
+          ).copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ),
       ),

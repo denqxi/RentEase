@@ -1,3 +1,4 @@
+import '../../../core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -48,7 +49,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
         : allItems;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.fieldFill,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -56,7 +57,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
             // ── 1. Top Header Bar ──
             Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              color: Colors.white,
+              color: AppColors.surface,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -70,17 +71,17 @@ class _ActivityScreenState extends State<ActivityScreen> {
                             height: 38,
                             margin: const EdgeInsets.only(right: 12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
+                              color: AppColors.fieldFill,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: const Color(0xFFE2E8F0),
+                                color: AppColors.fieldBorder,
                                 width: 0.8,
                               ),
                             ),
                             child: const Icon(
                               Icons.arrow_back_rounded,
                               size: 19,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.textPrimary,
                             ),
                           ),
                         ),
@@ -92,7 +93,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                             fontFamily: 'DM Sans',
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A),
+                            color: AppColors.textPrimary,
                             letterSpacing: -0.4,
                           ),
                         ),
@@ -107,8 +108,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: unreadCount > 0
-                                ? const Color(0xFFF0F9FF)
-                                : const Color(0xFFF1F5F9),
+                                ? AppColors.accentSoft
+                                : AppColors.fieldFill,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -118,8 +119,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
                               fontSize: 12.5,
                               fontWeight: FontWeight.w700,
                               color: unreadCount > 0
-                                  ? const Color(0xFF00A8F0)
-                                  : const Color(0xFF94A3B8),
+                                  ? AppColors.primary
+                                  : AppColors.hint,
                             ),
                           ),
                         ),
@@ -148,7 +149,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 ],
               ),
             ),
-            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            const Divider(height: 1, color: AppColors.fieldBorder),
 
             // ── 3. Notification List or Empty State ──
             Expanded(
@@ -156,7 +157,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                   ? const Center(
                       child: CircularProgressIndicator(
                         strokeWidth: 2.5,
-                        color: Color(0xFF00A8F0),
+                        color: AppColors.primary,
                       ),
                     )
                   : displayedItems.isEmpty
@@ -194,7 +195,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+          color: isSelected ? AppColors.textPrimary : AppColors.fieldFill,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -206,7 +207,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 height: 7,
                 margin: const EdgeInsets.only(right: 6),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF00A8F0),
+                  color: AppColors.primary,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -217,7 +218,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 fontFamily: 'DM Sans',
                 fontSize: 12.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF64748B),
+                color: isSelected ? AppColors.surface : AppColors.textSecondary,
               ),
             ),
           ],
@@ -237,13 +238,13 @@ class _ActivityScreenState extends State<ActivityScreen> {
               width: 68,
               height: 68,
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: AppColors.fieldFill,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.notifications_none_rounded,
                 size: 32,
-                color: Color(0xFF94A3B8),
+                color: AppColors.hint,
               ),
             ),
             const SizedBox(height: 16),
@@ -253,7 +254,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 fontFamily: 'DM Sans',
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF0F172A),
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 6),
@@ -265,7 +266,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
               style: const TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
-                color: Color(0xFF64748B),
+                color: AppColors.textSecondary,
                 height: 1.4,
               ),
             ),

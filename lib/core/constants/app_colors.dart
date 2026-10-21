@@ -26,7 +26,7 @@ abstract final class AppColors {
   static const Color onInk = Color(0xFFFFFFFF);
 
   /// Selected / active teal used for chips, toggles, slider and progress.
-  static const Color accent = Color(0xFF19A2C1);
+  static const Color accent = Color(0xFF1F7D8C);
 
   /// Soft teal-grey background (success ring, match card).
   static const Color accentSoft = Color(0xFFEAF1F2);
@@ -126,6 +126,31 @@ abstract final class AppColors {
   static const Color darkSwitchTrack = Color(0xFF444444);
   static const Color accentOverlay = Color(0x201F7D8C);
   static const Color adminNavy = Color(0xFF1A1A2E);
+  // ── Slate / utility tokens (used by shared widgets) ──────────────────────
+  static const Color transparent = Color(0x00000000);
+  static const Color slate900 = Color(0xFF0F172A);
+  static const Color slate700 = Color(0xFF334155);
+  static const Color slate400 = Color(0xFF94A3B8);
+  static const Color slate200 = Color(0xFFE2E8F0);
+  static const Color blue600 = Color(0xFF2563EB);
+  static const Color sky400 = Color(0xFF38BDF8);
+  static const Color emerald400 = Color(0xFF34D399);
+  static const Color emerald500 = Color(0xFF10B981);
+  static const Color rose500 = Color(0xFFF43F5E);
+  static const Color skyFill = Color(0xFFE0F2FE);
+  static const Color redFill50 = Color(0xFFFEF2F2);
+  static const Color redFill100 = Color(0xFFFEE2E2);
+  static const Color redBorder200 = Color(0xFFFECACA);
+  static const Color red600 = Color(0xFFDC2626);
+  static const Color red700 = Color(0xFFB91C1C);
+  static const Color red800 = Color(0xFF991B1B);
+  static const Color red900 = Color(0xFF7F1D1D);
+  static const Color amberFill50 = Color(0xFFFFFDF5);
+  static const Color amberBorder200 = Color(0xFFFDE68A);
+  static const Color amber600 = Color(0xFFD97706);
+  static const Color amber800 = Color(0xFF92400E);
+  static const Color amber900 = Color(0xFF78350F);
+
   // Google "G" logo brand colors (sign-in button glyph only).
   static const Color googleBlue = Color(0xFF4285F4);
   static const Color googleGreen = Color(0xFF34A853);

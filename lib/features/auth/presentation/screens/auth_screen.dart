@@ -686,7 +686,7 @@ class _RememberForgotRow extends StatelessWidget {
                 ? 'Forgot password? (${forgotPasswordCountdown}s)'
                 : 'Forgot password?',
             style: AppTextStyles.label(context).copyWith(
-              color: isCountingDown ? Colors.grey : AppColors.primary,
+              color: isCountingDown ? AppColors.hint : AppColors.primary,
             ),
           ),
         ),

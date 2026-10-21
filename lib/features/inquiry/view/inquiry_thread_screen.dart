@@ -210,7 +210,7 @@ class _ThreadScaffold extends StatelessWidget {
     final hasHeaderDetails = counterpartName != null && subtitle != null;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       body: Stack(
         children: [
           // Soft Top Sky-Blue Gradient Background
@@ -226,9 +226,9 @@ class _ThreadScaffold extends StatelessWidget {
                     begin: Alignment.topRight,
                     end: Alignment.bottomLeft,
                     colors: [
-                      const Color(0xFFD8F3FE).withValues(alpha: 0.7),
-                      const Color(0xFFEFF9FF).withValues(alpha: 0.45),
-                      Colors.white.withValues(alpha: 0.0),
+                      AppColors.accentSoft.withValues(alpha: 0.7),
+                      AppColors.accentSoft.withValues(alpha: 0.45),
+                      AppColors.surface.withValues(alpha: 0.0),
                     ],
                     stops: const [0.0, 0.55, 1.0],
                   ),
@@ -252,7 +252,7 @@ class _ThreadScaffold extends StatelessWidget {
                           width: 38,
                           height: 38,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.surface,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -266,7 +266,7 @@ class _ThreadScaffold extends StatelessWidget {
                           ),
                           child: const Icon(
                             Icons.chevron_left_rounded,
-                            color: Color(0xFF0F172A),
+                            color: AppColors.textPrimary,
                             size: 24,
                           ),
                         ),
@@ -286,7 +286,7 @@ class _ThreadScaffold extends StatelessWidget {
                                     height: 42,
                                     alignment: Alignment.center,
                                     decoration: const BoxDecoration(
-                                      color: Color(0xFFEDF2F7),
+                                      color: AppColors.fieldFill,
                                       shape: BoxShape.circle,
                                     ),
                                     child: Text(
@@ -295,7 +295,7 @@ class _ThreadScaffold extends StatelessWidget {
                                         fontFamily: 'DM Sans',
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700,
-                                        color: Color(0xFF0F172A),
+                                        color: AppColors.textPrimary,
                                       ),
                                     ),
                                   ),
@@ -313,7 +313,7 @@ class _ThreadScaffold extends StatelessWidget {
                                           fontFamily: 'DM Sans',
                                           fontSize: 15.5,
                                           fontWeight: FontWeight.w700,
-                                          color: Color(0xFF0F172A),
+                                          color: AppColors.textPrimary,
                                         ),
                                       ),
                                       if (subtitle != null) ...[
@@ -325,7 +325,7 @@ class _ThreadScaffold extends StatelessWidget {
                                             fontFamily: 'DM Sans',
                                             fontSize: 12.5,
                                             fontWeight: FontWeight.w500,
-                                            color: Color(0xFF64748B),
+                                            color: AppColors.textSecondary,
                                           ),
                                         ),
                                       ],
@@ -340,7 +340,7 @@ class _ThreadScaffold extends StatelessWidget {
                       const SizedBox(width: 6),
                       const Icon(
                         Icons.more_vert_rounded,
-                        color: Color(0xFF0F172A),
+                        color: AppColors.textPrimary,
                         size: 21,
                       ),
                     ],

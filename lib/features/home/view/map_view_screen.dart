@@ -1256,7 +1256,8 @@ class _NearbyPropertiesSheet extends StatefulWidget {
 enum _SortOption { nearest, highestMatch }
 
 class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
-  _SortOption _sortBy = _SortOption.nearest;
+  // Default is Ci-ranked (CLAUDE.md rule 9); "nearest" is an explicit opt-in.
+  _SortOption _sortBy = _SortOption.highestMatch;
 
   static String _fmt(num value) => value
       .round()

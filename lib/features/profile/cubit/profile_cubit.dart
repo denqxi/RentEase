@@ -46,6 +46,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         .catchError((Object _) {
           // The header falls back to a neutral name; not worth a banner.
         });
+    _inquiriesSub?.cancel();
     _inquiriesSub = repository
         .watchTenantInquiries(uid)
         .listen(
