@@ -42,6 +42,9 @@ class AppChip extends StatelessWidget {
 
     return Container(
       height: 30,
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.sizeOf(context).width - 32,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color: bg,
@@ -53,19 +56,23 @@ class AppChip extends StatelessWidget {
         children: [
           if (isLocked) ...[
             Icon(Icons.lock_rounded, size: 10, color: textColor),
-            SizedBox(width: 4),
+            const SizedBox(width: 4),
           ],
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: textColor,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: textColor,
+              ),
             ),
           ),
           if (onRemove != null) ...[
-            SizedBox(width: 4),
+            const SizedBox(width: 4),
             GestureDetector(
               onTap: onRemove,
               child: Icon(Icons.close_rounded, size: 10, color: textColor),

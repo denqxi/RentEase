@@ -44,16 +44,17 @@ class NearbySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final top3Ids = context.select<HomeCubit, Set<String>>(
-      (c) => c.state.recommended.take(3).map((l) => l.id).toSet(),
-    );
-    final allNearby = context.select<HomeCubit, List<Listing>>(
-      (c) => c.state.nearby,
-    );
-    final listings = allNearby.where((l) => !top3Ids.contains(l.id)).toList();
+    // Select the stable inputs: a freshly built Set never compares equal, so
+    // selecting the top-3 ids directly rebuilt on every emission.
+    context.select<HomeCubit, List<Listing>>((c) => c.state.listings);
+    context.select<HomeCubit, bool>((c) => c.state.isGuest);
+    final cubit = context.read<HomeCubit>();
+    final top3Ids = cubit.state.recommended.take(3).map((l) => l.id).toSet();
+    final listings = cubit.state.nearby
+        .where((l) => !top3Ids.contains(l.id))
+        .toList();
     if (listings.isEmpty) return const SizedBox.shrink();
 
-    final cubit = context.read<HomeCubit>();
     final isGuest = context.select<ProfileCubit, bool>(
       (c) => c.state.userRole == UserRole.guest,
     );
@@ -95,29 +96,32 @@ class NearbySection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        ListView.separated(
-          physics: const NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
+        Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          itemCount: listings.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 14),
-          itemBuilder: (ctx, i) => ListingCardLarge(
-            listing: listings[i],
-            isGuest: isGuest,
-            onSavedToggle: () {
-              if (isGuest) {
-                GuestAccessSheet.show(ctx);
-                return;
-              }
-              cubit.toggleSaved(listings[i].id);
-            },
-            onTap: () => openPropertyDetail(
-              ctx,
-              cubit,
-              listings[i].id,
-              initialListing: listings[i],
-              initialPropertyDoc: listings[i].propertyDoc,
-            ),
+          child: Column(
+            children: [
+              for (int i = 0; i < listings.length; i++) ...[
+                if (i > 0) const SizedBox(height: 14),
+                ListingCardLarge(
+                  listing: listings[i],
+                  isGuest: isGuest,
+                  onSavedToggle: () {
+                    if (isGuest) {
+                      GuestAccessSheet.show(context);
+                      return;
+                    }
+                    cubit.toggleSaved(listings[i].id);
+                  },
+                  onTap: () => openPropertyDetail(
+                    context,
+                    cubit,
+                    listings[i].id,
+                    initialListing: listings[i],
+                    initialPropertyDoc: listings[i].propertyDoc,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ],

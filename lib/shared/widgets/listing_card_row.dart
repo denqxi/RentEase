@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/utils/currency_utils.dart';
 import '../../features/home/model/listing.dart';
 import 'guest_access_sheet.dart';
 import 'listing_image_placeholder.dart';
@@ -48,7 +49,7 @@ class ListingCardRow extends StatelessWidget {
                 isGuest: isGuest,
                 onSavedToggle: onSavedToggle,
               ),
-              SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.md),
               Expanded(child: _Info(listing: listing)),
             ],
           ),
@@ -128,16 +129,16 @@ class _Info extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.sm),
             Text(
-              '\$${listing.pricePerMonth.toLocale()}',
+              CurrencyUtils.formatDollars(listing.pricePerMonth),
               style: AppTextStyles.label(
                 context,
               ).copyWith(color: AppColors.accent, fontSize: 14),
             ),
           ],
         ),
-        SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: AppSpacing.xs),
         Row(
           children: <Widget>[
             Icon(
@@ -145,7 +146,7 @@ class _Info extends StatelessWidget {
               size: 12,
               color: context.appColors.textSecondary,
             ),
-            SizedBox(width: 2),
+            const SizedBox(width: 2),
             Expanded(
               child: Text(
                 listing.location,
@@ -156,19 +157,19 @@ class _Info extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: AppSpacing.xs),
         Row(
           children: <Widget>[
             Icon(Icons.bed, size: 12, color: context.appColors.textSecondary),
-            SizedBox(width: 2),
+            const SizedBox(width: 2),
             Text('${listing.beds} bd', style: AppTextStyles.caption(context)),
-            SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.sm),
             Icon(
               Icons.bathroom_outlined,
               size: 12,
               color: context.appColors.textSecondary,
             ),
-            SizedBox(width: 2),
+            const SizedBox(width: 2),
             Text('${listing.baths} ba', style: AppTextStyles.caption(context)),
           ],
         ),
@@ -200,16 +201,6 @@ class _HeartButton extends StatelessWidget {
           size: 14,
         ),
       ),
-    );
-  }
-}
-
-extension on int {
-  /// Formats an integer with comma separators (e.g. 1800 → "1,800").
-  String toLocale() {
-    return toString().replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]},',
     );
   }
 }

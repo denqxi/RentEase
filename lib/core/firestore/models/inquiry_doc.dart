@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'firestore_parse.dart';
+
 /// `inquiries/{inquiryId}` — structured two-phase inquiries between
 /// compatible (bScore = 1) tenants and owners.
 class InquiryDoc {
@@ -55,15 +57,15 @@ class InquiryDoc {
         tenantId: map['tenantId'] as String? ?? '',
         ownerId: map['ownerId'] as String? ?? '',
         propertyId: map['propertyId'] as String? ?? '',
-        tenantCiSnapshot: map['tenantCiSnapshot'] as num? ?? 0,
-        stage: map['stage'] as num? ?? 1,
+        tenantCiSnapshot: parseNum(map['tenantCiSnapshot'], 0),
+        stage: parseNum(map['stage'], 1),
         initiatedBy: map['initiatedBy'] as String? ?? '',
         status: map['status'] as String? ?? 'pending',
         ownerDecision: map['ownerDecision'] as String? ?? 'pending',
         declineReason: map['declineReason'] as String?,
-        autoInfoSent: map['autoInfoSent'] as bool? ?? false,
-        createdAt: map['createdAt'] as Timestamp?,
-        updatedAt: map['updatedAt'] as Timestamp?,
+        autoInfoSent: parseBool(map['autoInfoSent'], false),
+        createdAt: parseTimestamp(map['createdAt']),
+        updatedAt: parseTimestamp(map['updatedAt']),
       );
 
   factory InquiryDoc.fromSnapshot(

@@ -50,6 +50,18 @@ class FindTenantsRemoteDataSource {
     return snap.docs.map(MatchDoc.fromSnapshot).toList();
   }
 
+  /// Every eligible match across all of the owner's listings in one query
+  /// (instead of one query per property). Equality-only, so no composite
+  /// index; the `ownerId` filter satisfies the `matches` read rule.
+  Future<List<MatchDoc>> fetchOwnerEligibleMatches(String ownerId) async {
+    final snap = await _firestore
+        .collection(FirestoreCollections.matches)
+        .where('ownerId', isEqualTo: ownerId)
+        .where('bScore', isEqualTo: 1)
+        .get();
+    return snap.docs.map(MatchDoc.fromSnapshot).toList();
+  }
+
   Future<UserDoc?> fetchUser(String uid) async {
     final snap =
         await _firestore.collection(FirestoreCollections.users).doc(uid).get();

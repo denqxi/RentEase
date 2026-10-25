@@ -11,8 +11,8 @@ import '../cubit/tenant_onboarding_cubit.dart';
 /// and Amenities using an allocation limit capping system.
 class TopsisWeightScreen extends StatefulWidget {
   const TopsisWeightScreen({
-    this.initialRent = 0.50,
-    this.initialDistance = 0.20,
+    this.initialRent = 0.35,
+    this.initialDistance = 0.35,
     this.initialAmenities = 0.30,
     this.onSave,
     super.key,
@@ -29,12 +29,12 @@ class TopsisWeightScreen extends StatefulWidget {
 
 class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
   // Theme Color Tokens
-  static const Color _primaryTeal = Color(0xFF149BBD);
-  static const Color _midnightNavy = Color(0xFF1D1C2E);
-  static const Color _surfaceTint = Color(0xFFEBF2F5);
-  static const Color _borderStroke = Color(0xFFE2E8F0);
-  static const Color _textPrimary = Color(0xFF1E293B);
-  static const Color _textSecondary = Color(0xFF64748B);
+  static const Color _primaryTeal = AppColors.primary;
+  static const Color _midnightNavy = AppColors.ink;
+  static const Color _surfaceTint = AppColors.accentSoft;
+  static const Color _borderStroke = AppColors.slate200;
+  static const Color _textPrimary = AppColors.slate900;
+  static const Color _textSecondary = AppColors.textSecondary;
 
   // Allocation State (values stored as integer percentages 0-100)
   late int _rent;
@@ -286,12 +286,12 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                           decoration: BoxDecoration(
                             color: _isBalanced
                                 ? _surfaceTint
-                                : const Color(0xFFFFFBEB),
+                                : AppColors.amberFill50,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: _isBalanced
                                   ? _primaryTeal.withValues(alpha: 0.35)
-                                  : const Color(0xFFFDE68A),
+                                  : AppColors.amberBorder200,
                               width: 1.2,
                             ),
                           ),
@@ -306,7 +306,7 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                                         : Icons.info_outline_rounded,
                                     color: _isBalanced
                                         ? _primaryTeal
-                                        : const Color(0xFFD97706),
+                                        : AppColors.amber600,
                                     size: 18,
                                   ),
                                   const SizedBox(width: 8),
@@ -321,7 +321,7 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                                         fontWeight: FontWeight.w700,
                                         color: _isBalanced
                                             ? _primaryTeal
-                                            : const Color(0xFFB45309),
+                                            : AppColors.amber800,
                                       ),
                                     ),
                                   ),
@@ -372,7 +372,7 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                       backgroundColor:
                           WidgetStateProperty.resolveWith<Color>((states) {
                         if (states.contains(WidgetState.disabled)) {
-                          return const Color(0xFFD9D9E0);
+                          return AppColors.indicatorInactive;
                         }
                         return _midnightNavy;
                       }),
@@ -381,7 +381,7 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                         if (states.contains(WidgetState.disabled)) {
                           return _textSecondary;
                         }
-                        return Colors.white;
+                        return AppColors.onInk;
                       }),
                       elevation: WidgetStateProperty.all(0),
                       shape: WidgetStateProperty.all(
@@ -428,18 +428,18 @@ class _CriteriaSliderCard extends StatelessWidget {
   final int value;
   final ValueChanged<double> onChanged;
 
-  static const Color _primaryTeal = Color(0xFF149BBD);
-  static const Color _midnightNavy = Color(0xFF1D1C2E);
-  static const Color _surfaceTint = Color(0xFFEBF2F5);
-  static const Color _borderStroke = Color(0xFFE2E8F0);
-  static const Color _textSecondary = Color(0xFF64748B);
+  static const Color _primaryTeal = AppColors.primary;
+  static const Color _midnightNavy = AppColors.ink;
+  static const Color _surfaceTint = AppColors.accentSoft;
+  static const Color _borderStroke = AppColors.slate200;
+  static const Color _textSecondary = AppColors.textSecondary;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.onInk,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _borderStroke),
       ),

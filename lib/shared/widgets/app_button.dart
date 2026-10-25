@@ -49,18 +49,21 @@ class AppButton extends StatelessWidget {
     if (isDanger) {
       return SizedBox(
         width: isFullWidth ? double.infinity : null,
-        height: height,
         child: OutlinedButton(
           onPressed: onPressed,
           style: OutlinedButton.styleFrom(
-            side: BorderSide(color: AppColors.destructive),
+            side: const BorderSide(color: AppColors.destructive),
             backgroundColor: context.appColors.surface,
+            minimumSize: Size(0, height),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadii.button),
             ),
           ),
           child: Text(
             label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: AppTextStyles.buttonLabel.copyWith(
               fontSize: isSmall ? 13 : 15,
               color: AppColors.destructive,
@@ -74,18 +77,21 @@ class AppButton extends StatelessWidget {
       final borderColor = color ?? context.appColors.fieldBorder;
       return SizedBox(
         width: isFullWidth ? double.infinity : null,
-        height: height,
         child: OutlinedButton(
           onPressed: onPressed,
           style: OutlinedButton.styleFrom(
             side: BorderSide(color: borderColor),
             backgroundColor: context.appColors.surface,
+            minimumSize: Size(0, height),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadii.button),
             ),
           ),
           child: Text(
             label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: AppTextStyles.buttonLabel.copyWith(
               fontSize: isSmall ? 13 : 15,
               color: borderColor,
@@ -98,7 +104,6 @@ class AppButton extends StatelessWidget {
     if (color != null) {
       return SizedBox(
         width: isFullWidth ? double.infinity : null,
-        height: height,
         child: ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
@@ -107,12 +112,16 @@ class AppButton extends StatelessWidget {
                 : context.appColors.indicatorInactive,
             foregroundColor: AppColors.onInk,
             elevation: 0,
+            minimumSize: Size(0, height),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadii.button),
             ),
           ),
           child: Text(
             label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: AppTextStyles.buttonLabel.copyWith(
               fontSize: isSmall ? 13 : 15,
               color: onPressed != null
@@ -129,7 +138,6 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.primary:
         return SizedBox(
           width: isFullWidth ? double.infinity : null,
-          height: height,
           child: ElevatedButton(
             onPressed: onPressed,
             style: ElevatedButton.styleFrom(
@@ -140,12 +148,16 @@ class AppButton extends StatelessWidget {
                   ? AppColors.onInk
                   : context.appColors.textSecondary,
               elevation: 0,
+              minimumSize: Size(0, height),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadii.button),
               ),
             ),
             child: Text(
               label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
               style: AppTextStyles.buttonLabel.copyWith(
                 fontSize: isSmall ? 13 : 15,
                 color: onPressed != null
@@ -159,18 +171,21 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.outline:
         return SizedBox(
           width: isFullWidth ? double.infinity : null,
-          height: height,
           child: OutlinedButton(
             onPressed: onPressed,
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: context.appColors.fieldBorder),
               backgroundColor: context.appColors.surface,
+              minimumSize: Size(0, height),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadii.button),
               ),
             ),
             child: Text(
               label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
               style: AppTextStyles.buttonLabel.copyWith(
                 fontSize: isSmall ? 13 : 15,
                 color: context.appColors.textPrimary,
@@ -182,18 +197,21 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.destructiveOutline:
         return SizedBox(
           width: isFullWidth ? double.infinity : null,
-          height: height,
           child: OutlinedButton(
             onPressed: onPressed,
             style: OutlinedButton.styleFrom(
-              side: BorderSide(color: AppColors.destructive),
+              side: const BorderSide(color: AppColors.destructive),
               backgroundColor: context.appColors.surface,
+              minimumSize: Size(0, height),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadii.button),
               ),
             ),
             child: Text(
               label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
               style: AppTextStyles.buttonLabel.copyWith(
                 fontSize: isSmall ? 13 : 15,
                 color: AppColors.destructive,
@@ -270,7 +288,9 @@ class AppPrimaryButton extends StatelessWidget {
           ),
           shape: WidgetStateProperty.all(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(borderRadius ?? AppRadii.button),
+              borderRadius: BorderRadius.circular(
+                borderRadius ?? AppRadii.button,
+              ),
             ),
           ),
         ),

@@ -42,14 +42,14 @@ class CardOverHeroLayout extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: context.appColors.surface,
-                borderRadius: BorderRadius.vertical(
+                borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(AppRadii.card),
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.scrim.withValues(alpha: 0.094),
                     blurRadius: 24,
-                    offset: Offset(0, -6),
+                    offset: const Offset(0, -6),
                   ),
                 ],
               ),
@@ -97,7 +97,7 @@ class _FallbackHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.accentSoft,
-      child: Center(
+      child: const Center(
         child: Icon(Icons.home_work_rounded, color: AppColors.accent, size: 64),
       ),
     );
@@ -160,7 +160,7 @@ class OnboardingStepHeader extends StatelessWidget {
     return Row(
       children: [
         StepProgressDots(currentStep: currentStep, totalSteps: totalSteps),
-        SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.sm),
         Text(
           label,
           style: TextStyle(

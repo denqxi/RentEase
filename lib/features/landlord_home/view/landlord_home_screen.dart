@@ -16,13 +16,13 @@ import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/pending_listing_banner.dart';
 import '../../activity/cubit/activity_cubit.dart';
 import '../../activity/view/activity_screen.dart';
-import '../../auth/presentation/current_uid.dart';
-import '../../owner/data/repositories/find_tenants_repository_impl.dart';
-import '../../owner/model/compatible_tenant.dart';
 import '../widgets/landlord_home_header.dart';
 import '../cubit/landlord_home_cubit.dart';
 import '../../../shared/widgets/app_svg_icon.dart';
 import 'property_manager_screen.dart';
+
+// Compiled once instead of on every call.
+final RegExp _kThousandsRe = RegExp(r'(\d)(?=(\d{3})+(?!\d))');
 
 /// Owner home: property management dashboard with real listings, live
 /// availability controls, and quick actions.
@@ -151,8 +151,14 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
     BuildContext context,
     List<PropertyDoc> allProperties,
     LandlordHomeCubit cubit,
-    List<CompatibleTenant> allTenants,
+    Map<String, Set<String>> tenantIdsByProperty,
   ) {
+    // Distinct compatible tenants across a card's rooms, from the cubit's one
+    // owner-wide matches query (cards no longer query Firestore themselves).
+    int countFor(Iterable<PropertyDoc> rooms) => {
+      for (final r in rooms) ...?tenantIdsByProperty[r.propertyId],
+    }.length;
+
     // 1. Group all rooms by parentPropertyId
     final groups = <String, List<PropertyDoc>>{};
     for (final p in allProperties) {
@@ -174,10 +180,7 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
 
       if (!isGroupedRoom) {
         // Entire property / single listing
-        final count = allTenants.where((t) {
-          return t.matchId.endsWith('_${p.propertyId}') ||
-              t.matchId.contains(p.propertyId);
-        }).length;
+        final count = countFor([p]);
 
         items.add(
           Padding(
@@ -194,12 +197,7 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
         // Multi-room property
         if (!emitted.add(id)) continue;
         final rooms = groups[id] ?? [p];
-        final propertyIds = rooms.map((r) => r.propertyId).toSet();
-        final count = allTenants.where((t) {
-          return propertyIds.any(
-            (pid) => t.matchId.endsWith('_$pid') || t.matchId.contains(pid),
-          );
-        }).length;
+        final count = countFor(rooms);
 
         items.add(
           Padding(
@@ -246,9 +244,9 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
                     center: Alignment.topRight,
                     radius: 1.05,
                     colors: <Color>[
-                      const Color(0xFFCCF2FE).withValues(alpha: 0.70),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.35),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.0),
+                      AppColors.sky200.withValues(alpha: 0.70),
+                      AppColors.skyFill.withValues(alpha: 0.35),
+                      AppColors.skyFill.withValues(alpha: 0.0),
                     ],
                     stops: const <double>[0.0, 0.45, 0.88],
                   ),
@@ -278,6 +276,17 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
                       );
                       context.read<LandlordHomeCubit>().clearError();
                     },
+                    // Only the fields read below; tenant-list reloads
+                    // (tenants, tenantsLoading, tenantsError) and search
+                    // emissions no longer rebuild the whole home tree.
+                    buildWhen: (prev, curr) =>
+                        prev.isLoading != curr.isLoading ||
+                        prev.errorMessage != curr.errorMessage ||
+                        prev.firstName != curr.firstName ||
+                        prev.photoUrl != curr.photoUrl ||
+                        prev.verificationStatus != curr.verificationStatus ||
+                        prev.properties != curr.properties ||
+                        prev.tenantIdsByProperty != curr.tenantIdsByProperty,
                     builder: (context, state) {
                       return Column(
                         children: <Widget>[
@@ -327,7 +336,7 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
                                   )
                                 : RefreshIndicator(
                                     color: AppColors.primary,
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: AppColors.surface,
                                     edgeOffset: 0,
                                     onRefresh: () async {
                                       _ModernPropertyCard.clearCache();
@@ -404,7 +413,7 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
                                                   context,
                                                   state.properties,
                                                   cubit,
-                                                  state.tenants,
+                                                  state.tenantIdsByProperty,
                                                 ),
                                               ),
                                             ),
@@ -501,17 +510,17 @@ class _StatsRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+          border: Border.all(color: AppColors.fieldFill, width: 1.2),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+              color: AppColors.slate900.withValues(alpha: 0.05),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+              color: AppColors.slate900.withValues(alpha: 0.02),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -525,16 +534,16 @@ class _StatsRow extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Column(
+                const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const <Widget>[
+                  children: <Widget>[
                     Text(
                       'Portfolio Overview',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 16.5,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
+                        color: AppColors.slate900,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -545,7 +554,7 @@ class _StatsRow extends StatelessWidget {
                         fontFamily: 'DM Sans',
                         fontSize: 12.5,
                         fontWeight: FontWeight.w400,
-                        color: Color(0xFF94A3B8),
+                        color: AppColors.slate400,
                       ),
                     ),
                   ],
@@ -589,9 +598,9 @@ class _StatsRow extends StatelessWidget {
                 Expanded(
                   child: _StatCard(
                     icon: Icons.check_circle_outline_rounded,
-                    iconBgColor: const Color(0xFFDCFCE7),
-                    iconBorderColor: const Color(0xFF86EFAC),
-                    iconColor: const Color(0xFF16A34A),
+                    iconBgColor: AppColors.green100,
+                    iconBorderColor: AppColors.green300,
+                    iconColor: AppColors.green600,
                     value: '$available',
                     label: 'Available',
                     subtitle: 'Ready to rent',
@@ -601,9 +610,9 @@ class _StatsRow extends StatelessWidget {
                 Expanded(
                   child: _StatCard(
                     icon: Icons.access_time_rounded,
-                    iconBgColor: const Color(0xFFFEF3C7),
-                    iconBorderColor: const Color(0xFFFCD34D),
-                    iconColor: const Color(0xFFD97706),
+                    iconBgColor: AppColors.warningFill,
+                    iconBorderColor: AppColors.amberBorder200,
+                    iconColor: AppColors.amber600,
                     value: '$notAvailable',
                     label: 'Unavailable',
                     subtitle: 'Not for rent',
@@ -644,10 +653,10 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC).withValues(alpha: 0.55),
+        color: AppColors.slate50.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFE2E8F0).withValues(alpha: 0.65),
+          color: AppColors.slate200.withValues(alpha: 0.65),
           width: 0.65,
         ),
       ),
@@ -688,7 +697,7 @@ class _StatCard extends StatelessWidget {
                       fontFamily: 'DM Sans',
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
+                      color: AppColors.slate900,
                       height: 1.0,
                     ),
                   ),
@@ -706,7 +715,7 @@ class _StatCard extends StatelessWidget {
               fontFamily: 'DM Sans',
               fontSize: 12.0,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF0F172A),
+              color: AppColors.slate900,
               height: 1.15,
             ),
           ),
@@ -720,7 +729,7 @@ class _StatCard extends StatelessWidget {
               fontFamily: 'DM Sans',
               fontSize: 10.5,
               fontWeight: FontWeight.w400,
-              color: Color(0xFF94A3B8),
+              color: AppColors.slate400,
               height: 1.15,
             ),
           ),
@@ -761,7 +770,7 @@ class _ActivePropertiesHeader extends StatelessWidget {
                   fontFamily: 'DM Sans',
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A),
+                  color: AppColors.slate900,
                   letterSpacing: -0.2,
                 ),
               ),
@@ -772,9 +781,9 @@ class _ActivePropertiesHeader extends StatelessWidget {
                   vertical: 2.5,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                  color: AppColors.fieldFill,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                  border: Border.all(color: AppColors.slate200, width: 1),
                 ),
                 child: Text(
                   '$count',
@@ -782,7 +791,7 @@ class _ActivePropertiesHeader extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF64748B),
+                    color: AppColors.slate500,
                   ),
                 ),
               ),
@@ -795,15 +804,15 @@ class _ActivePropertiesHeader extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0xFFE2E8F0),
+                      color: AppColors.slate200,
                       width: 1,
                     ),
                     boxShadow: <BoxShadow>[
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
+                        color: AppColors.scrim.withValues(alpha: 0.04),
                         blurRadius: 4,
                         offset: const Offset(0, 1),
                       ),
@@ -811,7 +820,7 @@ class _ActivePropertiesHeader extends StatelessWidget {
                   ),
                   child: const Icon(
                     Icons.add_rounded,
-                    color: Color(0xFF0F172A),
+                    color: AppColors.slate900,
                     size: 18,
                   ),
                 ),
@@ -825,7 +834,7 @@ class _ActivePropertiesHeader extends StatelessWidget {
               fontFamily: 'DM Sans',
               fontSize: 12,
               fontWeight: FontWeight.w400,
-              color: Color(0xFF94A3B8),
+              color: AppColors.slate400,
             ),
           ),
           const SizedBox(height: 14),
@@ -834,12 +843,12 @@ class _ActivePropertiesHeader extends StatelessWidget {
           Container(
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: AppColors.slate200),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                  color: AppColors.slate900.withValues(alpha: 0.03),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -850,13 +859,13 @@ class _ActivePropertiesHeader extends StatelessWidget {
               style: const TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
-                color: Color(0xFF0F172A),
+                color: AppColors.slate900,
               ),
               decoration: InputDecoration(
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 prefixIcon: const Icon(
                   Icons.search_rounded,
-                  color: Color(0xFF94A3B8),
+                  color: AppColors.slate400,
                   size: 18,
                 ),
                 suffixIcon: searchController.text.isNotEmpty
@@ -864,7 +873,7 @@ class _ActivePropertiesHeader extends StatelessWidget {
                         onTap: searchController.clear,
                         child: const Icon(
                           Icons.close_rounded,
-                          color: Color(0xFF94A3B8),
+                          color: AppColors.slate400,
                           size: 16,
                         ),
                       )
@@ -873,7 +882,7 @@ class _ActivePropertiesHeader extends StatelessWidget {
                 hintStyle: const TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 12.5,
-                  color: Color(0xFF94A3B8),
+                  color: AppColors.slate400,
                 ),
                 border: InputBorder.none,
               ),
@@ -931,12 +940,12 @@ class _FilterChipButton extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0F172A) : Colors.white,
+          color: isSelected ? AppColors.slate900 : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF0F172A)
-                : const Color(0xFFE2E8F0),
+                ? AppColors.slate900
+                : AppColors.slate200,
             width: 1,
           ),
         ),
@@ -946,7 +955,7 @@ class _FilterChipButton extends StatelessWidget {
             fontFamily: 'DM Sans',
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? Colors.white : const Color(0xFF64748B),
+            color: isSelected ? AppColors.surface : AppColors.slate500,
           ),
         ),
       ),
@@ -967,20 +976,20 @@ class _EmptyPropertiesView extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: const Color(0xFFE2E8F0).withValues(alpha: 0.6),
+            color: AppColors.slate200.withValues(alpha: 0.6),
             width: 0.75,
           ),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+              color: AppColors.slate900.withValues(alpha: 0.05),
               blurRadius: 18,
               offset: const Offset(0, 6),
             ),
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+              color: AppColors.slate900.withValues(alpha: 0.02),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -994,7 +1003,7 @@ class _EmptyPropertiesView extends StatelessWidget {
                 fontFamily: 'DM Sans',
                 fontSize: 13.5,
                 fontWeight: FontWeight.w400,
-                color: Color(0xFF64748B),
+                color: AppColors.slate500,
                 height: 1.4,
               ),
               textAlign: TextAlign.center,
@@ -1007,8 +1016,8 @@ class _EmptyPropertiesView extends StatelessWidget {
                 onPressed: () =>
                     Navigator.of(context).pushNamed(AppRouter.addProperty),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F172A),
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.slate900,
+                  foregroundColor: AppColors.surface,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -1020,7 +1029,7 @@ class _EmptyPropertiesView extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: AppColors.surface,
                   ),
                 ),
               ),
@@ -1047,11 +1056,9 @@ class _ModernPropertyCard extends StatefulWidget {
   final VoidCallback onTap;
   final int compatibleCount;
 
-  static final Map<String, int> _countsCache = {};
   static final Map<String, (double, int)> _ratingsCache = {};
 
   static void clearCache() {
-    _countsCache.clear();
     _ratingsCache.clear();
   }
 
@@ -1060,56 +1067,23 @@ class _ModernPropertyCard extends StatefulWidget {
 }
 
 class _ModernPropertyCardState extends State<_ModernPropertyCard> {
-  int? _resolvedCount;
-
+  // The compatible-tenant count comes from LandlordHomeCubit
+  // (`compatibleCount`), computed from one owner-wide matches query.
   @override
   void initState() {
     super.initState();
-    _resolvedCount = _ModernPropertyCard._countsCache[widget.property.propertyId] ??
-        (widget.compatibleCount > 0 ? widget.compatibleCount : null);
-    _loadCompatibleCount();
+    _loadRatings();
   }
 
   @override
   void didUpdateWidget(covariant _ModernPropertyCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.property.propertyId != widget.property.propertyId ||
-        oldWidget.property.vacancyStatus != widget.property.vacancyStatus ||
-        oldWidget.property.isAvailable != widget.property.isAvailable) {
-      _loadCompatibleCount();
+    if (oldWidget.property.propertyId != widget.property.propertyId) {
+      _loadRatings();
     }
   }
 
-  Future<void> _loadCompatibleCount() async {
-    final ownerId = widget.property.ownerId.isNotEmpty
-        ? widget.property.ownerId
-        : (currentUidOrNull(context) ?? '');
-    if (ownerId.isEmpty) return;
-
-    try {
-      final repo = FindTenantsRepositoryImpl();
-      final targetRooms = widget.rooms.isNotEmpty ? widget.rooms : [widget.property];
-      final uniqueTenants = <String>{};
-
-      for (final r in targetRooms) {
-        final list = await repo.fetchCompatibleTenants(
-          ownerId: ownerId,
-          propertyId: r.propertyId,
-        );
-        for (final t in list) {
-          uniqueTenants.add(t.tenantId);
-        }
-      }
-
-      final count = uniqueTenants.length;
-      _ModernPropertyCard._countsCache[widget.property.propertyId] = count;
-      if (mounted) {
-        setState(() => _resolvedCount = count);
-      }
-    } catch (_) {
-      // Keep previous count or fallback
-    }
-
+  Future<void> _loadRatings() async {
     if ((widget.property.totalRatings ?? 0) == 0 &&
         !_ModernPropertyCard._ratingsCache.containsKey(widget.property.propertyId)) {
       try {
@@ -1135,7 +1109,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
   }
 
   String _fmt(num value) => value.round().toString().replaceAllMapped(
-    RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+    _kThousandsRe,
     (m) => '${m[1]},',
   );
 
@@ -1144,7 +1118,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
     final property = widget.property;
     final rooms = widget.rooms;
     final onTap = widget.onTap;
-    final int countToDisplay = _resolvedCount ?? widget.compatibleCount;
+    final int countToDisplay = widget.compatibleCount;
     final int seed = property.propertyId.hashCode % 5 + 1;
     final int availableCount = rooms.where((r) => r.isAvailable).length;
 
@@ -1178,34 +1152,34 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
 
       statusLabel = effectiveStatus == 'available' ? 'Available' : 'Occupied';
       statusDotColor = effectiveStatus == 'available'
-          ? const Color(0xFF22C55E)
-          : const Color(0xFF94A3B8);
+          ? AppColors.matchHigh
+          : AppColors.slate400;
     } else {
       statusLabel = availableCount > 0
           ? '$availableCount Available'
           : 'Occupied';
 
       statusDotColor = availableCount > 0
-          ? const Color(0xFF22C55E)
-          : const Color(0xFF94A3B8);
+          ? AppColors.matchHigh
+          : AppColors.slate400;
     }
     final int photoCount = property.photos.length;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+        border: Border.all(color: AppColors.slate200, width: 0.8),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+            color: AppColors.slate900.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         borderRadius: BorderRadius.circular(22),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -1225,7 +1199,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        clipBehavior: Clip.antiAlias,
                         child: ListingImagePlaceholder(
                           seed: seed,
                           photoUrl: isRoom
@@ -1247,7 +1221,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: const Color(0xFFE2E8F0).withValues(alpha: 0.7),
+                                color: AppColors.slate200.withValues(alpha: 0.7),
                                 width: 0.8,
                               ),
                             ),
@@ -1265,11 +1239,11 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.surface,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.22),
+                                  color: AppColors.scrim.withValues(alpha: 0.22),
                                   blurRadius: 10,
                                   offset: const Offset(0, 3),
                                 ),
@@ -1331,7 +1305,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                     fontFamily: 'DM Sans',
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.white,
+                                    color: AppColors.surface,
                                   ),
                                 ),
                               ],
@@ -1354,10 +1328,10 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                     vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.28),
+                                    color: AppColors.scrim.withValues(alpha: 0.28),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.35),
+                                      color: AppColors.surface.withValues(alpha: 0.35),
                                       width: 0.6,
                                     ),
                                   ),
@@ -1367,7 +1341,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                       const Icon(
                                         Icons.photo_outlined,
                                         size: 11,
-                                        color: Colors.white,
+                                        color: AppColors.surface,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
@@ -1376,7 +1350,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                           fontFamily: 'DM Sans',
                                           fontSize: 10,
                                           fontWeight: FontWeight.w700,
-                                          color: Colors.white,
+                                          color: AppColors.surface,
                                           letterSpacing: -0.1,
                                         ),
                                       ),
@@ -1412,7 +1386,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                   fontFamily: 'DM Sans',
                                   fontSize: 17,
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF0F172A),
+                                  color: AppColors.slate900,
                                   letterSpacing: -0.3,
                                 ),
                               ),
@@ -1422,7 +1396,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                   const Icon(
                                     Icons.location_on_outlined,
                                     size: 13,
-                                    color: Color(0xFF94A3B8),
+                                    color: AppColors.slate400,
                                   ),
                                   const SizedBox(width: 4),
                                   Expanded(
@@ -1434,7 +1408,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                         fontFamily: 'DM Sans',
                                         fontSize: 11,
                                         fontWeight: FontWeight.w500,
-                                        color: Color(0xFF475569),
+                                        color: AppColors.slate600,
                                       ),
                                     ),
                                   ),
@@ -1451,7 +1425,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                     const Divider(
                       height: 1,
                       thickness: 0.8,
-                      color: Color(0xFFF1F5F9),
+                      color: AppColors.fieldFill,
                     ),
                     const SizedBox(height: 11),
                     Row(
@@ -1516,7 +1490,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                   fontFamily: 'DM Sans',
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w500,
-                                  color: Color(0xFF64748B),
+                                  color: AppColors.slate500,
                                 ),
                               ),
                             ],
@@ -1570,7 +1544,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
         const Icon(
           Icons.star_rounded,
           size: 16,
-          color: Color(0xFFF59E0B),
+          color: AppColors.matchMedium,
         ),
         const SizedBox(width: 3.5),
         if (hasRating) ...[
@@ -1580,7 +1554,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
               fontFamily: 'DM Sans',
               fontSize: 12,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF0F172A),
+              color: AppColors.slate900,
             ),
           ),
           const SizedBox(width: 2.5),
@@ -1590,7 +1564,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
               fontFamily: 'DM Sans',
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF64748B),
+              color: AppColors.slate500,
             ),
           ),
         ] else ...[
@@ -1600,7 +1574,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
               fontFamily: 'DM Sans',
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF64748B),
+              color: AppColors.slate500,
             ),
           ),
         ],

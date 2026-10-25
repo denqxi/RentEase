@@ -43,7 +43,7 @@ class _OwnerInquiriesScreenState extends State<OwnerInquiriesScreen> {
     final uid = currentUidOrNull(context);
     if (uid == null) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF8FAFC),
+        backgroundColor: AppColors.slate50,
         body: _InboxMessage('Sign in to see your inquiries.'),
       );
     }
@@ -87,7 +87,7 @@ class _OwnerInquiriesView extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: AppColors.slate50,
         body: Stack(
           children: [
             // Subtle top-right gradient — matching the homescreen bg
@@ -103,9 +103,9 @@ class _OwnerInquiriesView extends StatelessWidget {
                       center: Alignment.topRight,
                       radius: 1.05,
                       colors: <Color>[
-                        const Color(0xFFCCF2FE).withValues(alpha: 0.70),
-                        const Color(0xFFE0F7FE).withValues(alpha: 0.35),
-                        const Color(0xFFE0F7FE).withValues(alpha: 0.0),
+                        AppColors.sky200.withValues(alpha: 0.70),
+                        AppColors.skyFill.withValues(alpha: 0.35),
+                        AppColors.skyFill.withValues(alpha: 0.0),
                       ],
                       stops: const <double>[0.0, 0.45, 0.88],
                     ),
@@ -130,17 +130,17 @@ class _OwnerInquiriesView extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
+                        const Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
+                            children: [
                               Text(
                                 'Inquiries',
                                 style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 28,
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF0F172A),
+                                  color: AppColors.slate900,
                                   letterSpacing: -0.6,
                                   height: 1.15,
                                 ),
@@ -152,7 +152,7 @@ class _OwnerInquiriesView extends StatelessWidget {
                                   fontFamily: 'DM Sans',
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w500,
-                                  color: Color(0xFF64748B),
+                                  color: AppColors.slate500,
                                 ),
                               ),
                             ],
@@ -170,7 +170,7 @@ class _OwnerInquiriesView extends StatelessWidget {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF00A8F0),
+                              color: AppColors.brandSky,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             alignment: Alignment.center,
@@ -180,7 +180,7 @@ class _OwnerInquiriesView extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: AppColors.surface,
                               ),
                             ),
                           ),
@@ -194,7 +194,7 @@ class _OwnerInquiriesView extends StatelessWidget {
                     decoration: const BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
-                          color: Color(0xFFE2E8F0),
+                          color: AppColors.slate200,
                           width: 1,
                         ),
                       ),
@@ -203,9 +203,9 @@ class _OwnerInquiriesView extends StatelessWidget {
                       indicatorColor: AppColors.primary,
                       indicatorWeight: 2.5,
                       indicatorSize: TabBarIndicatorSize.tab,
-                      dividerColor: Colors.transparent,
+                      dividerColor: AppColors.transparent,
                       labelColor: AppColors.primary,
-                      unselectedLabelColor: const Color(0xFF64748B),
+                      unselectedLabelColor: AppColors.slate500,
                       labelStyle: const TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 14,
@@ -253,7 +253,7 @@ class _OwnerInquiriesView extends StatelessWidget {
                     child: Container(
                       height: 46,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
+                        color: AppColors.fieldFill,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: TextField(
@@ -262,7 +262,7 @@ class _OwnerInquiriesView extends StatelessWidget {
                           fontFamily: 'DM Sans',
                           fontSize: 13.5,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF0F172A),
+                          color: AppColors.slate900,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Search name or property...',
@@ -270,11 +270,11 @@ class _OwnerInquiriesView extends StatelessWidget {
                             fontFamily: 'DM Sans',
                             fontSize: 13.5,
                             fontWeight: FontWeight.w400,
-                            color: Color(0xFF64748B),
+                            color: AppColors.slate500,
                           ),
                           prefixIcon: const Icon(
                             Icons.search_rounded,
-                            color: Color(0xFF475569),
+                            color: AppColors.slate600,
                             size: 21,
                           ),
                           suffixIcon: searchController.text.isNotEmpty
@@ -283,7 +283,7 @@ class _OwnerInquiriesView extends StatelessWidget {
                                   icon: const Icon(
                                     Icons.close_rounded,
                                     size: 18,
-                                    color: Color(0xFF64748B),
+                                    color: AppColors.slate500,
                                   ),
                                 )
                               : null,
@@ -336,7 +336,7 @@ class _TabWithDot extends StatelessWidget {
             width: 7,
             height: 7,
             decoration: const BoxDecoration(
-              color: Color(0xFF00A8F0),
+              color: AppColors.brandSky,
               shape: BoxShape.circle,
             ),
           ),
@@ -420,7 +420,7 @@ class _InboxMessage extends StatelessWidget {
           text,
           style: AppTextStyles.body(
             context,
-          ).copyWith(color: const Color(0xFF64748B)),
+          ).copyWith(color: AppColors.slate500),
           textAlign: TextAlign.center,
         ),
       ),
@@ -489,7 +489,7 @@ class _OwnerInquiryCard extends StatelessWidget {
     }
 
     return Material(
-      color: Colors.white,
+      color: AppColors.surface,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: open,
@@ -497,17 +497,17 @@ class _OwnerInquiryCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isUnread ? const Color(0xFFBAE6FD) : const Color(0xFFE2E8F0),
+              color: isUnread ? AppColors.sky200 : AppColors.slate200,
               width: isUnread ? 1.2 : 0.8,
             ),
             boxShadow: [
               BoxShadow(
                 color: isUnread
-                    ? const Color(0xFF00A8F0).withValues(alpha: 0.07)
-                    : const Color(0xFF0F172A).withValues(alpha: 0.035),
+                    ? AppColors.brandSky.withValues(alpha: 0.07)
+                    : AppColors.slate900.withValues(alpha: 0.035),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -522,7 +522,7 @@ class _OwnerInquiryCard extends StatelessWidget {
                 height: 44,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: isUnread ? const Color(0xFFE0F7FE) : const Color(0xFFEDF2F7),
+                  color: isUnread ? AppColors.skyFill : AppColors.fieldFill,
                   shape: BoxShape.circle,
                 ),
                 child: Text(
@@ -531,7 +531,7 @@ class _OwnerInquiryCard extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 15,
                     fontWeight: isUnread ? FontWeight.w800 : FontWeight.w700,
-                    color: const Color(0xFF0F172A),
+                    color: AppColors.slate900,
                   ),
                 ),
               ),
@@ -554,7 +554,7 @@ class _OwnerInquiryCard extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 15,
                               fontWeight: isUnread ? FontWeight.w800 : FontWeight.w700,
-                              color: const Color(0xFF0F172A),
+                              color: AppColors.slate900,
                             ),
                           ),
                         ),
@@ -563,9 +563,9 @@ class _OwnerInquiryCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF0FDF4),
+                              color: AppColors.emerald50,
                               borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: const Color(0xFF86EFAC), width: 0.8),
+                              border: Border.all(color: AppColors.green300, width: 0.8),
                             ),
                             child: Text(
                               '${(inquiry.tenantCiSnapshot * 100).round()}%',
@@ -573,7 +573,7 @@ class _OwnerInquiryCard extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF15803D),
+                                color: AppColors.green700,
                               ),
                             ),
                           ),
@@ -581,9 +581,9 @@ class _OwnerInquiryCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
+                              color: AppColors.slate50,
                               borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+                              border: Border.all(color: AppColors.slate200, width: 0.8),
                             ),
                             child: Text(
                               'ci=${inquiry.tenantCiSnapshot.toDouble().toStringAsFixed(2)}',
@@ -591,7 +591,7 @@ class _OwnerInquiryCard extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF475569),
+                                color: AppColors.slate600,
                               ),
                             ),
                           ),
@@ -607,7 +607,7 @@ class _OwnerInquiryCard extends StatelessWidget {
                         fontFamily: 'DM Sans',
                         fontSize: 12.5,
                         fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
-                        color: isUnread ? const Color(0xFF1E293B) : const Color(0xFF64748B),
+                        color: isUnread ? AppColors.slate800 : AppColors.slate500,
                       ),
                     ),
                   ],
@@ -625,7 +625,7 @@ class _OwnerInquiryCard extends StatelessWidget {
                       fontFamily: 'DM Sans',
                       fontSize: 12,
                       fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
-                      color: isUnread ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
+                      color: isUnread ? AppColors.slate900 : AppColors.slate400,
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -634,7 +634,7 @@ class _OwnerInquiryCard extends StatelessWidget {
                       width: 8,
                       height: 8,
                       decoration: const BoxDecoration(
-                        color: Color(0xFF00A8F0),
+                        color: AppColors.brandSky,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -643,7 +643,7 @@ class _OwnerInquiryCard extends StatelessWidget {
                   const Icon(
                     Icons.chevron_right_rounded,
                     size: 20,
-                    color: Color(0xFF94A3B8),
+                    color: AppColors.slate400,
                   ),
                 ],
               ),

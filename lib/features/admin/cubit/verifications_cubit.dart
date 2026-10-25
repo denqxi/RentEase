@@ -138,6 +138,12 @@ class VerificationsCubit extends Cubit<VerificationsState> {
   }
 
   @override
+  void emit(VerificationsState state) {
+    if (isClosed) return; // async work may outlive the cubit
+    super.emit(state);
+  }
+
+  @override
   Future<void> close() {
     _sub?.cancel();
     return super.close();

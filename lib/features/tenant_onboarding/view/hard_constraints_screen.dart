@@ -7,7 +7,7 @@ import '../../../core/constants/app_dimensions.dart';
 import '../cubit/tenant_onboarding_cubit.dart';
 import 'soft_preferences_step_screen.dart';
 
-/// Screen 1 of 5 in Tenant Onboarding: "What are your must-haves?"
+/// Screen 1 of 4 in Tenant Onboarding: "What are your must-haves?"
 class HardConstraintsScreen extends StatefulWidget {
   const HardConstraintsScreen({super.key});
 
@@ -118,7 +118,7 @@ class _HardConstraintsScreenState extends State<HardConstraintsScreen> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
-                        value: 1 / 5,
+                        value: 1 / 4,
                         minHeight: 5,
                         backgroundColor: context.appColors.indicatorInactive
                             .withValues(alpha: 0.5),
@@ -130,7 +130,7 @@ class _HardConstraintsScreenState extends State<HardConstraintsScreen> {
                   ),
                   const SizedBox(width: 14),
                   Text(
-                    '1 / 5',
+                    '1 / 4',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 13,
@@ -176,7 +176,7 @@ class _HardConstraintsScreenState extends State<HardConstraintsScreen> {
                         title: 'ABOUT THE PLACE',
                         children: [
                           // 1. Maximum monthly budget (single-layer input with peso sign and digits-only filter)
-                          _FieldLabel(label: 'Maximum monthly budget'),
+                          const _FieldLabel(label: 'Maximum monthly budget'),
                           const SizedBox(height: 6),
                           TextField(
                             controller: _budgetController,
@@ -269,7 +269,7 @@ class _HardConstraintsScreenState extends State<HardConstraintsScreen> {
                           const SizedBox(height: 14),
 
                           // 2. Gender Policy
-                          _FieldLabel(label: 'Gender Policy'),
+                          const _FieldLabel(label: 'Gender Policy'),
                           const SizedBox(height: 6),
                           Container(
                             height: 50,
@@ -490,13 +490,13 @@ class _HardConstraintsScreenState extends State<HardConstraintsScreen> {
                     backgroundColor:
                         WidgetStateProperty.resolveWith<Color>((states) {
                       if (states.contains(WidgetState.disabled)) {
-                        return const Color(0xFFD9D9E0);
+                        return AppColors.indicatorInactive;
                       }
                       return context.appColors.ink;
                     }),
                     foregroundColor:
                         WidgetStateProperty.resolveWith<Color>((states) {
-                      return Colors.white;
+                      return AppColors.onInk;
                     }),
                     elevation: WidgetStateProperty.all(0),
                     shape: WidgetStateProperty.all(
@@ -551,7 +551,7 @@ class _SectionCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
+                color: AppColors.fieldFill,
                 border: Border(
                   bottom: BorderSide(
                     color: context.appColors.fieldBorder,
@@ -682,7 +682,7 @@ class _TextToggle extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 3),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          color: value ? AppColors.primary : const Color(0xFF9CA3AF),
+          color: value ? AppColors.primary : AppColors.hint,
         ),
         child: Stack(
           alignment: Alignment.center,
@@ -701,7 +701,7 @@ class _TextToggle extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                    color: AppColors.onInk,
                     letterSpacing: 0.2,
                   ),
                 ),
@@ -715,10 +715,10 @@ class _TextToggle extends StatelessWidget {
                 height: 22,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
+                  color: AppColors.onInk,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black12,
+                      color: AppColors.scrimFaint,
                       blurRadius: 2,
                       offset: Offset(0, 1),
                     ),

@@ -51,7 +51,7 @@ class AdminPageHeader extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
@@ -60,7 +60,7 @@ class AdminPageHeader extends StatelessWidget {
                           ),
                         ),
                         if (subtitle != null) ...[
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             subtitle!,
                             style: TextStyle(
@@ -76,7 +76,7 @@ class AdminPageHeader extends StatelessWidget {
                   ?trailing,
                 ],
               ),
-              if (bottom != null) ...[SizedBox(height: AppSpacing.md), bottom!],
+              if (bottom != null) ...[const SizedBox(height: AppSpacing.md), bottom!],
             ],
           ),
         ),
@@ -103,7 +103,7 @@ class AdminSearchField extends StatelessWidget {
     return TextField(
       controller: controller,
       onChanged: onChanged,
-      style: TextStyle(
+      style: const TextStyle(
         fontFamily: 'DM Sans',
         fontSize: 14,
         color: AppColors.onInk,
@@ -135,7 +135,7 @@ class AdminSearchField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.field),
-          borderSide: BorderSide(color: AppColors.accent, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
         ),
       ),
     );
@@ -159,7 +159,7 @@ class AdminAvatarMenu extends StatelessWidget {
         if (v == 'logout') onLogout();
       },
       itemBuilder: (_) => [
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'logout',
           child: Row(
             children: [
@@ -190,7 +190,7 @@ class AdminAvatarMenu extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: AppColors.onInk.withValues(alpha: 0.25)),
         ),
-        child: Center(
+        child: const Center(
           child: Text(
             'A',
             style: TextStyle(

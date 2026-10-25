@@ -6,6 +6,9 @@ import '../../../core/firestore/firestore_collections.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 
+// Compiled once instead of on every call.
+final RegExp _kWhitespaceRe = RegExp(r'\s+');
+
 class PropertyReviewsScreen extends StatefulWidget {
   const PropertyReviewsScreen({
     required this.property,
@@ -197,14 +200,14 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
         : p.title;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.slate50,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          color: const Color(0xFF0F172A),
+          color: AppColors.slate900,
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -213,13 +216,13 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
             fontFamily: 'DM Sans',
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF0F172A),
+            color: AppColors.slate900,
           ),
         ),
         centerTitle: false,
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
-          child: Divider(color: Color(0xFFF1F5F9), height: 1),
+          child: Divider(color: AppColors.fieldFill, height: 1),
         ),
       ),
       body: _isLoading
@@ -252,7 +255,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                                   fontFamily: 'DM Sans',
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF0F172A),
+                                  color: AppColors.slate900,
                                 ),
                               ),
                             ],
@@ -282,12 +285,12 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.slate200),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            color: AppColors.slate900.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -319,7 +322,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                     fontFamily: 'DM Sans',
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
+                    color: AppColors.slate900,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -328,7 +331,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                     const Icon(
                       Icons.location_on_outlined,
                       size: 13,
-                      color: Color(0xFF94A3B8),
+                      color: AppColors.slate400,
                     ),
                     const SizedBox(width: 3),
                     Expanded(
@@ -340,7 +343,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                           fontFamily: 'DM Sans',
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF64748B),
+                          color: AppColors.slate500,
                         ),
                       ),
                     ),
@@ -358,12 +361,12 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.slate200),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            color: AppColors.slate900.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -383,7 +386,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                     fontFamily: 'DM Sans',
                     fontSize: 38,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF0F172A),
+                    color: AppColors.slate900,
                     letterSpacing: -1,
                   ),
                 ),
@@ -396,8 +399,8 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                       isFilled ? Icons.star_rounded : Icons.star_border_rounded,
                       size: 20,
                       color: isFilled
-                          ? const Color(0xFFF59E0B)
-                          : const Color(0xFFCBD5E1),
+                          ? AppColors.matchMedium
+                          : AppColors.slate300,
                     );
                   }),
                 ),
@@ -408,7 +411,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                     fontFamily: 'DM Sans',
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B),
+                    color: AppColors.slate500,
                   ),
                 ),
               ],
@@ -419,7 +422,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
           Container(
             height: 90,
             width: 1,
-            color: const Color(0xFFF1F5F9),
+            color: AppColors.fieldFill,
             margin: const EdgeInsets.symmetric(horizontal: 14),
           ),
 
@@ -440,14 +443,14 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                           fontFamily: 'DM Sans',
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF64748B),
+                          color: AppColors.slate500,
                         ),
                       ),
                       const SizedBox(width: 4),
                       const Icon(
                         Icons.star_rounded,
                         size: 11,
-                        color: Color(0xFFF59E0B),
+                        color: AppColors.matchMedium,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -455,9 +458,9 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
                             value: pct,
-                            backgroundColor: const Color(0xFFF1F5F9),
+                            backgroundColor: AppColors.fieldFill,
                             valueColor: const AlwaysStoppedAnimation<Color>(
-                              Color(0xFFF59E0B),
+                              AppColors.matchMedium,
                             ),
                             minHeight: 6,
                           ),
@@ -473,7 +476,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                             fontFamily: 'DM Sans',
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF94A3B8),
+                            color: AppColors.slate400,
                           ),
                         ),
                       ),
@@ -492,12 +495,12 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.slate200),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            color: AppColors.slate900.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -539,7 +542,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                         fontFamily: 'DM Sans',
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A),
+                        color: AppColors.slate900,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -550,7 +553,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                           style: const TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 11.5,
-                            color: Color(0xFF94A3B8),
+                            color: AppColors.slate400,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -562,7 +565,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                               vertical: 1.5,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
+                              color: AppColors.fieldFill,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -571,7 +574,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                                 fontFamily: 'DM Sans',
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF475569),
+                                color: AppColors.slate600,
                               ),
                             ),
                           ),
@@ -590,8 +593,8 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                         : Icons.star_border_rounded,
                     size: 15,
                     color: i < review.stars
-                        ? const Color(0xFFF59E0B)
-                        : const Color(0xFFCBD5E1),
+                        ? AppColors.matchMedium
+                        : AppColors.slate300,
                   );
                 }),
               ),
@@ -605,7 +608,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                 fontFamily: 'DM Sans',
                 fontSize: 13,
                 height: 1.45,
-                color: Color(0xFF334155),
+                color: AppColors.slate700,
               ),
             ),
           ],
@@ -625,14 +628,14 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFBEB),
+                color: AppColors.amberFill50,
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFFDE68A)),
+                border: Border.all(color: AppColors.amberBorder200),
               ),
               child: const Icon(
                 Icons.star_outline_rounded,
                 size: 36,
-                color: Color(0xFFF59E0B),
+                color: AppColors.matchMedium,
               ),
             ),
             const SizedBox(height: 18),
@@ -642,7 +645,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                 fontFamily: 'DM Sans',
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
+                color: AppColors.slate900,
               ),
             ),
             const SizedBox(height: 8),
@@ -652,7 +655,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
               style: const TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13.5,
-                color: Color(0xFF64748B),
+                color: AppColors.slate500,
                 height: 1.4,
               ),
             ),
@@ -679,7 +682,7 @@ class _PropertyReviewItem {
   final String? unitLabel;
 
   String get initials {
-    final parts = name.trim().split(RegExp(r'\s+'));
+    final parts = name.trim().split(_kWhitespaceRe);
     if (parts.length >= 2) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }

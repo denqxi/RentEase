@@ -48,11 +48,12 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
   // Documents are uploaded to Cloudinary as they are picked; submitting stores
   // their URLs and records the verification request for admin review.
   Future<void> _submit() async {
+    if (_submitting) return;
     final uid = currentUidOrNull(context);
     if (uid == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
+        const SnackBar(
+          content: Text(
             'Your session has expired. Please sign in again.',
           ),
           backgroundColor: AppColors.destructive,
@@ -129,7 +130,7 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
                       subtitle:
                           'Upload your ID and ownership document to get verified as a property owner. A business permit is optional.',
                     ),
-                    SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.lg),
                     Expanded(
                       child: SingleChildScrollView(
                         child: Column(
@@ -188,7 +189,7 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: AppSpacing.sm),
+                    const SizedBox(height: AppSpacing.sm),
                     BlocBuilder<ImageUploadCubit, ImageUploadState>(
                       bloc: _uploads,
                       builder: (context, state) => AppPrimaryButton(
@@ -200,7 +201,7 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
                             : null,
                       ),
                     ),
-                    SizedBox(height: AppSpacing.sm),
+                    const SizedBox(height: AppSpacing.sm),
                     Center(
                       child: Text(
                         'Documents are reviewed within 1–2 business days.',

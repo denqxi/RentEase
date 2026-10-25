@@ -43,13 +43,13 @@ class PoiSetupScreen extends StatefulWidget {
 
 class _PoiSetupScreenState extends State<PoiSetupScreen> {
   // Theme Color Tokens
-  static const Color _primaryTeal = Color(0xFF149BBD);
-  static const Color _midnightNavy = Color(0xFF1D1C2E);
-  static const Color _surfaceTint = Color(0xFFEBF2F5);
-  static const Color _borderStroke = Color(0xFFE2E8F0);
-  static const Color _borderStrokeDark = Color(0xFFCBD5E1);
-  static const Color _textPrimary = Color(0xFF1E293B);
-  static const Color _textSecondary = Color(0xFF64748B);
+  static const Color _primaryTeal = AppColors.primary;
+  static const Color _midnightNavy = AppColors.ink;
+  static const Color _surfaceTint = AppColors.accentSoft;
+  static const Color _borderStroke = AppColors.slate200;
+  static const Color _borderStrokeDark = AppColors.indicatorInactive;
+  static const Color _textPrimary = AppColors.slate900;
+  static const Color _textSecondary = AppColors.textSecondary;
 
   // Form State
   String _poiType = 'School'; // 'School', 'Workplace', 'Other'
@@ -74,15 +74,10 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
       if (widget.initialLatLng != null) {
         _markerPos = widget.initialLatLng;
         _resolvedAddress = widget.initialAddress ?? AppOptions.defaultMapLabel;
-      } else {
-        _markerPos = const LatLng(
-          AppOptions.defaultMapLat,
-          AppOptions.defaultMapLng,
-        );
-        _resolvedAddress = widget.initialAddress ?? AppOptions.defaultMapLabel;
       }
+      // No default pin: the tenant must pick a location explicitly.
       if (widget.initialMaxKm != null && widget.initialMaxKm! > 0) {
-        _maxKm = widget.initialMaxKm!;
+        _maxKm = widget.initialMaxKm!.clamp(0.5, 10.0);
       }
     } else {
       final cubitState = context.read<TenantOnboardingCubit>().state;
@@ -97,16 +92,11 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
           cubitState.poiLatLng!.longitude,
         );
         _resolvedAddress = cubitState.poiLabel ?? AppOptions.defaultMapLabel;
-      } else {
-        _markerPos = const LatLng(
-          AppOptions.defaultMapLat,
-          AppOptions.defaultMapLng,
-        );
-        _resolvedAddress = AppOptions.defaultMapLabel;
       }
+      // No default pin: the tenant must pick a location explicitly.
 
       if (cubitState.maxDistanceKm > 0) {
-        _maxKm = cubitState.maxDistanceKm;
+        _maxKm = cubitState.maxDistanceKm.clamp(0.5, 10.0);
       }
     }
 
@@ -175,23 +165,20 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
   }
 
   void _recenterDefault() {
+    // Only re-centers the map; never drops a pin the tenant did not choose.
     final pos = _markerPos ??
         const LatLng(
           AppOptions.defaultMapLat,
           AppOptions.defaultMapLng,
         );
-    _dropPin(pos, label: _resolvedAddress ?? AppOptions.defaultMapLabel);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _mapController.move(pos, 14.5);
     });
   }
 
   void _continue() {
-    final pos = _markerPos ??
-        const LatLng(
-          AppOptions.defaultMapLat,
-          AppOptions.defaultMapLng,
-        );
+    final pos = _markerPos;
+    if (pos == null) return; // explicit pick required
     final label = _resolvedAddress ?? '$_poiType location';
 
     if (widget.isPicker) {
@@ -447,7 +434,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                             minHeight: 32,
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
+                          fillColor: AppColors.fieldFill,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 8,
@@ -478,7 +465,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                             border: Border.all(color: _borderStroke),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
+                                color: AppColors.scrim.withValues(alpha: 0.05),
                                 blurRadius: 6,
                                 offset: const Offset(0, 3),
                               ),
@@ -569,7 +556,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                                           onTap: () => _selectPlace(place),
                                           child: Container(
                                             decoration: BoxDecoration(
-                                              color: Colors.white,
+                                              color: AppColors.onInk,
                                               shape: BoxShape.circle,
                                               border: Border.all(
                                                 color: _primaryTeal,
@@ -577,7 +564,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                                               ),
                                               boxShadow: [
                                                 BoxShadow(
-                                                  color: Colors.black
+                                                  color: AppColors.scrim
                                                       .withValues(alpha: 0.1),
                                                   blurRadius: 3,
                                                 ),
@@ -617,13 +604,13 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                               right: 8,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: AppColors.onInk,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: _borderStroke),
                                   boxShadow: [
                                     BoxShadow(
                                       color:
-                                          Colors.black.withValues(alpha: 0.08),
+                                          AppColors.scrim.withValues(alpha: 0.08),
                                       blurRadius: 3,
                                     ),
                                   ],
@@ -658,7 +645,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                                     ),
                                     decoration: BoxDecoration(
                                       color:
-                                          Colors.white.withValues(alpha: 0.92),
+                                          AppColors.onInk.withValues(alpha: 0.92),
                                       borderRadius: BorderRadius.circular(6),
                                       border: Border.all(color: _borderStroke),
                                     ),
@@ -696,7 +683,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                             Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: AppColors.onInk,
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: _primaryTeal.withValues(alpha: 0.3),
@@ -782,9 +769,12 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                         ),
                         child: Slider(
                           value: _maxKm,
-                          min: 1.0,
+                          // 0 km would empty the pool (LocationMatch is
+                          // distance <= radius); 0.5 km matches Edit
+                          // constraints.
+                          min: 0.5,
                           max: 10.0,
-                          divisions: 18,
+                          divisions: 19,
                           onChanged: (v) => setState(() => _maxKm = v),
                         ),
                       ),
@@ -824,10 +814,14 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _continue,
+                  onPressed: _markerPos == null ? null : _continue,
                   style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.all(_midnightNavy),
-                    foregroundColor: WidgetStateProperty.all(Colors.white),
+                    backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                      (states) => states.contains(WidgetState.disabled)
+                          ? AppColors.indicatorInactive
+                          : _midnightNavy,
+                    ),
+                    foregroundColor: WidgetStateProperty.all(AppColors.onInk),
                     elevation: WidgetStateProperty.all(0),
                     shape: WidgetStateProperty.all(
                       RoundedRectangleBorder(
@@ -869,10 +863,10 @@ class _CategoryCard extends StatelessWidget {
   final bool isActive;
   final VoidCallback onTap;
 
-  static const Color _primaryTeal = Color(0xFF149BBD);
-  static const Color _surfaceTint = Color(0xFFEBF2F5);
-  static const Color _borderStroke = Color(0xFFE2E8F0);
-  static const Color _textSecondary = Color(0xFF64748B);
+  static const Color _primaryTeal = AppColors.primary;
+  static const Color _surfaceTint = AppColors.accentSoft;
+  static const Color _borderStroke = AppColors.slate200;
+  static const Color _textSecondary = AppColors.textSecondary;
 
   @override
   Widget build(BuildContext context) {
@@ -883,7 +877,7 @@ class _CategoryCard extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
         decoration: BoxDecoration(
-          color: isActive ? _surfaceTint : Colors.white,
+          color: isActive ? _surfaceTint : AppColors.onInk,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isActive ? _primaryTeal : _borderStroke,

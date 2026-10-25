@@ -38,5 +38,11 @@ class AdminLoginCubit extends Cubit<AdminLoginState> {
     }
   }
 
+  @override
+  void emit(AdminLoginState state) {
+    if (isClosed) return; // async work may outlive the cubit
+    super.emit(state);
+  }
+
   Future<void> signOut() => _repo.signOut();
 }

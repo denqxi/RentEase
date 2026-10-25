@@ -33,7 +33,7 @@ class PreferenceDropdown extends StatelessWidget {
           label,
           style: AppTextStyles.label(context),
         ),
-        SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.sm),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           decoration: BoxDecoration(

@@ -26,6 +26,10 @@ class UsersState extends Equatable {
   final String? notice;
   final int noticeSeq;
 
+  /// Lower-cased search fields per user, computed once per snapshot object
+  /// instead of on every keystroke for every tab.
+  static final _searchKeys = Expando<(String, String)>();
+
   /// [tab]: 'all' | 'tenant' | 'owner' | 'suspended'.
   List<UserDoc> filtered(String tab) {
     final q = query.trim().toLowerCase();
@@ -38,8 +42,11 @@ class UsersState extends Equatable {
       };
       if (!inTab) return false;
       if (q.isEmpty) return true;
-      return '${u.firstName} ${u.lastName}'.toLowerCase().contains(q) ||
-          u.email.toLowerCase().contains(q);
+      final (name, email) = _searchKeys[u] ??= (
+        '${u.firstName} ${u.lastName}'.toLowerCase(),
+        u.email.toLowerCase(),
+      );
+      return name.contains(q) || email.contains(q);
     }).toList();
   }
 
@@ -113,6 +120,12 @@ class UsersCubit extends Cubit<UsersState> {
         notice: message,
       ),
     );
+  }
+
+  @override
+  void emit(UsersState state) {
+    if (isClosed) return; // async work may outlive the cubit
+    super.emit(state);
   }
 
   @override

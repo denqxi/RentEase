@@ -181,7 +181,7 @@ class _PropertyInformationCard extends StatelessWidget {
             : 'None';
 
     return Material(
-      color: Colors.transparent,
+      color: AppColors.transparent,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: p != null

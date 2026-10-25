@@ -25,6 +25,10 @@ class AdminPropertiesState extends Equatable {
   final String? notice;
   final int noticeSeq;
 
+  /// Lower-cased search fields per item, computed once per snapshot object
+  /// instead of on every keystroke for every tab.
+  static final _searchKeys = Expando<(String, String, String)>();
+
   /// [tab]: 'all' | 'active' | 'unlisted'. Active = available to tenants;
   /// unlisted = hidden by an admin.
   List<AdminPropertyItem> filtered(String tab) {
@@ -38,9 +42,12 @@ class AdminPropertiesState extends Equatable {
       };
       if (!inTab) return false;
       if (q.isEmpty) return true;
-      return p.title.toLowerCase().contains(q) ||
-          p.address.toLowerCase().contains(q) ||
-          i.ownerName.toLowerCase().contains(q);
+      final (title, address, owner) = _searchKeys[i] ??= (
+        p.title.toLowerCase(),
+        p.address.toLowerCase(),
+        i.ownerName.toLowerCase(),
+      );
+      return title.contains(q) || address.contains(q) || owner.contains(q);
     }).toList();
   }
 
@@ -114,6 +121,12 @@ class AdminPropertiesCubit extends Cubit<AdminPropertiesState> {
         notice: message,
       ),
     );
+  }
+
+  @override
+  void emit(AdminPropertiesState state) {
+    if (isClosed) return; // async work may outlive the cubit
+    super.emit(state);
   }
 
   @override

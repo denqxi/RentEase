@@ -10,8 +10,8 @@ import '../domain/repositories/owner_onboarding_repository.dart';
 part 'owner_onboarding_state.dart';
 
 /// Drives owner onboarding: the verification request, then the "Add
-/// property" wizard, whose draft spans three pushed routes (so, like
-/// `TenantOnboardingCubit`, this lives above the Navigator).
+/// property" wizard (`CreateListingWizardScreen`); like
+/// `TenantOnboardingCubit`, this lives above the Navigator.
 class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
   OwnerOnboardingCubit({required this._repository})
     : super(const OwnerOnboardingState());
@@ -63,64 +63,6 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
 
   Stream<String> watchVerificationStatus(String uid) =>
       _repository.watchVerificationStatus(uid);
-
-  // ── Step 1: basics ──────────────────────────────────────────────────────
-
-  void saveBasics({
-    required String title,
-    required String address,
-    required double latitude,
-    required double longitude,
-    List<UploadedImage> photos = const [],
-  }) {
-    emit(
-      state.copyWith(
-        status: OwnerOnboardingStatus.editing,
-        title: title,
-        address: address,
-        latitude: latitude,
-        longitude: longitude,
-        photos: List<UploadedImage>.unmodifiable(photos),
-      ),
-    );
-  }
-
-  // ── Step 2: house rules ─────────────────────────────────────────────────
-
-  void saveRules({
-    required int depositAmount,
-    required int advanceMonths,
-    required String allowedGender,
-    required bool smokingAllowed,
-    required bool petsAllowed,
-    required int curfewHours,
-    required int maxOccupants,
-  }) {
-    emit(
-      state.copyWith(
-        status: OwnerOnboardingStatus.editing,
-        depositAmount: depositAmount,
-        advanceMonths: advanceMonths,
-        allowedGender: allowedGender,
-        smokingAllowed: smokingAllowed,
-        petsAllowed: petsAllowed,
-        curfewHours: curfewHours,
-        maxOccupants: maxOccupants,
-      ),
-    );
-  }
-
-  // ── Step 3: pricing and amenities ───────────────────────────────────────
-
-  void savePricing({required int monthlyRent, required List<String> amenities}) {
-    emit(
-      state.copyWith(
-        status: OwnerOnboardingStatus.editing,
-        monthlyRent: monthlyRent,
-        amenities: List<String>.unmodifiable(amenities),
-      ),
-    );
-  }
 
   // ── Create-listing wizard ────────────────────────────────────────────────
 

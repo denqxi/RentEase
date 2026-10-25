@@ -22,6 +22,9 @@ import '../widgets/edit_property_sheet.dart';
 import 'edit_entire_property_screen.dart';
 import 'property_reviews_screen.dart';
 
+// Compiled once instead of on every call.
+final RegExp _kThousandsRe = RegExp(r'(\d)(?=(\d{3})+(?!\d))');
+
 /// Screen displayed when clicking an owner property card.
 ///
 /// Supports two distinct modes:
@@ -82,7 +85,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
           style: const TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 13,
-            color: Color(0xFF475569),
+            color: AppColors.slate600,
             height: 1.4,
           ),
         ),
@@ -98,7 +101,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B),
+                    color: AppColors.slate500,
                   ),
                 ),
               ),
@@ -106,7 +109,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.surface,
                   elevation: 0,
                   minimumSize: const Size(110, 42),
                   padding: const EdgeInsets.symmetric(
@@ -139,7 +142,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Room status updated to $targetLabel.'),
-            backgroundColor: const Color(0xFF0F172A),
+            backgroundColor: AppColors.slate900,
           ),
         );
       } catch (e) {
@@ -156,7 +159,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
 
   Widget _buildMultiRoomPropertyTypeSvg({
     double size = 20,
-    Color color = const Color(0xFF0F172A),
+    Color color = AppColors.slate900,
   }) {
     return SvgPicture.string(
       '''<svg xmlns="http://www.w3.org/2000/svg" width="$size" height="$size" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
@@ -279,28 +282,28 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+            color: AppColors.slate900.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+            color: AppColors.slate900.withValues(alpha: 0.02),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
         ],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          splashColor: const Color(0xFFFEF2F2),
-          highlightColor: const Color(0xFFFFF5F5),
+          splashColor: AppColors.redFill50,
+          highlightColor: AppColors.redFill50,
           onTap: () => _handleRemoveListing(context, rooms, cubit),
           child: const Padding(
             padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
@@ -310,7 +313,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                 Icon(
                   Icons.delete_outline_rounded,
                   size: 18,
-                  color: Color(0xFFE55353),
+                  color: AppColors.destructive,
                 ),
                 SizedBox(width: 6),
                 Text(
@@ -319,7 +322,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                     fontFamily: 'DM Sans',
                     fontSize: 13.5,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFE55353),
+                    color: AppColors.destructive,
                   ),
                 ),
               ],
@@ -341,8 +344,8 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => Dialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: AppColors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 28),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
@@ -354,12 +357,12 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                 width: 44,
                 height: 44,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFFFF5F5),
+                  color: AppColors.redFill50,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.delete_outline_rounded,
-                  color: Color(0xFFE55353),
+                  color: AppColors.destructive,
                   size: 22,
                 ),
               ),
@@ -371,7 +374,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                   fontFamily: 'DM Sans',
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A),
+                  color: AppColors.slate900,
                   letterSpacing: -0.2,
                 ),
               ),
@@ -383,7 +386,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                   fontFamily: 'DM Sans',
                   fontSize: 12.5,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF64748B),
+                  color: AppColors.slate500,
                   height: 1.45,
                 ),
               ),
@@ -393,10 +396,10 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                 height: 42,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE55353),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.destructive,
+                    foregroundColor: AppColors.surface,
                     elevation: 2,
-                    shadowColor: const Color(0xFFE55353).withValues(alpha: 0.25),
+                    shadowColor: AppColors.destructive.withValues(alpha: 0.25),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -418,8 +421,8 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                 height: 42,
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF0F172A),
-                    side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+                    foregroundColor: AppColors.slate900,
+                    side: const BorderSide(color: AppColors.slate200, width: 1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -448,8 +451,8 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
       context: context,
       barrierDismissible: false,
       builder: (_) => Dialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: AppColors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 48),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
@@ -474,7 +477,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                   fontFamily: 'DM Sans',
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
+                  color: AppColors.slate900,
                 ),
               ),
               const SizedBox(height: 4),
@@ -485,7 +488,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                   fontFamily: 'DM Sans',
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF64748B),
+                  color: AppColors.slate500,
                 ),
               ),
             ],
@@ -509,7 +512,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
         messenger.showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: const Color(0xFFDC2626),
+            backgroundColor: AppColors.red600,
           ),
         );
       }
@@ -525,8 +528,8 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
       context: context,
       barrierDismissible: false,
       builder: (dialogCtx) => Dialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: AppColors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 28),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
@@ -538,12 +541,12 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                 width: 44,
                 height: 44,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFDCFCE7),
+                  color: AppColors.green100,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.check_rounded,
-                  color: Color(0xFF16A34A),
+                  color: AppColors.green600,
                   size: 24,
                 ),
               ),
@@ -555,7 +558,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                   fontFamily: 'DM Sans',
                   fontSize: 16.5,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A),
+                  color: AppColors.slate900,
                   letterSpacing: -0.2,
                 ),
               ),
@@ -567,7 +570,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                   fontFamily: 'DM Sans',
                   fontSize: 12.5,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF64748B),
+                  color: AppColors.slate500,
                   height: 1.45,
                 ),
               ),
@@ -578,7 +581,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.surface,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -613,6 +616,9 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
     final cubit = context.read<LandlordHomeCubit>();
 
     return BlocBuilder<LandlordHomeCubit, LandlordHomeState>(
+      // Only `properties` is read below; skip rebuilding the whole screen for
+      // unrelated emissions (tenants, search query, loading flags).
+      buildWhen: (prev, curr) => prev.properties != curr.properties,
       builder: (context, state) {
         final propId = widget.initialProperty.propertyId;
         final parentId = widget.initialProperty.parentPropertyId;
@@ -662,22 +668,22 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFFE2E8F0).withValues(alpha: 0.6),
+                      color: AppColors.slate200.withValues(alpha: 0.6),
                       width: 1,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                        color: AppColors.slate900.withValues(alpha: 0.04),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
                     ],
                   ),
                   child: Material(
-                    color: Colors.transparent,
+                    color: AppColors.transparent,
                     borderRadius: BorderRadius.circular(12),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
@@ -772,10 +778,10 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                             width: double.infinity,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
-                              color: const Color(0xFFF1F5F9),
+                              color: AppColors.fieldFill,
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                                  color: AppColors.slate900.withValues(alpha: 0.06),
                                   blurRadius: 16,
                                   offset: const Offset(0, 4),
                                 ),
@@ -786,7 +792,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(16),
-                                  clipBehavior: Clip.antiAliasWithSaveLayer,
+                                  clipBehavior: Clip.antiAlias,
                                   child: ListingImagePlaceholder(
                                     seed: seed,
                                     photoUrl: currentRooms
@@ -808,14 +814,14 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                                       vertical: 5,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.65),
+                                      color: AppColors.scrim.withValues(alpha: 0.65),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
                                       '$availableCount Available',
                                       style: const TextStyle(
                                         fontFamily: 'DM Sans',
-                                        color: Colors.white,
+                                        color: AppColors.surface,
                                         fontSize: 11,
                                         fontWeight: FontWeight.w400,
                                       ),
@@ -832,16 +838,16 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.surface,
                               borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                                  color: AppColors.slate900.withValues(alpha: 0.06),
                                   blurRadius: 16,
                                   offset: const Offset(0, 4),
                                 ),
                                 BoxShadow(
-                                  color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+                                  color: AppColors.slate900.withValues(alpha: 0.02),
                                   blurRadius: 4,
                                   offset: const Offset(0, 1),
                                 ),
@@ -863,7 +869,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                                           fontFamily: 'DM Sans',
                                           fontSize: 20,
                                           fontWeight: FontWeight.w800,
-                                          color: Color(0xFF0F172A),
+                                          color: AppColors.slate900,
                                           letterSpacing: -0.4,
                                           height: 1.2,
                                         ),
@@ -935,7 +941,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                                           fontFamily: 'DM Sans',
                                           fontSize: 12,
                                           fontWeight: FontWeight.w400,
-                                          color: Color(0xFF64748B),
+                                          color: AppColors.slate500,
                                           height: 1.4,
                                         ),
                                       ),
@@ -961,7 +967,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                                         const Icon(
                                           Icons.star_rounded,
                                           size: 16.5,
-                                          color: Color(0xFFF59E0B),
+                                          color: AppColors.matchMedium,
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
@@ -973,14 +979,14 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                                             fontFamily: 'DM Sans',
                                             fontSize: 12.5,
                                             fontWeight: FontWeight.w700,
-                                            color: Color(0xFF0F172A),
+                                            color: AppColors.slate900,
                                           ),
                                         ),
                                         const SizedBox(width: 2),
                                         const Icon(
                                           Icons.chevron_right_rounded,
                                           size: 16,
-                                          color: Color(0xFF94A3B8),
+                                          color: AppColors.slate400,
                                         ),
                                       ],
                                     ),
@@ -991,7 +997,7 @@ const SizedBox(height: 14),
                                 const Divider(
                                   height: 1,
                                   thickness: 0.8,
-                                  color: Color(0xFFF1F5F9),
+                                  color: AppColors.fieldFill,
                                 ),
                                 const SizedBox(height: 14),
 
@@ -1013,7 +1019,7 @@ const SizedBox(height: 14),
                                                 fontFamily: 'DM Sans',
                                                 fontSize: 12.5,
                                                 fontWeight: FontWeight.w400,
-                                                color: Color(0xFF0F172A),
+                                                color: AppColors.slate900,
                                               ),
                                             ),
                                           ),
@@ -1042,16 +1048,16 @@ const SizedBox(height: 14),
                             width: double.infinity,
                             padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.surface,
                               borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                                  color: AppColors.slate900.withValues(alpha: 0.06),
                                   blurRadius: 16,
                                   offset: const Offset(0, 4),
                                 ),
                                 BoxShadow(
-                                  color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+                                  color: AppColors.slate900.withValues(alpha: 0.02),
                                   blurRadius: 4,
                                   offset: const Offset(0, 1),
                                 ),
@@ -1122,7 +1128,7 @@ const SizedBox(height: 14),
                                     fontFamily: 'DM Sans',
                                     fontSize: 12,
                                     fontWeight: FontWeight.w400,
-                                    color: Color(0xFF64748B),
+                                    color: AppColors.slate500,
                                   ),
                                 ),
                                 const SizedBox(height: 16),
@@ -1260,7 +1266,7 @@ class _EntirePropertyPhotoCarouselState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Photo added successfully.'),
-          backgroundColor: Color(0xFF0F172A),
+          backgroundColor: AppColors.slate900,
         ),
       );
     } catch (e) {
@@ -1334,7 +1340,7 @@ class _EntirePropertyPhotoCarouselState
     await Navigator.of(context).push(
       PageRouteBuilder<void>(
         opaque: false,
-        barrierColor: Colors.black87,
+        barrierColor: AppColors.scrimStrong,
         pageBuilder: (ctx, animation, secondaryAnimation) {
           return FadeTransition(
             opacity: animation,
@@ -1385,10 +1391,10 @@ class _EntirePropertyPhotoCarouselState
           width: double.infinity,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: const Color(0xFFF1F5F9),
+            color: AppColors.fieldFill,
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                color: AppColors.slate900.withValues(alpha: 0.05),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -1399,7 +1405,7 @@ class _EntirePropertyPhotoCarouselState
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                clipBehavior: Clip.antiAliasWithSaveLayer,
+                clipBehavior: Clip.antiAlias,
                 child: photoCount > 0
                     ? PageView.builder(
                         controller: _pageController,
@@ -1413,6 +1419,7 @@ class _EntirePropertyPhotoCarouselState
                             onTap: () => _openFullScreenGallery(index),
                             child: Image.network(
                               photoUrl,
+                              cacheWidth: 1280,
                               fit: BoxFit.cover,
                               filterQuality: FilterQuality.medium,
                               errorBuilder: (_, _, _) =>
@@ -1437,7 +1444,7 @@ class _EntirePropertyPhotoCarouselState
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+                        color: AppColors.slate200.withValues(alpha: 0.8),
                         width: 1,
                       ),
                     ),
@@ -1460,10 +1467,10 @@ class _EntirePropertyPhotoCarouselState
                           vertical: 2.5,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.28),
+                          color: AppColors.scrim.withValues(alpha: 0.28),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.35),
+                            color: AppColors.surface.withValues(alpha: 0.35),
                             width: 0.6,
                           ),
                         ),
@@ -1473,7 +1480,7 @@ class _EntirePropertyPhotoCarouselState
                             const Icon(
                               Icons.photo_outlined,
                               size: 10.5,
-                              color: Colors.white,
+                              color: AppColors.surface,
                             ),
                             const SizedBox(width: 3.5),
                             Text(
@@ -1482,7 +1489,7 @@ class _EntirePropertyPhotoCarouselState
                                   : '$photoCount',
                               style: const TextStyle(
                                 fontFamily: 'DM Sans',
-                                color: Colors.white,
+                                color: AppColors.surface,
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.1,
@@ -1529,17 +1536,18 @@ class _EntirePropertyPhotoCarouselState
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          clipBehavior: Clip.antiAliasWithSaveLayer,
+                          clipBehavior: Clip.antiAlias,
                           child: Image.network(
                             thumbUrl,
+                            cacheWidth: 168,
                             fit: BoxFit.cover,
                             filterQuality: FilterQuality.medium,
                             errorBuilder: (_, _, _) => Container(
-                              color: const Color(0xFFF1F5F9),
+                              color: AppColors.fieldFill,
                               child: const Icon(
                                 Icons.broken_image,
                                 size: 18,
-                                color: Colors.grey,
+                                color: AppColors.hint,
                               ),
                             ),
                           ),
@@ -1553,7 +1561,7 @@ class _EntirePropertyPhotoCarouselState
                                 border: Border.all(
                                   color: isSelected
                                       ? AppColors.primary
-                                      : const Color(0xFFE2E8F0),
+                                      : AppColors.slate200,
                                   width: isSelected ? 2 : 1,
                                 ),
                               ),
@@ -1573,10 +1581,10 @@ class _EntirePropertyPhotoCarouselState
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: AppColors.slate50,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: const Color(0xFFE2E8F0),
+                      color: AppColors.slate200,
                       width: 1,
                     ),
                   ),
@@ -1592,7 +1600,7 @@ class _EntirePropertyPhotoCarouselState
                           )
                         : const Icon(
                             Icons.add_rounded,
-                            color: Color(0xFF64748B),
+                            color: AppColors.slate500,
                             size: 20,
                           ),
                   ),
@@ -1689,7 +1697,7 @@ class _FullScreenPhotoGalleryState extends State<_FullScreenPhotoGallery> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.destructive,
-              foregroundColor: Colors.white,
+              foregroundColor: AppColors.surface,
             ),
             onPressed: () => Navigator.of(dialogCtx).pop(true),
             child: const Text('Remove'),
@@ -1724,7 +1732,7 @@ class _FullScreenPhotoGalleryState extends State<_FullScreenPhotoGallery> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Photo removed.'),
-          backgroundColor: Color(0xFF0F172A),
+          backgroundColor: AppColors.slate900,
         ),
       );
     } catch (e) {
@@ -1742,7 +1750,7 @@ class _FullScreenPhotoGalleryState extends State<_FullScreenPhotoGallery> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black.withValues(alpha: 0.94),
+      backgroundColor: AppColors.scrim.withValues(alpha: 0.94),
       body: SafeArea(
         child: Stack(
           children: [
@@ -1759,9 +1767,9 @@ class _FullScreenPhotoGalleryState extends State<_FullScreenPhotoGallery> {
                     child: Image.network(
                       _photos[index],
                       fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) => const Icon(
+                      errorBuilder: (_, _, _) => Icon(
                         Icons.broken_image_outlined,
-                        color: Colors.white54,
+                        color: AppColors.surface.withValues(alpha: 0.54),
                         size: 48,
                       ),
                     ),
@@ -1784,14 +1792,14 @@ class _FullScreenPhotoGalleryState extends State<_FullScreenPhotoGallery> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: AppColors.surface.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       '${_currentIndex + 1} / ${_photos.length}',
                       style: const TextStyle(
                         fontFamily: 'DM Sans',
-                        color: Colors.white,
+                        color: AppColors.surface,
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1804,12 +1812,12 @@ class _FullScreenPhotoGalleryState extends State<_FullScreenPhotoGallery> {
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
+                        color: AppColors.surface.withValues(alpha: 0.18),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.close_rounded,
-                        color: Colors.white,
+                        color: AppColors.surface,
                         size: 22,
                       ),
                     ),
@@ -1826,8 +1834,8 @@ class _FullScreenPhotoGalleryState extends State<_FullScreenPhotoGallery> {
               child: Center(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE55353),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.destructive,
+                    foregroundColor: AppColors.surface,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
                       vertical: 12,
@@ -1843,7 +1851,7 @@ class _FullScreenPhotoGalleryState extends State<_FullScreenPhotoGallery> {
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: AppColors.surface,
                           ),
                         )
                       : const Icon(Icons.delete_outline_rounded, size: 18),
@@ -1885,7 +1893,7 @@ class _EntirePropertyMainCard extends StatelessWidget {
   static String _fmt(num value) => value
       .round()
       .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+      .replaceAllMapped(_kThousandsRe, (m) => '${m[1]},');
 
   Future<void> _selectStatus(BuildContext context, String targetStatus) async {
     final currentStatus = property.vacancyStatus.isNotEmpty
@@ -1917,7 +1925,7 @@ class _EntirePropertyMainCard extends StatelessWidget {
           style: const TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 13,
-            color: Color(0xFF475569),
+            color: AppColors.slate600,
             height: 1.4,
           ),
         ),
@@ -1933,7 +1941,7 @@ class _EntirePropertyMainCard extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B),
+                    color: AppColors.slate500,
                   ),
                 ),
               ),
@@ -1941,7 +1949,7 @@ class _EntirePropertyMainCard extends StatelessWidget {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.surface,
                   elevation: 0,
                   minimumSize: const Size(110, 42),
                   padding: const EdgeInsets.symmetric(
@@ -1974,7 +1982,7 @@ class _EntirePropertyMainCard extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Rental status updated to $targetLabel.'),
-            backgroundColor: const Color(0xFF0F172A),
+            backgroundColor: AppColors.slate900,
           ),
         );
       } catch (e) {
@@ -2004,16 +2012,16 @@ class _EntirePropertyMainCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+            color: AppColors.slate900.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+            color: AppColors.slate900.withValues(alpha: 0.02),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -2035,7 +2043,7 @@ class _EntirePropertyMainCard extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
+                    color: AppColors.slate900,
                     letterSpacing: -0.4,
                     height: 1.2,
                   ),
@@ -2092,7 +2100,7 @@ class _EntirePropertyMainCard extends StatelessWidget {
                 fontFamily: 'DM Sans',
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF334155),
+                color: AppColors.slate700,
                 letterSpacing: -0.1,
               ),
             ),
@@ -2121,7 +2129,7 @@ class _EntirePropertyMainCard extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: Color(0xFF64748B),
+                    color: AppColors.slate500,
                     height: 1.4,
                   ),
                 ),
@@ -2146,7 +2154,7 @@ class _EntirePropertyMainCard extends StatelessWidget {
                   const Icon(
                     Icons.star_rounded,
                     size: 16.5,
-                    color: Color(0xFFF59E0B),
+                    color: AppColors.matchMedium,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -2155,14 +2163,14 @@ class _EntirePropertyMainCard extends StatelessWidget {
                       fontFamily: 'DM Sans',
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF0F172A),
+                      color: AppColors.slate900,
                     ),
                   ),
                   const SizedBox(width: 2),
                   const Icon(
                     Icons.chevron_right_rounded,
                     size: 16,
-                    color: Color(0xFF94A3B8),
+                    color: AppColors.slate400,
                   ),
                 ],
               ),
@@ -2170,7 +2178,7 @@ class _EntirePropertyMainCard extends StatelessWidget {
           ),
 
 const SizedBox(height: 14),
-          const Divider(height: 1, thickness: 0.8, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill),
           const SizedBox(height: 14),
 
           // Property Details Row (Building Type on left, Price on right)
@@ -2191,7 +2199,7 @@ const SizedBox(height: 14),
                           fontFamily: 'DM Sans',
                           fontSize: 12.5,
                           fontWeight: FontWeight.w400,
-                          color: Color(0xFF0F172A),
+                          color: AppColors.slate900,
                         ),
                       ),
                     ),
@@ -2221,7 +2229,7 @@ const SizedBox(height: 14),
                       fontFamily: 'DM Sans',
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: Color(0xFF64748B),
+                      color: AppColors.slate500,
                     ),
                   ),
                 ],
@@ -2230,7 +2238,7 @@ const SizedBox(height: 14),
           ),
 
           const SizedBox(height: 16),
-          const Divider(height: 1, thickness: 0.8, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill),
           const SizedBox(height: 16),
 
           // Rental Status Row with Dropdown
@@ -2247,7 +2255,7 @@ const SizedBox(height: 14),
                         fontFamily: 'DM Sans',
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A),
+                        color: AppColors.slate900,
                       ),
                     ),
                     SizedBox(height: 2),
@@ -2257,7 +2265,7 @@ const SizedBox(height: 14),
                         fontFamily: 'DM Sans',
                         fontSize: 11.5,
                         fontWeight: FontWeight.w400,
-                        color: Color(0xFF64748B),
+                        color: AppColors.slate500,
                       ),
                     ),
                   ],
@@ -2275,7 +2283,7 @@ const SizedBox(height: 14),
   Widget _buildStatusDropdown(BuildContext context, String currentStatus) {
     final isAvailable = currentStatus == 'available';
     final label = isAvailable ? 'Available' : 'Occupied';
-    final color = isAvailable ? const Color(0xFF16A34A) : const Color(0xFF475569);
+    final color = isAvailable ? AppColors.green600 : AppColors.slate600;
 
     return PopupMenuButton<String>(
       tooltip: 'Change Rental Status',
@@ -2283,21 +2291,21 @@ const SizedBox(height: 14),
       offset: const Offset(0, 32),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+        side: const BorderSide(color: AppColors.slate200, width: 1),
       ),
-      color: Colors.white,
+      color: AppColors.surface,
       elevation: 4,
       itemBuilder: (context) => [
         _buildPopupMenuItem(
           value: 'available',
           label: 'Available',
-          dotColor: const Color(0xFF16A34A),
+          dotColor: AppColors.green600,
           isSelected: isAvailable,
         ),
         _buildPopupMenuItem(
           value: 'booked',
           label: 'Occupied',
-          dotColor: const Color(0xFF475569),
+          dotColor: AppColors.slate600,
           isSelected: !isAvailable,
         ),
       ],
@@ -2361,7 +2369,7 @@ const SizedBox(height: 14),
               fontFamily: 'DM Sans',
               fontSize: 13,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: const Color(0xFF0F172A),
+              color: AppColors.slate900,
             ),
           ),
           if (isSelected) ...[
@@ -2375,7 +2383,7 @@ const SizedBox(height: 14),
 
   Widget _buildPropertyTypeSvg({
     double size = 20,
-    Color color = const Color(0xFF0F172A),
+    Color color = AppColors.slate900,
   }) {
     return SvgPicture.string(
       '''<svg xmlns="http://www.w3.org/2000/svg" width="$size" height="$size" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
@@ -2420,7 +2428,7 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
   static String _fmt(num value) => value
       .round()
       .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+      .replaceAllMapped(_kThousandsRe, (m) => '${m[1]},');
 
   @override
   void initState() {
@@ -2466,7 +2474,7 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Monthly rent must be greater than 0.'),
-          backgroundColor: Color(0xFFDC2626),
+          backgroundColor: AppColors.red600,
         ),
       );
       return;
@@ -2475,7 +2483,7 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Maximum occupants must be at least 1.'),
-          backgroundColor: Color(0xFFDC2626),
+          backgroundColor: AppColors.red600,
         ),
       );
       return;
@@ -2495,7 +2503,7 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Rent & capacity updated.'),
-          backgroundColor: Color(0xFF0F172A),
+          backgroundColor: AppColors.slate900,
         ),
       );
     } catch (_) {
@@ -2503,7 +2511,7 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Could not save rent & capacity.'),
-          backgroundColor: Color(0xFFDC2626),
+          backgroundColor: AppColors.red600,
         ),
       );
     } finally {
@@ -2521,16 +2529,16 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+            color: AppColors.slate900.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            color: AppColors.slate900.withValues(alpha: 0.03),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -2540,7 +2548,7 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Material(
-            color: Colors.transparent,
+            color: AppColors.transparent,
             child: InkWell(
               onTap: () => setState(() => _isExpanded = !_isExpanded),
               borderRadius: BorderRadius.circular(20),
@@ -2576,7 +2584,7 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
                               fontFamily: 'DM Sans',
                               fontSize: 15.5,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.slate900,
                               letterSpacing: -0.2,
                             ),
                           ),
@@ -2587,7 +2595,7 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
                               fontFamily: 'DM Sans',
                               fontSize: 12.5,
                               fontWeight: FontWeight.w500,
-                              color: Color(0xFF64748B),
+                              color: AppColors.slate500,
                             ),
                           ),
                         ],
@@ -2601,14 +2609,14 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
                         width: 30,
                         height: 30,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: AppColors.slate50,
                           borderRadius: BorderRadius.circular(9),
                         ),
                         alignment: Alignment.center,
                         child: const Icon(
                           Icons.keyboard_arrow_down_rounded,
                           size: 20,
-                          color: Color(0xFF475569),
+                          color: AppColors.slate600,
                         ),
                       ),
                     ),
@@ -2631,7 +2639,7 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
                         const Divider(
                           height: 1,
                           thickness: 1,
-                          color: Color(0xFFF1F5F9),
+                          color: AppColors.fieldFill,
                         ),
                         const SizedBox(height: 16),
                         LabelledField(
@@ -2709,7 +2717,7 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
   static String _fmt(num value) => value
       .round()
       .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+      .replaceAllMapped(_kThousandsRe, (m) => '${m[1]},');
 
   static String _formatCurfewHour(int hour) {
     if (hour == 0) return '12:00 AM (midnight)';
@@ -2781,7 +2789,7 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Security deposit cannot be negative.'),
-          backgroundColor: Color(0xFFDC2626),
+          backgroundColor: AppColors.red600,
         ),
       );
       return;
@@ -2790,7 +2798,7 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Advance rent cannot be negative.'),
-          backgroundColor: Color(0xFFDC2626),
+          backgroundColor: AppColors.red600,
         ),
       );
       return;
@@ -2814,7 +2822,7 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('House rules updated.'),
-          backgroundColor: Color(0xFF0F172A),
+          backgroundColor: AppColors.slate900,
         ),
       );
     } catch (_) {
@@ -2822,7 +2830,7 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Could not save house rules.'),
-          backgroundColor: Color(0xFFDC2626),
+          backgroundColor: AppColors.red600,
         ),
       );
     } finally {
@@ -2842,16 +2850,16 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+            color: AppColors.slate900.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            color: AppColors.slate900.withValues(alpha: 0.03),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -2861,7 +2869,7 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Material(
-            color: Colors.transparent,
+            color: AppColors.transparent,
             child: InkWell(
               onTap: () => setState(() => _isExpanded = !_isExpanded),
               borderRadius: BorderRadius.circular(20),
@@ -2897,7 +2905,7 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
                               fontFamily: 'DM Sans',
                               fontSize: 15.5,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.slate900,
                               letterSpacing: -0.2,
                             ),
                           ),
@@ -2910,7 +2918,7 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
                               fontFamily: 'DM Sans',
                               fontSize: 12.5,
                               fontWeight: FontWeight.w500,
-                              color: Color(0xFF64748B),
+                              color: AppColors.slate500,
                             ),
                           ),
                         ],
@@ -2924,14 +2932,14 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
                         width: 30,
                         height: 30,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: AppColors.slate50,
                           borderRadius: BorderRadius.circular(9),
                         ),
                         alignment: Alignment.center,
                         child: const Icon(
                           Icons.keyboard_arrow_down_rounded,
                           size: 20,
-                          color: Color(0xFF475569),
+                          color: AppColors.slate600,
                         ),
                       ),
                     ),
@@ -2954,7 +2962,7 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
                         const Divider(
                           height: 1,
                           thickness: 1,
-                          color: Color(0xFFF1F5F9),
+                          color: AppColors.fieldFill,
                         ),
                         const SizedBox(height: 16),
                         LabelledField(
@@ -3111,7 +3119,7 @@ class _ExpandableAmenitiesSectionState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Amenities updated.'),
-          backgroundColor: Color(0xFF0F172A),
+          backgroundColor: AppColors.slate900,
         ),
       );
     } catch (_) {
@@ -3119,7 +3127,7 @@ class _ExpandableAmenitiesSectionState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Could not save amenities.'),
-          backgroundColor: Color(0xFFDC2626),
+          backgroundColor: AppColors.red600,
         ),
       );
     } finally {
@@ -3137,16 +3145,16 @@ class _ExpandableAmenitiesSectionState
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+            color: AppColors.slate900.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            color: AppColors.slate900.withValues(alpha: 0.03),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -3156,7 +3164,7 @@ class _ExpandableAmenitiesSectionState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Material(
-            color: Colors.transparent,
+            color: AppColors.transparent,
             child: InkWell(
               onTap: () => setState(() => _isExpanded = !_isExpanded),
               borderRadius: BorderRadius.circular(20),
@@ -3192,7 +3200,7 @@ class _ExpandableAmenitiesSectionState
                               fontFamily: 'DM Sans',
                               fontSize: 15.5,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.slate900,
                               letterSpacing: -0.2,
                             ),
                           ),
@@ -3203,7 +3211,7 @@ class _ExpandableAmenitiesSectionState
                               fontFamily: 'DM Sans',
                               fontSize: 12.5,
                               fontWeight: FontWeight.w500,
-                              color: Color(0xFF64748B),
+                              color: AppColors.slate500,
                             ),
                           ),
                         ],
@@ -3217,14 +3225,14 @@ class _ExpandableAmenitiesSectionState
                         width: 30,
                         height: 30,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: AppColors.slate50,
                           borderRadius: BorderRadius.circular(9),
                         ),
                         alignment: Alignment.center,
                         child: const Icon(
                           Icons.keyboard_arrow_down_rounded,
                           size: 20,
-                          color: Color(0xFF475569),
+                          color: AppColors.slate600,
                         ),
                       ),
                     ),
@@ -3247,7 +3255,7 @@ class _ExpandableAmenitiesSectionState
                         const Divider(
                           height: 1,
                           thickness: 1,
-                          color: Color(0xFFF1F5F9),
+                          color: AppColors.fieldFill,
                         ),
                         const SizedBox(height: 14),
                         for (final (group, items) in kAmenityGroups) ...[
@@ -3320,7 +3328,7 @@ class _ExpandableSaveButton extends StatelessWidget {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: AppColors.surface,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -3361,7 +3369,7 @@ class _UnitRow extends StatelessWidget {
   static String _fmt(num value) => value
       .round()
       .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+      .replaceAllMapped(_kThousandsRe, (m) => '${m[1]},');
 
   @override
   Widget build(BuildContext context) {
@@ -3382,17 +3390,17 @@ class _UnitRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.08),
+              color: AppColors.slate900.withValues(alpha: 0.08),
               blurRadius: 14,
               spreadRadius: 0.5,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+              color: AppColors.slate900.withValues(alpha: 0.04),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -3405,11 +3413,11 @@ class _UnitRow extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: const Color(0xFFE2E8F0),
+                color: AppColors.slate200,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                    color: AppColors.slate900.withValues(alpha: 0.06),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -3417,7 +3425,7 @@ class _UnitRow extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                clipBehavior: Clip.antiAliasWithSaveLayer,
+                clipBehavior: Clip.antiAlias,
                 child: ListingImagePlaceholder(
                   seed: seed,
                   photoUrl: roomImageUrl,
@@ -3460,7 +3468,7 @@ class _UnitRow extends StatelessWidget {
                             fontFamily: 'DM Sans',
                             fontSize: 12.5,
                             fontWeight: FontWeight.w400,
-                            color: Color(0xFF64748B),
+                            color: AppColors.slate500,
                           ),
                         ),
                       ],
@@ -3475,7 +3483,7 @@ class _UnitRow extends StatelessWidget {
             const Icon(
               Icons.chevron_right_rounded,
               size: 18,
-              color: Color(0xFF94A3B8),
+              color: AppColors.slate400,
             ),
           ],
         ),
@@ -3486,7 +3494,7 @@ class _UnitRow extends StatelessWidget {
   Widget _buildRoomStatusDropdown(BuildContext context, String currentStatus) {
     final isAvailable = currentStatus == 'available';
     final label = isAvailable ? 'Available' : 'Occupied';
-    final color = isAvailable ? const Color(0xFF16A34A) : const Color(0xFF475569);
+    final color = isAvailable ? AppColors.green600 : AppColors.slate600;
 
     return PopupMenuButton<String>(
       tooltip: 'Change Room Status',
@@ -3494,38 +3502,38 @@ class _UnitRow extends StatelessWidget {
       offset: const Offset(0, 32),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+        side: const BorderSide(color: AppColors.slate200, width: 1),
       ),
-      color: Colors.white,
+      color: AppColors.surface,
       elevation: 4,
       itemBuilder: (context) => [
         _buildPopupMenuItem(
           value: 'available',
           label: 'Available',
-          dotColor: const Color(0xFF16A34A),
+          dotColor: AppColors.green600,
           isSelected: isAvailable,
         ),
         _buildPopupMenuItem(
           value: 'booked',
           label: 'Occupied',
-          dotColor: const Color(0xFF475569),
+          dotColor: AppColors.slate600,
           isSelected: !isAvailable,
         ),
       ],
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5.5),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.09),
+              color: AppColors.slate900.withValues(alpha: 0.09),
               blurRadius: 10,
               spreadRadius: 0.5,
               offset: const Offset(0, 2),
             ),
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+              color: AppColors.slate900.withValues(alpha: 0.04),
               blurRadius: 3,
               offset: const Offset(0, 1),
             ),
@@ -3581,7 +3589,7 @@ class _UnitRow extends StatelessWidget {
               fontFamily: 'DM Sans',
               fontSize: 13,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: const Color(0xFF0F172A),
+              color: AppColors.slate900,
             ),
           ),
           if (isSelected) ...[

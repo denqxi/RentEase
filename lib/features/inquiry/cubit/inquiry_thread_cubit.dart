@@ -45,6 +45,7 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
   StreamSubscription<ContactShareDoc?>? _contactSub;
   bool _contextLoaded = false;
   bool _contactStarted = false;
+  bool _sendInFlight = false;
 
   Future<void> _onInquiry(InquiryDoc? inquiry) async {
     if (isClosed) return;
@@ -142,9 +143,19 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
     return ok;
   }
 
-  Future<bool> sendMessage(String text) => _run(
-    (i) => _service.sendMessage(inquiry: i, senderId: uid, content: text),
-  );
+  /// Ignores a second send while one is in flight (fast double tap or
+  /// keyboard submit). Separate from `isBusy`, which a stream error resets.
+  Future<bool> sendMessage(String text) async {
+    if (_sendInFlight) return false;
+    _sendInFlight = true;
+    try {
+      return await _run(
+        (i) => _service.sendMessage(inquiry: i, senderId: uid, content: text),
+      );
+    } finally {
+      _sendInFlight = false;
+    }
+  }
 
   Future<bool> submitRating({required int stars, String? review}) async {
     final ok = await _run(

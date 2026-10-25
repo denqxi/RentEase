@@ -1,7 +1,7 @@
 // Test oracle from SPRINTPLAN.md section 2.4 — if this doesn't reproduce
 // the documented numbers, FilteringService must not be considered correct.
 // Gender strings are translated to the app's real constants ('Female only',
-// 'Mixed / Any' — see property_rules_screen.dart /
+// 'Mixed / Any' — see create_listing_wizard_screen.dart /
 // hard_constraints_screen.dart) rather than SPRINTPLAN's illustrative
 // "Female Only" / "All" casing; the expected B_scores are unchanged.
 

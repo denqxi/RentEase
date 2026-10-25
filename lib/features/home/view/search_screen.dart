@@ -254,7 +254,7 @@ class _SearchViewState extends State<_SearchView> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       builder: (_) => SessionFilterSheet(
         initialBudget: budget.toDouble().clamp(1000, 10000),
         initialDistance: distance.toDouble().clamp(0.5, 15),
@@ -309,11 +309,47 @@ class _SearchViewState extends State<_SearchView> {
     );
   }
 
+  // Memo for [_categorizedListings]: it is read several times per build and
+  // runs the query filter plus [SearchSession.evaluate] over every listing.
+  // Inputs are immutable (replaced, never mutated), so identity checks suffice.
+  List<Map<String, dynamic>>? _memoResults;
+  List<Map<String, dynamic>>? _memoNonMatches;
+  TenantProfileDoc? _memoProfile;
+  SearchSession? _memoSession;
+  String? _memoQuery;
+  ({
+    List<Map<String, dynamic>> compatible,
+    List<Map<String, dynamic>> filterMatches,
+    List<Map<String, dynamic>> others,
+  })? _memoCategorized;
+
   ({
     List<Map<String, dynamic>> compatible,
     List<Map<String, dynamic>> filterMatches,
     List<Map<String, dynamic>> others,
   }) get _categorizedListings {
+    final cached = _memoCategorized;
+    if (cached != null &&
+        identical(_memoResults, widget.results) &&
+        identical(_memoNonMatches, widget.nonMatches) &&
+        identical(_memoProfile, widget.profile) &&
+        identical(_memoSession, _session) &&
+        _memoQuery == _queryController.text) {
+      return cached;
+    }
+    _memoResults = widget.results;
+    _memoNonMatches = widget.nonMatches;
+    _memoProfile = widget.profile;
+    _memoSession = _session;
+    _memoQuery = _queryController.text;
+    return _memoCategorized = _computeCategorized();
+  }
+
+  ({
+    List<Map<String, dynamic>> compatible,
+    List<Map<String, dynamic>> filterMatches,
+    List<Map<String, dynamic>> others,
+  }) _computeCategorized() {
     final matching = widget.results
         .where((p) => matchesSearchQuery(p, _queryController.text))
         .toList();
@@ -471,9 +507,9 @@ class _SearchViewState extends State<_SearchView> {
                     center: Alignment.topLeft,
                     radius: 1.05,
                     colors: <Color>[
-                      const Color(0xFFCCF2FE).withValues(alpha: 0.70),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.35),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.0),
+                      AppColors.onboardingSky.withValues(alpha: 0.70),
+                      AppColors.skyFill.withValues(alpha: 0.35),
+                      AppColors.skyFill.withValues(alpha: 0.0),
                     ],
                     stops: const <double>[0.0, 0.45, 0.88],
                   ),
@@ -565,15 +601,15 @@ class _SearchViewState extends State<_SearchView> {
                     child: Container(
                       height: 42,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: const Color(0xFFE2E8F0),
+                          color: AppColors.slate200,
                           width: 0.8,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                            color: AppColors.slate900.withValues(alpha: 0.04),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -625,27 +661,27 @@ class _SearchViewState extends State<_SearchView> {
                     height: 42,
                     decoration: BoxDecoration(
                       color: hasActiveSession
-                          ? const Color(0xFFFEF3C7)
-                          : Colors.white,
+                          ? AppColors.warningFill
+                          : AppColors.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: hasActiveSession
-                            ? const Color(0xFFF59E0B)
-                            : const Color(0xFFE2E8F0),
+                            ? AppColors.matchMedium
+                            : AppColors.slate200,
                         width: hasActiveSession ? 1.2 : 0.8,
                       ),
                       boxShadow: [
                         BoxShadow(
                           color: hasActiveSession
-                              ? const Color(0xFFF59E0B).withValues(alpha: 0.2)
-                              : const Color(0xFF0F172A).withValues(alpha: 0.04),
+                              ? AppColors.matchMedium.withValues(alpha: 0.2)
+                              : AppColors.slate900.withValues(alpha: 0.04),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
                     child: Material(
-                      color: Colors.transparent,
+                      color: AppColors.transparent,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: _showFilterSheet,
@@ -658,7 +694,7 @@ class _SearchViewState extends State<_SearchView> {
                                 Icons.tune_rounded,
                                 size: 19,
                                 color: hasActiveSession
-                                    ? const Color(0xFFB45309)
+                                    ? AppColors.amber700
                                     : context.appColors.textPrimary,
                               ),
                               if (hasActiveSession)
@@ -669,7 +705,7 @@ class _SearchViewState extends State<_SearchView> {
                                     width: 7,
                                     height: 7,
                                     decoration: const BoxDecoration(
-                                      color: Color(0xFFD97706),
+                                      color: AppColors.amber600,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -688,22 +724,22 @@ class _SearchViewState extends State<_SearchView> {
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: const Color(0xFFE2E8F0),
+                          color: AppColors.slate200,
                           width: 0.8,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                            color: AppColors.slate900.withValues(alpha: 0.04),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
                         ],
                       ),
                       child: Material(
-                        color: Colors.transparent,
+                        color: AppColors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
                           onTap: () => setState(() => _session = null),
@@ -833,7 +869,7 @@ class _SearchViewState extends State<_SearchView> {
             itemCount: properties.length + 1,
             itemBuilder: (ctx, i) {
               if (i == properties.length) {
-                return SizedBox(height: AppSpacing.lg);
+                return const SizedBox(height: AppSpacing.lg);
               }
               final p = properties[i];
               final rank = (p['tenantRank'] as num?)?.toInt() ?? 0;
@@ -951,36 +987,36 @@ class _TabPill extends StatelessWidget {
 
     if (isSelected) {
       if (isAmber) {
-        bgColor = const Color(0xFFFEF3C7);
-        borderColor = const Color(0xFFF59E0B);
-        textColor = const Color(0xFF92400E);
-        countBg = const Color(0xFFFDE68A);
-        countText = const Color(0xFF78350F);
+        bgColor = AppColors.warningFill;
+        borderColor = AppColors.matchMedium;
+        textColor = AppColors.amber800;
+        countBg = AppColors.amberBorder200;
+        countText = AppColors.amber900;
       } else {
-        bgColor = const Color(0xFF0F172A);
-        borderColor = const Color(0xFF0F172A);
-        textColor = Colors.white;
-        countBg = Colors.white.withValues(alpha: 0.2);
-        countText = Colors.white;
+        bgColor = AppColors.slate900;
+        borderColor = AppColors.slate900;
+        textColor = AppColors.surface;
+        countBg = AppColors.surface.withValues(alpha: 0.2);
+        countText = AppColors.surface;
       }
     } else {
       if (isAmber) {
-        bgColor = Colors.white;
-        borderColor = const Color(0xFFFDE68A);
-        textColor = const Color(0xFFB45309);
-        countBg = const Color(0xFFFEF3C7);
-        countText = const Color(0xFF92400E);
+        bgColor = AppColors.surface;
+        borderColor = AppColors.amberBorder200;
+        textColor = AppColors.amber700;
+        countBg = AppColors.warningFill;
+        countText = AppColors.amber800;
       } else {
-        bgColor = Colors.white;
-        borderColor = const Color(0xFFE2E8F0);
-        textColor = const Color(0xFF64748B);
-        countBg = const Color(0xFFF1F5F9);
-        countText = const Color(0xFF475569);
+        bgColor = AppColors.surface;
+        borderColor = AppColors.slate200;
+        textColor = AppColors.slate500;
+        countBg = AppColors.fieldFill;
+        countText = AppColors.slate600;
       }
     }
 
     return Material(
-      color: Colors.transparent,
+      color: AppColors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
@@ -996,14 +1032,14 @@ class _TabPill extends StatelessWidget {
               if (isSelected)
                 BoxShadow(
                   color: isAmber
-                      ? const Color(0xFFF59E0B).withValues(alpha: 0.16)
-                      : const Color(0xFF0F172A).withValues(alpha: 0.06),
+                      ? AppColors.matchMedium.withValues(alpha: 0.16)
+                      : AppColors.slate900.withValues(alpha: 0.06),
                   blurRadius: 4,
                   offset: const Offset(0, 1.5),
                 )
               else
                 BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+                  color: AppColors.slate900.withValues(alpha: 0.02),
                   blurRadius: 2,
                   offset: const Offset(0, 1),
                 ),
@@ -1068,10 +1104,12 @@ class _PropertyCard extends StatelessWidget {
   final bool isGuest;
   final VoidCallback onTap;
 
+  static final RegExp _thousandsRe = RegExp(r'(\d)(?=(\d{3})+(?!\d))');
+
   static String _fmtRent(num value) => value
       .round()
       .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+      .replaceAllMapped(_thousandsRe, (m) => '${m[1]},');
 
   @override
   Widget build(BuildContext context) {
@@ -1129,27 +1167,27 @@ class _PropertyCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: const Color(0xFFE2E8F0),
+          color: AppColors.slate200,
           width: 0.8,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.08),
+            color: AppColors.slate900.withValues(alpha: 0.08),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+            color: AppColors.slate900.withValues(alpha: 0.02),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
         ],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         borderRadius: BorderRadius.circular(22),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -1169,7 +1207,7 @@ class _PropertyCard extends StatelessWidget {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        clipBehavior: Clip.antiAlias,
                         child: ListingImagePlaceholder(
                           seed: seed,
                           photoUrl: property['photoUrl'] as String?,
@@ -1181,7 +1219,7 @@ class _PropertyCard extends StatelessWidget {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: const Color(0xFFE2E8F0).withValues(alpha: 0.7),
+                                color: AppColors.slate200.withValues(alpha: 0.7),
                                 width: 0.8,
                               ),
                             ),
@@ -1206,14 +1244,14 @@ class _PropertyCard extends StatelessWidget {
                                     vertical: 2.5,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.28),
+                                    color: AppColors.scrim.withValues(alpha: 0.28),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: (isNonMatch || isFilterMatch)
                                           ? AppColors.amberPrimary.withValues(alpha: 0.6)
                                           : (!isGuest && matchPercent > 0)
                                               ? matchDotColor.withValues(alpha: 0.45)
-                                              : Colors.white.withValues(alpha: 0.25),
+                                              : AppColors.surface.withValues(alpha: 0.25),
                                       width: 0.6,
                                     ),
                                   ),
@@ -1233,7 +1271,7 @@ class _PropertyCard extends StatelessWidget {
                                             fontFamily: 'DM Sans',
                                             fontSize: 9.5,
                                             fontWeight: FontWeight.w700,
-                                            color: Colors.white,
+                                            color: AppColors.surface,
                                             letterSpacing: -0.1,
                                           ),
                                         ),
@@ -1250,7 +1288,7 @@ class _PropertyCard extends StatelessWidget {
                                             fontFamily: 'DM Sans',
                                             fontSize: 9.5,
                                             fontWeight: FontWeight.w700,
-                                            color: Colors.white,
+                                            color: AppColors.surface,
                                             letterSpacing: -0.1,
                                           ),
                                         ),
@@ -1261,15 +1299,15 @@ class _PropertyCard extends StatelessWidget {
                                             fontFamily: 'DM Sans',
                                             fontSize: 9.5,
                                             fontWeight: FontWeight.w700,
-                                            color: Colors.white,
+                                            color: AppColors.surface,
                                             letterSpacing: -0.1,
                                           ),
                                         ),
                                       ] else ...[
-                                        const Icon(
+                                        Icon(
                                           Icons.lock_outline,
                                           size: 9.5,
-                                          color: Colors.white70,
+                                          color: AppColors.onInk.withValues(alpha: 0.7),
                                         ),
                                         const SizedBox(width: 3),
                                         const Text(
@@ -1278,7 +1316,7 @@ class _PropertyCard extends StatelessWidget {
                                             fontFamily: 'DM Sans',
                                             fontSize: 9.5,
                                             fontWeight: FontWeight.w700,
-                                            color: Colors.white,
+                                            color: AppColors.surface,
                                             letterSpacing: -0.1,
                                           ),
                                         ),
@@ -1300,10 +1338,10 @@ class _PropertyCard extends StatelessWidget {
                                       vertical: 2.5,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.35),
+                                      color: AppColors.scrim.withValues(alpha: 0.35),
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
-                                        color: const Color(0xFF818CF8).withValues(alpha: 0.6),
+                                        color: AppColors.indigo400.withValues(alpha: 0.6),
                                         width: 0.6,
                                       ),
                                     ),
@@ -1313,7 +1351,7 @@ class _PropertyCard extends StatelessWidget {
                                         fontFamily: 'DM Sans',
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w700,
-                                        color: Color(0xFFC7D2FE),
+                                        color: AppColors.indigo200,
                                         letterSpacing: -0.1,
                                       ),
                                     ),
@@ -1330,7 +1368,7 @@ class _PropertyCard extends StatelessWidget {
                         top: 10,
                         right: 10,
                         child: Material(
-                          color: Colors.transparent,
+                          color: AppColors.transparent,
                           child: InkWell(
                             onTap: onSavedToggle,
                             borderRadius: BorderRadius.circular(16),
@@ -1342,10 +1380,10 @@ class _PropertyCard extends StatelessWidget {
                                   width: 32,
                                   height: 32,
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.28),
+                                    color: AppColors.scrim.withValues(alpha: 0.28),
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.35),
+                                      color: AppColors.surface.withValues(alpha: 0.35),
                                       width: 0.6,
                                     ),
                                   ),
@@ -1353,7 +1391,7 @@ class _PropertyCard extends StatelessWidget {
                                     child: Icon(
                                       isSaved ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
                                       size: 16,
-                                      color: isSaved ? AppColors.destructive : Colors.white,
+                                      color: isSaved ? AppColors.destructive : AppColors.surface,
                                     ),
                                   ),
                                 ),
@@ -1378,10 +1416,10 @@ class _PropertyCard extends StatelessWidget {
                                   vertical: 2.5,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.28),
+                                  color: AppColors.scrim.withValues(alpha: 0.28),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.35),
+                                    color: AppColors.surface.withValues(alpha: 0.35),
                                     width: 0.6,
                                   ),
                                 ),
@@ -1391,7 +1429,7 @@ class _PropertyCard extends StatelessWidget {
                                     const Icon(
                                       Icons.photo_outlined,
                                       size: 10.5,
-                                      color: Colors.white,
+                                      color: AppColors.surface,
                                     ),
                                     const SizedBox(width: 3.5),
                                     Text(
@@ -1400,7 +1438,7 @@ class _PropertyCard extends StatelessWidget {
                                         fontFamily: 'DM Sans',
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w700,
-                                        color: Colors.white,
+                                        color: AppColors.surface,
                                         letterSpacing: -0.1,
                                       ),
                                     ),
@@ -1430,7 +1468,7 @@ class _PropertyCard extends StatelessWidget {
                           fontFamily: 'DM Sans',
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF334155),
+                          color: AppColors.slate700,
                           letterSpacing: -0.1,
                           height: 1.15,
                         ),
@@ -1451,7 +1489,7 @@ class _PropertyCard extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 18.0,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.slate900,
                               letterSpacing: -0.3,
                               height: 1.15,
                             ),
@@ -1465,7 +1503,7 @@ class _PropertyCard extends StatelessWidget {
                             const Icon(
                               Icons.star_rounded,
                               size: 15.5,
-                              color: Color(0xFFF59E0B),
+                              color: AppColors.matchMedium,
                             ),
                             const SizedBox(width: 3),
                             Text(
@@ -1474,7 +1512,7 @@ class _PropertyCard extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF0F172A),
+                                color: AppColors.slate900,
                               ),
                             ),
                             if (hasRating && totalRatings > 0) ...[
@@ -1485,7 +1523,7 @@ class _PropertyCard extends StatelessWidget {
                                   fontFamily: 'DM Sans',
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF64748B),
+                                  color: AppColors.slate500,
                                 ),
                               ),
                             ],
@@ -1504,7 +1542,7 @@ class _PropertyCard extends StatelessWidget {
                           const Icon(
                             Icons.location_on_outlined,
                             size: 13,
-                            color: Color(0xFF64748B),
+                            color: AppColors.slate500,
                           ),
                           const SizedBox(width: 3),
                           Expanded(
@@ -1519,7 +1557,7 @@ class _PropertyCard extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF64748B),
+                                color: AppColors.slate500,
                               ),
                             ),
                           ),
@@ -1586,7 +1624,7 @@ class _PropertyCard extends StatelessWidget {
                                   fontFamily: 'DM Sans',
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF92400E),
+                                  color: AppColors.amber800,
                                 ),
                               ),
                             ),
@@ -1601,7 +1639,7 @@ class _PropertyCard extends StatelessWidget {
                     const Divider(
                       height: 1,
                       thickness: 0.8,
-                      color: Color(0xFFF1F5F9),
+                      color: AppColors.fieldFill,
                     ),
                     const SizedBox(height: 8),
 
@@ -1617,7 +1655,7 @@ class _PropertyCard extends StatelessWidget {
                             const AppSvgIcon(
                               svgString: AppSvgIcons.propertyType,
                               size: 15,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.slate900,
                             ),
                             const SizedBox(width: 6),
                             Text(
@@ -1626,7 +1664,7 @@ class _PropertyCard extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF0F172A),
+                                color: AppColors.slate900,
                               ),
                             ),
                           ],
@@ -1651,7 +1689,7 @@ class _PropertyCard extends StatelessWidget {
                                   fontFamily: 'DM Sans',
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w500,
-                                  color: Color(0xFF64748B),
+                                  color: AppColors.slate500,
                                 ),
                               ),
                             ],

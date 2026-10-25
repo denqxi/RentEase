@@ -15,8 +15,6 @@ import '../../features/auth/domain/entities/auth.dart';
 import '../../features/auth/presentation/screens/auth_screen.dart';
 import '../../features/auth/presentation/screens/email_verification_screen.dart';
 
-import '../../features/auth/presentation/screens/role_selection_screen.dart';
-import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/inquiry/view/tenant_inquiries_screen.dart';
 import '../../features/owner/view/find_tenants_screen.dart';
 import '../../features/owner/view/owner_inquiries_screen.dart';
@@ -24,15 +22,12 @@ import '../../features/owner_onboarding/view/create_listing_wizard_screen.dart';
 import '../../features/owner_onboarding/view/document_upload_screen.dart';
 import '../../features/profile/view/saved_screen.dart';
 import '../../features/shell/view/landlord_shell.dart';
-import '../../features/owner_onboarding/view/pricing_amenities_screen.dart';
-import '../../features/owner_onboarding/view/property_rules_screen.dart';
 import '../../features/owner_onboarding/view/verification_pending_screen.dart';
 import '../../features/profile/view/owner_profile_screen.dart';
 import '../../features/registration/model/user_role.dart';
 import '../../features/registration/view/registration_flow_screen.dart';
 import '../../features/onboarding/view/matching_transition_screen.dart';
 import '../../features/shell/view/main_shell.dart';
-import '../../features/tenant_onboarding/view/distance_preference_screen.dart';
 import '../../features/tenant_onboarding/view/hard_constraints_screen.dart';
 import '../../features/tenant_onboarding/view/poi_setup_screen.dart';
 import '../../features/tenant_onboarding/view/topsis_weight_screen.dart';
@@ -43,14 +38,10 @@ class AppRouter {
   static final RouteObserver<ModalRoute<void>> routeObserver =
       RouteObserver<ModalRoute<void>>();
 
-  static const splash = '/';
   static const signIn = '/sign-in';
-  static const roleSelection = '/role';
-  static const signup = '/signup';
 
   static const hardConstraints = '/onboarding/hard-constraints';
   static const poiSetup = '/onboarding/poi';
-  static const distancePreference = '/onboarding/distance';
   static const topsisWeight = '/onboarding/topsis';
   static const matchingTransition = '/onboarding/matching';
 
@@ -62,8 +53,6 @@ class AppRouter {
   static const documentUpload = '/owner-onboarding/docs';
   static const verificationPending = '/owner-onboarding/pending';
   static const addProperty = '/owner-onboarding/add-property';
-  static const propertyRules = '/owner-onboarding/rules';
-  static const pricingAmenities = '/owner-onboarding/pricing';
 
   static const ownerProperties = '/owner/properties';
   static const findTenants = '/owner/find-tenants';
@@ -142,18 +131,10 @@ class AppRouter {
             ),
           ),
         );
-      case roleSelection:
-        page = const RoleSelectionScreen();
-      case signup:
-        page = const SignupScreen();
-
       case hardConstraints:
         page = const HardConstraintsScreen();
       case poiSetup:
         page = const PoiSetupScreen();
-      case distancePreference:
-        final poiName = (settings.arguments as String?) ?? 'School';
-        page = DistancePreferenceScreen(poiName: poiName);
       case topsisWeight:
         page = const TopsisWeightScreen();
       case matchingTransition:
@@ -181,10 +162,6 @@ class AppRouter {
           addRoomTo: args is PropertyDoc ? args : null,
         );
 
-      case propertyRules:
-        page = const PropertyRulesScreen();
-      case pricingAmenities:
-        page = const PricingAmenitiesScreen();
 
       case ownerProperties:
         page = const LandlordShell();

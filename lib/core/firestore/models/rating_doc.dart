@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'firestore_parse.dart';
+
 /// `ratings/{ratingId}` — post-booking feedback between tenants and owners.
 class RatingDoc {
   const RatingDoc({
@@ -43,9 +45,9 @@ class RatingDoc {
         raterId: map['raterId'] as String? ?? '',
         ratedId: map['ratedId'] as String? ?? '',
         raterRole: map['raterRole'] as String? ?? '',
-        stars: map['stars'] as num? ?? 0,
+        stars: parseNum(map['stars'], 0),
         review: map['review'] as String?,
-        createdAt: map['createdAt'] as Timestamp?,
+        createdAt: parseTimestamp(map['createdAt']),
         propertyId: map['propertyId'] as String?,
         parentPropertyId: map['parentPropertyId'] as String?,
       );

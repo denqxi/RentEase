@@ -56,7 +56,24 @@ class _PendingListingBannerState extends State<PendingListingBanner>
     _rotationCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 4),
-    )..repeat();
+    );
+    _syncRotation();
+  }
+
+  @override
+  void didUpdateWidget(covariant PendingListingBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.status != widget.status) _syncRotation();
+  }
+
+  /// Only the hourglass (non-rejected) variant spins; a rejected banner would
+  /// otherwise keep scheduling frames for an animation nothing listens to.
+  void _syncRotation() {
+    if (widget.status == 'rejected') {
+      _rotationCtrl.stop();
+    } else if (!_rotationCtrl.isAnimating) {
+      _rotationCtrl.repeat();
+    }
   }
 
   @override
@@ -75,18 +92,10 @@ class _PendingListingBannerState extends State<PendingListingBanner>
     final Color borderColor = rejected
         ? AppColors.destructive
         : AppColors.amberBorder200.withValues(alpha: 0.9);
-    final Color accentColor = rejected
-        ? AppColors.red600
-        : AppColors.amber600;
-    final Color titleColor = rejected
-        ? AppColors.red800
-        : AppColors.amber800;
-    final Color textColor = rejected
-        ? AppColors.red700
-        : AppColors.amber800;
-    final Color linkColor = rejected
-        ? AppColors.red900
-        : AppColors.amber900;
+    final Color accentColor = rejected ? AppColors.red600 : AppColors.amber600;
+    final Color titleColor = rejected ? AppColors.red800 : AppColors.amber800;
+    final Color textColor = rejected ? AppColors.red700 : AppColors.amber800;
+    final Color linkColor = rejected ? AppColors.red900 : AppColors.amber900;
 
     final String title = rejected
         ? 'Verification not approved'
@@ -137,12 +146,14 @@ class _PendingListingBannerState extends State<PendingListingBanner>
                       borderRadius: BorderRadius.circular(7),
                     ),
                     child: Center(
-                      child: RotationTransition(
-                        turns: _rotationCtrl,
-                        child: const AppSvgIcon(
-                          svgString: AppSvgIcons.hourglass,
-                          size: 15,
-                          color: AppColors.amber600,
+                      child: RepaintBoundary(
+                        child: RotationTransition(
+                          turns: _rotationCtrl,
+                          child: const AppSvgIcon(
+                            svgString: AppSvgIcons.hourglass,
+                            size: 15,
+                            color: AppColors.amber600,
+                          ),
                         ),
                       ),
                     ),
@@ -205,11 +216,12 @@ class _PendingListingBannerState extends State<PendingListingBanner>
                 const SizedBox(height: 10),
                 // Action link: "Check status >" (aligned with header title)
                 GestureDetector(
-                  onTap: widget.onCheckStatus ??
+                  onTap:
+                      widget.onCheckStatus ??
                       () {
-                        Navigator.of(context).pushNamed(
-                          AppRouter.verificationPending,
-                        );
+                        Navigator.of(
+                          context,
+                        ).pushNamed(AppRouter.verificationPending);
                       },
                   behavior: HitTestBehavior.opaque,
                   child: Row(

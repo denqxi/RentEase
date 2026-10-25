@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/app_colors.dart';
 
@@ -8,8 +7,7 @@ abstract final class AppTheme {
   static ThemeData get dark => ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    fontFamily: GoogleFonts.dmSans().fontFamily,
-    textTheme: GoogleFonts.dmSansTextTheme(ThemeData.dark().textTheme),
+    fontFamily: 'DM Sans',
     colorScheme: ColorScheme.fromSeed(
       seedColor: AppColors.primary,
       brightness: Brightness.dark,
@@ -26,7 +24,7 @@ abstract final class AppTheme {
       ),
       iconTheme: const IconThemeData(color: AppColors.onInk),
       titleTextStyle: TextStyle(
-        fontFamily: GoogleFonts.dmSans().fontFamily,
+        fontFamily: 'DM Sans',
         fontSize: 16,
         fontWeight: FontWeight.w600,
         color: AppColors.onInk,
@@ -43,7 +41,7 @@ abstract final class AppTheme {
       fillColor: AppColors.darkField,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       hintStyle: TextStyle(
-        fontFamily: GoogleFonts.dmSans().fontFamily,
+        fontFamily: 'DM Sans',
         fontSize: 15,
         color: AppColors.textSecondary,
       ),
@@ -72,8 +70,7 @@ abstract final class AppTheme {
 
   static ThemeData get light => ThemeData(
     useMaterial3: true,
-    fontFamily: GoogleFonts.dmSans().fontFamily,
-    textTheme: GoogleFonts.dmSansTextTheme(),
+    fontFamily: 'DM Sans',
     colorScheme: ColorScheme.fromSeed(
       seedColor: AppColors.primary,
       surface: AppColors.surface,

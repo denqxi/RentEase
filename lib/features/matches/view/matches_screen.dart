@@ -16,9 +16,12 @@ class MatchesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final listings =
-        context.select<HomeCubit, List<Listing>>((c) => c.state.allByMatch);
+    // Select the stable inputs: `allByMatch` sorts into a new list on every
+    // call, which never compares equal and rebuilt on every emission.
+    context.select<HomeCubit, List<Listing>>((c) => c.state.listings);
+    context.select<HomeCubit, bool>((c) => c.state.isGuest);
     final cubit = context.read<HomeCubit>();
+    final listings = cubit.state.allByMatch;
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
@@ -37,7 +40,7 @@ class MatchesScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text('Matches', style: AppTextStyles.title(context)),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       'Homes sorted by how well they match you',
                       style: AppTextStyles.body(context),
@@ -51,14 +54,14 @@ class MatchesScreen extends StatelessWidget {
               sliver: SliverList.separated(
                 itemCount: listings.length,
                 separatorBuilder: (_, _) =>
-                    SizedBox(height: AppSpacing.sm),
+                    const SizedBox(height: AppSpacing.sm),
                 itemBuilder: (ctx, i) => ListingCardRow(
                   listing: listings[i],
                   onSavedToggle: () => cubit.toggleSaved(listings[i].id),
                   onTap: () => Navigator.of(ctx).push(
                     MaterialPageRoute<void>(
                       builder: (_) =>
-                          ListingDetailScreen(detail: ListingDetail.sample),
+                          const ListingDetailScreen(detail: ListingDetail.sample),
                     ),
                   ),
                 ),

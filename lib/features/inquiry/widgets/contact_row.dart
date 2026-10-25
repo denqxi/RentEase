@@ -41,7 +41,7 @@ class ContactRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.phone_outlined, size: 18, color: AppColors.accent),
+          const Icon(Icons.phone_outlined, size: 18, color: AppColors.accent),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
@@ -62,13 +62,13 @@ class ContactRow extends StatelessWidget {
           IconButton(
             tooltip: 'Call',
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            icon: Icon(Icons.call_outlined, color: AppColors.accent),
+            icon: const Icon(Icons.call_outlined, color: AppColors.accent),
             onPressed: () => _call(context, number),
           ),
           IconButton(
             tooltip: 'Copy',
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            icon: Icon(Icons.copy_outlined, color: AppColors.accent),
+            icon: const Icon(Icons.copy_outlined, color: AppColors.accent),
             onPressed: () => _copy(context, number),
           ),
         ],

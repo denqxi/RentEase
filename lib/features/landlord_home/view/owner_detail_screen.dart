@@ -2,9 +2,13 @@ import '../widgets/collapsible_detail_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/firestore/firestore_collections.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../core/utils/date_utils.dart';
+
+// Compiled once instead of on every call.
+final RegExp _kWhitespaceRe = RegExp(r'\s+');
 
 /// Detail view for a property owner / landlord (tenant perspective).
 /// Displays host information, contact details, and listing overview.
@@ -181,7 +185,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
 
   String get _initials {
     final parts =
-        _displayName.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+        _displayName.trim().split(_kWhitespaceRe).where((p) => p.isNotEmpty);
     final inits = parts.take(2).map((p) => p[0].toUpperCase()).join();
     return inits.isEmpty ? '?' : inits;
   }
@@ -205,7 +209,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
     final p = widget.property;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       body: Stack(
         children: [
           // ── Top Decorative Sky-Blue Gradient Backdrop ────────────────────
@@ -221,9 +225,9 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                     center: Alignment.topLeft,
                     radius: 1.1,
                     colors: [
-                      const Color(0xFFCCF2FE).withValues(alpha: 0.70),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.35),
-                      Colors.white.withValues(alpha: 0.0),
+                      AppColors.sky200.withValues(alpha: 0.70),
+                      AppColors.skyFill.withValues(alpha: 0.35),
+                      AppColors.surface.withValues(alpha: 0.0),
                     ],
                     stops: const [0.0, 0.45, 0.88],
                   ),
@@ -246,11 +250,11 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.surface,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                                color: AppColors.slate900.withValues(alpha: 0.06),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -259,7 +263,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                           child: const Icon(
                             Icons.arrow_back_rounded,
                             size: 20,
-                            color: Color(0xFF0F172A),
+                            color: AppColors.slate900,
                           ),
                         ),
                       ),
@@ -270,7 +274,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                           fontFamily: 'DM Sans',
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
+                          color: AppColors.slate900,
                           letterSpacing: -0.3,
                         ),
                       ),
@@ -289,12 +293,12 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                         Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.surface,
                             borderRadius: BorderRadius.circular(22),
-                            border: Border.all(color: Colors.white, width: 2),
+                            border: Border.all(color: AppColors.surface, width: 2),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                                color: AppColors.slate900.withValues(alpha: 0.04),
                                 blurRadius: 14,
                                 offset: const Offset(0, 4),
                               ),
@@ -313,9 +317,9 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        Color(0xFF7DD3FC), // Light blue
-                                        Color(0xFF00A8F0), // Blue
-                                        Color(0xFF10B981), // Emerald
+                                        AppColors.sky300, // Light blue
+                                        AppColors.brandSky, // Blue
+                                        AppColors.emerald500, // Emerald
                                       ],
                                     ),
                                   ),
@@ -323,13 +327,13 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                     padding: const EdgeInsets.all(2),
                                     decoration: const BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: Colors.white,
+                                      color: AppColors.surface,
                                     ),
                                     child: CircleAvatar(
                                       radius: 32,
-                                      backgroundColor: const Color(0xFFE0F2FE),
+                                      backgroundColor: AppColors.skyFill,
                                       backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
-                                          ? NetworkImage(photoUrl)
+                                          ? ResizeImage.resizeIfNeeded(340, null, NetworkImage(photoUrl))
                                           : null,
                                       child: (photoUrl == null || photoUrl.isEmpty)
                                           ? Text(
@@ -338,7 +342,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                                 fontFamily: 'DM Sans',
                                                 fontSize: 20,
                                                 fontWeight: FontWeight.w700,
-                                                color: Color(0xFF00A8F0),
+                                                color: AppColors.brandSky,
                                               ),
                                             )
                                           : null,
@@ -356,7 +360,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                           fontFamily: 'DM Sans',
                                           fontSize: 18,
                                           fontWeight: FontWeight.w800,
-                                          color: Color(0xFF0F172A),
+                                          color: AppColors.slate900,
                                         ),
                                       ),
                                       const SizedBox(height: 5),
@@ -367,13 +371,13 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: _isVerified
-                                              ? const Color(0xFFEFF6FF)
-                                              : const Color(0xFFF1F5F9),
+                                              ? AppColors.indigo50
+                                              : AppColors.fieldFill,
                                           borderRadius: BorderRadius.circular(20),
                                           border: Border.all(
                                             color: _isVerified
-                                                ? const Color(0xFF38BDF8)
-                                                : const Color(0xFFCBD5E1),
+                                                ? AppColors.sky400
+                                                : AppColors.slate300,
                                             width: 0.8,
                                           ),
                                         ),
@@ -386,8 +390,8 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                                   : Icons.shield_outlined,
                                               size: 13,
                                               color: _isVerified
-                                                  ? const Color(0xFF0284C7)
-                                                  : const Color(0xFF64748B),
+                                                  ? AppColors.sky600
+                                                  : AppColors.slate500,
                                             ),
                                             const SizedBox(width: 4),
                                             Text(
@@ -397,8 +401,8 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                                 fontSize: 11.5,
                                                 fontWeight: FontWeight.w700,
                                                 color: _isVerified
-                                                    ? const Color(0xFF0369A1)
-                                                    : const Color(0xFF475569),
+                                                    ? AppColors.sky700
+                                                    : AppColors.slate600,
                                               ),
                                             ),
                                           ],
@@ -412,7 +416,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                         style: const TextStyle(
                                           fontFamily: 'DM Sans',
                                           fontSize: 11.5,
-                                          color: Color(0xFF64748B),
+                                          color: AppColors.slate500,
                                         ),
                                       ),
                                     ],
@@ -553,7 +557,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 16, color: const Color(0xFF64748B)),
+            Icon(icon, size: 16, color: AppColors.slate500),
             const SizedBox(width: 8),
           ],
           SizedBox(
@@ -563,7 +567,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
               style: const TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
-                color: Color(0xFF64748B),
+                color: AppColors.slate500,
               ),
             ),
           ),
@@ -575,7 +579,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                 fontFamily: 'DM Sans',
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF0F172A),
+                color: AppColors.slate900,
               ),
             ),
           ),
@@ -593,13 +597,13 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
       badge = Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: const Color(0xFFFEF3C7),
+          color: AppColors.warningFill,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
+            const Icon(Icons.star_rounded, size: 14, color: AppColors.matchMedium),
             const SizedBox(width: 3),
             Text(
               '${avg.toStringAsFixed(1)} ($count)',
@@ -607,7 +611,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                 fontFamily: 'DM Sans',
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFFB45309),
+                color: AppColors.amber700,
               ),
             ),
           ],
@@ -617,13 +621,13 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
       badge = Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: const Color(0xFFFEF3C7),
+          color: AppColors.warningFill,
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.star_rounded, size: 13, color: Color(0xFFF59E0B)),
+            Icon(Icons.star_rounded, size: 13, color: AppColors.matchMedium),
             SizedBox(width: 3),
             Text(
               'No ratings yet',
@@ -631,7 +635,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                 fontFamily: 'DM Sans',
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFFB45309),
+                color: AppColors.amber700,
               ),
             ),
           ],
@@ -641,7 +645,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
 
     return CollapsibleDetailCard(
       icon: Icons.star_rounded,
-      iconColor: const Color(0xFFF59E0B),
+      iconColor: AppColors.matchMedium,
       title: 'Host ratings & reviews',
       badgeWidget: badge,
       child: _isLoadingReviews
@@ -653,7 +657,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                   height: 22,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Color(0xFF00A8F0),
+                    color: AppColors.brandSky,
                   ),
                 ),
               ),
@@ -668,13 +672,13 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                         width: 48,
                         height: 48,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFFEF3C7),
+                          color: AppColors.warningFill,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.star_rounded,
                           size: 26,
-                          color: Color(0xFFF59E0B),
+                          color: AppColors.matchMedium,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -684,7 +688,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                           fontFamily: 'DM Sans',
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
+                          color: AppColors.slate900,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -694,7 +698,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12,
-                          color: Color(0xFF64748B),
+                          color: AppColors.slate500,
                           height: 1.35,
                         ),
                       ),
@@ -716,7 +720,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFEF3C7),
+                              color: AppColors.warningFill,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -725,7 +729,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                 const Icon(
                                   Icons.star_rounded,
                                   size: 22,
-                                  color: Color(0xFFF59E0B),
+                                  color: AppColors.matchMedium,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -734,7 +738,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                     fontFamily: 'DM Sans',
                                     fontSize: 18,
                                     fontWeight: FontWeight.w800,
-                                    color: Color(0xFFB45309),
+                                    color: AppColors.amber700,
                                   ),
                                 ),
                               ],
@@ -756,8 +760,8 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                             : Icons.star_outline_rounded,
                                         size: 16,
                                         color: isFilled
-                                            ? const Color(0xFFF59E0B)
-                                            : const Color(0xFFCBD5E1),
+                                            ? AppColors.matchMedium
+                                            : AppColors.slate300,
                                       ),
                                     );
                                   }),
@@ -769,7 +773,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                     fontFamily: 'DM Sans',
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: Color(0xFF64748B),
+                                    color: AppColors.slate500,
                                   ),
                                 ),
                               ],
@@ -779,14 +783,14 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                       ),
                     ),
                     if (_reviews.isNotEmpty) ...[
-                      const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                      const Divider(height: 1, color: AppColors.fieldFill),
                       ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         padding: EdgeInsets.zero,
                         itemCount: _reviews.length,
                         separatorBuilder: (context, index) =>
-                            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                            const Divider(height: 1, color: AppColors.fieldFill),
                         itemBuilder: (ctx, i) {
                           final review = _reviews[i];
                           return Padding(
@@ -799,14 +803,14 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                   children: [
                                     CircleAvatar(
                                       radius: 16,
-                                      backgroundColor: const Color(0xFFE0F2FE),
+                                      backgroundColor: AppColors.skyFill,
                                       child: Text(
                                         review.raterInitials,
                                         style: const TextStyle(
                                           fontFamily: 'DM Sans',
                                           fontSize: 11,
                                           fontWeight: FontWeight.w700,
-                                          color: Color(0xFF00A8F0),
+                                          color: AppColors.brandSky,
                                         ),
                                       ),
                                     ),
@@ -818,7 +822,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                           fontFamily: 'DM Sans',
                                           fontSize: 13.5,
                                           fontWeight: FontWeight.w700,
-                                          color: Color(0xFF0F172A),
+                                          color: AppColors.slate900,
                                         ),
                                       ),
                                     ),
@@ -827,7 +831,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                       style: const TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 11.5,
-                                        color: Color(0xFF94A3B8),
+                                        color: AppColors.slate400,
                                       ),
                                     ),
                                   ],
@@ -844,8 +848,8 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                             : Icons.star_outline_rounded,
                                         size: 15,
                                         color: isFilled
-                                            ? const Color(0xFFF59E0B)
-                                            : const Color(0xFFCBD5E1),
+                                            ? AppColors.matchMedium
+                                            : AppColors.slate300,
                                       ),
                                     );
                                   }),
@@ -857,10 +861,10 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF8FAFC),
+                                      color: AppColors.slate50,
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
-                                        color: const Color(0xFFE2E8F0),
+                                        color: AppColors.slate200,
                                         width: 0.6,
                                       ),
                                     ),
@@ -870,7 +874,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                         fontFamily: 'DM Sans',
                                         fontSize: 12.5,
                                         height: 1.4,
-                                        color: Color(0xFF334155),
+                                        color: AppColors.slate700,
                                       ),
                                     ),
                                   ),
@@ -882,7 +886,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                       fontFamily: 'DM Sans',
                                       fontSize: 11.5,
                                       fontStyle: FontStyle.italic,
-                                      color: Color(0xFF94A3B8),
+                                      color: AppColors.slate400,
                                     ),
                                   ),
                                 ],
@@ -897,7 +901,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
     );
   }
 
-  Widget _divider() => const Divider(height: 1, color: Color(0xFFF1F5F9));
+  Widget _divider() => const Divider(height: 1, color: AppColors.fieldFill);
 }
 
 class _OwnerReviewItem {
@@ -915,7 +919,7 @@ class _OwnerReviewItem {
 
   String get raterInitials {
     final parts =
-        raterName.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+        raterName.trim().split(_kWhitespaceRe).where((p) => p.isNotEmpty);
     final inits = parts.take(2).map((p) => p[0].toUpperCase()).join();
     return inits.isEmpty ? '?' : inits;
   }

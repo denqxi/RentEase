@@ -29,7 +29,7 @@ class MismatchReason {
     MismatchKind.pets => 'No pets allowed',
     MismatchKind.overCapacity => 'Too many occupants',
     MismatchKind.noWifi => 'No WiFi',
-    MismatchKind.tooFar => '${_km(amount ?? 0)} km too far',
+    MismatchKind.tooFar => _tooFar(amount, 'too far'),
   };
 
   /// Fuller sentence for the detail screen.
@@ -46,8 +46,14 @@ class MismatchReason {
       'Group size exceeds allowed limit (by ${amount ?? 0})',
     MismatchKind.noWifi => 'No WiFi internet available',
     MismatchKind.tooFar =>
-      '${_km(amount ?? 0)} km farther than your commute limit',
+      _tooFar(amount, 'farther than your commute limit'),
   };
+
+  /// Unknown location (no pin) has an infinite excess: don't print a number.
+  String _tooFar(num? amount, String suffix) =>
+      (amount != null && !amount.isFinite)
+          ? 'Distance unavailable'
+          : '${_km(amount ?? 0)} km $suffix';
 
   /// Rounded up so a tiny overage never displays as "0.0".
   static String _km(num km) => ((km * 10).ceil() / 10).toStringAsFixed(1);

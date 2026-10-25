@@ -23,10 +23,17 @@ class OtherListingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.select<HomeCubit, HomeState>((c) => c.state);
-    if (state.isGuest) return const SizedBox.shrink();
+    final isGuest = context.select<HomeCubit, bool>((c) => c.state.isGuest);
+    final othersFailed =
+        context.select<HomeCubit, bool>((c) => c.state.othersFailed);
+    final others = context.select<HomeCubit, List<Map<String, dynamic>>>(
+      (c) => c.state.otherListings,
+    );
+    final savedIds =
+        context.select<HomeCubit, Set<String>>((c) => c.state.savedIds);
+    if (isGuest) return const SizedBox.shrink();
 
-    if (state.othersFailed) {
+    if (othersFailed) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         child: Row(
@@ -49,7 +56,6 @@ class OtherListingsSection extends StatelessWidget {
         ),
       );
     }
-    final others = state.otherListings;
     if (others.isEmpty) return const SizedBox.shrink();
 
     final cubit = context.read<HomeCubit>();
@@ -88,27 +94,30 @@ class OtherListingsSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        ListView.separated(
-          physics: const NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
+        Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          itemCount: others.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 14),
-          itemBuilder: (ctx, i) => OtherListingCard(
-            property: others[i],
-            isSaved: state.savedIds.contains(others[i]['propertyId']),
-            onSavedToggle: () =>
-                cubit.toggleSaved(others[i]['propertyId'] as String),
-            onTap: () => Navigator.of(ctx).push(
-              MaterialPageRoute<void>(
-                // Navigates instantly with in-memory map
-                builder: (_) => PropertyDetailScreen(
+          child: Column(
+            children: [
+              for (int i = 0; i < others.length; i++) ...[
+                if (i > 0) const SizedBox(height: 14),
+                OtherListingCard(
                   property: others[i],
-                  homeCubit: cubit,
-                  onPreferencesSaved: cubit.refresh,
+                  isSaved: savedIds.contains(others[i]['propertyId']),
+                  onSavedToggle: () =>
+                      cubit.toggleSaved(others[i]['propertyId'] as String),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      // Navigates instantly with in-memory map
+                      builder: (_) => PropertyDetailScreen(
+                        property: others[i],
+                        homeCubit: cubit,
+                        onPreferencesSaved: cubit.refresh,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              ],
+            ],
           ),
         ),
       ],
@@ -133,10 +142,12 @@ class OtherListingCard extends StatelessWidget {
   final bool isSaved;
   final VoidCallback? onSavedToggle;
 
+  static final RegExp _thousandsRe = RegExp(r'(\d)(?=(\d{3})+(?!\d))');
+
   static String _fmt(num value) => value
       .round()
       .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+      .replaceAllMapped(_thousandsRe, (m) => '${m[1]},');
 
   @override
   Widget build(BuildContext context) {
@@ -182,19 +193,19 @@ class OtherListingCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+        border: Border.all(color: AppColors.slate200, width: 0.8),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+            color: AppColors.slate900.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         borderRadius: BorderRadius.circular(22),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -214,7 +225,7 @@ class OtherListingCard extends StatelessWidget {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        clipBehavior: Clip.antiAlias,
                         child: ListingImagePlaceholder(
                           seed: seed,
                           photoUrl: property['photoUrl'] as String?,
@@ -226,7 +237,7 @@ class OtherListingCard extends StatelessWidget {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: const Color(0xFFE2E8F0).withValues(alpha: 0.7),
+                                color: AppColors.slate200.withValues(alpha: 0.7),
                                 width: 0.8,
                               ),
                             ),
@@ -248,7 +259,7 @@ class OtherListingCard extends StatelessWidget {
                                 vertical: 2.5,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.28),
+                                color: AppColors.scrim.withValues(alpha: 0.28),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: AppColors.amberPrimary.withValues(alpha: 0.45),
@@ -270,7 +281,7 @@ class OtherListingCard extends StatelessWidget {
                                       fontFamily: 'DM Sans',
                                       fontSize: 9.5,
                                       fontWeight: FontWeight.w700,
-                                      color: Colors.white,
+                                      color: AppColors.surface,
                                       letterSpacing: -0.1,
                                     ),
                                   ),
@@ -287,7 +298,7 @@ class OtherListingCard extends StatelessWidget {
                           top: 10,
                           right: 10,
                           child: Material(
-                            color: Colors.transparent,
+                            color: AppColors.transparent,
                             child: InkWell(
                               onTap: onSavedToggle,
                               customBorder: const CircleBorder(),
@@ -299,9 +310,9 @@ class OtherListingCard extends StatelessWidget {
                                     height: 28,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: Colors.black.withValues(alpha: 0.25),
+                                      color: AppColors.scrim.withValues(alpha: 0.25),
                                       border: Border.all(
-                                        color: Colors.white.withValues(alpha: 0.35),
+                                        color: AppColors.surface.withValues(alpha: 0.35),
                                         width: 0.6,
                                       ),
                                     ),
@@ -310,7 +321,7 @@ class OtherListingCard extends StatelessWidget {
                                       isSaved ? Icons.favorite : Icons.favorite_border,
                                       color: isSaved
                                           ? AppColors.destructive
-                                          : Colors.white,
+                                          : AppColors.surface,
                                       size: 15,
                                     ),
                                   ),
@@ -335,10 +346,10 @@ class OtherListingCard extends StatelessWidget {
                                   vertical: 2.5,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.28),
+                                  color: AppColors.scrim.withValues(alpha: 0.28),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.35),
+                                    color: AppColors.surface.withValues(alpha: 0.35),
                                     width: 0.6,
                                   ),
                                 ),
@@ -348,7 +359,7 @@ class OtherListingCard extends StatelessWidget {
                                     const Icon(
                                       Icons.photo_outlined,
                                       size: 10.5,
-                                      color: Colors.white,
+                                      color: AppColors.surface,
                                     ),
                                     const SizedBox(width: 3.5),
                                     Text(
@@ -357,7 +368,7 @@ class OtherListingCard extends StatelessWidget {
                                         fontFamily: 'DM Sans',
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w700,
-                                        color: Colors.white,
+                                        color: AppColors.surface,
                                         letterSpacing: -0.1,
                                       ),
                                     ),
@@ -388,7 +399,7 @@ class OtherListingCard extends StatelessWidget {
                           fontFamily: 'DM Sans',
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF334155),
+                          color: AppColors.slate700,
                           letterSpacing: -0.1,
                           height: 1.15,
                         ),
@@ -409,7 +420,7 @@ class OtherListingCard extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 18.0,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.slate900,
                               letterSpacing: -0.3,
                               height: 1.15,
                             ),
@@ -423,7 +434,7 @@ class OtherListingCard extends StatelessWidget {
                             const Icon(
                               Icons.star_rounded,
                               size: 15.5,
-                              color: Color(0xFFF59E0B),
+                              color: AppColors.matchMedium,
                             ),
                             const SizedBox(width: 3),
                             Text(
@@ -432,7 +443,7 @@ class OtherListingCard extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF0F172A),
+                                color: AppColors.slate900,
                               ),
                             ),
                             if (hasRating && totalRatings > 0) ...[
@@ -443,7 +454,7 @@ class OtherListingCard extends StatelessWidget {
                                   fontFamily: 'DM Sans',
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF64748B),
+                                  color: AppColors.slate500,
                                 ),
                               ),
                             ],
@@ -462,7 +473,7 @@ class OtherListingCard extends StatelessWidget {
                           const Icon(
                             Icons.location_on_outlined,
                             size: 13,
-                            color: Color(0xFF94A3B8),
+                            color: AppColors.slate400,
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -474,7 +485,7 @@ class OtherListingCard extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF475569),
+                                color: AppColors.slate600,
                               ),
                             ),
                           ),
@@ -514,7 +525,7 @@ class OtherListingCard extends StatelessWidget {
                     const Divider(
                       height: 1,
                       thickness: 0.8,
-                      color: Color(0xFFF1F5F9),
+                      color: AppColors.fieldFill,
                     ),
                     const SizedBox(height: 8),
 
@@ -531,7 +542,7 @@ class OtherListingCard extends StatelessWidget {
                             const AppSvgIcon(
                               svgString: AppSvgIcons.propertyType,
                               size: 15,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.slate900,
                             ),
                             const SizedBox(width: 6),
                             Text(
@@ -540,7 +551,7 @@ class OtherListingCard extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF0F172A),
+                                color: AppColors.slate900,
                               ),
                             ),
                           ],
@@ -566,7 +577,7 @@ class OtherListingCard extends StatelessWidget {
                                   fontFamily: 'DM Sans',
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w500,
-                                  color: Color(0xFF64748B),
+                                  color: AppColors.slate500,
                                 ),
                               ),
                             ],

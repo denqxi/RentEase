@@ -43,7 +43,7 @@ Future<void> startInquiry(
         ),
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(true),
-          child: Text(
+          child: const Text(
             'Send inquiry',
             style: TextStyle(
               color: AppColors.accent,

@@ -80,9 +80,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     center: Alignment.topRight,
                     radius: 1.05,
                     colors: <Color>[
-                      const Color(0xFFCCF2FE).withValues(alpha: 0.70),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.35),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.0),
+                      AppColors.skyFill.withValues(alpha: 0.70),
+                      AppColors.skyFill.withValues(alpha: 0.35),
+                      AppColors.skyFill.withValues(alpha: 0.0),
                     ],
                     stops: const <double>[0.0, 0.45, 0.88],
                   ),
@@ -138,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (context, state) {
                   return RefreshIndicator(
                     color: AppColors.primary,
-                    backgroundColor: Colors.white,
+                    backgroundColor: AppColors.surface,
                     edgeOffset: 0,
                     // Re-running the matching engine on pull-to-refresh is the
                     // same trigger point as opening this screen (CLAUDE.md
@@ -246,11 +246,11 @@ class _EmptyState extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+              color: AppColors.slate900.withValues(alpha: 0.06),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -302,7 +302,7 @@ class _EmptyState extends StatelessWidget {
                 fontFamily: 'DM Sans',
                 fontSize: 15.5,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF0F172A),
+                color: AppColors.slate900,
                 letterSpacing: -0.2,
               ),
               textAlign: TextAlign.center,
@@ -317,7 +317,7 @@ class _EmptyState extends StatelessWidget {
                 fontFamily: 'DM Sans',
                 fontSize: 11.5,
                 fontWeight: FontWeight.w400,
-                color: Color(0xFF64748B),
+                color: AppColors.slate500,
                 height: 1.35,
               ),
               textAlign: TextAlign.center,
@@ -328,7 +328,7 @@ class _EmptyState extends StatelessWidget {
                 // Left Button: Explore Other Listings
                 Expanded(
                   child: Material(
-                    color: const Color(0xFFF8FAFC),
+                    color: AppColors.slate50,
                     borderRadius: BorderRadius.circular(8),
                     child: InkWell(
                       onTap: onExploreOtherListings ??
@@ -401,7 +401,7 @@ class _EmptyState extends StatelessWidget {
                             fontFamily: 'DM Sans',
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: AppColors.surface,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -442,8 +442,8 @@ class _ErrorBanner extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.error_outline, color: AppColors.destructive, size: 18),
-            SizedBox(width: AppSpacing.sm),
+            const Icon(Icons.error_outline, color: AppColors.destructive, size: 18),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
                 message,

@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'firestore_parse.dart';
+
 /// `matches/{matchId}` — bilateral filter + TOPSIS results.
 /// Written by the tenant's own device (`FilteringService`/`TopsisService` —
 /// no Cloud Functions, see CLAUDE.md "Client-Side Matching Engine").
@@ -51,14 +53,14 @@ class MatchDoc {
         tenantId: map['tenantId'] as String? ?? '',
         ownerId: map['ownerId'] as String? ?? '',
         propertyId: map['propertyId'] as String? ?? '',
-        pScore: map['pScore'] as num? ?? 0,
-        tScore: map['tScore'] as num? ?? 0,
-        bScore: map['bScore'] as num? ?? 0,
-        distanceKm: map['distanceKm'] as num?,
-        tenantCi: map['tenantCi'] as num?,
-        tenantRank: map['tenantRank'] as num?,
-        computedAt: map['computedAt'] as Timestamp?,
-        version: map['version'] as num?,
+        pScore: parseNum(map['pScore'], 0),
+        tScore: parseNum(map['tScore'], 0),
+        bScore: parseNum(map['bScore'], 0),
+        distanceKm: parseNumOrNull(map['distanceKm']),
+        tenantCi: parseNumOrNull(map['tenantCi']),
+        tenantRank: parseNumOrNull(map['tenantRank']),
+        computedAt: parseTimestamp(map['computedAt']),
+        version: parseNumOrNull(map['version']),
       );
 
   factory MatchDoc.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) =>

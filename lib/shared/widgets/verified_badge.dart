@@ -16,7 +16,7 @@ class VerifiedBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double iconSize = isSmall ? 10 : 12;
-    final double fontSize = 10;
+    const double fontSize = 10;
     final EdgeInsets padding = isSmall
         ? const EdgeInsets.symmetric(horizontal: 6, vertical: 2)
         : const EdgeInsets.symmetric(horizontal: 8, vertical: 3);
@@ -37,8 +37,8 @@ class VerifiedBadge extends StatelessWidget {
               color: AppColors.accent,
               size: iconSize,
             ),
-            SizedBox(width: 3),
-            Text(
+            const SizedBox(width: 3),
+            const Text(
               'Verified owner',
               style: TextStyle(
                 fontFamily: 'DM Sans',
@@ -66,8 +66,8 @@ class VerifiedBadge extends StatelessWidget {
               color: AppColors.matchMedium,
               size: iconSize,
             ),
-            SizedBox(width: 3),
-            Text(
+            const SizedBox(width: 3),
+            const Text(
               'Pending',
               style: TextStyle(
                 fontFamily: 'DM Sans',

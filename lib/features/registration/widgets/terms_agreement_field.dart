@@ -46,7 +46,7 @@ class TermsAgreementField extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: GestureDetector(
                 onTap: () => onChanged(!value),
@@ -106,7 +106,7 @@ class TermsAgreementField extends StatelessWidget {
         ),
         if (errorText != null)
           Padding(
-            padding: EdgeInsets.only(top: AppSpacing.xs, left: 28),
+            padding: const EdgeInsets.only(top: AppSpacing.xs, left: 28),
             child: Text(
               errorText!,
               style: AppTextStyles.caption(context).copyWith(

@@ -52,19 +52,6 @@ abstract final class AppColors {
   /// Blue dot marking unread activity items.
   static const Color unread = Color(0xFF3B82F6);
 
-  // ── Convenience aliases used by new screens ──────────────────────────────
-  /// Alias for [fieldBorder] — hairline borders on cards and chips.
-  static const Color border = Color(0xFFE3E5E9);
-
-  /// Alias for [hint] — placeholder / hint text inside fields.
-  static const Color textHint = Color(0xFFA0A3AD);
-
-  /// Alias for [fieldFill] — fill color for input fields and unselected controls.
-  static const Color fieldBg = Color(0xFFF2F3F5);
-
-  /// Muted gray for disabled buttons and inactive elements.
-  static const Color disabled = Color(0xFFBDBDBD);
-
   // ── Primary blue family — extracted from RentEase logo gradient ──────────
   static const Color primaryDeep = Color(0xFF1B5FA8);
   static const Color primaryMid  = Color(0xFF1A7BBF);
@@ -74,17 +61,9 @@ abstract final class AppColors {
   // ── Tenant light fills ───────────────────────────────────────────────────
   static const Color tenantFillBlue = Color(0xFFE6F4FB);
   static const Color tenantFillCyan = Color(0xFFE0F7F6);
-  static const Color tenantFillTeal = Color(0xFFEBF8F5);
-
-  // ── Tenant dark text on light fills ─────────────────────────────────────
-  static const Color tenantTextDeep = Color(0xFF0C3D6E);
-  static const Color tenantTextCyan = Color(0xFF085A5E);
-  static const Color tenantTextTeal = Color(0xFF085041);
 
   // ── Owner purple ─────────────────────────────────────────────────────────
   static const Color ownerPrimary = Color(0xFF534AB7);
-  static const Color ownerDark    = Color(0xFF3C3489);
-  static const Color ownerFill    = Color(0xFFEEEDFE);
   static const Color ownerText    = Color(0xFF26215C);
 
   // ── Amber — session overrides and warnings only ──────────────────────────
@@ -97,11 +76,6 @@ abstract final class AppColors {
   static const Color greenPrimary = Color(0xFF3B6D11);
   static const Color greenFill    = Color(0xFFEAF3DE);
   static const Color greenText    = Color(0xFF27500A);
-
-  // ── Red — danger and decline only ───────────────────────────────────────
-  static const Color redPrimary = Color(0xFFA32D2D);
-  static const Color redFill    = Color(0xFFFCEBEB);
-  static const Color redText    = Color(0xFF791F1F);
 
   // ── Admin ────────────────────────────────────────────────────────────────
   static const Color scrim = Color(0xFF000000);
@@ -125,13 +99,22 @@ abstract final class AppColors {
   static const Color darkField = Color(0xFF2A2A36);
   static const Color darkSwitchTrack = Color(0xFF444444);
   static const Color accentOverlay = Color(0x201F7D8C);
-  static const Color adminNavy = Color(0xFF1A1A2E);
   // ── Slate / utility tokens (used by shared widgets) ──────────────────────
   static const Color transparent = Color(0x00000000);
   static const Color slate900 = Color(0xFF0F172A);
   static const Color slate700 = Color(0xFF334155);
   static const Color slate400 = Color(0xFF94A3B8);
+  static const Color slate500 = Color(0xFF64748B);
+  static const Color slate600 = Color(0xFF475569);
+  static const Color slate50 = Color(0xFFF8FAFC);
+  static const Color amber700 = Color(0xFFB45309);
+  static const Color indigo400 = Color(0xFF818CF8);
+  static const Color indigo200 = Color(0xFFC7D2FE);
   static const Color slate200 = Color(0xFFE2E8F0);
+  static const Color slate300 = Color(0xFFCBD5E1);
+  static const Color slate800 = Color(0xFF1E293B);
+  static const Color rose300 = Color(0xFFFDA4AF);
+  static const Color rose600 = Color(0xFFE11D48);
   static const Color blue600 = Color(0xFF2563EB);
   static const Color sky400 = Color(0xFF38BDF8);
   static const Color emerald400 = Color(0xFF34D399);
@@ -160,6 +143,21 @@ abstract final class AppColors {
   static const Color onboardingDotInactive = Color(0xFFCBDFED);
   static const Color scrimStrong = Color(0xCC000000);
   static const Color scrimFaint = Color(0x16000000);
+
+  // Tailwind-style utility tokens (owner / landlord screens).
+  static const Color brandSky = Color(0xFF00A8F0);
+  static const Color emerald50 = Color(0xFFECFDF5);
+  static const Color emerald600 = Color(0xFF059669);
+  static const Color green100 = Color(0xFFDCFCE7);
+  static const Color green300 = Color(0xFF86EFAC);
+  static const Color green600 = Color(0xFF16A34A);
+  static const Color green700 = Color(0xFF15803D);
+  static const Color indigo50 = Color(0xFFEEF2FF);
+  static const Color indigo600 = Color(0xFF4F46E5);
+  static const Color sky200 = Color(0xFFBAE6FD);
+  static const Color sky300 = Color(0xFF7DD3FC);
+  static const Color sky600 = Color(0xFF0284C7);
+  static const Color sky700 = Color(0xFF0369A1);
 }
 
 /// Theme-adaptive color tokens that flip between light and dark values.
@@ -189,25 +187,25 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
   final Color indicatorInactive;
 
   static const light = AppAdaptiveColors(
-    surface:           Color(0xFFFFFFFF),
-    textPrimary:       Color(0xFF1A1A2E),
-    textSecondary:     Color(0xFF7A7A8C),
-    fieldBorder:       Color(0xFFE3E5E9),
-    fieldFill:         Color(0xFFF2F3F5),
-    hint:              Color(0xFFA0A3AD),
-    ink:               Color(0xFF1A1A2E),
-    indicatorInactive: Color(0xFFD9D9E0),
+    surface:           AppColors.surface,
+    textPrimary:       AppColors.textPrimary,
+    textSecondary:     AppColors.textSecondary,
+    fieldBorder:       AppColors.fieldBorder,
+    fieldFill:         AppColors.fieldFill,
+    hint:              AppColors.hint,
+    ink:               AppColors.ink,
+    indicatorInactive: AppColors.indicatorInactive,
   );
 
   static const dark = AppAdaptiveColors(
-    surface:           Color(0xFF1E1E24),
+    surface:           AppColors.darkCard,
     textPrimary:       Color(0xFFE4E4EF),
     textSecondary:     Color(0xFFA8A8B8),
-    fieldBorder:       Color(0xFF404050),
-    fieldFill:         Color(0xFF2A2A36),
-    hint:              Color(0xFF7A7A8C),
+    fieldBorder:       AppColors.darkDivider,
+    fieldFill:         AppColors.darkField,
+    hint:              AppColors.textSecondary,
     ink:               Color(0xFFE4E4EF),
-    indicatorInactive: Color(0xFF404050),
+    indicatorInactive: AppColors.darkDivider,
   );
 
   @override

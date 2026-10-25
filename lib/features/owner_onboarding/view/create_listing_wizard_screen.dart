@@ -797,7 +797,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppRadii.field),
-      borderSide: BorderSide(color: AppColors.accent, width: 1.5),
+      borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
     ),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppRadii.field),
@@ -953,6 +953,9 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
                         width: 72,
                         height: 72,
                         fit: BoxFit.cover,
+                        // Decode a thumbnail, not the full upload; wide
+                        // enough to cover 72dp at 3x for 16:9 photos.
+                        cacheWidth: 400,
                         errorBuilder: (_, _, _) => Container(
                           width: 72,
                           height: 72,
@@ -1055,14 +1058,15 @@ class _LockedLocationCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 fit: BoxFit.cover,
+                cacheWidth: 256,
                 errorBuilder: (_, _, _) => Container(
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.onInk,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.apartment_rounded,
                     color: AppColors.accent,
                     size: 22,
@@ -1072,7 +1076,7 @@ class _LockedLocationCard extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.sm),
           ] else ...[
-            Icon(Icons.location_pin, color: AppColors.accent, size: 20),
+            const Icon(Icons.location_pin, color: AppColors.accent, size: 20),
             const SizedBox(width: AppSpacing.sm),
           ],
           Expanded(

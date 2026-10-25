@@ -69,7 +69,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   indicatorColor: AppColors.accent,
                   labelColor: AppColors.accent,
                   unselectedLabelColor: context.appColors.textSecondary,
-                  labelStyle: TextStyle(
+                  labelStyle: const TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -108,7 +108,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                               ),
                               itemCount: list.length,
                               separatorBuilder: (_, _) =>
-                                  SizedBox(height: AppSpacing.sm),
+                                  const SizedBox(height: AppSpacing.sm),
                               itemBuilder: (_, i) => _UserCard(
                                 user: list[i],
                                 isBusy: state.busyIds.contains(list[i].userId),
@@ -179,7 +179,7 @@ class _UserCard extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,7 +198,7 @@ class _UserCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,
@@ -221,10 +221,10 @@ class _UserCard extends StatelessWidget {
                   ],
                 ),
                 if (user.email.isNotEmpty) ...[
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(user.email, style: AppTextStyles.caption(context)),
                 ],
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Row(
                   children: [
                     Container(
@@ -237,7 +237,7 @@ class _UserCard extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                     ),
-                    SizedBox(width: 5),
+                    const SizedBox(width: 5),
                     Text(
                       '${isSuspended ? 'Suspended' : 'Active'} · Joined ${formatAdminDate(user.createdAt?.toDate())}',
                       style: AppTextStyles.caption(context).copyWith(

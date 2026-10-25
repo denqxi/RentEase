@@ -78,11 +78,11 @@ class LiveNavigationBottomBar extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: AppColors.scrim.withValues(alpha: 0.08),
             blurRadius: 16,
             offset: const Offset(0, -3),
           ),
@@ -100,7 +100,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
               height: 3.5,
               margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFCBD5E1),
+                color: AppColors.slate300,
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
@@ -110,9 +110,9 @@ class LiveNavigationBottomBar extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8.5),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: AppColors.slate50,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.75),
+              border: Border.all(color: AppColors.slate200, width: 0.75),
             ),
             child: Row(
               children: [
@@ -131,7 +131,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                         child: const Center(
                           child: Icon(
                             Icons.location_on_rounded,
-                            color: Colors.white,
+                            color: AppColors.surface,
                             size: 16,
                           ),
                         ),
@@ -150,7 +150,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF0F172A),
+                                color: AppColors.slate900,
                                 letterSpacing: -0.1,
                               ),
                             ),
@@ -163,7 +163,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w400,
-                                color: Color(0xFF64748B),
+                                color: AppColors.slate500,
                               ),
                             ),
                           ],
@@ -179,7 +179,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                   child: Icon(
                     Icons.chevron_right_rounded,
                     size: 16,
-                    color: Color(0xFF94A3B8),
+                    color: AppColors.slate400,
                   ),
                 ),
 
@@ -192,13 +192,13 @@ class LiveNavigationBottomBar extends StatelessWidget {
                         width: 28,
                         height: 28,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFF1F5F9),
+                          color: AppColors.fieldFill,
                           shape: BoxShape.circle,
                         ),
                         child: const Center(
                           child: Icon(
                             Icons.home_work_outlined,
-                            color: Color(0xFF334155),
+                            color: AppColors.slate700,
                             size: 15,
                           ),
                         ),
@@ -217,7 +217,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF0F172A),
+                                color: AppColors.slate900,
                                 letterSpacing: -0.1,
                               ),
                             ),
@@ -230,7 +230,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w400,
-                                color: Color(0xFF64748B),
+                                color: AppColors.slate500,
                               ),
                             ),
                           ],
@@ -267,7 +267,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                       fontFamily: 'DM Sans',
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF475569),
+                      color: AppColors.slate600,
                     ),
                   ),
                 ],
@@ -294,7 +294,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF15803D), // Deep rich green
+                              color: AppColors.greenPrimary, // Deep rich green
                               letterSpacing: -0.4,
                             ),
                           ),
@@ -305,7 +305,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF475569),
+                              color: AppColors.slate600,
                             ),
                           ),
                         ],
@@ -319,7 +319,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                           fontFamily: 'DM Sans',
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF64748B),
+                          color: AppColors.slate500,
                         ),
                       ),
                     ],
@@ -331,9 +331,9 @@ class LiveNavigationBottomBar extends StatelessWidget {
                 // Mode Selector Toggle [ Drive | Walk ]
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: AppColors.slate50,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFE2E8F0), width: 0.75),
+                    border: Border.all(color: AppColors.slate200, width: 0.75),
                   ),
                   padding: const EdgeInsets.all(2.5),
                   child: Row(
@@ -351,17 +351,17 @@ class LiveNavigationBottomBar extends StatelessWidget {
 
           // ── 3. Route Preview Callout Banner (Clickable to Google Maps) ──────
           Material(
-            color: Colors.transparent,
+            color: AppColors.transparent,
             child: InkWell(
               onTap: onLaunchGoogleMaps,
               borderRadius: BorderRadius.circular(10),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F9FF), // Very soft sky-blue
+                  color: AppColors.skyFill, // Very soft sky-blue
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: const Color(0xFFBAE6FD), // Sky-200
+                    color: AppColors.skyFill, // Sky-200
                     width: 0.8,
                   ),
                 ),
@@ -373,13 +373,13 @@ class LiveNavigationBottomBar extends StatelessWidget {
                       width: 28,
                       height: 28,
                       decoration: const BoxDecoration(
-                        color: Color(0xFFE0F2FE),
+                        color: AppColors.skyFill,
                         shape: BoxShape.circle,
                       ),
                       child: const Center(
                         child: Icon(
                           Icons.near_me_rounded,
-                          color: Color(0xFF0284C7),
+                          color: AppColors.blue600,
                           size: 15,
                         ),
                       ),
@@ -396,7 +396,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.slate900,
                             ),
                           ),
                           SizedBox(height: 2),
@@ -406,7 +406,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 11.5,
                               fontWeight: FontWeight.w400,
-                              color: Color(0xFF64748B),
+                              color: AppColors.slate500,
                               height: 1.3,
                             ),
                           ),
@@ -416,7 +416,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                     const SizedBox(width: 4),
                     const Icon(
                       Icons.chevron_right_rounded,
-                      color: Color(0xFF94A3B8),
+                      color: AppColors.slate400,
                       size: 17,
                     ),
                   ],
@@ -438,7 +438,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                     onPressed: onLaunchGoogleMaps,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppColors.surface,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       shape: RoundedRectangleBorder(
@@ -451,7 +451,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                         AppSvgIcon(
                           svgString: AppSvgIcons.googleMaps,
                           size: 18,
-                          color: Colors.white,
+                          color: AppColors.surface,
                         ),
                         SizedBox(width: 7),
                         Text(
@@ -462,7 +462,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                             fontFamily: 'DM Sans',
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: AppColors.surface,
                           ),
                         ),
                       ],
@@ -477,7 +477,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                 height: 40,
                 width: 40,
                 child: Material(
-                  color: const Color(0xFFF8FAFC),
+                  color: AppColors.slate50,
                   borderRadius: BorderRadius.circular(10),
                   child: InkWell(
                     onTap: onExit,
@@ -486,7 +486,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: const Color(0xFFE2E8F0),
+                          color: AppColors.slate200,
                           width: 0.9,
                         ),
                       ),
@@ -494,7 +494,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                         child: Icon(
                           Icons.close_rounded,
                           size: 18,
-                          color: Color(0xFF475569),
+                          color: AppColors.slate600,
                         ),
                       ),
                     ),
@@ -517,11 +517,11 @@ class LiveNavigationBottomBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5.5),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFFE0F7FA).withValues(alpha: 0.7)
-              : Colors.transparent,
+              ? AppColors.skyFill.withValues(alpha: 0.7)
+              : AppColors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.transparent,
+            color: isSelected ? AppColors.primary : AppColors.transparent,
             width: 0.9,
           ),
         ),
@@ -531,7 +531,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
             Icon(
               profile.icon,
               size: 14.5,
-              color: isSelected ? AppColors.primary : const Color(0xFF64748B),
+              color: isSelected ? AppColors.primary : AppColors.slate500,
             ),
             const SizedBox(width: 4.5),
             Text(
@@ -540,7 +540,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                 fontFamily: 'DM Sans',
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                color: isSelected ? AppColors.slate900 : AppColors.slate500,
               ),
             ),
           ],

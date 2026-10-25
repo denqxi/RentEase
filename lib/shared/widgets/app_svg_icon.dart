@@ -28,11 +28,13 @@ class AppSvgIcon extends StatelessWidget {
   /// Optional stroke width override to dynamically customize outline thickness.
   final double? strokeWidth;
 
+  static final RegExp _strokeWidthRe = RegExp(r'stroke-width="[^"]*"');
+
   @override
   Widget build(BuildContext context) {
     final String effectiveSvg = strokeWidth != null
         ? svgString.replaceAll(
-            RegExp(r'stroke-width="[^"]*"'),
+            _strokeWidthRe,
             'stroke-width="$strokeWidth"',
           )
         : svgString;

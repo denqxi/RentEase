@@ -38,7 +38,7 @@ class NotificationTile extends StatelessWidget {
         ),
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: () async {

@@ -1966,6 +1966,20 @@ describe('tenant private prefs — POI pin and weights hidden from owners', () =
     await assertFails(asTenant(TENANT_A).doc(prefsPath(TENANT_A)).set(prefs()));
   });
 
+  it('weights must sum to 1.0 (+-0.001) when all three are stored; partial docs and merges are checked on the merged doc', async () => {
+    const ref = () => asTenant(TENANT_A).doc(prefsPath(TENANT_A));
+    await assertFails(ref().set(prefs({ wRent: 0.5 }))); // 1.15
+    await assertFails(ref().set(prefs({ wRent: 0.2, wDistance: 0.2, wAmenities: 0.2 }))); // 0.6
+    await assertFails(ref().set(prefs({ wRent: 1.2, wDistance: -0.1, wAmenities: -0.1 }))); // range
+    await assertSucceeds(ref().set(prefs({ wRent: 0.3334, wDistance: 0.3333, wAmenities: 0.3333 })));
+    // a single stored weight (legacy/partial) is not summed
+    await assertSucceeds(ref().set({ wRent: 0.35 }));
+    // merge that changes one weight so the merged doc no longer sums to 1 is denied
+    await assertSucceeds(ref().set(prefs()));
+    await assertFails(ref().set({ wRent: 0.6 }, { merge: true }));
+    await assertSucceeds(ref().set({ wRent: 0.45, wDistance: 0.25 }, { merge: true }));
+  });
+
   it('the public tenantProfiles doc rejects the pin and weights on create and update', async () => {
     const t = asTenant(TENANT_A).doc(`tenantProfiles/${TENANT_A}`);
     await assertFails(t.set({ maxBudget: 4500, poiLatLng: new GeoPoint(7.07, 125.6) }));

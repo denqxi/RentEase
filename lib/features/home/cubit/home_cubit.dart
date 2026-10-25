@@ -26,7 +26,7 @@ class HomeCubit extends Cubit<HomeState> {
     required FilteringService this._filteringService,
     required TopsisService this._topsisService,
     this._savedRepository,
-  }) : super(HomeState(listings: const [], isLoading: true)) {
+  }) : super(const HomeState(listings: [], isLoading: true)) {
     refresh();
     _watchSaved();
   }
@@ -40,7 +40,7 @@ class HomeCubit extends Cubit<HomeState> {
       _filteringService = null,
       _topsisService = null,
       _savedRepository = null,
-      super(HomeState(listings: const [], isGuest: true, isLoading: true)) {
+      super(const HomeState(listings: [], isGuest: true, isLoading: true)) {
     refresh();
   }
 

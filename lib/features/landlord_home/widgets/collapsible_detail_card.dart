@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// An expandable section card with an icon, title, optional badge,
 /// rotating chevron, and smooth expansion animation.
@@ -35,16 +36,16 @@ class _CollapsibleDetailCardState extends State<CollapsibleDetailCard> {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveIconColor = widget.iconColor ?? const Color(0xFF00A8F0);
+    final effectiveIconColor = widget.iconColor ?? AppColors.brandSky;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+        border: Border.all(color: AppColors.slate200, width: 0.8),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.025),
+            color: AppColors.slate900.withValues(alpha: 0.025),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -54,7 +55,7 @@ class _CollapsibleDetailCardState extends State<CollapsibleDetailCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Material(
-            color: Colors.transparent,
+            color: AppColors.transparent,
             child: InkWell(
               onTap: () => setState(() => _isExpanded = !_isExpanded),
               borderRadius: BorderRadius.circular(16),
@@ -71,7 +72,7 @@ class _CollapsibleDetailCardState extends State<CollapsibleDetailCard> {
                           fontFamily: 'DM Sans',
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
+                          color: AppColors.slate900,
                         ),
                       ),
                     ),
@@ -85,7 +86,7 @@ class _CollapsibleDetailCardState extends State<CollapsibleDetailCard> {
                       child: const Icon(
                         Icons.keyboard_arrow_down_rounded,
                         size: 20,
-                        color: Color(0xFF64748B),
+                        color: AppColors.slate500,
                       ),
                     ),
                   ],
@@ -97,7 +98,7 @@ class _CollapsibleDetailCardState extends State<CollapsibleDetailCard> {
             firstChild: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                const Divider(height: 1, color: AppColors.fieldFill),
                 widget.child,
               ],
             ),

@@ -129,7 +129,7 @@ class _FindTenantsView extends StatelessWidget {
                       ],
                     ),
                   ),
-                  SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: AppSpacing.sm),
                 ],
                 if (listing != null)
                   Wrap(
@@ -144,7 +144,7 @@ class _FindTenantsView extends StatelessWidget {
                         ),
                     ],
                   ),
-                SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.sm),
                 if (state.isLoading)
                   const Padding(
                     padding: EdgeInsets.only(top: AppSpacing.xl),
@@ -165,10 +165,10 @@ class _FindTenantsView extends StatelessWidget {
                     '${state.tenants.length == 1 ? 'tenant' : 'tenants'}',
                     style: AppTextStyles.caption(context),
                   ),
-                  SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: AppSpacing.sm),
                   for (final t in state.tenants) ...[
                     _TenantCard(tenant: t, propertyId: state.selectedPropertyId),
-                    SizedBox(height: AppSpacing.sm),
+                    const SizedBox(height: AppSpacing.sm),
                   ],
                 ],
               ],
@@ -199,7 +199,7 @@ class _Message extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           if (onRetry != null) ...[
-            SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md),
             AppButton(
               label: 'Try again',
               variant: AppButtonVariant.outline,
@@ -235,6 +235,7 @@ class _TenantCard extends StatelessWidget {
           builder: (_) => TenantDetailScreen(
             tenant: tenant,
             showInviteButton: true,
+            propertyId: propertyId,
           ),
         ),
       ),
@@ -261,7 +262,7 @@ class _TenantCard extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,7 +276,7 @@ class _TenantCard extends StatelessWidget {
                       color: context.appColors.textPrimary,
                     ),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   if (details.isNotEmpty)
                     Text(details, style: AppTextStyles.caption(context)),
                   if (tenant.school?.isNotEmpty ?? false)
@@ -284,7 +285,7 @@ class _TenantCard extends StatelessWidget {
                     '₱${tenant.maxBudget}/mo budget',
                     style: AppTextStyles.caption(context),
                   ),
-                  SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: AppSpacing.sm),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -294,10 +295,10 @@ class _TenantCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEEF2FF),
+                            color: AppColors.indigo50,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: const Color(0xFFC7D2FE),
+                              color: AppColors.indigo200,
                               width: 0.8,
                             ),
                           ),
@@ -307,14 +308,14 @@ class _TenantCard extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 10.5,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF4F46E5),
+                              color: AppColors.indigo600,
                             ),
                           ),
                         ),
                       ],
                     ],
                   ),
-                  SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: AppSpacing.sm),
                   // CLAUDE.md rule 2: absent, never disabled, unless the owner
                   // can really invite (bScore 1, verified, property available,
                   // no existing thread) - InviteButton decides.

@@ -11,20 +11,15 @@ import '../../../core/firestore/models/models.dart';
 class OwnerReviewsScreen extends StatefulWidget {
   const OwnerReviewsScreen({super.key});
 
-  static const Color bgIceBlue = Colors.white;
-  static const Color primaryCyan = Color(0xFF00A8F0);
-  static const Color textDarkNavy = Color(0xFF14213D);
-  static const Color textMuted = Color(0xFF64748B);
-  static const Color textMutedLight = Color(0xFF94A3B8);
 
   static List<BoxShadow> get cardShadow => [
         BoxShadow(
-          color: const Color(0xFF0C2340).withValues(alpha: 0.06),
+          color: AppColors.ink.withValues(alpha: 0.06),
           blurRadius: 20,
           offset: const Offset(0, 4),
         ),
         BoxShadow(
-          color: const Color(0xFF0C2340).withValues(alpha: 0.03),
+          color: AppColors.ink.withValues(alpha: 0.03),
           blurRadius: 6,
           offset: const Offset(0, 1),
         ),
@@ -132,9 +127,9 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<AppThemeCubit>().state;
-    final bgColor = isDark ? context.appColors.surface : OwnerReviewsScreen.bgIceBlue;
-    final cardColor = isDark ? const Color(0xFF1E1E24) : Colors.white;
-    final textColor = isDark ? Colors.white : OwnerReviewsScreen.textDarkNavy;
+    final bgColor = isDark ? context.appColors.surface : AppColors.surface;
+    final cardColor = isDark ? AppColors.darkCard : AppColors.surface;
+    final textColor = isDark ? AppColors.surface : AppColors.ink;
 
     final isShowingEmpty = _reviews.isEmpty;
 
@@ -223,7 +218,7 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
                                       child: Icon(
                                         Icons.star_rounded,
                                         size: 26,
-                                        color: Color(0xFFF59E0B),
+                                        color: AppColors.matchMedium,
                                       ),
                                     );
                                   }),
@@ -234,7 +229,7 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
                                   style: const TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 13,
-                                    color: OwnerReviewsScreen.textMuted,
+                                    color: AppColors.slate500,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -287,7 +282,7 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
                 style: const TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 12,
-                  color: OwnerReviewsScreen.textMutedLight,
+                  color: AppColors.slate400,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -306,8 +301,8 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
                   isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
                   size: 18,
                   color: isFilled
-                      ? const Color(0xFFF59E0B)
-                      : const Color(0xFFCBD5E1),
+                      ? AppColors.matchMedium
+                      : AppColors.slate300,
                 ),
               );
             }),
@@ -333,7 +328,7 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
                 fontFamily: 'DM Sans',
                 fontSize: 13,
                 fontStyle: FontStyle.italic,
-                color: OwnerReviewsScreen.textMuted,
+                color: AppColors.slate500,
               ),
             ),
         ],
@@ -352,13 +347,13 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
               width: 72,
               height: 72,
               decoration: const BoxDecoration(
-                color: Color(0xFFFEF3C7),
+                color: AppColors.warningFill,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.star_rounded,
                 size: 38,
-                color: Color(0xFFF59E0B),
+                color: AppColors.matchMedium,
               ),
             ),
             const SizedBox(height: 20),
@@ -378,7 +373,7 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
               style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 14,
-                color: OwnerReviewsScreen.textMuted,
+                color: AppColors.slate500,
                 height: 1.4,
               ),
             ),

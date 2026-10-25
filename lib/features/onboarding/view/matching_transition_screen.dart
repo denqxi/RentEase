@@ -140,8 +140,11 @@ class _MatchingTransitionScreenState extends State<MatchingTransitionScreen> {
                     const SizedBox(width: 4),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 3.5),
-                      child: _BouncingDots(
-                        color: context.appColors.textSecondary,
+                      // Isolates the per-frame repaint of the looping dots.
+                      child: RepaintBoundary(
+                        child: _BouncingDots(
+                          color: context.appColors.textSecondary,
+                        ),
                       ),
                     ),
                   ],
@@ -301,7 +304,7 @@ class _RadarFallback extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: <Widget>[
-            SizedBox(
+            const SizedBox(
               width: 96,
               height: 96,
               child: CircularProgressIndicator(
@@ -376,19 +379,22 @@ class _StepRow extends StatelessWidget {
         ),
         child: const Icon(
           Icons.check_rounded,
-          color: Colors.white,
+          color: AppColors.onInk,
           size: 14,
         ),
       );
     } else if (isActive) {
       // Active: circular arc progress spinner in brand teal
-      return const SizedBox(
+      // RepaintBoundary keeps the spinner's per-frame repaint off the card.
+      return const RepaintBoundary(
         key: ValueKey<String>('active'),
-        width: 22,
-        height: 22,
-        child: CircularProgressIndicator(
-          strokeWidth: 2.3,
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.3,
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+          ),
         ),
       );
     } else {

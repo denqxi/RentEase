@@ -181,7 +181,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                 content: Text(
                   'Cannot pinpoint location because permission was denied. Tap the map to place your pin.',
                 ),
-                backgroundColor: Color(0xFF0F172A),
+                backgroundColor: AppColors.slate900,
               ),
             );
           }
@@ -225,7 +225,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
               content: Text(
                 'Cannot pinpoint location on this device. Please tap directly on the map to set your location.',
               ),
-              backgroundColor: Color(0xFF0F172A),
+              backgroundColor: AppColors.slate900,
             ),
           );
         }
@@ -236,7 +236,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
               content: Text(
                 'Location request timed out. Please tap directly on the map to place your pin.',
               ),
-              backgroundColor: Color(0xFF0F172A),
+              backgroundColor: AppColors.slate900,
             ),
           );
         }
@@ -247,7 +247,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
               content: Text(
                 'Cannot pinpoint your location right now. Please tap directly on the map to set your pin.',
               ),
-              backgroundColor: Color(0xFF0F172A),
+              backgroundColor: AppColors.slate900,
             ),
           );
         }
@@ -348,12 +348,12 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                 right: 8,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.onInk,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: context.appColors.fieldBorder),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
+                        color: AppColors.scrim.withValues(alpha: 0.08),
                         blurRadius: 4,
                         offset: const Offset(0, 1),
                       ),
@@ -395,12 +395,12 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: AppColors.onInk.withValues(alpha: 0.95),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: context.appColors.fieldBorder),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
+                          color: AppColors.scrim.withValues(alpha: 0.06),
                           blurRadius: 4,
                           offset: const Offset(0, 1),
                         ),
@@ -412,7 +412,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                         Icon(
                           Icons.lightbulb_rounded,
                           size: 14,
-                          color: Color(0xFFEAB308),
+                          color: AppColors.amberBorder,
                         ),
                         SizedBox(width: 5),
                         Text(
@@ -421,7 +421,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                             fontFamily: 'DM Sans',
                             fontSize: 11.5,
                             fontWeight: FontWeight.normal,
-                            color: Color(0xFF475569),
+                            color: AppColors.slate700,
                           ),
                         ),
                       ],
@@ -450,7 +450,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                   fontFamily: 'DM Sans',
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF64748B),
+                  color: AppColors.textSecondary,
                 ),
               ),
             ],
@@ -475,7 +475,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                     fontFamily: 'DM Sans',
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF0F172A),
+                    color: AppColors.slate900,
                   ),
                 ),
               ),

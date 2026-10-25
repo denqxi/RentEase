@@ -102,11 +102,11 @@ class GuestAccessSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.lg),
               Container(
                 width: 56,
                 height: 56,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.guestWarnFill,
                   shape: BoxShape.circle,
                 ),
@@ -116,7 +116,7 @@ class GuestAccessSheet extends StatelessWidget {
                   size: 28,
                 ),
               ),
-              SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 'Create an account to unlock',
                 style: TextStyle(
@@ -127,14 +127,14 @@ class GuestAccessSheet extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 'Sign up or sign in to save listings, send inquiries, '
                 'view your match scores, and manage your profile.',
                 style: AppTextStyles.body(context),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.lg),
               AppPrimaryButton(
                 label: 'Create an account',
                 onPressed: () {
@@ -143,7 +143,7 @@ class GuestAccessSheet extends StatelessWidget {
                   _openSignIn(navigator, thenCreateAccount: true);
                 },
               ),
-              SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
               AppButton(
                 label: 'Sign in',
                 isOutlined: true,
@@ -153,7 +153,7 @@ class GuestAccessSheet extends StatelessWidget {
                   _openSignIn(navigator);
                 },
               ),
-              SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text(

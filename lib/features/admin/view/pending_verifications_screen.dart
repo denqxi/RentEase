@@ -39,7 +39,7 @@ class PendingVerificationsScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: ctx.appColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
+        title: const Text(
           'Reject verification',
           style: TextStyle(fontFamily: 'DM Sans', fontWeight: FontWeight.w700),
         ),
@@ -47,11 +47,11 @@ class PendingVerificationsScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Reason for rejection (optional):',
               style: TextStyle(fontFamily: 'DM Sans', fontSize: 14),
             ),
-            SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: reasonCtrl,
               maxLines: 3,
@@ -77,7 +77,7 @@ class PendingVerificationsScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
+            child: const Text(
               'Reject',
               style: TextStyle(
                 color: AppColors.destructive,
@@ -145,7 +145,7 @@ class PendingVerificationsScreen extends StatelessWidget {
                           onTap: () =>
                               context.read<VerificationsCubit>().setFilter(key),
                         ),
-                        SizedBox(width: AppSpacing.sm),
+                        const SizedBox(width: AppSpacing.sm),
                       ],
                     ],
                   ),
@@ -174,7 +174,7 @@ class PendingVerificationsScreen extends StatelessWidget {
                         ),
                         itemCount: visible.length,
                         separatorBuilder: (_, _) =>
-                            SizedBox(height: AppSpacing.sm),
+                            const SizedBox(height: AppSpacing.sm),
                         itemBuilder: (_, i) {
                           final item = visible[i];
                           final isPending = item.status == 'pending';
@@ -307,7 +307,7 @@ class _VerificationCard extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,13 +353,13 @@ class _VerificationCard extends StatelessWidget {
           ),
           if (item.status == 'rejected' &&
               (item.profile.rejectionReason ?? '').isNotEmpty) ...[
-            SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               'Reason: ${item.profile.rejectionReason}',
               style: AppTextStyles.caption(context),
             ),
           ],
-          SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.sm),
           _DocumentsSection(
             documents: documents,
             onOpen: onOpenDocuments,
@@ -369,7 +369,7 @@ class _VerificationCard extends StatelessWidget {
             onReject: onReject,
           ),
           if (isBusy) ...[
-            SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md),
             const Center(
               child: SizedBox(
                 width: 22,
@@ -381,7 +381,7 @@ class _VerificationCard extends StatelessWidget {
               ),
             ),
           ] else if (item.status == 'pending') ...[
-            SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md),
             Row(
               children: [
                 Expanded(
@@ -391,7 +391,7 @@ class _VerificationCard extends StatelessWidget {
                     onPressed: onApprove,
                   ),
                 ),
-                SizedBox(width: AppSpacing.sm),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: AppButton(
                     label: 'Reject',
@@ -443,12 +443,12 @@ class _DocumentsSection extends StatelessWidget {
         alignment: Alignment.centerLeft,
         child: TextButton.icon(
           onPressed: onOpen,
-          icon: Icon(
+          icon: const Icon(
             Icons.description_rounded,
             size: 15,
             color: AppColors.accent,
           ),
-          label: Text(
+          label: const Text(
             'View submitted documents',
             style: TextStyle(
               fontFamily: 'DM Sans',
@@ -482,7 +482,7 @@ class _DocumentsSection extends StatelessWidget {
             color: context.appColors.textSecondary,
           ),
         ),
-        SizedBox(height: 6),
+        const SizedBox(height: 6),
         for (var i = 0; i < count; i++)
           _DocumentRow(
             label: i < _labels.length ? _labels[i] : 'Document ${i + 1}',
@@ -544,7 +544,7 @@ class DocumentViewerDialog extends StatelessWidget {
               children: [
                 IconButton(
                   tooltip: 'Close',
-                  icon: Icon(Icons.close_rounded, color: AppColors.onInk),
+                  icon: const Icon(Icons.close_rounded, color: AppColors.onInk),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 Expanded(
@@ -552,7 +552,7 @@ class DocumentViewerDialog extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -583,7 +583,7 @@ class DocumentViewerDialog extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
+                            const Text(
                               documentLoadErrorMessage,
                               textAlign: TextAlign.center,
                               style: TextStyle(
@@ -592,10 +592,10 @@ class DocumentViewerDialog extends StatelessWidget {
                                 color: AppColors.onInk,
                               ),
                             ),
-                            SizedBox(height: AppSpacing.sm),
+                            const SizedBox(height: AppSpacing.sm),
                             SelectableText(
                               reference,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
                                 color: AppColors.hint,
@@ -610,12 +610,12 @@ class DocumentViewerDialog extends StatelessWidget {
                                       );
                                       showAdminNotice(context, 'Copied');
                                     },
-                              icon: Icon(
+                              icon: const Icon(
                                 Icons.copy_rounded,
                                 size: 16,
                                 color: AppColors.primary,
                               ),
-                              label: Text(
+                              label: const Text(
                                 'Copy public ID',
                                 style: TextStyle(color: AppColors.primary),
                               ),
@@ -656,7 +656,7 @@ class DocumentViewerDialog extends StatelessWidget {
                         ),
                       ),
                     if (onApprove != null && onReject != null)
-                      SizedBox(width: AppSpacing.sm),
+                      const SizedBox(width: AppSpacing.sm),
                     if (onReject != null)
                       Expanded(
                         child: AppButton(
@@ -765,7 +765,7 @@ class _DocumentRow extends StatelessWidget {
                               ),
                         errorBuilder: (_, _, _) => Container(
                           color: context.appColors.surface,
-                          child: Icon(
+                          child: const Icon(
                             Icons.broken_image_rounded,
                             color: AppColors.hint,
                           ),
@@ -773,7 +773,7 @@ class _DocumentRow extends StatelessWidget {
                       )
                     : Container(
                         color: context.appColors.surface,
-                        child: Icon(
+                        child: const Icon(
                           Icons.description_rounded,
                           color: AppColors.hint,
                         ),
@@ -781,14 +781,14 @@ class _DocumentRow extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
@@ -809,7 +809,7 @@ class _DocumentRow extends StatelessWidget {
           IconButton(
             tooltip: 'Copy public ID',
             visualDensity: VisualDensity.compact,
-            icon: Icon(Icons.copy_rounded, size: 16, color: AppColors.accent),
+            icon: const Icon(Icons.copy_rounded, size: 16, color: AppColors.accent),
             onPressed: reference.isEmpty
                 ? null
                 : () {
@@ -844,7 +844,7 @@ class BusinessPermitCheckButton extends StatelessWidget {
     );
     if (opened) return;
     messenger.showSnackBar(
-      SnackBar(
+      const SnackBar(
         backgroundColor: AppColors.destructive,
         content: Text(
           'Could not open the NegosyoKonek page. Please try again or open '
@@ -865,14 +865,14 @@ class BusinessPermitCheckButton extends StatelessWidget {
           Text(
             'Owner: $ownerName',
             style: onDark
-                ? TextStyle(
+                ? const TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12,
                     color: AppColors.hint,
                   )
                 : AppTextStyles.caption(context),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           AppButton(
             label: 'Check business permit (NegosyoKonek)',
             variant: AppButtonVariant.outline,

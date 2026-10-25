@@ -14,10 +14,10 @@ class IdealTenantStepView extends StatelessWidget {
 
   static const List<String> _incomeRanges = <String>[
     'Any',
-    'Under \$2,000',
-    '\$2,000–\$3,500',
-    '\$3,500–\$5,000',
-    'Over \$5,000',
+    'Under ₱2,000',
+    '₱2,000–₱3,500',
+    '₱3,500–₱5,000',
+    'Over ₱5,000',
   ];
 
   static const List<String> _genderPreferences = <String>[

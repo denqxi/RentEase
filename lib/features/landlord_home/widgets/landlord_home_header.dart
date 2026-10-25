@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/utils/date_utils.dart';
@@ -53,20 +54,20 @@ class LandlordHomeHeader extends StatelessWidget {
         height: 60,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: const Color(0xFFF1F5F9),
+            color: AppColors.fieldFill,
             width: 1.2,
           ),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+              color: AppColors.slate900.withValues(alpha: 0.05),
               blurRadius: 14,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+              color: AppColors.slate900.withValues(alpha: 0.02),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -88,14 +89,14 @@ class LandlordHomeHeader extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: <Color>[
-                        Color(0xFF7DD3FC), // Light blue
-                        Color(0xFF00A8F0), // Blue
-                        Color(0xFF10B981), // Green
+                        AppColors.sky300, // Light blue
+                        AppColors.brandSky, // Blue
+                        AppColors.emerald500, // Green
                       ],
                     ),
                     boxShadow: <BoxShadow>[
                       BoxShadow(
-                        color: const Color(0xFF00A8F0).withValues(alpha: 0.14),
+                        color: AppColors.brandSky.withValues(alpha: 0.14),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -105,12 +106,13 @@ class LandlordHomeHeader extends StatelessWidget {
                     padding: const EdgeInsets.all(1.5),
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white,
+                      color: AppColors.surface,
                     ),
                     child: ClipOval(
                       child: photoUrl != null && photoUrl!.trim().isNotEmpty
                           ? Image.network(
                               photoUrl!,
+                              cacheWidth: 160,
                               fit: BoxFit.cover,
                               errorBuilder: (_, _, _) => _defaultAvatar(),
                             )
@@ -126,9 +128,9 @@ class LandlordHomeHeader extends StatelessWidget {
                     width: 11,
                     height: 11,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981),
+                      color: AppColors.emerald500,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+                      border: Border.all(color: AppColors.surface, width: 2),
                     ),
                   ),
                 ),
@@ -148,7 +150,7 @@ class LandlordHomeHeader extends StatelessWidget {
                       fontFamily: 'DM Sans',
                       fontSize: 12.0,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF94A3B8),
+                      color: AppColors.slate400,
                       height: 1.15,
                     ),
                     maxLines: 1,
@@ -165,7 +167,7 @@ class LandlordHomeHeader extends StatelessWidget {
                             fontFamily: 'DM Sans',
                             fontSize: 16.0,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF0F172A),
+                            color: AppColors.slate900,
                             letterSpacing: -0.2,
                             height: 1.15,
                           ),
@@ -212,9 +214,9 @@ class LandlordHomeHeader extends StatelessWidget {
                   height: 38,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFF8FAFC),
+                    color: AppColors.slate50,
                     border: Border.all(
-                      color: const Color(0xFFF1F5F9),
+                      color: AppColors.fieldFill,
                       width: 1,
                     ),
                   ),
@@ -226,7 +228,7 @@ class LandlordHomeHeader extends StatelessWidget {
                       const AppSvgIcon(
                         svgString: AppSvgIcons.notification,
                         size: 20,
-                        color: Color(0xFF334155),
+                        color: AppColors.slate700,
                       ),
                       if (hasBadge)
                         Positioned(
@@ -236,7 +238,7 @@ class LandlordHomeHeader extends StatelessWidget {
                             width: 7.5,
                             height: 7.5,
                             decoration: const BoxDecoration(
-                              color: Color(0xFFF87171),
+                              color: AppColors.destructive,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -259,7 +261,7 @@ class LandlordHomeHeader extends StatelessWidget {
       errorBuilder: (_, _, _) => const Icon(
         Icons.person_rounded,
         size: 22,
-        color: Color(0xFF94A3B8),
+        color: AppColors.slate400,
       ),
     );
   }

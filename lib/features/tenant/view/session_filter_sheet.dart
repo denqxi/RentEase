@@ -174,7 +174,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: const Color(0xFFCBD5E1),
+              color: AppColors.slate300,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -193,22 +193,22 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                     child: Icon(
                       Icons.close_rounded,
                       size: 20,
-                      color: Color(0xFF64748B),
+                      color: AppColors.slate500,
                     ),
                   ),
                 ),
-                Expanded(
+                const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
+                    children: [
                       Text(
                         'Search Filters',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
+                          color: AppColors.slate900,
                           letterSpacing: -0.2,
                         ),
                       ),
@@ -219,7 +219,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                           fontFamily: 'DM Sans',
                           fontSize: 11.5,
                           fontWeight: FontWeight.w400,
-                          color: Color(0xFF64748B),
+                          color: AppColors.slate500,
                           letterSpacing: -0.1,
                         ),
                         maxLines: 1,
@@ -236,14 +236,14 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                     Navigator.of(context).pop();
                   },
                   borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(
                       horizontal: 4,
                       vertical: 2,
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         Icon(
                           Icons.refresh_rounded,
                           size: 15,
@@ -267,7 +267,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
             ),
           ),
 
-          const Divider(height: 1, thickness: 0.8, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill),
 
           // Scrollable Accordions
           Flexible(
@@ -293,7 +293,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                               fontFamily: 'DM Sans',
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF1E293B),
+                              color: AppColors.slate800,
                             ),
                           ),
                           const Spacer(),
@@ -315,7 +315,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                           fontFamily: 'DM Sans',
                           fontSize: 11.5,
                           fontWeight: FontWeight.w400,
-                          color: Color(0xFF64748B),
+                          color: AppColors.slate500,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -339,12 +339,12 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                           fontFamily: 'DM Sans',
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF0F172A),
+                          color: AppColors.slate900,
                         ),
                         decoration: InputDecoration(
                           isDense: true,
                           filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
+                          fillColor: AppColors.slate50,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 14,
                             vertical: 10,
@@ -357,7 +357,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                 fontFamily: 'DM Sans',
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF475569),
+                                color: AppColors.slate600,
                               ),
                             ),
                           ),
@@ -369,12 +369,12 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                           hintStyle: const TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 12.5,
-                            color: Color(0xFF94A3B8),
+                            color: AppColors.slate400,
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                             borderSide: const BorderSide(
-                              color: Color(0xFFE2E8F0),
+                              color: AppColors.slate200,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
@@ -392,7 +392,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                       SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           activeTrackColor: AppColors.primary,
-                          inactiveTrackColor: const Color(0xFFE2E8F0),
+                          inactiveTrackColor: AppColors.slate200,
                           thumbColor: AppColors.primary,
                           trackHeight: 3.5,
                         ),
@@ -418,7 +418,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                           fontFamily: 'DM Sans',
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF334155),
+                          color: AppColors.slate700,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -446,7 +446,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                           fontFamily: 'DM Sans',
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF334155),
+                          color: AppColors.slate700,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -487,10 +487,10 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: AppColors.slate50,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color(0xFFE2E8F0),
+                            color: AppColors.slate200,
                             width: 0.8,
                           ),
                         ),
@@ -508,7 +508,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                     fontFamily: 'DM Sans',
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF64748B),
+                                    color: AppColors.slate500,
                                     letterSpacing: 0.6,
                                   ),
                                 ),
@@ -518,7 +518,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFE2E8F0),
+                                    color: AppColors.slate200,
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
@@ -527,7 +527,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                       fontFamily: 'DM Sans',
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF475569),
+                                      color: AppColors.slate600,
                                     ),
                                   ),
                                 ),
@@ -542,7 +542,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                 fontFamily: 'DM Sans',
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF0F172A),
+                                color: AppColors.slate900,
                                 height: 1.25,
                               ),
                             ),
@@ -587,7 +587,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                   children: [
                                     Icon(
                                       Icons.location_on_rounded,
-                                      color: Colors.white,
+                                      color: AppColors.surface,
                                       size: 13,
                                     ),
                                     SizedBox(width: 3.5),
@@ -597,7 +597,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                         fontFamily: 'DM Sans',
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                                        color: AppColors.surface,
                                       ),
                                     ),
                                   ],
@@ -618,7 +618,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                               fontFamily: 'DM Sans',
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF1E293B),
+                              color: AppColors.slate800,
                             ),
                           ),
                           const Spacer(),
@@ -642,13 +642,13 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                           fontFamily: 'DM Sans',
                           fontSize: 11.5,
                           fontWeight: FontWeight.w400,
-                          color: Color(0xFF64748B),
+                          color: AppColors.slate500,
                         ),
                       ),
                       SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           activeTrackColor: AppColors.primary,
-                          inactiveTrackColor: const Color(0xFFE2E8F0),
+                          inactiveTrackColor: AppColors.slate200,
                           thumbColor: AppColors.primary,
                           trackHeight: 3.5,
                         ),
@@ -681,7 +681,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                             fontFamily: 'DM Sans',
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF64748B),
+                            color: AppColors.slate500,
                             letterSpacing: 0.6,
                           ),
                         ),
@@ -740,7 +740,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                     fontFamily: 'DM Sans',
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF1E293B),
+                                    color: AppColors.slate800,
                                   ),
                                 ),
                                 SizedBox(height: 2),
@@ -750,7 +750,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                     fontFamily: 'DM Sans',
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w400,
-                                    color: Color(0xFF64748B),
+                                    color: AppColors.slate500,
                                   ),
                                 ),
                               ],
@@ -758,7 +758,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                           ),
                           Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
+                              color: AppColors.fieldFill,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Row(
@@ -782,7 +782,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                       fontFamily: 'DM Sans',
                                       fontSize: 13.5,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF1E293B),
+                                      color: AppColors.slate800,
                                     ),
                                   ),
                                 ),
@@ -803,7 +803,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                       const Divider(
                         height: 1,
                         thickness: 0.6,
-                        color: Color(0xFFE2E8F0),
+                        color: AppColors.slate200,
                       ),
                       const SizedBox(height: 10),
 
@@ -817,7 +817,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                 fontFamily: 'DM Sans',
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF1E293B),
+                                color: AppColors.slate800,
                               ),
                             ),
                           ),
@@ -826,13 +826,13 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                             alignment: Alignment.centerRight,
                             child: Switch(
                               value: _requireSmoking,
-                              activeThumbColor: Colors.white,
+                              activeThumbColor: AppColors.surface,
                               activeTrackColor: AppColors.primary,
-                              inactiveThumbColor: const Color(0xFF94A3B8),
-                              inactiveTrackColor: const Color(0xFFE2E8F0),
+                              inactiveThumbColor: AppColors.slate400,
+                              inactiveTrackColor: AppColors.slate200,
                               trackOutlineColor:
                                   WidgetStateProperty.resolveWith(
-                                (states) => Colors.transparent,
+                                (states) => AppColors.transparent,
                               ),
                               materialTapTargetSize:
                                   MaterialTapTargetSize.shrinkWrap,
@@ -853,7 +853,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                 fontFamily: 'DM Sans',
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF1E293B),
+                                color: AppColors.slate800,
                               ),
                             ),
                           ),
@@ -862,13 +862,13 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                             alignment: Alignment.centerRight,
                             child: Switch(
                               value: _requirePets,
-                              activeThumbColor: Colors.white,
+                              activeThumbColor: AppColors.surface,
                               activeTrackColor: AppColors.primary,
-                              inactiveThumbColor: const Color(0xFF94A3B8),
-                              inactiveTrackColor: const Color(0xFFE2E8F0),
+                              inactiveThumbColor: AppColors.slate400,
+                              inactiveTrackColor: AppColors.slate200,
                               trackOutlineColor:
                                   WidgetStateProperty.resolveWith(
-                                (states) => Colors.transparent,
+                                (states) => AppColors.transparent,
                               ),
                               materialTapTargetSize:
                                   MaterialTapTargetSize.shrinkWrap,
@@ -888,7 +888,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                 fontFamily: 'DM Sans',
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF1E293B),
+                                color: AppColors.slate800,
                               ),
                             ),
                           ),
@@ -897,13 +897,13 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                             alignment: Alignment.centerRight,
                             child: Switch(
                               value: _wifiRequired,
-                              activeThumbColor: Colors.white,
+                              activeThumbColor: AppColors.surface,
                               activeTrackColor: AppColors.primary,
-                              inactiveThumbColor: const Color(0xFF94A3B8),
-                              inactiveTrackColor: const Color(0xFFE2E8F0),
+                              inactiveThumbColor: AppColors.slate400,
+                              inactiveTrackColor: AppColors.slate200,
                               trackOutlineColor:
                                   WidgetStateProperty.resolveWith(
-                                (states) => Colors.transparent,
+                                (states) => AppColors.transparent,
                               ),
                               materialTapTargetSize:
                                   MaterialTapTargetSize.shrinkWrap,
@@ -927,16 +927,16 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: AppColors.slate50,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color:
-                                const Color(0xFFE2E8F0).withValues(alpha: 0.6),
+                                AppColors.slate200.withValues(alpha: 0.6),
                             width: 0.6,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF0F172A)
+                              color: AppColors.slate900
                                   .withValues(alpha: 0.02),
                               blurRadius: 6,
                               offset: const Offset(0, 1),
@@ -951,7 +951,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                               child: Icon(
                                 Icons.lock_outline_rounded,
                                 size: 16,
-                                color: Color(0xFF64748B),
+                                color: AppColors.slate500,
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -967,7 +967,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                           fontFamily: 'DM Sans',
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w600,
-                                          color: Color(0xFF1E293B),
+                                          color: AppColors.slate800,
                                         ),
                                       ),
                                       const Spacer(),
@@ -1000,7 +1000,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                       fontFamily: 'DM Sans',
                                       fontSize: 11,
                                       fontWeight: FontWeight.w400,
-                                      color: Color(0xFF64748B),
+                                      color: AppColors.slate500,
                                       height: 1.25,
                                     ),
                                   ),
@@ -1021,13 +1021,13 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
           Container(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface,
               border: const Border(
-                top: BorderSide(color: Color(0xFFF1F5F9), width: 1),
+                top: BorderSide(color: AppColors.fieldFill, width: 1),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
+                  color: AppColors.scrim.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
@@ -1057,7 +1057,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.appColors.ink,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.surface,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -1069,7 +1069,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                       fontFamily: 'DM Sans',
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: AppColors.surface,
                     ),
                   ),
                 ),
@@ -1107,20 +1107,20 @@ class _ExpandableFilterSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: const Color(0xFFE2E8F0),
+          color: AppColors.slate200,
           width: 0.8,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.08),
+            color: AppColors.slate900.withValues(alpha: 0.08),
             blurRadius: 14,
             offset: const Offset(0, 3),
           ),
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+            color: AppColors.slate900.withValues(alpha: 0.02),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -1158,7 +1158,7 @@ class _ExpandableFilterSection extends StatelessWidget {
                       fontFamily: 'DM Sans',
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF1E293B),
+                      color: AppColors.slate800,
                       letterSpacing: 0.3,
                     ),
                   ),
@@ -1179,7 +1179,7 @@ class _ExpandableFilterSection extends StatelessWidget {
                     child: const Icon(
                       Icons.keyboard_arrow_down_rounded,
                       size: 20,
-                      color: Color(0xFF94A3B8),
+                      color: AppColors.slate400,
                     ),
                   ),
                 ],
@@ -1189,7 +1189,7 @@ class _ExpandableFilterSection extends StatelessWidget {
 
           // Collapsible body
           if (isExpanded) ...[
-            const Divider(height: 1, thickness: 0.6, color: Color(0xFFF1F5F9)),
+            const Divider(height: 1, thickness: 0.6, color: AppColors.fieldFill),
             Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
@@ -1223,12 +1223,12 @@ class _RoomTypePill extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         height: 38,
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : const Color(0xFFF8FAFC),
+          color: isSelected ? AppColors.primary : AppColors.slate50,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected
                 ? AppColors.primary
-                : const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+                : AppColors.slate200.withValues(alpha: 0.8),
             width: isSelected ? 1.0 : 0.6,
           ),
           boxShadow: isSelected
@@ -1248,7 +1248,7 @@ class _RoomTypePill extends StatelessWidget {
             fontFamily: 'DM Sans',
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? Colors.white : const Color(0xFF475569),
+            color: isSelected ? AppColors.surface : AppColors.slate600,
           ),
         ),
       ),
@@ -1277,12 +1277,12 @@ class _FilterChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary.withValues(alpha: 0.08)
-              : const Color(0xFFF8FAFC),
+              : AppColors.slate50,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
                 ? AppColors.primary.withValues(alpha: 0.6)
-                : const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+                : AppColors.slate200.withValues(alpha: 0.8),
             width: isSelected ? 1.0 : 0.6,
           ),
         ),
@@ -1299,7 +1299,7 @@ class _FilterChip extends StatelessWidget {
                 fontFamily: 'DM Sans',
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? AppColors.primary : const Color(0xFF334155),
+                color: isSelected ? AppColors.primary : AppColors.slate700,
               ),
             ),
           ],
@@ -1332,12 +1332,12 @@ class _IconChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary.withValues(alpha: 0.08)
-              : const Color(0xFFF8FAFC),
+              : AppColors.slate50,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
                 ? AppColors.primary.withValues(alpha: 0.6)
-                : const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+                : AppColors.slate200.withValues(alpha: 0.8),
             width: isSelected ? 1.0 : 0.6,
           ),
         ),
@@ -1347,7 +1347,7 @@ class _IconChip extends StatelessWidget {
             Icon(
               icon,
               size: 13.5,
-              color: isSelected ? AppColors.primary : const Color(0xFF64748B),
+              color: isSelected ? AppColors.primary : AppColors.slate500,
             ),
             const SizedBox(width: 5),
             Text(
@@ -1356,7 +1356,7 @@ class _IconChip extends StatelessWidget {
                 fontFamily: 'DM Sans',
                 fontSize: 11.5,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? AppColors.primary : const Color(0xFF334155),
+                color: isSelected ? AppColors.primary : AppColors.slate700,
               ),
             ),
           ],

@@ -64,8 +64,9 @@ class _InquiryChatViewState extends State<InquiryChatView> {
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
+        // The list is reversed: offset 0 is the newest message.
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -565,7 +566,15 @@ class _InquiryChatViewState extends State<InquiryChatView> {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<InquiryThreadCubit>().state;
+    // Message-only emissions are handled by the list's own BlocSelector, so
+    // the rest of the screen (header, banner, input bar) is not rebuilt.
+    return BlocBuilder<InquiryThreadCubit, InquiryThreadState>(
+      buildWhen: (p, c) => p.copyWith(messages: c.messages) != c,
+      builder: _buildBody,
+    );
+  }
+
+  Widget _buildBody(BuildContext context, InquiryThreadState state) {
     final inquiry = state.inquiry!;
     final property = state.property;
     final booked = inquiry.status == 'booked';
@@ -574,14 +583,8 @@ class _InquiryChatViewState extends State<InquiryChatView> {
     final canChat = InquiryService.canChat(inquiry);
     final myId = context.read<InquiryThreadCubit>().uid;
 
-    if (state.messages.length != _lastMessageCount) {
-      _lastMessageCount = state.messages.length;
-      _scrollToBottom();
-    }
-
-    final threadDate = state.messages.isNotEmpty
-        ? state.messages.first.timeStamp?.toDate()
-        : (inquiry.updatedAt?.toDate() ?? inquiry.createdAt?.toDate());
+    final fallbackDate =
+        inquiry.updatedAt?.toDate() ?? inquiry.createdAt?.toDate();
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -844,31 +847,56 @@ class _InquiryChatViewState extends State<InquiryChatView> {
 
                 // ── Chat Messages List ───────────────────────────────────
                 Expanded(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                    itemCount: state.messages.length + 1,
-                    itemBuilder: (_, i) {
-                      if (i == 0) {
-                        return Column(
-                          children: [
-                            _DateDivider(date: threadDate),
-                            const SizedBox(height: 12),
-                            _AcceptedStatusBanner(
-                              title: widget.isOwner
-                                  ? 'You accepted this inquiry — chat is open.'
-                                  : '${widget.counterpartName} accepted your inquiry — chat is open.',
-                              subtitle:
-                                  'You can now message and exchange details.',
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                        );
+                  child: BlocSelector<InquiryThreadCubit, InquiryThreadState,
+                      List<MessageDoc>>(
+                    selector: (s) => s.messages,
+                    builder: (context, messages) {
+                      if (messages.length != _lastMessageCount) {
+                        _lastMessageCount = messages.length;
+                        _scrollToBottom();
                       }
-                      final message = state.messages[i - 1];
-                      return _MessageBubble(
-                        message: message,
-                        isMine: message.senderId == myId,
+                      final threadDate = messages.isNotEmpty
+                          ? messages.first.timeStamp?.toDate()
+                          : fallbackDate;
+                      // Reversed: index 0 is the newest message and the
+                      // thread header sits at the last index (visual top).
+                      return ListView.builder(
+                        controller: _scrollController,
+                        reverse: true,
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                        itemCount: messages.length + 1,
+                        findChildIndexCallback: (key) {
+                          if (key is! ValueKey<String>) return null;
+                          final idx = messages.indexWhere(
+                            (m) => m.messageId == key.value,
+                          );
+                          return idx < 0 ? null : messages.length - 1 - idx;
+                        },
+                        itemBuilder: (_, i) {
+                          if (i == messages.length) {
+                            return Column(
+                              key: const ValueKey('thread-header'),
+                              children: [
+                                _DateDivider(date: threadDate),
+                                const SizedBox(height: 12),
+                                _AcceptedStatusBanner(
+                                  title: widget.isOwner
+                                      ? 'You accepted this inquiry — chat is open.'
+                                      : '${widget.counterpartName} accepted your inquiry — chat is open.',
+                                  subtitle:
+                                      'You can now message and exchange details.',
+                                ),
+                                const SizedBox(height: 16),
+                              ],
+                            );
+                          }
+                          final message = messages[messages.length - 1 - i];
+                          return _MessageBubble(
+                            key: ValueKey(message.messageId),
+                            message: message,
+                            isMine: message.senderId == myId,
+                          );
+                        },
                       );
                     },
                   ),
@@ -1303,7 +1331,11 @@ class _AcceptedStatusBanner extends StatelessWidget {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message, required this.isMine});
+  const _MessageBubble({
+    super.key,
+    required this.message,
+    required this.isMine,
+  });
 
   final MessageDoc message;
   final bool isMine;
@@ -1330,7 +1362,7 @@ class _MessageBubble extends StatelessWidget {
         children: [
           Container(
             constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.76,
+              maxWidth: MediaQuery.sizeOf(context).width * 0.76,
             ),
             padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
             decoration: BoxDecoration(
@@ -1491,14 +1523,14 @@ class _BookedPanel extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7).withValues(alpha: 0.6),
+                color: AppColors.warningFill.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFFDE68A)),
+                border: Border.all(color: AppColors.amberBorder200),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 18),
+                  Icon(Icons.star_rounded, color: AppColors.matchMedium, size: 18),
                   SizedBox(width: 6),
                   Text(
                     'You rated this stay · Thank you!',
@@ -1506,7 +1538,7 @@ class _BookedPanel extends StatelessWidget {
                       fontFamily: 'DM Sans',
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF92400E),
+                      color: AppColors.amber800,
                     ),
                   ),
                 ],

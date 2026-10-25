@@ -17,6 +17,18 @@ class DistanceUtils {
     calculator: Haversine(),
   );
 
+  /// Like [kmBetween], but a missing coordinate yields [double.infinity].
+  /// Models default an absent pin to `GeoPoint(0, 0)` (Gulf of Guinea), so two
+  /// missing pins would otherwise read as "0 km apart" and pass LocationMatch.
+  static double kmBetweenOrInfinity(GeoPoint a, GeoPoint b) {
+    bool missing(GeoPoint p) =>
+        (p.latitude == 0 && p.longitude == 0) ||
+        !p.latitude.isFinite ||
+        !p.longitude.isFinite;
+    if (missing(a) || missing(b)) return double.infinity;
+    return kmBetween(a, b);
+  }
+
   /// Distance in kilometers between two Firestore [GeoPoint]s.
   static double kmBetween(GeoPoint a, GeoPoint b) {
     return _distance.as(

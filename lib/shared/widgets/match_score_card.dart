@@ -38,7 +38,7 @@ class MatchScoreCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               _CircleGauge(percent: matchPercent),
-              SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,7 +49,7 @@ class MatchScoreCard extends StatelessWidget {
                         context,
                       ).copyWith(fontSize: 15, fontWeight: FontWeight.w700),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       summary,
                       style: AppTextStyles.caption(
@@ -61,7 +61,7 @@ class MatchScoreCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
           ...reasons.map((r) => _ReasonRow(label: r.$1, met: r.$2)),
         ],
       ),
@@ -90,7 +90,7 @@ class _CircleGauge extends StatelessWidget {
             children: <Widget>[
               Text(
                 '$percent%',
-                style: TextStyle(
+                style: const TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -180,7 +180,7 @@ class _ReasonRow extends StatelessWidget {
               size: 12,
             ),
           ),
-          SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               label,

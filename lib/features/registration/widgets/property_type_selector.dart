@@ -26,7 +26,7 @@ class PropertyTypeSelector extends StatelessWidget {
           'Property type',
           style: AppTextStyles.label(context).copyWith(color: context.appColors.textSecondary),
         ),
-        SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.sm),
         Wrap(
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,

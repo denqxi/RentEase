@@ -4,6 +4,7 @@ library;
 
 export 'admin_log_doc.dart';
 export 'contact_share_doc.dart';
+export 'firestore_parse.dart';
 export 'inquiry_doc.dart';
 export 'match_doc.dart';
 export 'message_doc.dart';

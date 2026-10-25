@@ -26,7 +26,7 @@ class LifestyleSelector extends StatelessWidget {
           'Lifestyle preference',
           style: AppTextStyles.label(context).copyWith(color: context.appColors.textSecondary),
         ),
-        SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.sm),
         Wrap(
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,

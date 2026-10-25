@@ -25,6 +25,7 @@ class FindTenantsCubit extends Cubit<FindTenantsState> {
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
       final listings = await _repository.fetchOwnerListings(ownerId);
+      if (isClosed) return;
       if (listings.isEmpty) {
         emit(state.copyWith(isLoading: false, listings: const [], tenants: const []));
         return;
@@ -35,6 +36,7 @@ class FindTenantsCubit extends Cubit<FindTenantsState> {
       emit(state.copyWith(listings: listings, selectedPropertyId: selected));
       await _loadTenants(selected);
     } catch (e) {
+      if (isClosed) return;
       emit(state.copyWith(isLoading: false, errorMessage: _message(e)));
     }
   }
@@ -52,6 +54,7 @@ class FindTenantsCubit extends Cubit<FindTenantsState> {
     try {
       await _loadTenants(propertyId);
     } catch (e) {
+      if (isClosed) return;
       emit(state.copyWith(isLoading: false, errorMessage: _message(e)));
     }
   }
@@ -62,8 +65,14 @@ class FindTenantsCubit extends Cubit<FindTenantsState> {
       propertyId: propertyId,
     );
     // Ignore a stale response if the owner switched property meanwhile.
-    if (propertyId != state.selectedPropertyId) return;
+    if (isClosed || propertyId != state.selectedPropertyId) return;
     emit(state.copyWith(isLoading: false, tenants: tenants));
+  }
+
+  @override
+  void emit(FindTenantsState state) {
+    if (isClosed) return; // async work may outlive the cubit
+    super.emit(state);
   }
 
   String _message(Object e) => e.toString().replaceFirst('Exception: ', '');

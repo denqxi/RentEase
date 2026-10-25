@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'firestore_parse.dart';
+
 /// `properties/{propertyId}/rooms/{roomId}` — individual rooms in a property.
 class RoomDoc {
   const RoomDoc({
@@ -29,10 +31,10 @@ class RoomDoc {
         roomId: id,
         propertyId: map['propertyId'] as String? ?? '',
         label: map['label'] as String? ?? '',
-        maxOccupants: map['maxOccupants'] as num? ?? 1,
-        monthlyRent: map['monthlyRent'] as num? ?? 0,
-        isAvailable: map['isAvailable'] as bool? ?? false,
-        photos: (map['photos'] as List?)?.cast<String>(),
+        maxOccupants: parseNum(map['maxOccupants'], 1),
+        monthlyRent: parseNum(map['monthlyRent'], 0),
+        isAvailable: parseBool(map['isAvailable'], false),
+        photos: parseStringListOrNull(map['photos']),
         notes: map['notes'] as String?,
       );
 

@@ -103,9 +103,9 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(title, style: AppTextStyles.title(context)),
-                        SizedBox(height: AppSpacing.sm),
+                        const SizedBox(height: AppSpacing.sm),
                         Text(body, style: AppTextStyles.body(context)),
-                        SizedBox(height: AppSpacing.xl),
+                        const SizedBox(height: AppSpacing.xl),
                         _StatusCard(status: status),
                         const Spacer(),
                         if (status == 'verified') ...[
@@ -113,11 +113,11 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
                             label: 'Add your first property',
                             onPressed: _addFirstProperty,
                           ),
-                          SizedBox(height: AppSpacing.sm),
+                          const SizedBox(height: AppSpacing.sm),
                           Center(
                             child: TextButton(
                               onPressed: _goToDashboard,
-                              child: Text(
+                              child: const Text(
                                 'Skip for now',
                                 style: TextStyle(
                                   fontFamily: 'DM Sans',
@@ -132,7 +132,7 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
                             label: 'Continue to Dashboard',
                             onPressed: _goToDashboard,
                           ),
-                          SizedBox(height: AppSpacing.sm),
+                          const SizedBox(height: AppSpacing.sm),
                           Center(
                             child: Text(
                               'This usually takes 1–2 business days.',
@@ -199,7 +199,7 @@ class _StatusCard extends StatelessWidget {
                   size: 24,
                 ),
               ),
-              SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.md),
               Text(
                 verified
                     ? 'Approved'
@@ -215,13 +215,13 @@ class _StatusCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.lg),
           const _ChecklistRow(
             icon: Icons.check_circle_rounded,
             color: AppColors.matchHigh,
             label: 'Documents submitted',
           ),
-          SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
           if (verified)
             const _ChecklistRow(
               icon: Icons.check_circle_rounded,
@@ -244,7 +244,7 @@ class _StatusCard extends StatelessWidget {
               badge: 'In progress',
               badgeColor: AppColors.matchMedium,
             ),
-          SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
           if (verified)
             const _ChecklistRow(
               icon: Icons.check_circle_rounded,
@@ -285,7 +285,7 @@ class _ChecklistRow extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, color: color, size: 20),
-        SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Text(
             label,

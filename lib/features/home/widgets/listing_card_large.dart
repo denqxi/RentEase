@@ -24,10 +24,13 @@ class ListingCardLarge extends StatelessWidget {
   final bool isGuest;
   final VoidCallback? onTap;
 
+  static final RegExp _thousandsRe = RegExp(r'(\d)(?=(\d{3})+(?!\d))');
+  static final RegExp _dashRe = RegExp(r'^(.+?)\s+[—–-]\s+(.+)$');
+
   static String _fmt(num value) => value
       .round()
       .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+      .replaceAllMapped(_thousandsRe, (m) => '${m[1]},');
 
   /// Resolves the property name and prominent title (room name or property title).
   ///
@@ -62,7 +65,7 @@ class ListingCardLarge extends StatelessWidget {
 
     // 3. Fallback: Parse common hyphen / en-dash / em-dash delimiters in rawTitle:
     // e.g. "Lucky Boarding House — Room 101" or "Lucky Boarding House – Room 101" or "Lucky Boarding House - Room 101"
-    final dashMatch = RegExp(r'^(.+?)\s+[—–-]\s+(.+)$').firstMatch(rawTitle.trim());
+    final dashMatch = _dashRe.firstMatch(rawTitle.trim());
     if (dashMatch != null) {
       final part1 = dashMatch.group(1)!.trim();
       final part2 = dashMatch.group(2)!.trim();
@@ -92,19 +95,19 @@ class ListingCardLarge extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+        border: Border.all(color: AppColors.slate200, width: 0.8),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+            color: AppColors.slate900.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         borderRadius: BorderRadius.circular(22),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -124,7 +127,7 @@ class ListingCardLarge extends StatelessWidget {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        clipBehavior: Clip.antiAlias,
                         child: ListingImagePlaceholder(
                           seed: listing.imageSeed,
                           photoUrl: listing.photoUrl,
@@ -136,7 +139,7 @@ class ListingCardLarge extends StatelessWidget {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: const Color(0xFFE2E8F0)
+                                color: AppColors.slate200
                                     .withValues(alpha: 0.7),
                                 width: 0.8,
                               ),
@@ -162,12 +165,12 @@ class ListingCardLarge extends StatelessWidget {
                                     vertical: 2.5,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.28),
+                                    color: AppColors.scrim.withValues(alpha: 0.28),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: (!isGuest && listing.matchPercent > 0)
                                           ? listing.matchDotColor.withValues(alpha: 0.45)
-                                          : Colors.white.withValues(alpha: 0.25),
+                                          : AppColors.surface.withValues(alpha: 0.25),
                                       width: 0.6,
                                     ),
                                   ),
@@ -181,15 +184,15 @@ class ListingCardLarge extends StatelessWidget {
                                             fontFamily: 'DM Sans',
                                             fontSize: 9.5,
                                             fontWeight: FontWeight.w700,
-                                            color: Colors.white,
+                                            color: AppColors.surface,
                                             letterSpacing: -0.1,
                                           ),
                                         ),
                                       ] else ...[
-                                        const Icon(
+                                        Icon(
                                           Icons.lock_outline,
                                           size: 9.5,
-                                          color: Colors.white70,
+                                          color: AppColors.onInk.withValues(alpha: 0.7),
                                         ),
                                         const SizedBox(width: 3),
                                         const Text(
@@ -198,7 +201,7 @@ class ListingCardLarge extends StatelessWidget {
                                             fontFamily: 'DM Sans',
                                             fontSize: 9.5,
                                             fontWeight: FontWeight.w700,
-                                            color: Colors.white,
+                                            color: AppColors.surface,
                                             letterSpacing: -0.1,
                                           ),
                                         ),
@@ -220,10 +223,10 @@ class ListingCardLarge extends StatelessWidget {
                                       vertical: 2.5,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.35),
+                                      color: AppColors.scrim.withValues(alpha: 0.35),
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
-                                        color: const Color(0xFF818CF8).withValues(alpha: 0.6),
+                                        color: AppColors.indigo400.withValues(alpha: 0.6),
                                         width: 0.6,
                                       ),
                                     ),
@@ -233,7 +236,7 @@ class ListingCardLarge extends StatelessWidget {
                                         fontFamily: 'DM Sans',
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w700,
-                                        color: Color(0xFFC7D2FE),
+                                        color: AppColors.indigo200,
                                         letterSpacing: -0.1,
                                       ),
                                     ),
@@ -270,10 +273,10 @@ class ListingCardLarge extends StatelessWidget {
                                   vertical: 2.5,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.28),
+                                  color: AppColors.scrim.withValues(alpha: 0.28),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.35),
+                                    color: AppColors.surface.withValues(alpha: 0.35),
                                     width: 0.6,
                                   ),
                                 ),
@@ -283,7 +286,7 @@ class ListingCardLarge extends StatelessWidget {
                                     const Icon(
                                       Icons.photo_outlined,
                                       size: 10.5,
-                                      color: Colors.white,
+                                      color: AppColors.surface,
                                     ),
                                     const SizedBox(width: 3.5),
                                     Text(
@@ -292,7 +295,7 @@ class ListingCardLarge extends StatelessWidget {
                                         fontFamily: 'DM Sans',
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w700,
-                                        color: Colors.white,
+                                        color: AppColors.surface,
                                         letterSpacing: -0.1,
                                       ),
                                     ),
@@ -323,7 +326,7 @@ class ListingCardLarge extends StatelessWidget {
                           fontFamily: 'DM Sans',
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF334155),
+                          color: AppColors.slate700,
                           letterSpacing: -0.1,
                           height: 1.15,
                         ),
@@ -344,7 +347,7 @@ class ListingCardLarge extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 18.0,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.slate900,
                               letterSpacing: -0.3,
                               height: 1.15,
                             ),
@@ -358,7 +361,7 @@ class ListingCardLarge extends StatelessWidget {
                             const Icon(
                               Icons.star_rounded,
                               size: 15.5,
-                              color: Color(0xFFF59E0B),
+                              color: AppColors.matchMedium,
                             ),
                             const SizedBox(width: 3),
                             Text(
@@ -369,7 +372,7 @@ class ListingCardLarge extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF0F172A),
+                                color: AppColors.slate900,
                               ),
                             ),
                             if (hasRating && (listing.reviewCount ?? 0) > 0) ...[
@@ -380,7 +383,7 @@ class ListingCardLarge extends StatelessWidget {
                                   fontFamily: 'DM Sans',
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF64748B),
+                                  color: AppColors.slate500,
                                 ),
                               ),
                             ],
@@ -399,7 +402,7 @@ class ListingCardLarge extends StatelessWidget {
                           const Icon(
                             Icons.location_on_outlined,
                             size: 13,
-                            color: Color(0xFF94A3B8),
+                            color: AppColors.slate400,
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -411,7 +414,7 @@ class ListingCardLarge extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF475569),
+                                color: AppColors.slate600,
                               ),
                             ),
                           ),
@@ -424,7 +427,7 @@ class ListingCardLarge extends StatelessWidget {
                     const Divider(
                       height: 1,
                       thickness: 0.8,
-                      color: Color(0xFFF1F5F9),
+                      color: AppColors.fieldFill,
                     ),
                     const SizedBox(height: 8),
 
@@ -441,7 +444,7 @@ class ListingCardLarge extends StatelessWidget {
                             const AppSvgIcon(
                               svgString: AppSvgIcons.propertyType,
                               size: 15,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.slate900,
                             ),
                             const SizedBox(width: 6),
                             Text(
@@ -450,7 +453,7 @@ class ListingCardLarge extends StatelessWidget {
                                 fontFamily: 'DM Sans',
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF0F172A),
+                                color: AppColors.slate900,
                               ),
                             ),
                           ],
@@ -476,7 +479,7 @@ class ListingCardLarge extends StatelessWidget {
                                   fontFamily: 'DM Sans',
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w500,
-                                  color: Color(0xFF64748B),
+                                  color: AppColors.slate500,
                                 ),
                               ),
                             ],
@@ -504,7 +507,7 @@ class _HeartButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.transparent,
+      color: AppColors.transparent,
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),
@@ -516,16 +519,16 @@ class _HeartButton extends StatelessWidget {
               height: 28,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.black.withValues(alpha: 0.25),
+                color: AppColors.scrim.withValues(alpha: 0.25),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.35),
+                  color: AppColors.surface.withValues(alpha: 0.35),
                   width: 0.6,
                 ),
               ),
               alignment: Alignment.center,
               child: Icon(
                 isSaved ? Icons.favorite : Icons.favorite_border,
-                color: isSaved ? AppColors.destructive : Colors.white,
+                color: isSaved ? AppColors.destructive : AppColors.surface,
                 size: 15,
               ),
             ),

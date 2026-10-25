@@ -9,6 +9,9 @@ import '../../inquiry/widgets/invite_button.dart';
 import '../../owner/model/compatible_tenant.dart';
 import '../../owner_onboarding/widgets/listing_form_widgets.dart';
 
+// Compiled once instead of on every call.
+final RegExp _kWhitespaceRe = RegExp(r'\s+');
+
 /// One review given by an owner/landlord to this tenant.
 class _TenantReviewItem {
   const _TenantReviewItem({
@@ -39,8 +42,12 @@ class TenantDetailScreen extends StatefulWidget {
     this.profile,
     this.phone,
     this.showInviteButton = false,
+    this.propertyId,
     super.key,
   });
+
+  /// Property Find Tenants is scoped to; limits the invite to it.
+  final String? propertyId;
 
   final CompatibleTenant tenant;
   final UserDoc? user;
@@ -146,7 +153,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
           totalStars += rating.stars;
 
           final rName = namesMap[rating.raterId] ?? 'Property Owner';
-          final parts = rName.split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+          final parts = rName.split(_kWhitespaceRe).where((p) => p.isNotEmpty);
           final initials = parts.take(2).map((p) => p[0].toUpperCase()).join();
 
           String dateStr = 'Recent';
@@ -282,7 +289,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
         : 'Not required';
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       body: Stack(
         children: [
           // ── Top Decorative Sky-Blue Gradient Backdrop ────────────────────
@@ -298,9 +305,9 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                     center: Alignment.topLeft,
                     radius: 1.1,
                     colors: [
-                      const Color(0xFFCCF2FE).withValues(alpha: 0.70),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.35),
-                      Colors.white.withValues(alpha: 0.0),
+                      AppColors.sky200.withValues(alpha: 0.70),
+                      AppColors.skyFill.withValues(alpha: 0.35),
+                      AppColors.surface.withValues(alpha: 0.0),
                     ],
                     stops: const [0.0, 0.45, 0.88],
                   ),
@@ -323,11 +330,11 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.surface,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                                color: AppColors.slate900.withValues(alpha: 0.06),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -336,7 +343,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                           child: const Icon(
                             Icons.arrow_back_rounded,
                             size: 20,
-                            color: Color(0xFF0F172A),
+                            color: AppColors.slate900,
                           ),
                         ),
                       ),
@@ -347,7 +354,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                           fontFamily: 'DM Sans',
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
+                          color: AppColors.slate900,
                           letterSpacing: -0.3,
                         ),
                       ),
@@ -366,12 +373,12 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                         Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.surface,
                             borderRadius: BorderRadius.circular(22),
-                            border: Border.all(color: Colors.white, width: 2),
+                            border: Border.all(color: AppColors.surface, width: 2),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                                color: AppColors.slate900.withValues(alpha: 0.04),
                                 blurRadius: 14,
                                 offset: const Offset(0, 4),
                               ),
@@ -390,9 +397,9 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        Color(0xFF7DD3FC), // Light blue
-                                        Color(0xFF00A8F0), // Blue
-                                        Color(0xFF10B981), // Emerald
+                                        AppColors.sky300, // Light blue
+                                        AppColors.brandSky, // Blue
+                                        AppColors.emerald500, // Emerald
                                       ],
                                     ),
                                   ),
@@ -400,13 +407,13 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                     padding: const EdgeInsets.all(2),
                                     decoration: const BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: Colors.white,
+                                      color: AppColors.surface,
                                     ),
                                     child: CircleAvatar(
                                       radius: 32,
-                                      backgroundColor: const Color(0xFFE0F2FE),
+                                      backgroundColor: AppColors.skyFill,
                                       backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
-                                          ? NetworkImage(photoUrl)
+                                          ? ResizeImage.resizeIfNeeded(340, null, NetworkImage(photoUrl))
                                           : null,
                                       child: (photoUrl == null || photoUrl.isEmpty)
                                           ? Text(
@@ -415,7 +422,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                                 fontFamily: 'DM Sans',
                                                 fontSize: 20,
                                                 fontWeight: FontWeight.w700,
-                                                color: Color(0xFF00A8F0),
+                                                color: AppColors.brandSky,
                                               ),
                                             )
                                           : null,
@@ -433,7 +440,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                           fontFamily: 'DM Sans',
                                           fontSize: 18,
                                           fontWeight: FontWeight.w800,
-                                          color: Color(0xFF0F172A),
+                                          color: AppColors.slate900,
                                         ),
                                       ),
                                       const SizedBox(height: 5),
@@ -447,10 +454,10 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                               vertical: 3.5,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFECFDF5),
+                                              color: AppColors.emerald50,
                                               borderRadius: BorderRadius.circular(20),
                                               border: Border.all(
-                                                color: const Color(0xFF10B981),
+                                                color: AppColors.emerald500,
                                                 width: 0.8,
                                               ),
                                             ),
@@ -460,7 +467,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                                 Icon(
                                                   Icons.check_circle_rounded,
                                                   size: 13,
-                                                  color: Color(0xFF10B981),
+                                                  color: AppColors.emerald500,
                                                 ),
                                                 SizedBox(width: 4),
                                                 Text(
@@ -469,7 +476,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                                     fontFamily: 'DM Sans',
                                                     fontSize: 11.5,
                                                     fontWeight: FontWeight.w700,
-                                                    color: Color(0xFF059669),
+                                                    color: AppColors.emerald600,
                                                   ),
                                                 ),
                                               ],
@@ -482,10 +489,10 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                                 vertical: 3.5,
                                               ),
                                               decoration: BoxDecoration(
-                                                color: const Color(0xFFFEF3C7),
+                                                color: AppColors.warningFill,
                                                 borderRadius: BorderRadius.circular(20),
                                                 border: Border.all(
-                                                  color: const Color(0xFFF59E0B),
+                                                  color: AppColors.matchMedium,
                                                   width: 0.8,
                                                 ),
                                               ),
@@ -495,7 +502,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                                   const Icon(
                                                     Icons.star_rounded,
                                                     size: 14,
-                                                    color: Color(0xFFD97706),
+                                                    color: AppColors.amber600,
                                                   ),
                                                   const SizedBox(width: 3.5),
                                                   Text(
@@ -504,7 +511,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                                       fontFamily: 'DM Sans',
                                                       fontSize: 11.5,
                                                       fontWeight: FontWeight.w700,
-                                                      color: Color(0xFFB45309),
+                                                      color: AppColors.amber700,
                                                     ),
                                                   ),
                                                 ],
@@ -517,10 +524,10 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                                 vertical: 3.5,
                                               ),
                                               decoration: BoxDecoration(
-                                                color: const Color(0xFFFEF3C7),
+                                                color: AppColors.warningFill,
                                                 borderRadius: BorderRadius.circular(20),
                                                 border: Border.all(
-                                                  color: const Color(0xFFFDE68A),
+                                                  color: AppColors.amberBorder200,
                                                   width: 0.8,
                                                 ),
                                               ),
@@ -530,7 +537,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                                   Icon(
                                                     Icons.star_rounded,
                                                     size: 13,
-                                                    color: Color(0xFFF59E0B),
+                                                    color: AppColors.matchMedium,
                                                   ),
                                                   SizedBox(width: 3.5),
                                                   Text(
@@ -539,7 +546,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                                       fontFamily: 'DM Sans',
                                                       fontSize: 11.5,
                                                       fontWeight: FontWeight.w600,
-                                                      color: Color(0xFFB45309),
+                                                      color: AppColors.amber700,
                                                     ),
                                                   ),
                                                 ],
@@ -553,7 +560,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                         style: TextStyle(
                                           fontFamily: 'DM Sans',
                                           fontSize: 11.5,
-                                          color: Color(0xFF64748B),
+                                          color: AppColors.slate500,
                                         ),
                                       ),
                                     ],
@@ -649,6 +656,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                             tenantId: tenant.tenantId,
                             tenantName: tenant.name,
                             bScore: tenant.bScore,
+                            propertyId: widget.propertyId,
                           ),
                         ],
                       ],
@@ -675,7 +683,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 16, color: const Color(0xFF64748B)),
+            Icon(icon, size: 16, color: AppColors.slate500),
             const SizedBox(width: 8),
           ],
           SizedBox(
@@ -685,7 +693,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
               style: const TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
-                color: Color(0xFF64748B),
+                color: AppColors.slate500,
               ),
             ),
           ),
@@ -697,7 +705,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                 fontFamily: 'DM Sans',
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF0F172A),
+                color: AppColors.slate900,
               ),
             ),
           ),
@@ -720,7 +728,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
             style: const TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 13,
-              color: Color(0xFF64748B),
+              color: AppColors.slate500,
             ),
           ),
           const SizedBox(height: 10),
@@ -743,13 +751,13 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
       badge = Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: const Color(0xFFFEF3C7),
+          color: AppColors.warningFill,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
+            const Icon(Icons.star_rounded, size: 14, color: AppColors.matchMedium),
             const SizedBox(width: 3),
             Text(
               '${_avgRating.toStringAsFixed(1)} ($_totalReviews)',
@@ -757,7 +765,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                 fontFamily: 'DM Sans',
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFFB45309),
+                color: AppColors.amber700,
               ),
             ),
           ],
@@ -767,13 +775,13 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
       badge = Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: const Color(0xFFFEF3C7),
+          color: AppColors.warningFill,
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.star_rounded, size: 13, color: Color(0xFFF59E0B)),
+            Icon(Icons.star_rounded, size: 13, color: AppColors.matchMedium),
             SizedBox(width: 3),
             Text(
               'No ratings yet',
@@ -781,7 +789,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                 fontFamily: 'DM Sans',
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFFB45309),
+                color: AppColors.amber700,
               ),
             ),
           ],
@@ -791,7 +799,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
 
     return CollapsibleDetailCard(
       icon: Icons.star_rounded,
-      iconColor: const Color(0xFFF59E0B),
+      iconColor: AppColors.matchMedium,
       title: 'Landlord ratings & reviews',
       badgeWidget: badge,
       child: _isLoadingReviews
@@ -803,7 +811,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                   height: 22,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Color(0xFF00A8F0),
+                    color: AppColors.brandSky,
                   ),
                 ),
               ),
@@ -818,13 +826,13 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                         width: 48,
                         height: 48,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFFEF3C7),
+                          color: AppColors.warningFill,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.star_rounded,
                           size: 26,
-                          color: Color(0xFFF59E0B),
+                          color: AppColors.matchMedium,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -834,7 +842,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                           fontFamily: 'DM Sans',
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
+                          color: AppColors.slate900,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -844,7 +852,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12,
-                          color: Color(0xFF64748B),
+                          color: AppColors.slate500,
                           height: 1.35,
                         ),
                       ),
@@ -866,7 +874,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFEF3C7),
+                              color: AppColors.warningFill,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -875,7 +883,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                 const Icon(
                                   Icons.star_rounded,
                                   size: 22,
-                                  color: Color(0xFFF59E0B),
+                                  color: AppColors.matchMedium,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -884,7 +892,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                     fontFamily: 'DM Sans',
                                     fontSize: 18,
                                     fontWeight: FontWeight.w800,
-                                    color: Color(0xFFB45309),
+                                    color: AppColors.amber700,
                                   ),
                                 ),
                               ],
@@ -906,8 +914,8 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                             : Icons.star_outline_rounded,
                                         size: 16,
                                         color: isFilled
-                                            ? const Color(0xFFF59E0B)
-                                            : const Color(0xFFCBD5E1),
+                                            ? AppColors.matchMedium
+                                            : AppColors.slate300,
                                       ),
                                     );
                                   }),
@@ -919,7 +927,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                     fontFamily: 'DM Sans',
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: Color(0xFF64748B),
+                                    color: AppColors.slate500,
                                   ),
                                 ),
                               ],
@@ -929,14 +937,14 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                       ),
                     ),
                     if (_reviews.isNotEmpty) ...[
-                      const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                      const Divider(height: 1, color: AppColors.fieldFill),
                       ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         padding: EdgeInsets.zero,
                         itemCount: _reviews.length,
                         separatorBuilder: (context, index) =>
-                            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                            const Divider(height: 1, color: AppColors.fieldFill),
                         itemBuilder: (ctx, i) {
                           final review = _reviews[i];
                           return Padding(
@@ -949,14 +957,14 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                   children: [
                                     CircleAvatar(
                                       radius: 16,
-                                      backgroundColor: const Color(0xFFE0F2FE),
+                                      backgroundColor: AppColors.skyFill,
                                       child: Text(
                                         review.raterInitials,
                                         style: const TextStyle(
                                           fontFamily: 'DM Sans',
                                           fontSize: 11,
                                           fontWeight: FontWeight.w700,
-                                          color: Color(0xFF00A8F0),
+                                          color: AppColors.brandSky,
                                         ),
                                       ),
                                     ),
@@ -972,7 +980,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                               fontFamily: 'DM Sans',
                                               fontSize: 13.5,
                                               fontWeight: FontWeight.w700,
-                                              color: Color(0xFF0F172A),
+                                              color: AppColors.slate900,
                                             ),
                                           ),
                                           if (review.propertyTitle != null) ...[
@@ -983,7 +991,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                                 fontFamily: 'DM Sans',
                                                 fontSize: 11.5,
                                                 fontWeight: FontWeight.w500,
-                                                color: Color(0xFF64748B),
+                                                color: AppColors.slate500,
                                               ),
                                             ),
                                           ],
@@ -995,7 +1003,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                       style: const TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 11.5,
-                                        color: Color(0xFF94A3B8),
+                                        color: AppColors.slate400,
                                       ),
                                     ),
                                   ],
@@ -1012,8 +1020,8 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                             : Icons.star_outline_rounded,
                                         size: 15,
                                         color: isFilled
-                                            ? const Color(0xFFF59E0B)
-                                            : const Color(0xFFCBD5E1),
+                                            ? AppColors.matchMedium
+                                            : AppColors.slate300,
                                       ),
                                     );
                                   }),
@@ -1025,10 +1033,10 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF8FAFC),
+                                      color: AppColors.slate50,
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
-                                        color: const Color(0xFFE2E8F0),
+                                        color: AppColors.slate200,
                                         width: 0.6,
                                       ),
                                     ),
@@ -1038,7 +1046,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                         fontFamily: 'DM Sans',
                                         fontSize: 12.5,
                                         height: 1.4,
-                                        color: Color(0xFF334155),
+                                        color: AppColors.slate700,
                                       ),
                                     ),
                                   ),
@@ -1050,7 +1058,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                       fontFamily: 'DM Sans',
                                       fontSize: 11.5,
                                       fontStyle: FontStyle.italic,
-                                      color: Color(0xFF94A3B8),
+                                      color: AppColors.slate400,
                                     ),
                                   ),
                                 ],
@@ -1065,7 +1073,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
     );
   }
 
-  Widget _divider() => const Divider(height: 1, color: Color(0xFFF1F5F9));
+  Widget _divider() => const Divider(height: 1, color: AppColors.fieldFill);
 }
 
 class _TenantAmenityChip extends StatelessWidget {
@@ -1080,7 +1088,7 @@ class _TenantAmenityChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(5, 5, 11, 5),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: AppColors.primary.withValues(alpha: 0.55),
@@ -1119,7 +1127,7 @@ class _TenantAmenityChip extends StatelessWidget {
                 fontFamily: 'DM Sans',
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF0F172A),
+                color: AppColors.slate900,
                 height: 1.1,
               ),
             ),

@@ -186,7 +186,7 @@ class _TenantInquiriesViewState extends State<_TenantInquiriesView> {
                 onChanged: (i) => setState(() => _selectedTab = i),
               ),
             ),
-            SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md),
             Expanded(
               child: state.isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -252,7 +252,7 @@ class _InquiryList extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       itemCount: items.length + 1,
       itemBuilder: (ctx, i) {
-        if (i == items.length) return SizedBox(height: AppSpacing.lg);
+        if (i == items.length) return const SizedBox(height: AppSpacing.lg);
         final item = items[i];
         final inquiry = item.inquiry;
         final isUnread = unreadInquiryIds.contains(inquiry.inquiryId);
@@ -358,7 +358,7 @@ class _SegTab extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.surface : Colors.transparent,
+            color: isSelected ? AppColors.surface : AppColors.transparent,
             borderRadius: BorderRadius.circular(18),
             boxShadow: isSelected
                 ? <BoxShadow>[
@@ -514,9 +514,9 @@ class _InquiryCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF0FDF4),
+                          color: AppColors.greenFill,
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFF86EFAC), width: 0.8),
+                          border: Border.all(color: AppColors.matchHigh, width: 0.8),
                         ),
                         child: Text(
                           '${(tenantCi! * 100).round()}%',
@@ -524,7 +524,7 @@ class _InquiryCard extends StatelessWidget {
                             fontFamily: 'DM Sans',
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF15803D),
+                            color: AppColors.greenPrimary,
                           ),
                         ),
                       ),
@@ -532,9 +532,9 @@ class _InquiryCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: AppColors.fieldFill,
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+                          border: Border.all(color: AppColors.slate200, width: 0.8),
                         ),
                         child: Text(
                           'ci=${tenantCi!.toDouble().toStringAsFixed(2)}',
@@ -542,7 +542,7 @@ class _InquiryCard extends StatelessWidget {
                             fontFamily: 'DM Sans',
                             fontSize: 9.5,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF475569),
+                            color: AppColors.slate700,
                           ),
                         ),
                       ),

@@ -27,6 +27,10 @@ import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
 import 'map_view_screen.dart';
 
+// Compiled once instead of on every call.
+final RegExp _kThousandsRe = RegExp(r'(\d)(?=(\d{3})+(?!\d))');
+final RegExp _kWhitespaceRe = RegExp(r'\s+');
+
 /// The detail-screen heart: transparent glass circular badge on the hero image,
 /// filled destructive when saved. Rebuilds only when this property's saved flag changes.
 class _SaveHeart extends StatelessWidget {
@@ -44,7 +48,7 @@ class _SaveHeart extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = this.cubit;
     Widget button(bool saved) => Material(
-      color: Colors.transparent,
+      color: AppColors.transparent,
       child: InkWell(
         onTap: () => onTap(cubit),
         customBorder: const CircleBorder(),
@@ -56,16 +60,16 @@ class _SaveHeart extends StatelessWidget {
               height: 32,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.black.withValues(alpha: 0.25),
+                color: AppColors.scrim.withValues(alpha: 0.25),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.35),
+                  color: AppColors.surface.withValues(alpha: 0.35),
                   width: 0.6,
                 ),
               ),
               alignment: Alignment.center,
               child: Icon(
                 saved ? Icons.favorite : Icons.favorite_border,
-                color: saved ? AppColors.destructive : Colors.white,
+                color: saved ? AppColors.destructive : AppColors.surface,
                 size: 16,
               ),
             ),
@@ -178,6 +182,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         'bScore': doc.isAvailable ? 1 : 0,
         'isOutsidePreference': false,
         'isNonMatch': false,
+        'matchKnown': false,
         'vacancyStatus': doc.vacancyStatus,
         'isAvailable': doc.isAvailable,
         'latitude': doc.location.latitude,
@@ -218,6 +223,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         'bScore': 1,
         'isOutsidePreference': false,
         'isNonMatch': false,
+        'matchKnown': false,
         'vacancyStatus': 'available',
         'isAvailable': true,
         'avgRating': l.rating,
@@ -236,6 +242,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       'bScore': 1,
       'isOutsidePreference': false,
       'isNonMatch': false,
+      'matchKnown': false,
       'isAvailable': true,
       'photos': const <String>[],
       'amenityList': const <String>[],
@@ -255,6 +262,16 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       }
 
       detail ??= {};
+      // The repository knows when this tenant is NOT a match for the
+      // property; the availability-based fallback below must not undo that
+      // (Send Inquiry has to stay absent when B_score = 0).
+      // Guests have no match docs (guest map always carries bScore 0); their
+      // Send Inquiry opens the sign-up sheet, so they are never a non-match.
+      final repoSaysNonMatch = !widget.isGuest &&
+          (detail['isNonMatch'] == true || detail['bScore'] == 0);
+      // Only a repository answer makes the match status known; without one
+      // (e.g. opened from a notification) Send Inquiry stays absent.
+      final repoKnowsMatch = detail.containsKey('bScore');
 
       // Always fetch fresh property document from Firestore to ensure
       // up-to-date ratings (avgRating, totalRatings), availability, and rooms.
@@ -341,7 +358,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           if (ownerSnap.exists) {
             final u = UserDoc.fromSnapshot(ownerSnap);
             final name = '${u.firstName} ${u.lastName}'.trim();
-            final parts = name.split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+            final parts = name.split(_kWhitespaceRe).where((p) => p.isNotEmpty);
             final inits = parts.take(2).map((p) => p[0].toUpperCase()).join();
 
             detail['owner'] = u;
@@ -385,31 +402,12 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       if (!mounted) return;
       if (detail.isNotEmpty) {
         setState(() {
-          final wasNonMatch = _property['isNonMatch'];
-          final wasFilterMatch = _property['isFilterMatch'];
-          final sessionReasons = _property['mismatchReasons'];
-          final wasOutside = _property['isOutsidePreference'];
-          final bExcess = _property['budgetExcess'];
-          final dExcess = _property['distanceExcess'];
-          final bScore = _property['bScore'];
-
-          _property = {
-            ..._property,
-            ...detail!,
-            if (wasNonMatch != null) ...{'isNonMatch': wasNonMatch},
-            if (wasFilterMatch != null) ...{'isFilterMatch': wasFilterMatch},
-            if (sessionReasons != null) ...{'mismatchReasons': sessionReasons},
-            if (wasOutside != null) ...{'isOutsidePreference': wasOutside},
-            if (bExcess != null) ...{'budgetExcess': bExcess},
-            if (dExcess != null) ...{'distanceExcess': dExcess},
-            // Never let the availability-derived fallback re-enable a
-            // property that was passed in with bScore 0 (Send Inquiry must
-            // stay absent).
-            if (bScore != null &&
-                ((wasNonMatch == false && wasFilterMatch != true) ||
-                    (bScore is num && bScore == 0)))
-              ...{'bScore': bScore},
-          };
+          _property = mergePropertyDetail(
+            current: _property,
+            detail: detail!,
+            repoSaysNonMatch: repoSaysNonMatch,
+            repoKnowsMatch: repoKnowsMatch,
+          );
           _isLoadingDetails = false;
         });
       } else {
@@ -517,7 +515,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   static String _fmt(num value) => value
       .round()
       .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+      .replaceAllMapped(_kThousandsRe, (m) => '${m[1]},');
 
   @override
   Widget build(BuildContext context) {
@@ -528,7 +526,8 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         (_property['mismatchReasons'] as List?)?.cast<MismatchReason>() ??
         const <MismatchReason>[];
     final int bScore = (_property['bScore'] as num?)?.toInt() ?? 1;
-    final bool canInquire = bScore == 1 && !isFilterMatch;
+    final bool canInquire =
+        bScore == 1 && !isFilterMatch && _property['matchKnown'] != false;
     final propId = (_property['propertyId'] as String?) ?? '';
     final int seed = propId.hashCode % 5 + 1;
     final displayName = (_property['title'] as String?) ?? 'Property';
@@ -578,9 +577,9 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                     center: Alignment.topRight,
                     radius: 1.15,
                     colors: <Color>[
-                      const Color(0xFFCCF2FE).withValues(alpha: 0.75),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.40),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.0),
+                      AppColors.onboardingSky.withValues(alpha: 0.75),
+                      AppColors.skyFill.withValues(alpha: 0.40),
+                      AppColors.skyFill.withValues(alpha: 0.0),
                     ],
                     stops: const <double>[0.0, 0.45, 0.88],
                   ),
@@ -601,22 +600,22 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.surface,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color(0xFFE2E8F0).withValues(alpha: 0.6),
+                            color: AppColors.slate200.withValues(alpha: 0.6),
                             width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                              color: AppColors.slate900.withValues(alpha: 0.04),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
                           ],
                         ),
                         child: Material(
-                          color: Colors.transparent,
+                          color: AppColors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           child: InkWell(
                             borderRadius: BorderRadius.circular(12),
@@ -647,7 +646,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                   const LinearProgressIndicator(
                     minHeight: 2,
                     color: AppColors.primary,
-                    backgroundColor: Colors.transparent,
+                    backgroundColor: AppColors.transparent,
                   ),
 
             // Scrollable Content
@@ -934,7 +933,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 13,
-                                color: Color(0xFF64748B),
+                                color: AppColors.slate500,
                               ),
                             ),
                           ),
@@ -974,11 +973,11 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.surface,
                             borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                                color: AppColors.slate900.withValues(alpha: 0.05),
                                 blurRadius: 16,
                                 offset: const Offset(0, 4),
                               ),
@@ -1001,7 +1000,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                                       fontFamily: 'DM Sans',
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800,
-                                      color: Color(0xFF0F172A),
+                                      color: AppColors.slate900,
                                     ),
                                   ),
                                 ],
@@ -1025,7 +1024,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                                           style: const TextStyle(
                                             fontFamily: 'DM Sans',
                                             fontSize: 13,
-                                            color: Color(0xFF475569),
+                                            color: AppColors.slate600,
                                           ),
                                         ),
                                       ),
@@ -1043,22 +1042,22 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                         width: double.infinity,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.surface,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color(0xFFE2E8F0),
+                            color: AppColors.slate200,
                             width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.04),
+                              color: AppColors.scrim.withValues(alpha: 0.04),
                               blurRadius: 6,
                               offset: const Offset(0, 2),
                             ),
                           ],
                         ),
                         child: Material(
-                          color: Colors.transparent,
+                          color: AppColors.transparent,
                           child: InkWell(
                             borderRadius: BorderRadius.circular(12),
                             onTap: () => _editPreferences(context),
@@ -1069,7 +1068,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                                   fontFamily: 'DM Sans',
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF0F172A),
+                                  color: AppColors.slate900,
                                 ),
                               ),
                             ),
@@ -1113,12 +1112,12 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                               fontFamily: 'DM Sans',
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: AppColors.surface,
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: context.appColors.ink,
-                            foregroundColor: Colors.white,
+                            foregroundColor: AppColors.surface,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1143,7 +1142,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: context.appColors.ink,
-                            foregroundColor: Colors.white,
+                            foregroundColor: AppColors.surface,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1155,7 +1154,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                               fontFamily: 'DM Sans',
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: AppColors.surface,
                             ),
                           ),
                         ),
@@ -1178,7 +1177,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: context.appColors.ink,
-                              foregroundColor: Colors.white,
+                              foregroundColor: AppColors.surface,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -1190,7 +1189,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                                 fontFamily: 'DM Sans',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: AppColors.surface,
                               ),
                             ),
                           ),
@@ -1243,7 +1242,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
               fontFamily: 'DM Sans',
               fontSize: 13.5,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF64748B),
+              color: AppColors.slate500,
             ),
           ),
           Flexible(
@@ -1254,7 +1253,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                 fontFamily: 'DM Sans',
                 fontSize: 13.5,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF0F172A),
+                color: AppColors.slate900,
               ),
             ),
           ),
@@ -1264,7 +1263,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   }
 
   static Widget _divider() =>
-      const Divider(height: 1, thickness: 0.8, color: Color(0xFFF1F5F9));
+      const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1368,7 +1367,7 @@ class _FullScreenSwipeableImageViewerState
     final double contentScale = (1.0 - dragRatio * 0.2).clamp(0.75, 1.0);
 
     return Scaffold(
-      backgroundColor: Colors.black.withValues(alpha: 0.94 * bgOpacity),
+      backgroundColor: AppColors.scrim.withValues(alpha: 0.94 * bgOpacity),
       body: SafeArea(
         child: Stack(
           children: [
@@ -1450,12 +1449,12 @@ class _FullScreenSwipeableImageViewerState
                       icon: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.4),
+                          color: AppColors.scrim.withValues(alpha: 0.4),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.close_rounded,
-                          color: Colors.white,
+                          color: AppColors.surface,
                           size: 22,
                         ),
                       ),
@@ -1468,7 +1467,7 @@ class _FullScreenSwipeableImageViewerState
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.4),
+                          color: AppColors.scrim.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -1477,7 +1476,7 @@ class _FullScreenSwipeableImageViewerState
                             fontFamily: 'DM Sans',
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: AppColors.surface,
                           ),
                         ),
                       ),
@@ -1550,7 +1549,7 @@ class _PropertyPhotoGallerySectionState
     Navigator.of(context).push(
       PageRouteBuilder<void>(
         opaque: false,
-        barrierColor: Colors.transparent,
+        barrierColor: AppColors.transparent,
         transitionDuration: const Duration(milliseconds: 200),
         reverseTransitionDuration: const Duration(milliseconds: 200),
         pageBuilder: (ctx, animation, secondaryAnimation) {
@@ -1584,10 +1583,10 @@ class _PropertyPhotoGallerySectionState
           width: double.infinity,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: const Color(0xFFF1F5F9),
+            color: AppColors.fieldFill,
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                color: AppColors.slate900.withValues(alpha: 0.05),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -1598,7 +1597,7 @@ class _PropertyPhotoGallerySectionState
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                clipBehavior: Clip.antiAliasWithSaveLayer,
+                clipBehavior: Clip.antiAlias,
                 child: photoCount > 0
                     ? PageView.builder(
                         controller: _pageController,
@@ -1612,6 +1611,7 @@ class _PropertyPhotoGallerySectionState
                             onTap: () => _openFullScreenViewer(index),
                             child: Image.network(
                               photoUrl,
+                              cacheWidth: 1280,
                               fit: BoxFit.cover,
                               filterQuality: FilterQuality.medium,
                               errorBuilder: (_, _, _) =>
@@ -1636,7 +1636,7 @@ class _PropertyPhotoGallerySectionState
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+                        color: AppColors.slate200.withValues(alpha: 0.8),
                         width: 1,
                       ),
                     ),
@@ -1661,14 +1661,14 @@ class _PropertyPhotoGallerySectionState
                             vertical: 2.5,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.28),
+                            color: AppColors.scrim.withValues(alpha: 0.28),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: (widget.isNonMatch || widget.isFilterMatch)
                                   ? AppColors.amberPrimary.withValues(alpha: 0.6)
                                   : (!widget.isGuest && widget.matchPercent > 0)
                                       ? widget.matchDotColor.withValues(alpha: 0.45)
-                                      : Colors.white.withValues(alpha: 0.25),
+                                      : AppColors.surface.withValues(alpha: 0.25),
                               width: 0.6,
                             ),
                           ),
@@ -1688,7 +1688,7 @@ class _PropertyPhotoGallerySectionState
                                     fontFamily: 'DM Sans',
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.white,
+                                    color: AppColors.surface,
                                     letterSpacing: -0.1,
                                   ),
                                 ),
@@ -1705,7 +1705,7 @@ class _PropertyPhotoGallerySectionState
                                     fontFamily: 'DM Sans',
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.white,
+                                    color: AppColors.surface,
                                     letterSpacing: -0.1,
                                   ),
                                 ),
@@ -1717,7 +1717,7 @@ class _PropertyPhotoGallerySectionState
                                     fontFamily: 'DM Sans',
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.white,
+                                    color: AppColors.surface,
                                     letterSpacing: -0.1,
                                   ),
                                 ),
@@ -1730,15 +1730,15 @@ class _PropertyPhotoGallerySectionState
                                     fontFamily: 'DM Sans',
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.white,
+                                    color: AppColors.surface,
                                     letterSpacing: -0.1,
                                   ),
                                 ),
                               ] else ...[
-                                const Icon(
+                                Icon(
                                   Icons.lock_outline,
                                   size: 9.5,
-                                  color: Colors.white70,
+                                  color: AppColors.onInk.withValues(alpha: 0.7),
                                 ),
                                 const SizedBox(width: 3),
                                 const Text(
@@ -1747,7 +1747,7 @@ class _PropertyPhotoGallerySectionState
                                     fontFamily: 'DM Sans',
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.white,
+                                    color: AppColors.surface,
                                   ),
                                 ),
                               ],
@@ -1768,10 +1768,10 @@ class _PropertyPhotoGallerySectionState
                               vertical: 2.5,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.35),
+                              color: AppColors.scrim.withValues(alpha: 0.35),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: const Color(0xFF818CF8).withValues(alpha: 0.6),
+                                color: AppColors.indigo400.withValues(alpha: 0.6),
                                 width: 0.6,
                               ),
                             ),
@@ -1781,7 +1781,7 @@ class _PropertyPhotoGallerySectionState
                                 fontFamily: 'DM Sans',
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFFC7D2FE),
+                                color: AppColors.indigo200,
                                 letterSpacing: -0.1,
                               ),
                             ),
@@ -1819,10 +1819,10 @@ class _PropertyPhotoGallerySectionState
                           vertical: 2.5,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.28),
+                          color: AppColors.scrim.withValues(alpha: 0.28),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.35),
+                            color: AppColors.surface.withValues(alpha: 0.35),
                             width: 0.6,
                           ),
                         ),
@@ -1832,7 +1832,7 @@ class _PropertyPhotoGallerySectionState
                             const Icon(
                               Icons.photo_outlined,
                               size: 10.5,
-                              color: Colors.white,
+                              color: AppColors.surface,
                             ),
                             const SizedBox(width: 3.5),
                             Text(
@@ -1843,7 +1843,7 @@ class _PropertyPhotoGallerySectionState
                                 fontFamily: 'DM Sans',
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: AppColors.surface,
                                 letterSpacing: -0.1,
                               ),
                             ),
@@ -1887,17 +1887,18 @@ class _PropertyPhotoGallerySectionState
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          clipBehavior: Clip.antiAliasWithSaveLayer,
+                          clipBehavior: Clip.antiAlias,
                           child: Image.network(
                             thumbUrl,
+                            cacheWidth: 300,
                             fit: BoxFit.cover,
                             filterQuality: FilterQuality.medium,
                             errorBuilder: (_, _, _) => Container(
-                              color: const Color(0xFFF1F5F9),
+                              color: AppColors.fieldFill,
                               child: const Icon(
                                 Icons.broken_image,
                                 size: 18,
-                                color: Colors.grey,
+                                color: AppColors.hint,
                               ),
                             ),
                           ),
@@ -1911,7 +1912,7 @@ class _PropertyPhotoGallerySectionState
                                 border: Border.all(
                                   color: isSelected
                                       ? AppColors.primary
-                                      : const Color(0xFFE2E8F0),
+                                      : AppColors.slate200,
                                   width: isSelected ? 2 : 1,
                                 ),
                               ),
@@ -1966,7 +1967,7 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
   static String _fmt(num value) => value
       .round()
       .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+      .replaceAllMapped(_kThousandsRe, (m) => '${m[1]},');
 
   @override
   Widget build(BuildContext context) {
@@ -1980,16 +1981,16 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+            color: AppColors.slate900.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+            color: AppColors.slate900.withValues(alpha: 0.02),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -2007,7 +2008,7 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
               fontFamily: 'DM Sans',
               fontSize: 20,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF0F172A),
+              color: AppColors.slate900,
               letterSpacing: -0.4,
               height: 1.2,
             ),
@@ -2058,7 +2059,7 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
                           fontFamily: 'DM Sans',
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
-                          color: Color(0xFF64748B),
+                          color: AppColors.slate500,
                           height: 1.4,
                         ),
                       ),
@@ -2118,7 +2119,7 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
                   const Icon(
                     Icons.star_rounded,
                     size: 16.5,
-                    color: Color(0xFFF59E0B),
+                    color: AppColors.matchMedium,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -2127,7 +2128,7 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
                       fontFamily: 'DM Sans',
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
+                      color: AppColors.slate900,
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -2139,7 +2140,7 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
                       fontFamily: 'DM Sans',
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF64748B),
+                      color: AppColors.slate500,
                     ),
                   ),
                 ],
@@ -2148,7 +2149,7 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
           ),
 
           const SizedBox(height: 14),
-          const Divider(height: 1, thickness: 0.8, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill),
           const SizedBox(height: 14),
 
           // Details Row: Property Type on left, Rent on right
@@ -2158,10 +2159,10 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
               Expanded(
                 child: Row(
                   children: [
-                    AppSvgIcon(
+                    const AppSvgIcon(
                       svgString: AppSvgIcons.propertyType,
                       size: 16,
-                      color: const Color(0xFF0F172A),
+                      color: AppColors.slate900,
                     ),
                     const SizedBox(width: 7),
                     Flexible(
@@ -2173,7 +2174,7 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
                           fontFamily: 'DM Sans',
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF0F172A),
+                          color: AppColors.slate900,
                         ),
                       ),
                     ),
@@ -2202,7 +2203,7 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
                       fontFamily: 'DM Sans',
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF64748B),
+                      color: AppColors.slate500,
                     ),
                   ),
                 ],
@@ -2244,16 +2245,16 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+            color: AppColors.slate900.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            color: AppColors.slate900.withValues(alpha: 0.03),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -2263,7 +2264,7 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Material(
-            color: Colors.transparent,
+            color: AppColors.transparent,
             child: InkWell(
               onTap: () => setState(() => _isExpanded = !_isExpanded),
               borderRadius: BorderRadius.circular(20),
@@ -2299,7 +2300,7 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
                               fontFamily: 'DM Sans',
                               fontSize: 15.5,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.slate900,
                               letterSpacing: -0.2,
                             ),
                           ),
@@ -2312,7 +2313,7 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
                               fontFamily: 'DM Sans',
                               fontSize: 12.5,
                               fontWeight: FontWeight.w500,
-                              color: Color(0xFF64748B),
+                              color: AppColors.slate500,
                             ),
                           ),
                         ],
@@ -2326,14 +2327,14 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
                         width: 30,
                         height: 30,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: AppColors.slate50,
                           borderRadius: BorderRadius.circular(9),
                         ),
                         alignment: Alignment.center,
                         child: const Icon(
                           Icons.keyboard_arrow_down_rounded,
                           size: 20,
-                          color: Color(0xFF475569),
+                          color: AppColors.slate600,
                         ),
                       ),
                     ),
@@ -2356,7 +2357,7 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
                         const Divider(
                           height: 1,
                           thickness: 1,
-                          color: Color(0xFFF1F5F9),
+                          color: AppColors.fieldFill,
                         ),
                         const SizedBox(height: 10),
                         ...widget.children,
@@ -2386,7 +2387,7 @@ class _TenantAmenityChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(5, 5, 11, 5),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: AppColors.primary.withValues(alpha: 0.55),
@@ -2424,7 +2425,7 @@ class _TenantAmenityChip extends StatelessWidget {
               fontFamily: 'DM Sans',
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF0F172A),
+              color: AppColors.slate900,
               height: 1.1,
             ),
           ),
@@ -2463,18 +2464,18 @@ class _HostInformationCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+            color: AppColors.slate900.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
@@ -2498,16 +2499,16 @@ class _HostInformationCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Hosted by',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF64748B),
+                        color: AppColors.slate500,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -2523,8 +2524,8 @@ class _HostInformationCard extends StatelessWidget {
                             color: AppColors.primary,
                           ),
                         ),
-                        const SizedBox(width: 2),
-                        const Icon(
+                        SizedBox(width: 2),
+                        Icon(
                           Icons.chevron_right_rounded,
                           size: 16,
                           color: AppColors.primary,
@@ -2542,7 +2543,7 @@ class _HostInformationCard extends StatelessWidget {
                           AppColors.primary.withValues(alpha: 0.12),
                       backgroundImage: (ownerPhotoUrl != null &&
                               ownerPhotoUrl.isNotEmpty)
-                          ? NetworkImage(ownerPhotoUrl)
+                          ? ResizeImage.resizeIfNeeded(236, null, NetworkImage(ownerPhotoUrl))
                           : null,
                       child: (ownerPhotoUrl == null || ownerPhotoUrl.isEmpty)
                           ? Text(
@@ -2572,7 +2573,7 @@ class _HostInformationCard extends StatelessWidget {
                                     fontFamily: 'DM Sans',
                                     fontSize: 15,
                                     fontWeight: FontWeight.w800,
-                                    color: Color(0xFF0F172A),
+                                    color: AppColors.slate900,
                                   ),
                                 ),
                               ),
@@ -2619,7 +2620,7 @@ class _HostInformationCard extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: Color(0xFF64748B),
+                              color: AppColors.slate500,
                             ),
                           ),
                         ],
@@ -2839,12 +2840,12 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+        border: Border.all(color: AppColors.fieldFill, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+            color: AppColors.slate900.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -2862,14 +2863,14 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                   fontFamily: 'DM Sans',
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
+                  color: AppColors.slate900,
                 ),
               ),
               if (!_isLoading && _totalCount > 0)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
+                    color: AppColors.warningFill,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -2877,7 +2878,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                     children: [
                       const Icon(
                         Icons.star_rounded,
-                        color: Color(0xFFF59E0B),
+                        color: AppColors.matchMedium,
                         size: 15,
                       ),
                       const SizedBox(width: 3.5),
@@ -2887,7 +2888,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                           fontFamily: 'DM Sans',
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
+                          color: AppColors.slate900,
                         ),
                       ),
                     ],
@@ -2896,7 +2897,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(height: 1, thickness: 0.8, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill),
           const SizedBox(height: 12),
 
           SizedBox(
@@ -2908,7 +2909,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                       height: 24,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Color(0xFF00A8F0),
+                        color: AppColors.sky400,
                       ),
                     ),
                   )
@@ -2920,7 +2921,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                             Icon(
                               Icons.rate_review_outlined,
                               size: 32,
-                              color: const Color(0xFF94A3B8).withValues(alpha: 0.7),
+                              color: AppColors.slate400.withValues(alpha: 0.7),
                             ),
                             const SizedBox(height: 8),
                             const Text(
@@ -2929,7 +2930,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                                 fontFamily: 'DM Sans',
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF64748B),
+                                color: AppColors.slate500,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -2938,7 +2939,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
-                                color: Color(0xFF94A3B8),
+                                color: AppColors.slate400,
                               ),
                             ),
                           ],
@@ -2954,7 +2955,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                             child: Divider(
                               height: 1,
                               thickness: 0.6,
-                              color: Color(0xFFF1F5F9),
+                              color: AppColors.fieldFill,
                             ),
                           ),
                           itemBuilder: (context, index) {
@@ -2971,7 +2972,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                                         fontFamily: 'DM Sans',
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
-                                        color: Color(0xFF0F172A),
+                                        color: AppColors.slate900,
                                       ),
                                     ),
                                     Text(
@@ -2979,7 +2980,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                                       style: const TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 11,
-                                        color: Color(0xFF94A3B8),
+                                        color: AppColors.slate400,
                                       ),
                                     ),
                                   ],
@@ -2991,8 +2992,8 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                                       Icons.star_rounded,
                                       size: 14,
                                       color: i < rev.stars
-                                          ? const Color(0xFFF59E0B)
-                                          : const Color(0xFFE2E8F0),
+                                          ? AppColors.matchMedium
+                                          : AppColors.slate200,
                                     );
                                   }),
                                 ),
@@ -3005,7 +3006,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                                       fontFamily: 'DM Sans',
                                       fontSize: 12.5,
                                       height: 1.35,
-                                      color: Color(0xFF475569),
+                                      color: AppColors.slate600,
                                     ),
                                   ),
                                 ],
@@ -3019,4 +3020,53 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
       ),
     );
   }
+}
+
+/// Merges freshly loaded [detail] into the [current] property map.
+///
+/// Match-status keys passed in by the caller are preserved, and a repository
+/// non-match ([repoSaysNonMatch]) always wins: bScore is forced to 0 so the
+/// availability-derived fallback can never re-enable Send Inquiry.
+/// Marks the match status as known (`matchKnown: true`) only when the
+/// repository evaluated the match ([repoKnowsMatch]) or the caller already
+/// supplied a known status; otherwise `matchKnown` stays false.
+Map<String, dynamic> mergePropertyDetail({
+  required Map<String, dynamic> current,
+  required Map<String, dynamic> detail,
+  required bool repoSaysNonMatch,
+  bool repoKnowsMatch = true,
+}) {
+  final wasNonMatch = current['isNonMatch'];
+  final wasFilterMatch = current['isFilterMatch'];
+  final sessionReasons = current['mismatchReasons'];
+  final wasOutside = current['isOutsidePreference'];
+  final bExcess = current['budgetExcess'];
+  final dExcess = current['distanceExcess'];
+  final bScore = current['bScore'];
+
+  return {
+    ...current,
+    ...detail,
+    if (wasNonMatch != null) ...{'isNonMatch': wasNonMatch},
+    if (wasFilterMatch != null) ...{'isFilterMatch': wasFilterMatch},
+    if (sessionReasons != null) ...{'mismatchReasons': sessionReasons},
+    if (wasOutside != null) ...{'isOutsidePreference': wasOutside},
+    if (bExcess != null) ...{'budgetExcess': bExcess},
+    if (dExcess != null) ...{'distanceExcess': dExcess},
+    // Never let the availability-derived fallback re-enable a property that
+    // was passed in with bScore 0.
+    if (bScore != null &&
+        ((wasNonMatch == false && wasFilterMatch != true) ||
+            (bScore is num && bScore == 0)))
+      ...{'bScore': bScore},
+    if (detail['bScore'] is num && detail['bScore'] == 0) ...{'bScore': 0},
+    if (repoSaysNonMatch) ...{
+      'bScore': 0,
+      'isNonMatch': true,
+      if (detail['mismatchReasons'] != null)
+        'mismatchReasons': detail['mismatchReasons'],
+    },
+    'matchKnown':
+        repoKnowsMatch || repoSaysNonMatch || current['matchKnown'] != false,
+  };
 }

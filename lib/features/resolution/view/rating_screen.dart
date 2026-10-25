@@ -63,6 +63,7 @@ class _RatingScreenState extends State<RatingScreen> {
   bool _submitting = false;
 
   Future<void> _submit() async {
+    if (_submitting) return;
     final onSubmit = widget.onSubmit;
     if (onSubmit == null) {
       Navigator.of(context).pop();
@@ -110,17 +111,17 @@ class _RatingScreenState extends State<RatingScreen> {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: AppColors.fieldFill,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFFE2E8F0),
+                        color: AppColors.slate200,
                         width: 0.8,
                       ),
                     ),
                     child: const Icon(
                       Icons.arrow_back_rounded,
                       size: 19,
-                      color: Color(0xFF0F172A),
+                      color: AppColors.slate900,
                     ),
                   ),
                 ),
@@ -194,7 +195,7 @@ class _RatingScreenState extends State<RatingScreen> {
                             : Icons.star_border_rounded,
                         color: i < _starRating
                             ? AppColors.amberPrimary
-                            : AppColors.border,
+                            : AppColors.fieldBorder,
                         size: 40,
                       ),
                     ),
@@ -211,16 +212,16 @@ class _RatingScreenState extends State<RatingScreen> {
                   fillColor: AppColors.fieldFill,
                   hintText: widget._reviewHint,
                   hintStyle: const TextStyle(
-                    color: AppColors.textHint,
+                    color: AppColors.hint,
                     fontSize: 13,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: const BorderSide(color: AppColors.fieldBorder),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: const BorderSide(color: AppColors.fieldBorder),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),

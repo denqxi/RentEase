@@ -133,7 +133,7 @@ class _EditConstraintsViewState extends State<_EditConstraintsView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: AppSpacing.md),
+                      const SizedBox(height: AppSpacing.md),
                       LabelledField(
                         label: 'Max monthly budget',
                         child: AppTextField(
@@ -146,7 +146,7 @@ class _EditConstraintsViewState extends State<_EditConstraintsView> {
                           hintText: '4500',
                         ),
                       ),
-                      SizedBox(height: AppSpacing.md),
+                      const SizedBox(height: AppSpacing.md),
                       PreferenceDropdown(
                         label: 'Gender policy',
                         value: _gender,
@@ -154,7 +154,7 @@ class _EditConstraintsViewState extends State<_EditConstraintsView> {
                         items: _genderOptions,
                         onChanged: (v) => setState(() => _gender = v),
                       ),
-                      SizedBox(height: AppSpacing.md),
+                      const SizedBox(height: AppSpacing.md),
                       Row(
                         children: [
                           Expanded(
@@ -171,7 +171,7 @@ class _EditConstraintsViewState extends State<_EditConstraintsView> {
                           ),
                         ],
                       ),
-                      SizedBox(height: AppSpacing.md),
+                      const SizedBox(height: AppSpacing.md),
                       Row(
                         children: [
                           Expanded(
@@ -202,7 +202,7 @@ class _EditConstraintsViewState extends State<_EditConstraintsView> {
                         inactiveColor: context.appColors.indicatorInactive,
                         onChanged: (v) => setState(() => _maxDistance = v),
                       ),
-                      SizedBox(height: AppSpacing.xl),
+                      const SizedBox(height: AppSpacing.xl),
                     ],
                   ),
                 ),
@@ -316,7 +316,7 @@ class _SaveBar extends StatelessWidget {
               label: saving ? 'Saving & re-matching...' : 'Save changes',
               onPressed: saving || !enabled ? null : onSave,
             ),
-            SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               note,
               style: AppTextStyles.caption(context),

@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'firestore_parse.dart';
+
 /// `ownerProfiles/{userId}` — owner verification. Document ID references
 /// `users/{userId}`.
 ///
@@ -51,15 +53,15 @@ class OwnerProfileDoc {
       OwnerProfileDoc(
         userId: id,
         verificationStatus: map['verificationStatus'] as String? ?? 'none',
-        submittedAt: map['submittedAt'] as Timestamp?,
-        verifiedAt: map['verifiedAt'] as Timestamp?,
-        rejectedAt: map['rejectedAt'] as Timestamp?,
+        submittedAt: parseTimestamp(map['submittedAt']),
+        verifiedAt: parseTimestamp(map['verifiedAt']),
+        rejectedAt: parseTimestamp(map['rejectedAt']),
         rejectionReason: map['rejectionReason'] as String?,
-        avgRating: map['avgRating'] as num?,
-        totalRatings: map['totalRatings'] as num?,
-        ratingSum: map['ratingSum'] as num?,
-        propertyCount: map['propertyCount'] as num?,
-        updatedAt: map['updatedAt'] as Timestamp?,
+        avgRating: parseNumOrNull(map['avgRating']),
+        totalRatings: parseNumOrNull(map['totalRatings']),
+        ratingSum: parseNumOrNull(map['ratingSum']),
+        propertyCount: parseNumOrNull(map['propertyCount']),
+        updatedAt: parseTimestamp(map['updatedAt']),
       );
 
   factory OwnerProfileDoc.fromSnapshot(

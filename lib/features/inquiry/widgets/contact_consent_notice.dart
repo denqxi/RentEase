@@ -18,7 +18,7 @@ class ContactConsentNotice extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.phone_outlined, size: 16, color: AppColors.accent),
+        const Icon(Icons.phone_outlined, size: 16, color: AppColors.accent),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Text(

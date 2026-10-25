@@ -243,6 +243,10 @@ class _SignInScreenState extends State<SignInScreen>
                   child: FadeTransition(
                     opacity: _cardFade,
                     child: BlocBuilder<AuthBloc, AuthState>(
+                // The card only reads these two flags.
+                buildWhen: (p, c) =>
+                    (p is AuthLoading) != (c is AuthLoading) ||
+                    (p is AuthSuspended) != (c is AuthSuspended),
                 builder: (context, state) => _SignInCard(
                   headerSlide: _headerSlide,
                   fieldsSlide: _fieldsSlide,
@@ -349,7 +353,7 @@ class _SignInCard extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: context.appColors.surface,
-        borderRadius: BorderRadius.vertical(
+        borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppRadii.card),
         ),
         boxShadow: [
@@ -400,7 +404,7 @@ class _SignInCard extends StatelessWidget {
                 ),
               ),
               if (isSuspended) ...[
-                SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.md),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(AppSpacing.md),
@@ -446,11 +450,11 @@ class _SignInCard extends StatelessWidget {
                   children: [
                     const _OrDivider(),
                     const SizedBox(height: 14),
-                    Row(
+                    const Row(
                       children: [
-                        const Expanded(child: _GoogleButton()),
+                        Expanded(child: _GoogleButton()),
                         SizedBox(width: AppSpacing.sm),
-                        const Expanded(child: _GuestButton()),
+                        Expanded(child: _GuestButton()),
                       ],
                     ),
                     const SizedBox(height: 18),
@@ -485,8 +489,8 @@ class _SignInLogoRow extends StatelessWidget {
           errorBuilder: (_, _, _) => Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.home_work_rounded, color: AppColors.primary, size: 22),
-              SizedBox(width: 6),
+              const Icon(Icons.home_work_rounded, color: AppColors.primary, size: 22),
+              const SizedBox(width: 6),
               Text(
                 'RentEase',
                 style: TextStyle(
@@ -632,7 +636,7 @@ class _AuthTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.field),
-          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
     );
@@ -670,7 +674,7 @@ class _RememberForgotRow extends StatelessWidget {
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ),
-        SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.sm),
         Text(
           'Remember me',
           style: AppTextStyles.label(context).copyWith(
@@ -731,7 +735,9 @@ class _GoogleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AuthBloc>().state is AuthLoading;
+    final isLoading = context.select<AuthBloc, bool>(
+      (bloc) => bloc.state is AuthLoading,
+    );
     return SizedBox(
       width: double.infinity,
       height: AppSizes.fieldHeight,
@@ -844,7 +850,7 @@ class _GuestButton extends StatelessWidget {
                 color: context.appColors.textPrimary,
               ),
             ),
-            SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.sm),
             Text(
               'Guest',
               style: AppTextStyles.body(context).copyWith(

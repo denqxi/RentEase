@@ -70,10 +70,7 @@ class AppTextField extends StatelessWidget {
         ).copyWith(fontSize: 14, color: context.appColors.textSecondary),
         prefixIcon: prefixIcon != null
             ? Padding(
-                padding: const EdgeInsets.only(
-                  left: 12,
-                  right: 8,
-                ),
+                padding: const EdgeInsets.only(left: 12, right: 8),
                 child: prefixIcon,
               )
             : null,
@@ -104,7 +101,7 @@ class AppTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.accent, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -131,10 +128,7 @@ class LabelledField extends StatelessWidget {
           label,
           style: AppTextStyles.label(
             context,
-          ).copyWith(
-            fontSize: 13,
-            color: context.appColors.textSecondary,
-          ),
+          ).copyWith(fontSize: 13, color: context.appColors.textSecondary),
         ),
         const SizedBox(height: 6),
         child,

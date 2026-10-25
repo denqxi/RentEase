@@ -70,6 +70,26 @@ class _FakeTenantsRepo implements FindTenantsRepository {
     if (fail) throw Exception('boom');
     return byProperty[propertyId] ?? [];
   }
+
+  /// Mirrors the real owner-wide read: `calls` records the property ids
+  /// whose tenant details were requested.
+  @override
+  Future<OwnerCompatibleTenants> fetchCompatibleTenantsForOwner({
+    required String ownerId,
+    required Set<String> detailPropertyIds,
+  }) async {
+    calls.addAll(detailPropertyIds.toList()..sort());
+    if (fail) throw Exception('boom');
+    return (
+      byProperty: {
+        for (final id in detailPropertyIds) id: byProperty[id] ?? [],
+      },
+      tenantIdsByProperty: {
+        for (final e in byProperty.entries)
+          e.key: {for (final t in e.value) t.tenantId},
+      },
+    );
+  }
 }
 
 Future<void> _settle() => Future<void>.delayed(Duration.zero);
@@ -141,6 +161,21 @@ void main() {
     await _settle();
     expect(cubit.state.showPendingBanner, isFalse);
     expect(cubit.state.tenants.map((t) => t.name), ['Ana', 'Ben', 'zara']);
+    await cubit.close();
+  });
+
+  test('card counts cover unavailable listings with leftover matches',
+      () async {
+    tenants.byProperty['a'] = [_tenant('t1', 'Ben')];
+    tenants.byProperty['b'] = [_tenant('t2', 'Ana'), _tenant('t3', 'Cy')];
+    final cubit = build();
+    owner.properties.add([_property('a'), _property('b', available: false)]);
+    owner.status.add('verified');
+    await _settle();
+    await _settle();
+    expect(tenants.calls, ['a']); // details only for available listings
+    expect(cubit.state.tenants.map((t) => t.name), ['Ben']);
+    expect(cubit.state.tenantIdsByProperty['b'], {'t2', 't3'});
     await cubit.close();
   });
 

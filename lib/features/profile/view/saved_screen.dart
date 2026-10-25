@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../features/home/cubit/home_cubit.dart';
+import '../../../features/home/model/listing.dart';
 import '../../../features/home/widgets/listing_card_large.dart';
 import '../../../features/home/widgets/nearby_section.dart'
     show openPropertyDetail;
@@ -27,7 +28,16 @@ class _SavedScreenState extends State<SavedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<HomeCubit>().state;
+    // Rebuild only for the saved-tab fields, not every HomeState emission.
+    context.select<HomeCubit, (List<Listing>, Set<String>, bool, bool)>(
+      (c) => (
+        c.state.savedListings,
+        c.state.savedIds,
+        c.state.isLoadingSaved,
+        c.state.savedLoadFailed,
+      ),
+    );
+    final state = context.read<HomeCubit>().state;
     // Unsaving is optimistic: the card leaves at once, and returns if the
     // write fails and is rolled back.
     final saved = [
@@ -53,9 +63,9 @@ class _SavedScreenState extends State<SavedScreen> {
                     center: Alignment.topRight,
                     radius: 1.05,
                     colors: <Color>[
-                      const Color(0xFFCCF2FE).withValues(alpha: 0.70),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.35),
-                      const Color(0xFFE0F7FE).withValues(alpha: 0.0),
+                      AppColors.tenantFillCyan.withValues(alpha: 0.70),
+                      AppColors.tenantFillCyan.withValues(alpha: 0.35),
+                      AppColors.tenantFillCyan.withValues(alpha: 0.0),
                     ],
                     stops: const <double>[0.0, 0.45, 0.88],
                   ),
@@ -233,7 +243,7 @@ class _EmptyState extends StatelessWidget {
               color: context.appColors.textSecondary,
             ),
           ),
-          SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             'No saved properties yet',
             style: TextStyle(
@@ -243,7 +253,7 @@ class _EmptyState extends StatelessWidget {
               color: context.appColors.textPrimary,
             ),
           ),
-          SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             'Tap the heart on any listing\nto save it here.',
             textAlign: TextAlign.center,

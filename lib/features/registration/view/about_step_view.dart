@@ -33,7 +33,7 @@ class AboutStepView extends StatelessWidget {
         LabeledTextField(
           label: 'Monthly income',
           hint: 'e.g. 3,500',
-          prefixText: '\$  ',
+          prefixText: '₱  ',
           keyboardType: TextInputType.number,
           onChanged: cubit.updateMonthlyIncome,
         ),

@@ -99,14 +99,20 @@ class AdminRepositoryImpl implements AdminRepository {
         .where((id) => id.isNotEmpty && !_people.containsKey(id))
         .toSet()
         .toList();
-    for (var i = 0; i < missing.length; i += 30) {
-      final chunk = missing.sublist(
-        i,
-        i + 30 > missing.length ? missing.length : i + 30,
-      );
-      final snap = await _col(
-        FirestoreCollections.users,
-      ).where(FieldPath.documentId, whereIn: chunk).get();
+    // whereIn caps at 30 ids; chunks are fetched in parallel.
+    final snaps = await Future.wait([
+      for (var i = 0; i < missing.length; i += 30)
+        _col(FirestoreCollections.users)
+            .where(
+              FieldPath.documentId,
+              whereIn: missing.sublist(
+                i,
+                i + 30 > missing.length ? missing.length : i + 30,
+              ),
+            )
+            .get(),
+    ]);
+    for (final snap in snaps) {
       for (final d in snap.docs) {
         final u = UserDoc.fromSnapshot(d);
         _people[d.id] = (
@@ -199,9 +205,9 @@ class AdminRepositoryImpl implements AdminRepository {
             .get();
         final data = snap.data() ?? const <String, dynamic>{};
         return VerificationDocuments(
-          urls: (data['documentUrls'] as List?)?.cast<String>() ?? const [],
+          urls: parseStringList(data['documentUrls']),
           publicIds:
-              (data['documentPublicIds'] as List?)?.cast<String>() ?? const [],
+              parseStringList(data['documentPublicIds']),
         );
       });
 
@@ -230,6 +236,19 @@ class AdminRepositoryImpl implements AdminRepository {
       FirestoreCollections.properties,
     ).where('ownerId', isEqualTo: ownerId).get();
 
+    // Firestore batches cap at 500 writes: flip listings in chunks first
+    // (idempotent), then commit the profile + log together.
+    for (var i = 0; i < listings.docs.length; i += 400) {
+      final chunk = _db.batch();
+      for (final p in listings.docs.skip(i).take(400)) {
+        chunk.update(p.reference, {
+          'isVerified': true,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      await chunk.commit();
+    }
+
     final batch = _db.batch();
     batch.update(ref, {
       'verificationStatus': 'verified',
@@ -237,12 +256,6 @@ class AdminRepositoryImpl implements AdminRepository {
       'rejectionReason': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
-    for (final p in listings.docs) {
-      batch.update(p.reference, {
-        'isVerified': true,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    }
     batch.set(
       _col(FirestoreCollections.adminLogs).doc(),
       _log('approve_owner', ownerId, 'owner', null),
@@ -332,7 +345,7 @@ class AdminRepositoryImpl implements AdminRepository {
               AdminPropertyItem(
                 property: p,
                 ownerName: _nameOf(p.ownerId),
-                adminUnlisted: raw['adminUnlisted'] as bool? ?? false,
+                adminUnlisted: parseBool(raw['adminUnlisted']),
               ),
           ]..sort((a, b) {
             final x = a.property.createdAt?.millisecondsSinceEpoch ?? 0;

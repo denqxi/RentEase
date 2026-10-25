@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'firestore_parse.dart';
+
 import 'tenant_private_prefs_doc.dart';
 
 /// `tenantProfiles/{userId}` — tenant matching preferences and profile.
@@ -140,32 +142,31 @@ class TenantProfileDoc {
   factory TenantProfileDoc.fromMap(String id, Map<String, dynamic> map) =>
       TenantProfileDoc(
         userId: id,
-        maxBudget: map['maxBudget'] as num? ?? 0,
+        maxBudget: parseNum(map['maxBudget'], 0),
         requiredGender: map['requiredGender'] as String? ?? '',
-        needsWifi: map['needsWifi'] as bool? ?? false,
-        maxDistanceKm: map['maxDistanceKm'] as num? ?? 0,
-        poiLatLng: map['poiLatLng'] as GeoPoint? ?? const GeoPoint(0, 0),
+        needsWifi: parseBool(map['needsWifi'], false),
+        maxDistanceKm: parseNum(map['maxDistanceKm'], 0),
+        poiLatLng: parseGeoPoint(map['poiLatLng']) ?? const GeoPoint(0, 0),
         poiLabel: map['poiLabel'] as String? ?? '',
         poiType: map['poiType'] as String?,
         roomType: map['roomType'] as String?,
-        preferredAmenities: (map['preferredAmenities'] as List?)
-            ?.cast<String>(),
-        isSmoker: map['isSmoker'] as bool? ?? false,
-        hasPet: map['hasPet'] as bool? ?? false,
-        groupSize: map['groupSize'] as num? ?? 1,
+        preferredAmenities: parseStringListOrNull(map['preferredAmenities']),
+        isSmoker: parseBool(map['isSmoker'], false),
+        hasPet: parseBool(map['hasPet'], false),
+        groupSize: parseNum(map['groupSize'], 1),
         school: map['school'] as String?,
         occupation: map['occupation'] as String?,
-        moveInDate: map['moveInDate'] as Timestamp?,
-        isSeeking: map['isSeeking'] as bool? ?? true,
-        wRent: map['wRent'] as num? ?? 0.35,
-        wDistance: map['wDistance'] as num? ?? 0.35,
-        wAmenities: map['wAmenities'] as num? ?? 0.30,
-        avgRating: map['avgRating'] as num?,
-        totalRatings: map['totalRatings'] as num?,
-        ratingSum: map['ratingSum'] as num?,
-        profileCompleteness: map['profileCompleteness'] as num?,
-        credibilityScore: map['credibilityScore'] as num?,
-        updatedAt: map['updatedAt'] as Timestamp?,
+        moveInDate: parseTimestamp(map['moveInDate']),
+        isSeeking: parseBool(map['isSeeking'], true),
+        wRent: parseNum(map['wRent'], 0.35),
+        wDistance: parseNum(map['wDistance'], 0.35),
+        wAmenities: parseNum(map['wAmenities'], 0.30),
+        avgRating: parseNumOrNull(map['avgRating']),
+        totalRatings: parseNumOrNull(map['totalRatings']),
+        ratingSum: parseNumOrNull(map['ratingSum']),
+        profileCompleteness: parseNumOrNull(map['profileCompleteness']),
+        credibilityScore: parseNumOrNull(map['credibilityScore']),
+        updatedAt: parseTimestamp(map['updatedAt']),
       );
 
   factory TenantProfileDoc.fromSnapshot(

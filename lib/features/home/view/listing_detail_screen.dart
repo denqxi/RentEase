@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/currency_utils.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/match_score_card.dart';
 import '../cubit/listing_detail_cubit.dart';
@@ -51,11 +52,11 @@ class _ListingDetailView extends StatelessWidget {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate(<Widget>[
                     _TitleRow(detail: detail),
-                    SizedBox(height: AppSpacing.xs),
+                    const SizedBox(height: AppSpacing.xs),
                     _LocationRow(location: detail.location),
-                    SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.md),
                     _SpecsRow(detail: detail),
-                    SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.md),
                     MatchScoreCard(
                       matchPercent: detail.matchPercent,
                       label: detail.matchLabel,
@@ -64,18 +65,18 @@ class _ListingDetailView extends StatelessWidget {
                           .map((r) => (r.label, r.met))
                           .toList(),
                     ),
-                    SizedBox(height: AppSpacing.lg),
-                    _SectionTitle(title: 'About this home'),
-                    SizedBox(height: AppSpacing.sm),
+                    const SizedBox(height: AppSpacing.lg),
+                    const _SectionTitle(title: 'About this home'),
+                    const SizedBox(height: AppSpacing.sm),
                     Text(
                       detail.description,
                       style: AppTextStyles.body(context),
                     ),
-                    SizedBox(height: AppSpacing.lg),
-                    _SectionTitle(title: 'Amenities'),
-                    SizedBox(height: AppSpacing.sm),
+                    const SizedBox(height: AppSpacing.lg),
+                    const _SectionTitle(title: 'Amenities'),
+                    const SizedBox(height: AppSpacing.sm),
                     _AmenitiesWrap(amenities: detail.amenities),
-                    SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.lg),
                     _LandlordRow(detail: detail),
                   ]),
                 ),
@@ -227,12 +228,12 @@ class _TitleRow extends StatelessWidget {
         Expanded(
           child: Text(detail.title, style: AppTextStyles.title(context)),
         ),
-        SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.sm),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: <Widget>[
             Text(
-              '\$${detail.pricePerMonth.toLocale()}',
+              CurrencyUtils.formatDollars(detail.pricePerMonth),
               style: AppTextStyles.title(
                 context,
               ).copyWith(color: AppColors.accent, fontSize: 20),
@@ -262,7 +263,7 @@ class _LocationRow extends StatelessWidget {
           size: 14,
           color: context.appColors.textSecondary,
         ),
-        SizedBox(width: 4),
+        const SizedBox(width: 4),
         Text(
           location,
           style: AppTextStyles.caption(context).copyWith(fontSize: 13),
@@ -282,11 +283,11 @@ class _SpecsRow extends StatelessWidget {
     return Row(
       children: <Widget>[
         _SpecChip(value: '${detail.beds}', label: 'Bedrooms'),
-        SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.sm),
         _SpecChip(value: '${detail.baths}', label: 'Bathrooms'),
-        SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.sm),
         _SpecChip(value: '${detail.sqft} ft²', label: 'Area'),
-        SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.sm),
         _SpecChip(value: detail.propertyType, label: 'Type'),
       ],
     );
@@ -321,7 +322,7 @@ class _SpecChip extends StatelessWidget {
               ).copyWith(fontSize: 13, fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 2),
+            const SizedBox(height: 2),
             Text(
               label,
               style: AppTextStyles.caption(context).copyWith(fontSize: 10),
@@ -397,7 +398,7 @@ class _AmenityChip extends StatelessWidget {
             size: 14,
             color: context.appColors.textSecondary,
           ),
-          SizedBox(width: 4),
+          const SizedBox(width: 4),
           Text(
             label,
             style: AppTextStyles.caption(context).copyWith(
@@ -431,7 +432,7 @@ class _LandlordRow extends StatelessWidget {
           Container(
             width: 44,
             height: 44,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: <Color>[AppColors.placeholderNavyA, AppColors.placeholderNavyB],
@@ -439,9 +440,9 @@ class _LandlordRow extends StatelessWidget {
                 end: Alignment.bottomRight,
               ),
             ),
-            child: Icon(Icons.person, color: AppColors.onInk, size: 22),
+            child: const Icon(Icons.person, color: AppColors.onInk, size: 22),
           ),
-          SizedBox(width: AppSpacing.md),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,7 +507,7 @@ class _BottomBar extends StatelessWidget {
       child: Row(
         children: <Widget>[
           _HeartButton(isSaved: isSaved, onTap: onSaveToggle),
-          SizedBox(width: AppSpacing.md),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: SizedBox(
               height: AppSizes.buttonHeight,
@@ -524,7 +525,7 @@ class _BottomBar extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadii.button),
                   ),
                 ),
-                child: Text(
+                child: const Text(
                   'Contact landlord',
                   style: AppTextStyles.buttonLabel,
                 ),
@@ -564,17 +565,5 @@ class _HeartButton extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-extension on int {
-  String toLocale() {
-    final s = toString();
-    final buffer = StringBuffer();
-    for (var i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(s[i]);
-    }
-    return buffer.toString();
   }
 }

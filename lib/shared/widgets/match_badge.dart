@@ -44,8 +44,8 @@ class MatchBadge extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(Icons.lock_outline, color: AppColors.onInk, size: 11),
-            SizedBox(width: 4),
+            const Icon(Icons.lock_outline, color: AppColors.onInk, size: 11),
+            const SizedBox(width: 4),
             Text(
               showLabel ? 'Match Score' : 'Score',
               style: AppTextStyles.label(context).copyWith(
@@ -75,7 +75,10 @@ class MatchBadge extends StatelessWidget {
               Container(
                 width: 6,
                 height: 6,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: _dotColor),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _dotColor,
+                ),
               ),
               const SizedBox(width: 4),
               Text(
@@ -94,10 +97,10 @@ class MatchBadge extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3.5),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1B4B).withValues(alpha: 0.75),
+              color: AppColors.ownerText.withValues(alpha: 0.75),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: const Color(0xFF818CF8).withValues(alpha: 0.6),
+                color: AppColors.ownerPrimary.withValues(alpha: 0.6),
                 width: 0.6,
               ),
             ),
@@ -105,7 +108,7 @@ class MatchBadge extends StatelessWidget {
               'ci=${ciVal.toStringAsFixed(2)}',
               style: const TextStyle(
                 fontFamily: 'DM Sans',
-                color: Color(0xFFC7D2FE),
+                color: AppColors.indigo50,
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
               ),

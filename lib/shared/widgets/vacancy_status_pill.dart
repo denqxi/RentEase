@@ -57,7 +57,7 @@ class VacancyStatusPill extends StatelessWidget {
               shape: BoxShape.circle,
             ),
           ),
-          SizedBox(width: 4),
+          const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(

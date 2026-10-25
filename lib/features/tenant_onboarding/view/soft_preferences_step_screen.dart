@@ -97,7 +97,7 @@ class _SoftPreferencesStepScreenState extends State<SoftPreferencesStepScreen> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
-                        value: 2 / 5,
+                        value: 2 / 4,
                         minHeight: 5,
                         backgroundColor: context.appColors.indicatorInactive
                             .withValues(alpha: 0.5),
@@ -109,7 +109,7 @@ class _SoftPreferencesStepScreenState extends State<SoftPreferencesStepScreen> {
                   ),
                   const SizedBox(width: 14),
                   Text(
-                    '2 / 5',
+                    '2 / 4',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 13,
@@ -226,7 +226,7 @@ class _SoftPreferencesStepScreenState extends State<SoftPreferencesStepScreen> {
                   style: ButtonStyle(
                     backgroundColor:
                         WidgetStateProperty.all(context.appColors.ink),
-                    foregroundColor: WidgetStateProperty.all(Colors.white),
+                    foregroundColor: WidgetStateProperty.all(AppColors.onInk),
                     elevation: WidgetStateProperty.all(0),
                     shape: WidgetStateProperty.all(
                       RoundedRectangleBorder(
@@ -283,7 +283,7 @@ class _RoomTypePill extends StatelessWidget {
             fontFamily: 'DM Sans',
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? Colors.white : context.appColors.textSecondary,
+            color: isSelected ? AppColors.onInk : context.appColors.textSecondary,
           ),
         ),
       ),
@@ -311,7 +311,7 @@ class _AmenityChip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8.5),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE8F7F8) : context.appColors.surface,
+          color: isSelected ? AppColors.accentSoft : context.appColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color:

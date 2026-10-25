@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'firestore_parse.dart';
+
 /// `tenantProfiles/{userId}/private/prefs` — the tenant's map pin (POI) and
 /// TOPSIS weights. Readable and writable only by that tenant (and admins);
 /// owners reading `tenantProfiles/{uid}` for Find Tenants never see them.
@@ -36,13 +38,13 @@ class TenantPrivatePrefsDoc {
 
   factory TenantPrivatePrefsDoc.fromMap(Map<String, dynamic> map) =>
       TenantPrivatePrefsDoc(
-        poiLatLng: map['poiLatLng'] as GeoPoint?,
+        poiLatLng: parseGeoPoint(map['poiLatLng']),
         poiLabel: map['poiLabel'] as String?,
         poiType: map['poiType'] as String?,
-        wRent: map['wRent'] as num?,
-        wDistance: map['wDistance'] as num?,
-        wAmenities: map['wAmenities'] as num?,
-        updatedAt: map['updatedAt'] as Timestamp?,
+        wRent: parseNumOrNull(map['wRent']),
+        wDistance: parseNumOrNull(map['wDistance']),
+        wAmenities: parseNumOrNull(map['wAmenities']),
+        updatedAt: parseTimestamp(map['updatedAt']),
       );
 
   factory TenantPrivatePrefsDoc.fromSnapshot(

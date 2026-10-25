@@ -109,7 +109,7 @@ class FilteringService {
 
   // ── Gender matching helpers ─────────────────────────────────────────────
   // The app's real gender-policy values are 'Female only' | 'Male only' |
-  // 'Mixed / Any' (see property_rules_screen.dart, hard_constraints_screen.dart) —
+  // 'Mixed / Any' (see create_listing_wizard_screen.dart, hard_constraints_screen.dart) —
   // matched case-insensitively rather than hardcoding that exact casing.
 
   static bool _isWildcardGender(String value) {
@@ -170,7 +170,7 @@ class FilteringService {
     final ineligiblePropertyIds = <String>[];
 
     for (final property in properties) {
-      final distanceKm = DistanceUtils.kmBetween(
+      final distanceKm = DistanceUtils.kmBetweenOrInfinity(
         tenant.poiLatLng,
         property.location,
       );

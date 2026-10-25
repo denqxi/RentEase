@@ -92,24 +92,24 @@ class _ListingDropdownState<T> extends State<ListingDropdown<T>>
               showWhenUnlinked: false,
               offset: Offset(0, size.height + 4),
               child: Material(
-                color: Colors.transparent,
+                color: AppColors.transparent,
                 child: FadeTransition(
                   opacity: _fadeAnim,
                   child: Container(
                     width: size.width,
                     constraints: const BoxConstraints(maxHeight: 280),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.onInk,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.11),
+                          color: AppColors.slate900.withValues(alpha: 0.11),
                           blurRadius: 22,
                           spreadRadius: 1,
                           offset: const Offset(0, 8),
                         ),
                         BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                          color: AppColors.slate900.withValues(alpha: 0.04),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -136,7 +136,7 @@ class _ListingDropdownState<T> extends State<ListingDropdown<T>>
                             ),
                             color: isSelected
                                 ? AppColors.primary.withValues(alpha: 0.06)
-                                : Colors.transparent,
+                                : AppColors.transparent,
                             child: DefaultTextStyle(
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
@@ -146,7 +146,7 @@ class _ListingDropdownState<T> extends State<ListingDropdown<T>>
                                     : FontWeight.w400,
                                 color: isSelected
                                     ? AppColors.primary
-                                    : const Color(0xFF1E293B),
+                                    : AppColors.slate900,
                               ),
                               child: item.child,
                             ),
@@ -208,12 +208,12 @@ class _ListingDropdownState<T> extends State<ListingDropdown<T>>
             vertical: 10,
           ),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.onInk,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: _isOpen
                   ? AppColors.accent
-                  : const Color(0xFFCBD5E1),
+                  : AppColors.indicatorInactive,
               width: _isOpen ? 1.4 : 1.0,
             ),
           ),
@@ -236,7 +236,7 @@ class _ListingDropdownState<T> extends State<ListingDropdown<T>>
                           fontFamily: 'DM Sans',
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
-                          color: Color(0xFF64748B),
+                          color: AppColors.textSecondary,
                         ),
                       ),
               ),
@@ -247,7 +247,7 @@ class _ListingDropdownState<T> extends State<ListingDropdown<T>>
                 child: const Icon(
                   Icons.arrow_drop_down_rounded,
                   size: 20,
-                  color: Color(0xFF64748B),
+                  color: AppColors.textSecondary,
                 ),
               ),
             ],
@@ -370,23 +370,23 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
               showWhenUnlinked: false,
               offset: Offset(0, size.height + 4),
               child: Material(
-                color: Colors.transparent,
+                color: AppColors.transparent,
                 child: FadeTransition(
                   opacity: _fadeAnim,
                   child: Container(
                     width: size.width,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.onInk,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.11),
+                          color: AppColors.slate900.withValues(alpha: 0.11),
                           blurRadius: 22,
                           spreadRadius: 1,
                           offset: const Offset(0, 8),
                         ),
                         BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                          color: AppColors.slate900.withValues(alpha: 0.04),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -409,7 +409,7 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
                                 ),
                                 color: (_isOptionSelected(option))
                                     ? AppColors.primary.withValues(alpha: 0.06)
-                                    : Colors.transparent,
+                                    : AppColors.transparent,
                                 child: Text(
                                   option,
                                   style: TextStyle(
@@ -420,7 +420,7 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
                                         : FontWeight.w400,
                                     color: _isOptionSelected(option)
                                         ? AppColors.primary
-                                        : const Color(0xFF1E293B),
+                                        : AppColors.slate900,
                                   ),
                                 ),
                               ),
@@ -499,12 +499,12 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
           vertical: _isCustomMode ? 2 : 10,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.onInk,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isFocusedOrOpen
                 ? AppColors.accent
-                : const Color(0xFFCBD5E1),
+                : AppColors.indicatorInactive,
             width: isFocusedOrOpen ? 1.4 : 1.0,
           ),
         ),
@@ -527,7 +527,7 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
                           fontFamily: 'DM Sans',
                           fontSize: 13.5,
                           fontWeight: FontWeight.w400,
-                          color: Color(0xFF94A3B8),
+                          color: AppColors.slate400,
                         ),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
@@ -558,7 +558,7 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
                           color:
                               (widget.value != null && widget.value!.isNotEmpty)
                                   ? context.appColors.textPrimary
-                                  : const Color(0xFF64748B),
+                                  : AppColors.textSecondary,
                         ),
                       ),
                     ),
@@ -575,7 +575,7 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
                   child: const Icon(
                     Icons.arrow_drop_down_rounded,
                     size: 20,
-                    color: Color(0xFF64748B),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ),
@@ -665,17 +665,17 @@ class RentalTypeCard extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: selected ? AppColors.accentSoft : Colors.white,
+            color: selected ? AppColors.accentSoft : AppColors.onInk,
             borderRadius: BorderRadius.circular(AppRadii.field),
             border: Border.all(
-              color: selected ? AppColors.accent : const Color(0xFFE2E8F0),
+              color: selected ? AppColors.accent : AppColors.slate200,
               width: selected ? 1.5 : 1,
             ),
             boxShadow: [
               BoxShadow(
                 color: selected
                     ? AppColors.accent.withValues(alpha: 0.12)
-                    : Colors.black.withValues(alpha: 0.05),
+                    : AppColors.scrim.withValues(alpha: 0.05),
                 blurRadius: 10,
                 spreadRadius: 0,
                 offset: const Offset(0, 3),
@@ -688,10 +688,10 @@ class RentalTypeCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: selected ? AppColors.accent : const Color(0xFFF1F5F9),
+                  color: selected ? AppColors.accent : AppColors.fieldFill,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: selected ? AppColors.accent : const Color(0xFFE2E8F0),
+                    color: selected ? AppColors.accent : AppColors.slate200,
                   ),
                 ),
                 alignment: Alignment.center,
@@ -726,7 +726,7 @@ class RentalTypeCard extends StatelessWidget {
                 ),
               ),
               if (selected)
-                Icon(Icons.check_circle_rounded, color: AppColors.accent),
+                const Icon(Icons.check_circle_rounded, color: AppColors.accent),
             ],
           ),
         ),
@@ -768,13 +768,13 @@ class ListingCalloutBox extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: const Color(0xFFE2E8F0).withValues(alpha: 0.7),
+              color: AppColors.slate200.withValues(alpha: 0.7),
               shape: BoxShape.circle,
             ),
             child: Icon(
               icon,
               size: 20,
-              color: const Color(0xFF475569),
+              color: AppColors.slate700,
             ),
           ),
           const SizedBox(width: AppSpacing.md),
@@ -789,7 +789,7 @@ class ListingCalloutBox extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 14.5,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
+                    color: AppColors.slate900,
                     letterSpacing: -0.2,
                   ),
                 ),
@@ -800,7 +800,7 @@ class ListingCalloutBox extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 12.5,
                     fontWeight: FontWeight.w400,
-                    color: Color(0xFF64748B),
+                    color: AppColors.textSecondary,
                     height: 1.35,
                   ),
                 ),
@@ -915,12 +915,12 @@ class AmenityChip extends StatelessWidget {
             5,
           ),
           decoration: BoxDecoration(
-            color: selected ? AppColors.accent : const Color(0xFFF1F5F9),
+            color: selected ? AppColors.accent : AppColors.fieldFill,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: selected
                   ? AppColors.accent
-                  : const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+                  : AppColors.slate200.withValues(alpha: 0.8),
               width: 1,
             ),
           ),
@@ -932,15 +932,15 @@ class AmenityChip extends StatelessWidget {
                 height: 22,
                 decoration: BoxDecoration(
                   color: selected
-                      ? Colors.white.withValues(alpha: 0.22)
-                      : Colors.white,
+                      ? AppColors.onInk.withValues(alpha: 0.22)
+                      : AppColors.onInk,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
                 child: Icon(
                   iconData,
                   size: 13,
-                  color: selected ? Colors.white : AppColors.accent,
+                  color: selected ? AppColors.onInk : AppColors.accent,
                 ),
               ),
               const SizedBox(width: 7),
@@ -951,7 +951,7 @@ class AmenityChip extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 12,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                    color: selected ? Colors.white : const Color(0xFF1E293B),
+                    color: selected ? AppColors.onInk : AppColors.slate900,
                     height: 1.1,
                   ),
                 ),
@@ -961,7 +961,7 @@ class AmenityChip extends StatelessWidget {
                 Icon(
                   Icons.close_rounded,
                   size: 13.5,
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: AppColors.onInk.withValues(alpha: 0.9),
                 ),
               ],
             ],
@@ -1015,8 +1015,8 @@ class ReviewSectionCard extends StatelessWidget {
                 child: GestureDetector(
                   onTap: onEdit,
                   behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(
                       horizontal: 4,
                       vertical: 4,
                     ),
@@ -1028,7 +1028,7 @@ class ReviewSectionCard extends StatelessWidget {
                           size: 14,
                           color: AppColors.accent,
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4),
                         Text(
                           'Edit',
                           style: TextStyle(

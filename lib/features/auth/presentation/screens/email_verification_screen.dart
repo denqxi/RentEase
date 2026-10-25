@@ -415,6 +415,12 @@ class _EmailVerificationBodyState extends State<_EmailVerificationBody>
                           onPressed: _handleOpenEmailApp,
                         ),
                         const SizedBox(height: AppSpacing.md),
+                        AppButton(
+                          label: "I've verified",
+                          variant: AppButtonVariant.outline,
+                          onPressed: widget.onContinue,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
                         GestureDetector(
                           onTap: _resendCountdown == 0 ? _resend : null,
                           behavior: HitTestBehavior.opaque,

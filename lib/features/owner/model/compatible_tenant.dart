@@ -1,5 +1,8 @@
 import 'package:equatable/equatable.dart';
 
+// Compiled once instead of on every call.
+final RegExp _kWhitespaceRe = RegExp(r'\s+');
+
 /// One compatible (bScore = 1) tenant for a property, as shown on a Find
 /// Tenants card — joined from `matches`, `users` and `tenantProfiles`.
 ///
@@ -29,7 +32,7 @@ class CompatibleTenant extends Equatable {
   final num? tenantCi;
 
   String get initials {
-    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+    final parts = name.trim().split(_kWhitespaceRe).where((p) => p.isNotEmpty);
     return parts.take(2).map((p) => p[0].toUpperCase()).join();
   }
 

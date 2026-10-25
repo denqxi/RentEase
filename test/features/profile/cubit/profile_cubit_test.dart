@@ -37,6 +37,7 @@ InquiryDoc _inq(String id) => InquiryDoc(
 );
 
 void main() {
+  profileRefreshTests();
   test('loads the real name, photo and inquiry count', () async {
     final repo = _FakeRepo(
       user: const UserDoc(
@@ -74,5 +75,40 @@ void main() {
   test('without uid/repository (guest) nothing is loaded', () {
     final cubit = ProfileCubit();
     expect(cubit.state.fullName, '');
+  });
+}
+
+class _CountingRepo extends _FakeRepo {
+  int active = 0;
+  final List<StreamController<List<InquiryDoc>>> all = [];
+
+  @override
+  Stream<List<InquiryDoc>> watchTenantInquiries(String tenantId) {
+    late StreamController<List<InquiryDoc>> c;
+    c = StreamController<List<InquiryDoc>>(
+      onListen: () => active++,
+      onCancel: () => active--,
+    );
+    all.add(c);
+    return c.stream;
+  }
+}
+
+void profileRefreshTests() {
+  test('refresh replaces the inquiry subscription instead of leaking one',
+      () async {
+    final repo = _CountingRepo();
+    final cubit = ProfileCubit(uid: 't', repository: repo);
+    await Future<void>.delayed(Duration.zero);
+    expect(repo.active, 1);
+
+    cubit.refresh();
+    cubit.refresh();
+    await Future<void>.delayed(Duration.zero);
+    expect(repo.active, 1);
+
+    await cubit.close();
+    await Future<void>.delayed(Duration.zero);
+    expect(repo.active, 0);
   });
 }

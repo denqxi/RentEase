@@ -35,7 +35,7 @@ class PropertyStepView extends StatelessWidget {
         LabeledTextField(
           label: 'Monthly rent',
           hint: 'e.g. 1,800',
-          prefixText: '\$  ',
+          prefixText: '₱  ',
           keyboardType: TextInputType.number,
           onChanged: cubit.updateMonthlyRent,
         ),

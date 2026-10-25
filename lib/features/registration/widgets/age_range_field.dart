@@ -24,7 +24,7 @@ class AgeRangeField extends StatelessWidget {
           'Preferred age range',
           style: AppTextStyles.label(context).copyWith(color: context.appColors.textSecondary),
         ),
-        SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.sm),
         Row(
           children: <Widget>[
             Expanded(
@@ -34,7 +34,7 @@ class AgeRangeField extends StatelessWidget {
                 onChanged: onMinChanged,
               ),
             ),
-            SizedBox(width: AppSpacing.md),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: _AgeInput(
                 label: 'Max age',
@@ -66,7 +66,7 @@ class _AgeInput extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(label, style: AppTextStyles.label(context)),
-        SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.sm),
         TextField(
           onChanged: onChanged,
           keyboardType: TextInputType.number,

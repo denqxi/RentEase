@@ -36,18 +36,18 @@ class PrivacyNoticeScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.md),
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: EdgeInsets.only(bottom: AppSpacing.lg),
+                        padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                         child: Text(
                           PrivacyNoticeContent.intro,
                           style: AppTextStyles.body(context),
@@ -59,17 +59,17 @@ class PrivacyNoticeScreen extends StatelessWidget {
                         title: PrivacyNoticeContent.contactHeading,
                         body: PrivacyNoticeContent.contactBody,
                       ),
-                      SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.lg),
                     ],
                   ),
                 ),
               ),
-              SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.md),
               AppButton(
                 label: 'Close',
                 onPressed: () => Navigator.of(context).pop(),
               ),
-              SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.md),
             ],
           ),
         ),
@@ -87,7 +87,7 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: AppSpacing.lg),
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -100,7 +100,7 @@ class _Section extends StatelessWidget {
               color: context.appColors.textPrimary,
             ),
           ),
-          SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: AppSpacing.xs),
           Text(body, style: AppTextStyles.body(context)),
         ],
       ),

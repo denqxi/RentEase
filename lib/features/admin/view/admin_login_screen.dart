@@ -84,14 +84,14 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Sign in', style: AppTextStyles.title(context)),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             'Authorized personnel only.',
             style: AppTextStyles.body(
               context,
             ).copyWith(color: context.appColors.textSecondary),
           ),
-          SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.lg),
           LabelledField(
             label: 'ADMIN EMAIL',
             child: AppTextField(
@@ -106,7 +106,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               onChanged: (_) => setState(() {}),
             ),
           ),
-          SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
           LabelledField(
             label: 'PASSWORD',
             child: AppTextField(
@@ -131,7 +131,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               onChanged: (_) => setState(() {}),
             ),
           ),
-          SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.lg),
           login.isLoading
               ? const Center(
                   child: Padding(
@@ -143,7 +143,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                   label: 'Sign in',
                   onPressed: _canSubmit ? _login : null,
                 ),
-          SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
           Center(
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -153,7 +153,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                   size: 13,
                   color: context.appColors.textSecondary,
                 ),
-                SizedBox(width: 4),
+                const SizedBox(width: 4),
                 Flexible(
                   child: Text(
                     'Admin accounts are provisioned by the platform team.',
@@ -163,7 +163,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               ],
             ),
           ),
-          SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.lg),
         ],
       ),
     );
@@ -197,16 +197,16 @@ class _AdminHero extends StatelessWidget {
                   color: AppColors.accent,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.admin_panel_settings_rounded,
                   color: AppColors.onInk,
                   size: 30,
                 ),
               ),
-              SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
-                  Text(
+                  const Text(
                     'RentEase',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
@@ -216,7 +216,7 @@ class _AdminHero extends StatelessWidget {
                       color: AppColors.onInk,
                     ),
                   ),
-                  SizedBox(width: AppSpacing.sm),
+                  const SizedBox(width: AppSpacing.sm),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -227,7 +227,7 @@ class _AdminHero extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppRadii.chip),
                       border: Border.all(color: AppColors.accent, width: 0.5),
                     ),
-                    child: Text(
+                    child: const Text(
                       'ADMIN',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
@@ -240,7 +240,7 @@ class _AdminHero extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
                 'Platform verification, users, and listings.',
                 style: TextStyle(

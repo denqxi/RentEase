@@ -12,6 +12,7 @@ class LandlordHomeState extends Equatable {
     this.properties = const [],
     this.tenants = const [],
     this.tenantsByProperty = const {},
+    this.tenantIdsByProperty = const {},
     this.tenantsLoading = false,
     this.tenantsError,
     this.searchQuery = '',
@@ -36,6 +37,11 @@ class LandlordHomeState extends Equatable {
   /// Compatible tenants keyed by `propertyId` so the Matches tab can show
   /// exact matches per room / entire property without cross-room deduplication.
   final Map<String, List<CompatibleTenant>> tenantsByProperty;
+
+  /// Distinct compatible tenant ids per `propertyId` for ALL of the owner's
+  /// listings (including unavailable ones with leftover matches) — drives
+  /// the property cards' "N compatible tenants" counts.
+  final Map<String, Set<String>> tenantIdsByProperty;
   final bool tenantsLoading;
   final String? tenantsError;
   final String searchQuery;
@@ -60,6 +66,7 @@ class LandlordHomeState extends Equatable {
     List<PropertyDoc>? properties,
     List<CompatibleTenant>? tenants,
     Map<String, List<CompatibleTenant>>? tenantsByProperty,
+    Map<String, Set<String>>? tenantIdsByProperty,
     bool? tenantsLoading,
     String? tenantsError,
     bool clearTenantsError = false,
@@ -75,6 +82,7 @@ class LandlordHomeState extends Equatable {
       properties: properties ?? this.properties,
       tenants: tenants ?? this.tenants,
       tenantsByProperty: tenantsByProperty ?? this.tenantsByProperty,
+      tenantIdsByProperty: tenantIdsByProperty ?? this.tenantIdsByProperty,
       tenantsLoading: tenantsLoading ?? this.tenantsLoading,
       tenantsError: clearTenantsError
           ? null
@@ -94,6 +102,7 @@ class LandlordHomeState extends Equatable {
     properties,
     tenants,
     tenantsByProperty,
+    tenantIdsByProperty,
     tenantsLoading,
     tenantsError,
     searchQuery,

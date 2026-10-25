@@ -1,3 +1,4 @@
+import 'package:rentease/core/constants/app_colors.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
@@ -12,7 +13,7 @@ class LiveUserPuck extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color brandBlue = Color(0xFF1A73E8); // Google Maps navigation blue
+    const Color brandBlue = AppColors.blue600; // Google Maps navigation blue
 
     return SizedBox(
       width: 52,
@@ -24,8 +25,8 @@ class LiveUserPuck extends StatelessWidget {
           if (heading != null)
             Transform.rotate(
               angle: (heading! * math.pi) / 180,
-              child: CustomPaint(
-                size: const Size(48, 48),
+              child: const CustomPaint(
+                size: Size(48, 48),
                 painter: _HeadingConePainter(color: brandBlue),
               ),
             ),
@@ -47,10 +48,10 @@ class LiveUserPuck extends StatelessWidget {
             decoration: BoxDecoration(
               color: brandBlue,
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2.5),
+              border: Border.all(color: AppColors.surface, width: 2.5),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
+                  color: AppColors.scrim.withValues(alpha: 0.25),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
@@ -118,18 +119,18 @@ class RecenterFloatingButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: AppColors.scrim.withValues(alpha: 0.12),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         child: InkWell(
           onTap: onTap,
           customBorder: const CircleBorder(),
@@ -138,7 +139,7 @@ class RecenterFloatingButton extends StatelessWidget {
             child: Icon(
               isTracking ? Icons.navigation_rounded : Icons.my_location_rounded,
               size: 22,
-              color: isTracking ? const Color(0xFF1A73E8) : const Color(0xFF0F172A),
+              color: isTracking ? AppColors.blue600 : AppColors.slate900,
             ),
           ),
         ),

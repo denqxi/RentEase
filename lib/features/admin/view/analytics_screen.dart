@@ -29,11 +29,11 @@ class AnalyticsScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: ctx.appColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
+        title: const Text(
           'Log out?',
           style: TextStyle(fontFamily: 'DM Sans', fontWeight: FontWeight.w700),
         ),
-        content: Text(
+        content: const Text(
           'You will be returned to the admin sign-in screen.',
           style: TextStyle(fontFamily: 'DM Sans', fontSize: 14),
         ),
@@ -56,7 +56,7 @@ class AnalyticsScreen extends StatelessWidget {
                 ),
               );
             },
-            child: Text(
+            child: const Text(
               'Log out',
               style: TextStyle(
                 color: AppColors.destructive,
@@ -137,14 +137,18 @@ class _Body extends StatelessWidget {
             count: stats.pendingVerifications,
             onReview: onGoToVerify,
           ),
-          SizedBox(height: AppSpacing.md),
-          GridView.count(
-            crossAxisCount: 2,
+          const SizedBox(height: AppSpacing.md),
+          GridView(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: AppSpacing.sm,
-            mainAxisSpacing: AppSpacing.sm,
-            childAspectRatio: 1.5,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: AppSpacing.sm,
+              mainAxisSpacing: AppSpacing.sm,
+              // Fixed extent that grows with text scale; an aspect ratio
+              // overflowed the card on 320dp phones even at 1x.
+              mainAxisExtent: 104 * math.max(1.0, MediaQuery.textScalerOf(context).scale(1)),
+            ),
             children: [
               _MetricCard(
                 label: 'Total users',
@@ -176,9 +180,9 @@ class _Body extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.lg),
           const _SectionTitle('Sign-ups, last 7 days'),
-          SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.sm),
           Container(
             height: 180,
             padding: const EdgeInsets.all(AppSpacing.sm),
@@ -197,13 +201,13 @@ class _Body extends StatelessWidget {
                     labels: [for (final d in signups) _weekday(d.day)],
                   ),
           ),
-          SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.lg),
           const _SectionTitle('User roles'),
-          SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.sm),
           _RoleSplitCard(tenants: stats.tenants, owners: stats.owners),
-          SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.lg),
           const _SectionTitle('Recent admin activity'),
-          SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: AppSpacing.xs),
           if (logs.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
@@ -314,13 +318,13 @@ class _PendingReviewCard extends StatelessWidget {
               color: AppColors.matchMedium.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: const Icon(
               Icons.pending_actions_rounded,
               color: AppColors.matchMedium,
               size: 20,
             ),
           ),
-          SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,7 +357,7 @@ class _PendingReviewCard extends StatelessWidget {
                   color: context.appColors.ink,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Text(
+                child: const Text(
                   'Review',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
@@ -408,7 +412,7 @@ class _MetricCard extends StatelessWidget {
                 ),
                 child: Icon(icon, color: color, size: 15),
               ),
-              SizedBox(width: 6),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   label,
@@ -486,11 +490,11 @@ class _RoleSplitCard extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               _LegendDot(color: AppColors.accent, label: 'Tenants · $tenants'),
-              SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.md),
               _LegendDot(
                 color: AppColors.matchMedium,
                 label: 'Owners · $owners',
@@ -519,7 +523,7 @@ class _LegendDot extends StatelessWidget {
           height: 8,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        SizedBox(width: 6),
+        const SizedBox(width: 6),
         Text(label, style: AppTextStyles.caption(context)),
       ],
     );
@@ -628,7 +632,7 @@ class _ActivityRow extends StatelessWidget {
             ),
             child: Icon(icon, color: color, size: 16),
           ),
-          SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               label,

@@ -196,7 +196,7 @@ class _HeroFrame extends StatelessWidget {
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: <Color>[
-        Colors.transparent,
+        AppColors.transparent,
         AppColors.scrimStrong,
       ],
     ),

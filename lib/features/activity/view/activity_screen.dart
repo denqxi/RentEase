@@ -43,10 +43,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
     final cubit = context.read<ActivityCubit>();
     final allItems = state.items;
 
-    final unreadCount = allItems.where((i) => !i.isRead).length;
-    final displayedItems = _filterUnreadOnly
-        ? allItems.where((i) => !i.isRead).toList()
-        : allItems;
+    // Unread comes from the uncapped unread listener, not the capped feed.
+    final unreadCount = state.unreadCount;
+    final displayedItems = _filterUnreadOnly ? state.unreadItems : allItems;
 
     return Scaffold(
       backgroundColor: AppColors.fieldFill,
@@ -237,7 +236,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
             Container(
               width: 68,
               height: 68,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.fieldFill,
                 shape: BoxShape.circle,
               ),

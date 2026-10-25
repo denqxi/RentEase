@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart' show FirebaseException;
+
 import '../../../../core/firestore/models/models.dart';
 import '../../../../core/utils/distance_utils.dart';
 import '../../../matching/domain/services/filtering_service.dart';
@@ -12,13 +14,27 @@ class HomeRepositoryImpl implements HomeRepository {
 
   final HomeRemoteDataSource _remote;
 
+  /// List screens must survive one unreadable/stale property (e.g.
+  /// permission-denied after a delist): treat it as missing, not fatal.
+  Future<PropertyDoc?> _tryFetchProperty(String id) async {
+    try {
+      return await _remote.fetchProperty(id);
+    } on FirebaseException {
+      return null;
+    }
+  }
+
   @override
   Future<List<Listing>> fetchCompatibleListings(String tenantId) async {
     final matches = await _remote.fetchEligibleMatches(tenantId);
     final listings = <Listing>[];
+    // Parallel fetch (same read count, latency of one read instead of N).
+    final fetched = await Future.wait(
+      matches.map((m) => _tryFetchProperty(m.propertyId)),
+    );
     for (var i = 0; i < matches.length; i++) {
       final match = matches[i];
-      final property = await _remote.fetchProperty(match.propertyId);
+      final property = fetched[i];
       // A match can outlive its property (delisted since filtering last
       // ran) — skip rather than show a broken card; the next
       // FilteringService.runFiltering() pass will clean the stale match up.
@@ -66,7 +82,7 @@ class HomeRepositoryImpl implements HomeRepository {
       _remote.fetchUser(tenantId),
     ).wait;
     if (profile == null) return map;
-    final km = DistanceUtils.kmBetween(profile.poiLatLng, property.location);
+    final km = DistanceUtils.kmBetweenOrInfinity(profile.poiLatLng, property.location);
     final reasons = FilteringService.explainMismatch(
       tenantGender: tenantUser?.gender ?? '',
       tenant: profile,
@@ -76,7 +92,7 @@ class HomeRepositoryImpl implements HomeRepository {
     if (reasons.isEmpty) return map;
     return {
       ...map,
-      'distance': _roundKm(km),
+      'distance': _roundKmOrNull(km),
       'bScore': 0,
       'matchId': null,
       'isNonMatch': true,
@@ -89,7 +105,7 @@ class HomeRepositoryImpl implements HomeRepository {
     // Already ordered by tenantCi desc (see HomeRemoteDataSource).
     final matches = await _remote.fetchEligibleMatches(tenantId);
     final properties = await Future.wait(
-      matches.map((m) => _remote.fetchProperty(m.propertyId)),
+      matches.map((m) => _tryFetchProperty(m.propertyId)),
     );
 
     // One owner can list several properties — fetch each owner once.
@@ -136,7 +152,7 @@ class HomeRepositoryImpl implements HomeRepository {
     final candidates = <(PropertyDoc, double, List<MismatchReason>)>[];
     for (final property in properties) {
       if (excludePropertyIds.contains(property.propertyId)) continue;
-      final km = DistanceUtils.kmBetween(profile.poiLatLng, property.location);
+      final km = DistanceUtils.kmBetweenOrInfinity(profile.poiLatLng, property.location);
       final reasons = FilteringService.explainMismatch(
         tenantGender: tenantGender,
         tenant: profile,
@@ -180,7 +196,7 @@ class HomeRepositoryImpl implements HomeRepository {
             owners[property.ownerId]?.$1,
             owners[property.ownerId]?.$2,
           ),
-          'distance': _roundKm(km),
+          'distance': _roundKmOrNull(km),
           'bScore': 0,
           'matchId': null,
           'isNonMatch': true,
@@ -254,7 +270,7 @@ class HomeRepositoryImpl implements HomeRepository {
       'photos': List<String>.from(property.photos),
       'address': property.address,
       'monthlyRent': property.monthlyRent,
-      'distance': _roundKm(match?.distanceKm ?? 0),
+      'distance': _roundKmOrNull(match?.distanceKm ?? double.infinity),
       'amenityScore': property.amenityScore ?? property.amenityList.length,
       'tenantCi': match?.tenantCi ?? 0,
       'tenantRank': match?.tenantRank ?? 0,
@@ -297,6 +313,9 @@ class HomeRepositoryImpl implements HomeRepository {
   /// One decimal for display ("2.4 km") — the unrounded value is only needed
   /// by FilteringService's LocationMatch, which reads the match doc directly.
   static double _roundKm(num km) => (km * 10).round() / 10;
+
+  /// Null (shown as "Distance unavailable" / hidden) when a pin is missing.
+  static double? _roundKmOrNull(num km) => km.isFinite ? _roundKm(km) : null;
 
   String _initialsFor(String? first, String? last) {
     final f = (first?.isNotEmpty ?? false) ? first![0] : '';

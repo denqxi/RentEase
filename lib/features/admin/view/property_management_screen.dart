@@ -76,7 +76,7 @@ class _PropertyManagementScreenState extends State<PropertyManagementScreen> {
                   indicatorColor: AppColors.accent,
                   labelColor: AppColors.accent,
                   unselectedLabelColor: context.appColors.textSecondary,
-                  labelStyle: TextStyle(
+                  labelStyle: const TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -144,7 +144,7 @@ class _PropertyList extends StatelessWidget {
         120,
       ),
       itemCount: items.length,
-      separatorBuilder: (_, _) => SizedBox(height: AppSpacing.sm),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
       itemBuilder: (_, i) => _PropertyCard(
         item: items[i],
         isBusy: busyIds.contains(items[i].property.propertyId),
@@ -196,11 +196,13 @@ class _PropertyCard extends StatelessWidget {
                   : Image.network(
                       p.photos.first,
                       fit: BoxFit.cover,
+                      // Thumbnail decode; covers 60dp at 3x for 16:9 photos.
+                      cacheWidth: 400,
                       errorBuilder: (_, _, _) => placeholder,
                     ),
             ),
           ),
-          SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,7 +231,7 @@ class _PropertyCard extends StatelessWidget {
                           color: AppColors.destructive.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(AppRadii.chip),
                         ),
-                        child: Text(
+                        child: const Text(
                           'Unlisted',
                           style: TextStyle(
                             fontFamily: 'DM Sans',
@@ -243,14 +245,14 @@ class _PropertyCard extends StatelessWidget {
                       VacancyStatusPill.fromString(p.vacancyStatus),
                   ],
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   p.address,
                   style: AppTextStyles.caption(context),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Row(
                   children: [
                     Text(
@@ -260,7 +262,7 @@ class _PropertyCard extends StatelessWidget {
                         color: context.appColors.textPrimary,
                       ),
                     ),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 6),
                     Flexible(
                       child: Text(
                         '· ${item.ownerName}',
@@ -270,7 +272,7 @@ class _PropertyCard extends StatelessWidget {
                       ),
                     ),
                     if (p.isVerified) ...[
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       const VerifiedBadge(isVerified: true, isSmall: true),
                     ],
                   ],

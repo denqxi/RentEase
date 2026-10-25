@@ -35,7 +35,7 @@ class AdminMessageView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 40, color: context.appColors.indicatorInactive),
-            SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               message,
               textAlign: TextAlign.center,
@@ -44,7 +44,7 @@ class AdminMessageView extends StatelessWidget {
             if (onRetry != null)
               TextButton(
                 onPressed: onRetry,
-                child: Text(
+                child: const Text(
                   'Try again',
                   style: TextStyle(color: AppColors.primary),
                 ),
@@ -71,11 +71,11 @@ Future<bool> confirmAdminAction(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
         title,
-        style: TextStyle(fontFamily: 'DM Sans', fontWeight: FontWeight.w700),
+        style: const TextStyle(fontFamily: 'DM Sans', fontWeight: FontWeight.w700),
       ),
       content: Text(
         body,
-        style: TextStyle(fontFamily: 'DM Sans', fontSize: 14),
+        style: const TextStyle(fontFamily: 'DM Sans', fontSize: 14),
       ),
       actions: [
         TextButton(

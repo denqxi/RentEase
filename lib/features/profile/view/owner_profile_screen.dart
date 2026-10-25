@@ -25,12 +25,6 @@ import 'owner_reviews_screen.dart';
 class OwnerProfileScreen extends StatefulWidget {
   const OwnerProfileScreen({super.key});
 
-  static const Color bgIceBlue = _OwnerProfileScreenState.bgIceBlue;
-  static const Color primaryCyan = _OwnerProfileScreenState.primaryCyan;
-  static const Color textDarkNavy = _OwnerProfileScreenState.textDarkNavy;
-  static const Color textMuted = _OwnerProfileScreenState.textMuted;
-  static const Color textMutedLight = _OwnerProfileScreenState.textMutedLight;
-  static const Color softRed = _OwnerProfileScreenState.softRed;
 
   static List<BoxShadow> get cardShadow => _OwnerProfileScreenState.cardShadow;
 
@@ -39,12 +33,6 @@ class OwnerProfileScreen extends StatefulWidget {
 }
 
 class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
-  static const Color bgIceBlue = Color(0xFFF4F9FD);
-  static const Color primaryCyan = Color(0xFF00A8F0);
-  static const Color textDarkNavy = Color(0xFF14213D);
-  static const Color textMuted = Color(0xFF64748B);
-  static const Color textMutedLight = Color(0xFF94A3B8);
-  static const Color softRed = Color(0xFFF26B7A);
 
   static const String _portfolioHomeSvg = '''
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -72,12 +60,12 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
 
   static List<BoxShadow> get cardShadow => [
         BoxShadow(
-          color: const Color(0xFF0C2340).withValues(alpha: 0.06),
+          color: AppColors.ink.withValues(alpha: 0.06),
           blurRadius: 20,
           offset: const Offset(0, 4),
         ),
         BoxShadow(
-          color: const Color(0xFF0C2340).withValues(alpha: 0.03),
+          color: AppColors.ink.withValues(alpha: 0.03),
           blurRadius: 6,
           offset: const Offset(0, 1),
         ),
@@ -119,22 +107,19 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     _ratingsSub?.cancel();
 
     try {
-      _inquiriesSub = FirebaseFirestore.instance
+      // One-shot aggregate count (1 read per 1000 docs) instead of a live
+      // listener that re-reads every inquiry doc on each change.
+      FirebaseFirestore.instance
           .collection(FirestoreCollections.inquiries)
           .where('ownerId', isEqualTo: uid)
-          .snapshots()
-          .listen(
-            (snap) {
-              if (mounted) {
-                setState(() {
-                  _inquiriesCount = snap.docs.length;
-                });
-              }
-            },
-            onError: (e) {
-              debugPrint('Error streaming owner inquiries: $e');
-            },
-          );
+          .count()
+          .get()
+          .then((agg) {
+            if (mounted) setState(() => _inquiriesCount = agg.count ?? 0);
+          })
+          .catchError((Object e) {
+            debugPrint('Error counting owner inquiries: $e');
+          });
     } catch (e) {
       debugPrint('Error subscribing to inquiries: $e');
     }
@@ -180,8 +165,8 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: AppColors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'Log out?',
@@ -189,7 +174,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
             fontFamily: 'DM Sans',
             fontSize: 17,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF0F172A),
+            color: AppColors.slate900,
           ),
         ),
         content: const Text(
@@ -197,7 +182,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 13.5,
-            color: Color(0xFF475569),
+            color: AppColors.slate600,
             height: 1.4,
           ),
         ),
@@ -213,15 +198,15 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B),
+                    color: AppColors.slate500,
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEF4444),
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.destructive,
+                  foregroundColor: AppColors.surface,
                   elevation: 0,
                   minimumSize: const Size(100, 42),
                   padding: const EdgeInsets.symmetric(
@@ -259,7 +244,17 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<AppThemeCubit>().state;
-    final state = context.watch<LandlordHomeCubit>().state;
+    // Rebuild only when a field shown here changes (not on tenant reloads or
+    // search emissions); the record compares structurally.
+    context.select<LandlordHomeCubit, (String, String?, String?, int)>(
+      (c) => (
+        c.state.fullName,
+        c.state.photoUrl,
+        c.state.verificationStatus,
+        c.state.properties.length,
+      ),
+    );
+    final state = context.read<LandlordHomeCubit>().state;
     final user = FirebaseAuth.instance.currentUser;
     final email = user?.email ?? 'josh.samuel@rentease.ph';
 
@@ -269,9 +264,9 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
             ? user!.displayName!
             : 'Josh Samuel';
 
-    final bgColor = isDark ? context.appColors.surface : Colors.white;
-    final cardColor = isDark ? const Color(0xFF1E1E24) : Colors.white;
-    final textColor = isDark ? Colors.white : OwnerProfileScreen.textDarkNavy;
+    final bgColor = isDark ? context.appColors.surface : AppColors.surface;
+    final cardColor = isDark ? AppColors.darkCard : AppColors.surface;
+    final textColor = isDark ? AppColors.surface : AppColors.ink;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -325,7 +320,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                 fontFamily: 'DM Sans',
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w500,
-                                color: OwnerProfileScreen.textMuted,
+                                color: AppColors.slate500,
                               ),
                             ),
                           ],
@@ -344,8 +339,8 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(
                         color: isDark
-                            ? Colors.white.withValues(alpha: 0.08)
-                            : Colors.white,
+                            ? AppColors.surface.withValues(alpha: 0.08)
+                            : AppColors.surface,
                         width: 2,
                       ),
                       boxShadow: cardShadow,
@@ -381,14 +376,14 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                           colors: [
-                                            Color(0xFF7DD3FC), // Light blue
-                                            Color(0xFF00A8F0), // Blue
-                                            Color(0xFF10B981), // Green
+                                            AppColors.sky400, // Light blue
+                                            AppColors.primaryCyan, // Blue
+                                            AppColors.emerald500, // Green
                                           ],
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: primaryCyan.withValues(
+                                            color: AppColors.primaryCyan.withValues(
                                               alpha: 0.14,
                                             ),
                                             blurRadius: 12,
@@ -405,13 +400,17 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                         child: CircleAvatar(
                                           radius: 31,
                                           backgroundColor:
-                                              const Color(0xFFD6F0FE),
+                                              AppColors.skyFill,
                                           backgroundImage:
                                               (state.photoUrl != null &&
                                                       state.photoUrl!
                                                           .isNotEmpty)
-                                                  ? NetworkImage(
-                                                      state.photoUrl!,
+                                                  ? ResizeImage.resizeIfNeeded(
+                                                      330,
+                                                      null,
+                                                      NetworkImage(
+                                                        state.photoUrl!,
+                                                      ),
                                                     )
                                                   : null,
                                           child: (state.photoUrl == null ||
@@ -419,7 +418,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                               ? const Icon(
                                                   Icons.person_rounded,
                                                   size: 37,
-                                                  color: primaryCyan,
+                                                  color: AppColors.primaryCyan,
                                                 )
                                               : null,
                                         ),
@@ -438,11 +437,11 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                           width: 26,
                                           height: 26,
                                           decoration: BoxDecoration(
-                                            color: Colors.white,
+                                            color: AppColors.surface,
                                             shape: BoxShape.circle,
                                             boxShadow: [
                                               BoxShadow(
-                                                color: const Color(0xFF0C2340)
+                                                color: AppColors.ink
                                                     .withValues(alpha: 0.12),
                                                 blurRadius: 6,
                                                 offset: const Offset(0, 2),
@@ -452,7 +451,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                           child: const Center(
                                             child: AppSvgIcon(
                                               svgString: _cameraOutlineSvg,
-                                              color: primaryCyan,
+                                              color: AppColors.primaryCyan,
                                               size: 15,
                                             ),
                                           ),
@@ -489,7 +488,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                             const SizedBox(width: 6),
                                             const Icon(
                                               Icons.check_circle_rounded,
-                                              color: primaryCyan,
+                                              color: AppColors.primaryCyan,
                                               size: 18,
                                             ),
                                           ],
@@ -501,7 +500,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                           const Icon(
                                             Icons.mail_outline_rounded,
                                             size: 14,
-                                            color: textMuted,
+                                            color: AppColors.slate500,
                                           ),
                                           const SizedBox(width: 6),
                                           Flexible(
@@ -510,7 +509,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                               style: const TextStyle(
                                                 fontFamily: 'DM Sans',
                                                 fontSize: 12.5,
-                                                color: textMuted,
+                                                color: AppColors.slate500,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                               overflow: TextOverflow.ellipsis,
@@ -549,8 +548,8 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                         context: context,
                         valueColor: textColor,
                         svgString: _portfolioHomeSvg,
-                        iconBg: const Color(0xFFE0F3FE),
-                        iconColor: primaryCyan,
+                        iconBg: AppColors.skyFill,
+                        iconColor: AppColors.primaryCyan,
                         value: '${state.properties.length}',
                         label: 'Listings',
                         onTap: () {
@@ -566,8 +565,8 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                         width: 1,
                         height: 40,
                         color: isDark
-                            ? Colors.white.withValues(alpha: 0.08)
-                            : const Color(0xFFE8EEF5),
+                            ? AppColors.surface.withValues(alpha: 0.08)
+                            : AppColors.slate200,
                       ),
                     ),
                     Expanded(
@@ -575,8 +574,8 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                         context: context,
                         valueColor: textColor,
                         svgString: AppSvgIcons.inquiry,
-                        iconBg: const Color(0xFFE0F3FE),
-                        iconColor: primaryCyan,
+                        iconBg: AppColors.skyFill,
+                        iconColor: AppColors.primaryCyan,
                         value: '$_inquiriesCount',
                         label: 'Inquiries',
                         onTap: () => Navigator.of(context).push(
@@ -592,8 +591,8 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                         width: 1,
                         height: 40,
                         color: isDark
-                            ? Colors.white.withValues(alpha: 0.08)
-                            : const Color(0xFFE8EEF5),
+                            ? AppColors.surface.withValues(alpha: 0.08)
+                            : AppColors.slate200,
                       ),
                     ),
                     Expanded(
@@ -601,8 +600,8 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                         context: context,
                         valueColor: textColor,
                         icon: Icons.star_rounded,
-                        iconBg: const Color(0xFFFEF3D6),
-                        iconColor: const Color(0xFFF59E0B),
+                        iconBg: AppColors.amberFill,
+                        iconColor: AppColors.matchMedium,
                         value: _totalReviews > 0
                             ? _avgRating.toStringAsFixed(1)
                             : '0',
@@ -648,13 +647,13 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                     // My reviews
                     _buildMenuItem(
                       icon: Icons.star_rounded,
-                      iconColor: const Color(0xFFF59E0B),
+                      iconColor: AppColors.matchMedium,
                       title: 'My reviews',
                       textColor: textColor,
                       trailingText: _totalReviews > 0
                           ? '${_avgRating.toStringAsFixed(1)} ★'
                           : 'No reviews yet',
-                      trailingTextColor: const Color(0xFF0F172A),
+                      trailingTextColor: AppColors.slate900,
                       onTap: () => OwnerReviewsScreen.open(context),
                     ),
                     _buildDivider(),
@@ -686,33 +685,33 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                 child: InkWell(
                   onTap: () => _confirmLogOut(context),
                   borderRadius: BorderRadius.circular(20),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(
                         horizontal: 18,
                         vertical: 15,
                       ),
                       child: Row(
                         children: [
-                          const AppSvgIcon(
+                          AppSvgIcon(
                             svgString: AppSvgIcons.logoutOutline,
-                            color: softRed,
+                            color: AppColors.rose500,
                             size: 21,
                           ),
-                          const SizedBox(width: 14),
-                          const Expanded(
+                          SizedBox(width: 14),
+                          Expanded(
                             child: Text(
                               'Log out',
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w600,
-                                color: softRed,
+                                color: AppColors.rose500,
                               ),
                             ),
                           ),
-                          const AppSvgIcon(
+                          AppSvgIcon(
                             svgString: AppSvgIcons.chevronRight,
-                            color: textMutedLight,
+                            color: AppColors.slate400,
                             size: 16,
                           ),
                         ],
@@ -730,7 +729,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12,
-                    color: textMutedLight,
+                    color: AppColors.slate400,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -812,7 +811,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
-                                color: textMuted,
+                                color: AppColors.slate500,
                               ),
                             ),
                           ],
@@ -826,7 +825,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                         fontFamily: 'DM Sans',
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: textMuted,
+                        color: AppColors.slate500,
                       ),
                     ),
                   ],
@@ -849,16 +848,16 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     final bool isPending = status == 'pending';
 
     final Color statusColor = isVerified
-        ? const Color(0xFF10B981)
+        ? AppColors.emerald500
         : isPending
-            ? const Color(0xFFF59E0B)
-            : const Color(0xFFEF4444);
+            ? AppColors.matchMedium
+            : AppColors.destructive;
 
     final Color statusBg = isVerified
-        ? const Color(0xFFE8F9F1)
+        ? AppColors.emerald50
         : isPending
-            ? const Color(0xFFFEF3C7)
-            : const Color(0xFFFEE2E2);
+            ? AppColors.warningFill
+            : AppColors.redFill100;
 
     final IconData icon = isVerified
         ? Icons.check_circle_rounded
@@ -934,7 +933,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                     style: const TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 11.5,
-                      color: textMuted,
+                      color: AppColors.slate500,
                       height: 1.3,
                     ),
                   ),
@@ -961,7 +960,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
             const SizedBox(width: 4),
             const Icon(
               Icons.chevron_right_rounded,
-              color: textMutedLight,
+              color: AppColors.slate400,
               size: 18,
             ),
           ],
@@ -980,7 +979,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     Color? trailingTextColor,
     required VoidCallback onTap,
   }) {
-    final effectiveColor = iconColor ?? primaryCyan;
+    final effectiveColor = iconColor ?? AppColors.primaryCyan;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -1015,14 +1014,14 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                   fontFamily: 'DM Sans',
                   fontSize: 13.5,
                   fontWeight: FontWeight.w700,
-                  color: trailingTextColor ?? primaryCyan,
+                  color: trailingTextColor ?? AppColors.primaryCyan,
                 ),
               ),
               const SizedBox(width: 4),
             ],
             const AppSvgIcon(
               svgString: AppSvgIcons.chevronRight,
-              color: textMutedLight,
+              color: AppColors.slate400,
               size: 16,
             ),
           ],
@@ -1040,7 +1039,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
         children: [
           const AppSvgIcon(
             svgString: AppSvgIcons.crescentMoon,
-            color: primaryCyan,
+            color: AppColors.primaryCyan,
             size: 21,
           ),
           const SizedBox(width: 14),
@@ -1069,7 +1068,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
       height: 1,
       indent: 54,
       endIndent: 16,
-      color: Color(0xFFF1F5F9),
+      color: AppColors.fieldFill,
     );
   }
 }
@@ -1086,10 +1085,10 @@ class _TopHeroWavePainter extends CustomPainter {
         begin: Alignment(0.5, -1.0),
         end: Alignment(-0.2, 1.0),
         colors: [
-          Color(0xFFC8E7FD),
-          Color(0xFFE6F4FE),
-          Color(0xFFF6FBFF),
-          Colors.white,
+          AppColors.onboardingSky,
+          AppColors.tenantFillBlue,
+          AppColors.tenantFillBlue,
+          AppColors.surface,
         ],
         stops: [0.0, 0.38, 0.72, 1.0],
       ).createShader(rect);
@@ -1112,9 +1111,9 @@ class _TopHeroWavePainter extends CustomPainter {
         begin: Alignment.topRight,
         end: Alignment.bottomLeft,
         colors: [
-          const Color(0xFFA7DAFC).withValues(alpha: 0.48),
-          const Color(0xFFD5EEFE).withValues(alpha: 0.18),
-          Colors.white.withValues(alpha: 0.0),
+          AppColors.sky400.withValues(alpha: 0.48),
+          AppColors.skyFill.withValues(alpha: 0.18),
+          AppColors.surface.withValues(alpha: 0.0),
         ],
       ).createShader(rect);
     canvas.drawPath(topRightWave, topRightPaint);
@@ -1136,8 +1135,8 @@ class _TopHeroWavePainter extends CustomPainter {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          const Color(0xFFCBE8FD).withValues(alpha: 0.35),
-          Colors.white.withValues(alpha: 0.0),
+          AppColors.onboardingSky.withValues(alpha: 0.35),
+          AppColors.surface.withValues(alpha: 0.0),
         ],
       ).createShader(rect);
     canvas.drawPath(leftWave, leftWavePaint);
@@ -1159,9 +1158,9 @@ class _ProfileCardWavePainter extends CustomPainter {
         begin: Alignment.centerLeft,
         end: Alignment.topRight,
         colors: [
-          Colors.white,
-          Color(0xFFF6FBFF),
-          Color(0xFFE5F4FE),
+          AppColors.surface,
+          AppColors.tenantFillBlue,
+          AppColors.tenantFillBlue,
         ],
         stops: [0.0, 0.55, 1.0],
       ).createShader(rect);
@@ -1185,8 +1184,8 @@ class _ProfileCardWavePainter extends CustomPainter {
         begin: Alignment.topRight,
         end: Alignment.bottomLeft,
         colors: [
-          const Color(0xFFB5E0FC).withValues(alpha: 0.48),
-          const Color(0xFFDDF1FE).withValues(alpha: 0.22),
+          AppColors.onboardingSky.withValues(alpha: 0.48),
+          AppColors.skyFill.withValues(alpha: 0.22),
         ],
       ).createShader(rect);
     canvas.drawPath(ribbonOuter, outerPaint);
@@ -1209,8 +1208,8 @@ class _ProfileCardWavePainter extends CustomPainter {
         begin: Alignment.topRight,
         end: Alignment.bottomLeft,
         colors: [
-          const Color(0xFF9BD4FB).withValues(alpha: 0.42),
-          const Color(0xFFCDEAFE).withValues(alpha: 0.15),
+          AppColors.sky400.withValues(alpha: 0.42),
+          AppColors.onboardingSky.withValues(alpha: 0.15),
         ],
       ).createShader(rect);
     canvas.drawPath(ribbonInner, innerPaint);
@@ -1228,7 +1227,7 @@ class _ProfileCardWavePainter extends CustomPainter {
       ..close();
 
     final sheenPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.38);
+      ..color = AppColors.surface.withValues(alpha: 0.38);
     canvas.drawPath(bottomSheen, sheenPaint);
   }
 

@@ -32,10 +32,12 @@ class _RecommendedSectionState extends State<RecommendedSection> {
 
   @override
   Widget build(BuildContext context) {
-    final allListings = context.select<HomeCubit, List<Listing>>(
-      (c) => c.state.recommended,
-    );
+    // Select the stable inputs: `recommended` builds a new sorted list on
+    // every call, so selecting it directly rebuilt on every emission.
+    context.select<HomeCubit, List<Listing>>((c) => c.state.listings);
+    context.select<HomeCubit, bool>((c) => c.state.isGuest);
     final cubit = context.read<HomeCubit>();
+    final allListings = cubit.state.recommended;
     final isGuest = context.select<ProfileCubit, bool>(
       (c) => c.state.userRole == UserRole.guest,
     );
@@ -103,7 +105,7 @@ class _RecommendedSectionState extends State<RecommendedSection> {
                         shape: BoxShape.circle,
                         color: isActive
                             ? AppColors.primary
-                            : const Color(0xFFE2E8F0),
+                            : AppColors.slate200,
                       ),
                     );
                   }),

@@ -38,6 +38,10 @@ class ListingImagePlaceholder extends StatelessWidget {
     if (url != null && url.isNotEmpty) {
       return Image.network(
         fullSize ? CloudinaryUrl.full(url) : CloudinaryUrl.thumbnail(url),
+        // Decode no larger than the rendition requested above (never upscales).
+        cacheWidth: fullSize
+            ? CloudinaryUrl.fullWidth
+            : CloudinaryUrl.thumbnailWidth,
         fit: BoxFit.cover,
         errorBuilder: (_, _, _) => _fallback(asset),
       );

@@ -14,7 +14,7 @@ class CompatibleBadge extends StatelessWidget {
         color: AppColors.matchHigh,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
+      child: const Text(
         'Compatible',
         style: TextStyle(
           fontFamily: 'DM Sans',

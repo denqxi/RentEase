@@ -83,6 +83,12 @@ class AnalyticsCubit extends Cubit<AnalyticsState> {
   Future<void> signOut() => _repo.signOut();
 
   @override
+  void emit(AnalyticsState state) {
+    if (isClosed) return; // async work may outlive the cubit
+    super.emit(state);
+  }
+
+  @override
   Future<void> close() {
     _logSub?.cancel();
     return super.close();

@@ -2,8 +2,8 @@ import '../core/firestore/models/models.dart';
 import '../features/admin/domain/entities/admin_entities.dart';
 import '../features/admin/domain/repositories/admin_repository.dart';
 
-/// In-memory [AdminRepository] with static sample data, for the debug screen
-/// viewer and screenshot tests (no Firebase). Writes are accepted and ignored.
+/// In-memory [AdminRepository] with static sample data, for the screenshot
+/// tests (no Firebase). Writes are accepted and ignored.
 class PreviewAdminRepository implements AdminRepository {
   const PreviewAdminRepository();
 

@@ -104,8 +104,10 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
     );
   }
 
-  /// Reloads the compatible-tenant list only when the set of available
-  /// listings changes (not on every unrelated edit).
+  /// Reloads compatible tenants only when the owner's listings or their
+  /// availability change (not on every unrelated edit). One owner-wide
+  /// `matches` query serves every listing, and its per-property tenant ids
+  /// feed the property cards' counts (so cards issue no queries of their own).
   Future<void> _refreshTenants({bool force = false}) async {
     final repo = _tenants;
     final ownerId = _ownerId;
@@ -114,15 +116,17 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
       for (final p in state.properties)
         if (p.isAvailable) p.propertyId,
     ]..sort();
-    final key = ids.join(',');
+    final allIds = [for (final p in state.properties) p.propertyId]..sort();
+    final key = '${ids.join(',')}|${allIds.join(',')}';
     if (!force && key == _tenantsKey) return;
     _tenantsKey = key;
     final request = ++_tenantsRequest;
-    if (ids.isEmpty) {
+    if (allIds.isEmpty) {
       emit(
         state.copyWith(
           tenants: const [],
           tenantsByProperty: const {},
+          tenantIdsByProperty: const {},
           tenantsLoading: false,
           clearTenantsError: true,
         ),
@@ -131,18 +135,17 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
     }
     emit(state.copyWith(tenantsLoading: true, clearTenantsError: true));
     try {
-      final lists = await Future.wait(
-        ids.map(
-          (id) => repo.fetchCompatibleTenants(ownerId: ownerId, propertyId: id),
-        ),
+      final result = await repo.fetchCompatibleTenantsForOwner(
+        ownerId: ownerId,
+        detailPropertyIds: ids.toSet(),
       );
       if (isClosed || request != _tenantsRequest) return;
       final byProperty = <String, List<CompatibleTenant>>{};
       final byTenant = <String, CompatibleTenant>{};
-      for (var i = 0; i < ids.length; i++) {
-        final propId = ids[i];
-        final propList = List<CompatibleTenant>.from(lists[i])
-          ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      for (final propId in ids) {
+        final propList = List<CompatibleTenant>.from(
+          result.byProperty[propId] ?? const <CompatibleTenant>[],
+        )..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
         byProperty[propId] = propList;
         for (final t in propList) {
           byTenant.putIfAbsent(t.tenantId, () => t);
@@ -155,6 +158,7 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
         state.copyWith(
           tenants: sorted,
           tenantsByProperty: byProperty,
+          tenantIdsByProperty: result.tenantIdsByProperty,
           tenantsLoading: false,
         ),
       );

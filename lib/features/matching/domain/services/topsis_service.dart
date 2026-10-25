@@ -99,15 +99,26 @@ class TopsisService {
       matches.map((m) => m.propertyId).toSet(),
     );
 
+    // A match with no cached distance must not read as "0 km" (the best
+    // possible value on a cost criterion); rank it as the farthest known.
+    final knownKm = [
+      for (final m in matches)
+        if (m.distanceKm != null && m.distanceKm!.isFinite) m.distanceKm!,
+    ];
+    final fallbackKm = knownKm.isEmpty
+        ? 0
+        : knownKm.reduce((a, b) => a > b ? a : b);
+
     final candidates = <TopsisCandidate>[];
     for (final match in matches) {
       final property = properties[match.propertyId];
       if (property == null) continue; // listing removed since filtering ran
+      final km = match.distanceKm;
       candidates.add(
         TopsisCandidate(
           matchId: match.matchId,
           monthlyRent: property.monthlyRent,
-          distanceKm: match.distanceKm ?? 0,
+          distanceKm: (km != null && km.isFinite) ? km : fallbackKm,
           amenityScore: property.amenityScore ?? property.amenityList.length,
         ),
       );

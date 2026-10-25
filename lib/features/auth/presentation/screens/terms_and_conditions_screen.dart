@@ -31,17 +31,17 @@ class TermsAndConditionsScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.md),
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _Section(
+                      const _Section(
                         title: 'Use of the platform',
                         body:
                             'RentEase matches tenants and boarding house owners in Davao City '
@@ -49,7 +49,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
                             'agree to provide accurate information in your profile and '
                             'constraints, since matching results and rankings depend on it.',
                       ),
-                      _Section(
+                      const _Section(
                         title: 'Account and role',
                         body:
                             'You choose a role (tenant or owner) at signup. Your role is '
@@ -57,7 +57,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
                             'properties right away; admin verification adds a Verified badge '
                             'to build trust.',
                       ),
-                      _Section(
+                      const _Section(
                         title: 'Communication',
                         body:
                             'In-app messaging is only enabled between a tenant and owner once '
@@ -65,7 +65,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
                             'profile and property information is provided in good faith by '
                             'each party.',
                       ),
-                      _Section(
+                      const _Section(
                         title: 'Data and privacy',
                         body:
                             'Your profile details, location pin, and preferences are stored to '
@@ -75,7 +75,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
                             'shared with the other party only after an inquiry is accepted, '
                             'and your emergency contact is never shared.',
                       ),
-                      _Section(
+                      const _Section(
                         title: 'Conduct',
                         body:
                             'You agree not to submit false verification documents, misuse the '
@@ -85,24 +85,24 @@ class TermsAndConditionsScreen extends StatelessWidget {
                       GestureDetector(
                         onTap: () => PrivacyNoticeScreen.open(context),
                         child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                           child: Text(
                             'Read the full Privacy Notice',
                             style: AppTextStyles.link(context),
                           ),
                         ),
                       ),
-                      SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.lg),
                     ],
                   ),
                 ),
               ),
-              SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.md),
               AppButton(
                 label: 'Close',
                 onPressed: () => Navigator.of(context).pop(),
               ),
-              SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.md),
             ],
           ),
         ),
@@ -120,7 +120,7 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: AppSpacing.lg),
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -133,7 +133,7 @@ class _Section extends StatelessWidget {
               color: context.appColors.textPrimary,
             ),
           ),
-          SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: AppSpacing.xs),
           Text(body, style: AppTextStyles.body(context)),
         ],
       ),
