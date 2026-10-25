@@ -36,7 +36,7 @@ class RatingScreen extends StatefulWidget {
   final String moveInLabel;
   final bool isOwnerView;
 
-  String get _heading => isOwnerView ? 'Tenant booked in!' : 'Room booked!';
+  String get _heading => 'Stay confirmed!';
 
   String get _prompt =>
       isOwnerView ? 'Rate this tenant' : 'Rate your experience';

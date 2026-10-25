@@ -18,7 +18,7 @@ class LandlordHomeHeader extends StatelessWidget {
     this.isVerified = false,
     this.hasUnreadNotifications = false,
     this.hasUnreadInquiries = false,
-    this.showNotificationDot = true,
+    this.showNotificationDot = false,
     this.onNotificationTap,
     this.now,
     super.key,

@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/firestore/models/models.dart';
+
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/app_svg_icons.dart';
@@ -164,8 +166,18 @@ class OtherListingCard extends StatelessWidget {
     final String address = (property['address'] as String?) ?? '';
     final int seed = id.hashCode % 5 + 1;
 
-    final avgRating = (property['avgRating'] as num?)?.toDouble();
-    final totalRatings = (property['totalRatings'] as num?)?.toInt() ?? 0;
+    final docObj = property['propertyDoc'];
+    final PropertyDoc? pDoc = docObj is PropertyDoc ? docObj : null;
+    final avgRating = (property['rating'] as num?)?.toDouble() ??
+        pDoc?.effectiveAvgRating ??
+        (property['avgRating'] as num?)?.toDouble() ??
+        (pDoc?.ratingSum != null && (pDoc?.totalRatings ?? 0) > 0
+            ? (pDoc!.ratingSum! / pDoc.totalRatings!).toDouble()
+            : null);
+    final totalRatings = (property['totalRatings'] as num?)?.toInt() ??
+        pDoc?.totalRatings?.toInt() ??
+        (property['reviewCount'] as num?)?.toInt() ??
+        0;
     final bool hasRating = avgRating != null && totalRatings > 0;
 
     return Container(

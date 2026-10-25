@@ -1,7 +1,10 @@
 import 'dart:ui';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../core/firestore/firestore_collections.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -284,6 +287,7 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
                             photoUrl: state.photoUrl,
                             isVerified: state.isVerified,
                             hasUnreadNotifications: unreadNotifications > 0,
+                            showNotificationDot: unreadNotifications > 0,
                             onNotificationTap: () {
                               try {
                                 final activityCubit = context
@@ -1044,8 +1048,12 @@ class _ModernPropertyCard extends StatefulWidget {
   final int compatibleCount;
 
   static final Map<String, int> _countsCache = {};
+  static final Map<String, (double, int)> _ratingsCache = {};
 
-  static void clearCache() => _countsCache.clear();
+  static void clearCache() {
+    _countsCache.clear();
+    _ratingsCache.clear();
+  }
 
   @override
   State<_ModernPropertyCard> createState() => _ModernPropertyCardState();
@@ -1100,6 +1108,29 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
       }
     } catch (_) {
       // Keep previous count or fallback
+    }
+
+    if ((widget.property.totalRatings ?? 0) == 0 &&
+        !_ModernPropertyCard._ratingsCache.containsKey(widget.property.propertyId)) {
+      try {
+        final targetIds = <String>{widget.property.propertyId};
+        for (final r in widget.rooms) {
+          targetIds.add(r.propertyId);
+        }
+        final snap = await FirebaseFirestore.instance
+            .collection(FirestoreCollections.ratings)
+            .where('propertyId', whereIn: targetIds.take(10).toList())
+            .get();
+        if (snap.docs.isNotEmpty) {
+          num sum = 0;
+          for (final d in snap.docs) {
+            sum += (d.data()['stars'] as num?) ?? 0;
+          }
+          final avg = (sum / snap.docs.length).toDouble();
+          _ModernPropertyCard._ratingsCache[widget.property.propertyId] = (avg, snap.docs.length);
+          if (mounted) setState(() {});
+        }
+      } catch (_) {}
     }
   }
 
@@ -1504,22 +1535,30 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
   }
 
   Widget _buildRatingBadge(PropertyDoc property, List<PropertyDoc> rooms) {
-    num? effectiveAvg = property.avgRating;
+    num? effectiveAvg = property.effectiveAvgRating ?? property.avgRating;
     num effectiveCount = property.totalRatings ?? 0;
 
-    if (property.isRoom && rooms.isNotEmpty) {
+    if (rooms.isNotEmpty) {
       num sum = 0;
       num count = 0;
       for (final r in rooms) {
-        if (r.avgRating != null && (r.totalRatings ?? 0) > 0) {
-          sum += (r.avgRating! * (r.totalRatings ?? 1));
-          count += (r.totalRatings ?? 1);
+        final rAvg = r.effectiveAvgRating ?? r.avgRating;
+        final rCount = r.totalRatings ?? 0;
+        if (rAvg != null && rCount > 0) {
+          sum += (r.ratingSum ?? (rAvg * rCount));
+          count += rCount;
         }
       }
       if (count > 0) {
         effectiveAvg = sum / count;
         effectiveCount = count;
       }
+    }
+
+    if (effectiveCount == 0 && _ModernPropertyCard._ratingsCache.containsKey(property.propertyId)) {
+      final cached = _ModernPropertyCard._ratingsCache[property.propertyId]!;
+      effectiveAvg = cached.$1;
+      effectiveCount = cached.$2;
     }
 
     final bool hasRating = effectiveAvg != null && effectiveCount > 0;

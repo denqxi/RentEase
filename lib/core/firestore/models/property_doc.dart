@@ -38,6 +38,7 @@ class PropertyDoc {
     this.propertyCoverPublicId,
     this.avgRating,
     this.totalRatings,
+    this.ratingSum,
   });
 
   /// 'entire_place' (default, also for legacy docs) | 'room'.
@@ -66,6 +67,14 @@ class PropertyDoc {
 
   /// Total count of tenant reviews submitted for this property.
   final num? totalRatings;
+  final num? ratingSum;
+
+  double? get effectiveAvgRating {
+    if (ratingSum != null && totalRatings != null && totalRatings! > 0) {
+      return (ratingSum! / totalRatings!).toDouble();
+    }
+    return avgRating?.toDouble();
+  }
 
   /// Returns the building cover photo if set, falling back to the first listing photo.
   String? get effectiveBuildingCoverPhoto =>
@@ -204,6 +213,7 @@ class PropertyDoc {
         propertyCoverPublicId: map['propertyCoverPublicId'] as String?,
         avgRating: map['avgRating'] != null ? _parseNum(map['avgRating']) : null,
         totalRatings: map['totalRatings'] != null ? _parseNum(map['totalRatings']) : null,
+        ratingSum: map['ratingSum'] != null ? _parseNum(map['ratingSum']) : null,
       );
 
   factory PropertyDoc.fromSnapshot(
@@ -246,5 +256,6 @@ class PropertyDoc {
       'propertyCoverPublicId': propertyCoverPublicId,
     if (avgRating != null) 'avgRating': avgRating,
     if (totalRatings != null) 'totalRatings': totalRatings,
+    if (ratingSum != null) 'ratingSum': ratingSum,
   };
 }

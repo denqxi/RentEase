@@ -94,7 +94,7 @@ class _InviteView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Invite $tenantName to which property?',
+                'Notify $tenantName about which property?',
                 style: AppTextStyles.title(sheetContext).copyWith(fontSize: 16),
               ),
               const SizedBox(height: AppSpacing.sm),

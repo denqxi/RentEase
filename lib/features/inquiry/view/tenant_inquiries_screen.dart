@@ -279,6 +279,7 @@ class _InquiryList extends StatelessWidget {
             isInvitation: InquiryService.isInvite(inquiry),
             date: inquiryDateLabel(inquiry.updatedAt?.toDate()),
             isUnread: isUnread,
+            tenantCi: inquiry.tenantCiSnapshot > 0 ? inquiry.tenantCiSnapshot : null,
             resolvedStatus: switch (inquiry.status) {
               'booked' => 'Booked',
               'declined' => 'Declined',
@@ -319,13 +320,13 @@ class _SegmentedControl extends StatelessWidget {
       child: Row(
         children: <Widget>[
           _SegTab(
-            label: 'Active',
+            label: 'Inquiries',
             isSelected: selected == 0,
             hasDot: hasActiveDot,
             onTap: () => onChanged(0),
           ),
           _SegTab(
-            label: 'Resolved',
+            label: 'History',
             isSelected: selected == 1,
             hasDot: hasResolvedDot,
             onTap: () => onChanged(1),
@@ -416,12 +417,14 @@ class _InquiryCard extends StatelessWidget {
     required this.date,
     this.isInvitation = false,
     this.isUnread = false,
+    this.tenantCi,
     this.resolvedStatus,
   });
 
   /// Owner-initiated: the tenant is the one who has to answer.
   final bool isInvitation;
   final bool isUnread;
+  final num? tenantCi;
 
   final String propertyInitials;
   final String propertyName;
@@ -504,6 +507,48 @@ class _InquiryCard extends StatelessWidget {
                     color: const Color(0xFF0F172A),
                   ),
                 ),
+                if (tenantCi != null && tenantCi! > 0) ...[
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFF86EFAC), width: 0.8),
+                        ),
+                        child: Text(
+                          '${(tenantCi! * 100).round()}%',
+                          style: const TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF15803D),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+                        ),
+                        child: Text(
+                          'ci=${tenantCi!.toDouble().toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF475569),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 2),
                 Text(
                   ownerName,

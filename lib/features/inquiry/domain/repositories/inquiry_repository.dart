@@ -60,7 +60,7 @@ abstract class InquiryRepository {
 
   Future<void> addMessage(String inquiryId, MessageDoc message);
 
-  Future<void> createRating(RatingDoc rating);
+  Future<void> createRating(RatingDoc rating, {String? parentPropertyId});
 
   /// Whether [raterId] already rated this inquiry.
   Future<bool> hasRated({required String inquiryId, required String raterId});

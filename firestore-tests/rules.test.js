@@ -333,6 +333,58 @@ describe('ownerProfiles / properties — owners can only read/write their own', 
     );
   });
 
+  it('authenticated non-suspended users can update rating aggregates on properties and rooms', async () => {
+    await seed(async (db) => {
+      await db.doc(`properties/${PROPERTY}/rooms/room1`).set({
+        name: 'Room 101',
+        rent: 2000,
+      });
+    });
+
+    // Tenant A (not the owner) can update rating aggregates on property
+    await assertSucceeds(
+      asTenant(TENANT_A).doc(`properties/${PROPERTY}`).update({
+        ratingSum: 9.5,
+        totalRatings: 2,
+        avgRating: 4.75,
+        updatedAt: '2026-10-23T00:00:00Z',
+      }),
+    );
+
+    // Tenant A can update rating aggregates on room
+    await assertSucceeds(
+      asTenant(TENANT_A).doc(`properties/${PROPERTY}/rooms/room1`).update({
+        ratingSum: 5,
+        totalRatings: 1,
+        avgRating: 5.0,
+      }),
+    );
+
+    // Cannot update forbidden keys along with rating aggregates
+    await assertFails(
+      asTenant(TENANT_A).doc(`properties/${PROPERTY}`).update({
+        ratingSum: 10,
+        monthlyRent: 1500,
+      }),
+    );
+
+    // totalRatings must be int, not string or float
+    await assertFails(
+      asTenant(TENANT_A).doc(`properties/${PROPERTY}`).update({
+        totalRatings: '5',
+      }),
+    );
+
+    // Unauthenticated user cannot update rating aggregates
+    await assertFails(
+      testEnv.unauthenticatedContext().firestore().doc(`properties/${PROPERTY}`).update({
+        ratingSum: 15,
+        totalRatings: 3,
+        avgRating: 5.0,
+      }),
+    );
+  });
+
   it('a new owner can submit for verification (create as pending)', async () => {
     await assertSucceeds(
       asOwner(OWNER_B).doc(`ownerProfiles/${OWNER_B}`).set({

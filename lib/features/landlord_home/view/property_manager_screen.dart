@@ -3595,15 +3595,17 @@ class _UnitRow extends StatelessWidget {
 }
 
 String _formatPropertyRatingLabel(PropertyDoc property, [List<PropertyDoc> rooms = const []]) {
-  num? avg = property.avgRating;
+  num? avg = property.effectiveAvgRating ?? property.avgRating;
   num count = property.totalRatings ?? 0;
-  if (property.isRoom && rooms.isNotEmpty) {
+  if (rooms.isNotEmpty) {
     num sum = 0;
     num total = 0;
     for (final r in rooms) {
-      if (r.avgRating != null && (r.totalRatings ?? 0) > 0) {
-        sum += (r.avgRating! * (r.totalRatings ?? 1));
-        total += (r.totalRatings ?? 1);
+      final rAvg = r.effectiveAvgRating ?? r.avgRating;
+      final rCount = r.totalRatings ?? 0;
+      if (rAvg != null && rCount > 0) {
+        sum += (r.ratingSum ?? (rAvg * rCount));
+        total += rCount;
       }
     }
     if (total > 0) {
@@ -3612,7 +3614,7 @@ String _formatPropertyRatingLabel(PropertyDoc property, [List<PropertyDoc> rooms
     }
   }
   if (avg != null && count > 0) {
-    return ' ·  ';
+    return '${avg.toStringAsFixed(1)} ($count)';
   }
-  return 'New · No reviews yet';
+  return '0';
 }

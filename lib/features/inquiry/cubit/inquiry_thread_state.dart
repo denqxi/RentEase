@@ -14,6 +14,7 @@ class InquiryThreadState extends Equatable {
     this.ownerVerified = false,
     this.ownerRejected = false,
     this.counterpartPhone,
+    this.hasRated = false,
   });
 
   final bool isLoading;
@@ -38,6 +39,9 @@ class InquiryThreadState extends Equatable {
   /// The other party's phone, once they shared it (accepted threads only).
   final String? counterpartPhone;
 
+  /// Whether current user has rated this inquiry/stay.
+  final bool hasRated;
+
   InquiryThreadState copyWith({
     bool? isLoading,
     bool? isBusy,
@@ -53,6 +57,7 @@ class InquiryThreadState extends Equatable {
     bool? ownerRejected,
     String? counterpartPhone,
     bool clearPhone = false,
+    bool? hasRated,
   }) {
     return InquiryThreadState(
       isLoading: isLoading ?? this.isLoading,
@@ -69,6 +74,7 @@ class InquiryThreadState extends Equatable {
       counterpartPhone: clearPhone
           ? null
           : (counterpartPhone ?? this.counterpartPhone),
+      hasRated: hasRated ?? this.hasRated,
     );
   }
 
@@ -88,5 +94,6 @@ class InquiryThreadState extends Equatable {
     ownerVerified,
     ownerRejected,
     counterpartPhone,
+    hasRated,
   ];
 }

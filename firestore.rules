@@ -266,13 +266,28 @@ service cloud.firestore {
                              'poiLongitude', 'poiAddress', 'wRent',
                              'wDistance', 'wAmenities']));
       }
-      allow create, update: if isSelf(userId) && notSuspended()
+      allow create: if isSelf(userId) && notSuspended()
         && !('emergencyContact' in request.resource.data)
         && noPrivatePrefs()
         // computed fields are server-side only
         && !request.resource.data.diff(resource == null ? {} : resource.data)
               .affectedKeys().hasAny(['avgRating', 'totalRatings',
                                       'profileCompleteness', 'credibilityScore']);
+      allow update: if (isSelf(userId) && notSuspended()
+          && !('emergencyContact' in request.resource.data)
+          && noPrivatePrefs()
+          // computed fields are server-side only
+          && !request.resource.data.diff(resource.data)
+                .affectedKeys().hasAny(['avgRating', 'totalRatings',
+                                        'profileCompleteness', 'credibilityScore']))
+        // Allow rating aggregate updates by authenticated users
+        || (signedIn()
+            && notSuspended()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['ratingSum', 'totalRatings', 'avgRating', 'updatedAt'])
+            && request.resource.data.get('totalRatings', 0) is int
+            && request.resource.data.get('ratingSum', 0) is number
+            && request.resource.data.get('avgRating', 0) is number);
       allow delete: if (isSelf(userId) && notSuspended()) || isAdmin();
 
       // Map pin + TOPSIS weights: that tenant and admins only (owners cannot
@@ -315,7 +330,15 @@ service cloud.firestore {
           && !request.resource.data.diff(resource.data).affectedKeys()
                 .hasAny(['verifiedAt', 'rejectedAt', 'avgRating',
                          'totalRatings', 'totalListings']))
-        || isAdmin(); // admin approves/rejects
+        || isAdmin() // admin approves/rejects
+        // Allow rating aggregate updates by authenticated users
+        || (signedIn()
+            && notSuspended()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['ratingSum', 'totalRatings', 'avgRating', 'updatedAt'])
+            && request.resource.data.get('totalRatings', 0) is int
+            && request.resource.data.get('ratingSum', 0) is number
+            && request.resource.data.get('avgRating', 0) is number);
       // Self-service account deletion (a rejected / pending owner included).
       allow delete: if (isSelf(userId) && notSuspended()) || isAdmin();
 
@@ -410,7 +433,15 @@ service cloud.firestore {
         || (isAdmin()
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['isAvailable', 'adminUnlisted', 'isVerified',
-                           'updatedAt']));
+                           'updatedAt']))
+        // Allow rating aggregate updates by authenticated users
+        || (signedIn()
+            && notSuspended()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['ratingSum', 'totalRatings', 'avgRating', 'updatedAt'])
+            && request.resource.data.get('totalRatings', 0) is int
+            && request.resource.data.get('ratingSum', 0) is number
+            && request.resource.data.get('avgRating', 0) is number);
       // Account deletion must also work for a rejected owner, so delete needs ownership (+ email verified, not suspended; a listing can
       // only exist if its creator had a verified email).
       allow delete: if (emailVerified() && notSuspended()
@@ -422,9 +453,20 @@ service cloud.firestore {
         allow read: if signedIn()
           || get(/databases/$(database)/documents/properties/$(propertyId))
                .data.get('isAvailable', false) == true;
-        allow create, update: if ownerMayWrite()
+        allow create: if ownerMayWrite()
           && get(/databases/$(database)/documents/properties/$(propertyId))
                .data.ownerId == request.auth.uid;
+        allow update: if (ownerMayWrite()
+            && get(/databases/$(database)/documents/properties/$(propertyId))
+                 .data.ownerId == request.auth.uid)
+          // Allow rating aggregate updates by authenticated users
+          || (signedIn()
+              && notSuspended()
+              && request.resource.data.diff(resource.data).affectedKeys()
+                   .hasOnly(['ratingSum', 'totalRatings', 'avgRating', 'updatedAt'])
+              && request.resource.data.get('totalRatings', 0) is int
+              && request.resource.data.get('ratingSum', 0) is number
+              && request.resource.data.get('avgRating', 0) is number);
         // Delete only needs ownership (account deletion; rooms go before the
         // property so this get() still resolves).
         allow delete: if (emailVerified() && notSuspended()
@@ -657,7 +699,8 @@ service cloud.firestore {
           && (inquiry().tenantId == request.auth.uid
               || inquiry().ownerId == request.auth.uid
               || isAdmin());
-        // Free chat only after owner accepts (stage 2).
+        // Free chat only after owner accepts (stage 2). Chat stays open after
+        // the stay is confirmed (status 'booked').
         allow create: if emailVerified()
           && notSuspended()
           && request.resource.data.keys().hasOnly(['senderId', 'senderRole',
@@ -675,7 +718,7 @@ service cloud.firestore {
           && ownerNotRejected(inquiry().ownerId)
           && inquiry().stage == 2
           && inquiry().ownerDecision == 'accepted'
-          && inquiry().get('status', 'active') == 'active'
+          && inquiry().get('status', 'active') in ['active', 'booked']
           && request.resource.data.isAutoGenerated == false;
         // readAt receipt update by the counterpart only.
         allow update: if notSuspended()
@@ -775,7 +818,7 @@ service cloud.firestore {
         && request.resource.data.isRead == false
         && request.resource.data.type in
              ['inquiry', 'inquiry_accepted', 'inquiry_declined', 'message',
-              'invitation', 'invitation_accepted', 'invitation_declined', 'rating']
+              'invitation', 'invitation_accepted', 'invitation_declined', 'rating', 'stay_confirmed']
         && request.resource.data.relatedType == 'inquiry'
         && request.resource.data.recipientId != request.auth.uid
         // Chat alerts are one rolling doc per inquiry+recipient (no message text).

@@ -62,15 +62,32 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
       num totalStars = 0;
       final counts = <int, int>{5: 0, 4: 0, 3: 0, 2: 0, 1: 0};
 
-      // Query ratings by propertyId
-      final snap = await FirebaseFirestore.instance
-          .collection(FirestoreCollections.ratings)
-          .where('propertyId', whereIn: targetIds.take(10).toList())
-          .get();
-
-      if (snap.docs.isNotEmpty) {
+      // Query ratings by propertyId and parentPropertyId
+      final docsMap = <String, DocumentSnapshot<Map<String, dynamic>>>{};
+      try {
+        final snap = await FirebaseFirestore.instance
+            .collection(FirestoreCollections.ratings)
+            .where('propertyId', whereIn: targetIds.take(10).toList())
+            .get();
         for (final doc in snap.docs) {
+          docsMap[doc.id] = doc;
+        }
+      } catch (_) {}
+
+      try {
+        final parentSnap = await FirebaseFirestore.instance
+            .collection(FirestoreCollections.ratings)
+            .where('parentPropertyId', whereIn: targetIds.take(10).toList())
+            .get();
+        for (final doc in parentSnap.docs) {
+          docsMap[doc.id] = doc;
+        }
+      } catch (_) {}
+
+      if (docsMap.isNotEmpty) {
+        for (final doc in docsMap.values) {
           final rating = RatingDoc.fromSnapshot(doc);
+          if (rating.raterRole != 'tenant') continue;
           final stars = rating.stars.toInt().clamp(1, 5);
           totalStars += stars;
           counts[stars] = (counts[stars] ?? 0) + 1;

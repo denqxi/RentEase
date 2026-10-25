@@ -135,7 +135,7 @@ class InquiryService {
   static bool isInvite(InquiryDoc i) => i.initiatedBy == 'owner';
 
   static bool canChat(InquiryDoc i) =>
-      i.stage == 2 && i.ownerDecision == 'accepted' && i.status == 'active';
+      i.stage == 2 && i.ownerDecision == 'accepted' && (i.status == 'active' || i.status == 'booked');
 
   static bool isResolved(InquiryDoc i) =>
       i.status == 'booked' || i.status == 'declined' || i.status == 'closed';
@@ -339,7 +339,7 @@ class InquiryService {
     );
     if (threads.any((t) => t.propertyId == match.propertyId)) {
       throw const InquiryException(
-        'This tenant already has an inquiry or invitation for this property.',
+        'This tenant already has an inquiry or notification for this property.',
       );
     }
 
@@ -360,8 +360,8 @@ class InquiryService {
     await _notify(
       recipientId: invitation.tenantId,
       type: 'invitation',
-      title: 'You were invited to a property',
-      body: 'An owner invited you to ${property.title}.',
+      title: 'A landlord notified you about a property',
+      body: 'An owner notified you that ${property.title} is available and matches your preferences.',
       inquiryId: invitation.inquiryId,
     );
     return invitation.inquiryId;
@@ -383,7 +383,7 @@ class InquiryService {
     await _notify(
       recipientId: inquiry.ownerId,
       type: 'invitation_accepted',
-      title: 'Your invitation was accepted',
+      title: 'Your property notification was accepted',
       body: 'Chat is now open with the tenant.',
       inquiryId: inquiry.inquiryId,
     );
@@ -405,8 +405,8 @@ class InquiryService {
     await _notify(
       recipientId: inquiry.ownerId,
       type: 'invitation_declined',
-      title: 'Your invitation was declined',
-      body: 'The tenant declined your invitation.',
+      title: 'Your property notification was declined',
+      body: 'The tenant declined your notification.',
       inquiryId: inquiry.inquiryId,
     );
   }
@@ -521,7 +521,7 @@ class InquiryService {
   /// listing off the market (FilteringService drops it from every tenant's
   /// matches on their next pass) and closes the property's other open
   /// inquiries.
-  Future<void> markBooked({
+  Future<void> markOccupied({
     required InquiryDoc inquiry,
     required String ownerId,
     bool fillsLastVacancy = false,
@@ -530,22 +530,34 @@ class InquiryService {
     await _requireOwnerNotRejected(ownerId);
     if (!canChat(inquiry)) {
       throw const InquiryException(
-        'Only an accepted, active inquiry can be marked as booked.',
+        'Only an accepted inquiry can be marked as occupied.',
       );
     }
-    final others = fillsLastVacancy
-        ? (await _repository.fetchOpenInquiriesForProperty(
-            ownerId: ownerId,
-            propertyId: inquiry.propertyId,
-          )).where((i) => i.inquiryId != inquiry.inquiryId)
-        : const <InquiryDoc>[];
     await _repository.commitBooking(
       inquiryId: inquiry.inquiryId,
       propertyId: inquiry.propertyId,
       fillsLastVacancy: fillsLastVacancy,
-      otherInquiryIds: [for (final i in others) i.inquiryId],
+      otherInquiryIds: const [],
+    );
+    await _notify(
+      recipientId: inquiry.tenantId,
+      type: 'stay_confirmed',
+      title: 'Your stay is confirmed!',
+      body: 'Your stay has been confirmed by the owner.',
+      inquiryId: inquiry.inquiryId,
     );
   }
+
+  /// Backward-compatible alias for [markOccupied].
+  Future<void> markBooked({
+    required InquiryDoc inquiry,
+    required String ownerId,
+    bool fillsLastVacancy = false,
+  }) => markOccupied(
+    inquiry: inquiry,
+    ownerId: ownerId,
+    fillsLastVacancy: fillsLastVacancy,
+  );
 
   // ── Rating ──────────────────────────────────────────────────────────────
 
@@ -568,7 +580,7 @@ class InquiryService {
       } catch (_) {}
     }
     if (currentInquiry.status != 'booked') {
-      throw const InquiryException('You can rate once the booking is confirmed.');
+      throw const InquiryException('You can rate once the stay is confirmed.');
     }
     if (stars < 1 || stars > 5) {
       throw const InquiryException('Pick between 1 and 5 stars.');
@@ -581,10 +593,16 @@ class InquiryService {
       inquiryId: currentInquiry.inquiryId,
       raterId: raterId,
     )) {
-      throw const InquiryException('You already rated this booking.');
+      throw const InquiryException('You already rated this stay.');
     }
     final trimmed = _capped(review, maxReviewLength);
     final ratedId = ratedIdFor(currentInquiry, raterIsOwner: raterIsOwner);
+
+    PropertyDoc? prop;
+    try {
+      prop = await _repository.fetchProperty(currentInquiry.propertyId);
+    } catch (_) {}
+
     await _repository.createRating(
       RatingDoc(
         ratingId: '${currentInquiry.inquiryId}_$raterId',
@@ -595,7 +613,9 @@ class InquiryService {
         stars: stars,
         review: trimmed.isEmpty ? null : trimmed,
         propertyId: currentInquiry.propertyId.isNotEmpty ? currentInquiry.propertyId : null,
+        parentPropertyId: prop?.parentPropertyId,
       ),
+      parentPropertyId: prop?.parentPropertyId,
     );
     await _notify(
       recipientId: ratedId,

@@ -126,17 +126,19 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
 
       final ratersMap = <String, String>{};
       if (ratersToFetch.isNotEmpty) {
-        final usersSnap = await FirebaseFirestore.instance
-            .collection(FirestoreCollections.users)
-            .where(FieldPath.documentId, whereIn: ratersToFetch.take(10).toList())
-            .get();
-        for (final u in usersSnap.docs) {
-          final data = u.data();
-          final fn = (data['firstName'] as String?)?.trim() ?? '';
-          final ln = (data['lastName'] as String?)?.trim() ?? '';
-          final full = '$fn $ln'.trim();
-          ratersMap[u.id] = full.isNotEmpty ? full : 'Tenant';
-        }
+        try {
+          final usersSnap = await FirebaseFirestore.instance
+              .collection(FirestoreCollections.users)
+              .where(FieldPath.documentId, whereIn: ratersToFetch.take(10).toList())
+              .get();
+          for (final u in usersSnap.docs) {
+            final data = u.data();
+            final fn = (data['firstName'] as String?)?.trim() ?? '';
+            final ln = (data['lastName'] as String?)?.trim() ?? '';
+            final full = '$fn $ln'.trim();
+            ratersMap[u.id] = full.isNotEmpty ? full : 'Tenant';
+          }
+        } catch (_) {}
       }
 
       final loaded = <_OwnerReviewItem>[];

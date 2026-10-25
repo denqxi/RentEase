@@ -15,6 +15,7 @@ class CompatibleTenant extends Equatable {
     required this.bScore,
     this.occupation,
     this.school,
+    this.tenantCi,
   });
 
   final String matchId;
@@ -25,6 +26,7 @@ class CompatibleTenant extends Equatable {
   final num bScore;
   final String? occupation;
   final String? school;
+  final num? tenantCi;
 
   String get initials {
     final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
@@ -41,5 +43,6 @@ class CompatibleTenant extends Equatable {
     bScore,
     occupation,
     school,
+    tenantCi,
   ];
 }

@@ -55,6 +55,7 @@ class FindTenantsRepositoryImpl implements FindTenantsRepository {
           bScore: m.bScore,
           occupation: profile.occupation,
           school: profile.school,
+          tenantCi: m.tenantCi,
         );
       }),
     );
