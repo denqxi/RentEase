@@ -285,7 +285,35 @@ class _TenantCard extends StatelessWidget {
                     style: AppTextStyles.caption(context),
                   ),
                   SizedBox(height: AppSpacing.sm),
-                  const CompatibleBadge(),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CompatibleBadge(),
+                      if (tenant.tenantCi != null) ...[
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: const Color(0xFFC7D2FE),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            'ci=${tenant.tenantCi!.toDouble().toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF4F46E5),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                   SizedBox(height: AppSpacing.sm),
                   // CLAUDE.md rule 2: absent, never disabled, unless the owner
                   // can really invite (bScore 1, verified, property available,

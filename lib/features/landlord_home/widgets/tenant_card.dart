@@ -79,8 +79,6 @@ class TenantCard extends StatelessWidget {
                   children: [
                     Text(
                       tenant.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.label(context).copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -89,8 +87,6 @@ class TenantCard extends StatelessWidget {
                     if (details.isNotEmpty)
                       Text(
                         details,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.caption(context)
                             .copyWith(fontSize: 12),
                       ),
@@ -100,7 +96,35 @@ class TenantCard extends StatelessWidget {
                           .copyWith(fontSize: 12),
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    const CompatibleBadge(),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CompatibleBadge(),
+                        if (tenant.tenantCi != null) ...[
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEEF2FF),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0xFFC7D2FE),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Text(
+                              'ci=${tenant.tenantCi!.toDouble().toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF4F46E5),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ),

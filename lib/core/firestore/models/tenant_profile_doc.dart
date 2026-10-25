@@ -35,6 +35,7 @@ class TenantProfileDoc {
     required this.wAmenities,
     this.avgRating,
     this.totalRatings,
+    this.ratingSum,
     this.profileCompleteness,
     this.credibilityScore,
     this.updatedAt,
@@ -124,6 +125,14 @@ class TenantProfileDoc {
   // Computed server-side.
   final num? avgRating;
   final num? totalRatings;
+  final num? ratingSum;
+
+  double? get effectiveAvgRating {
+    if (ratingSum != null && totalRatings != null && totalRatings! > 0) {
+      return (ratingSum! / totalRatings!).toDouble();
+    }
+    return avgRating?.toDouble();
+  }
   final num? profileCompleteness;
   final num? credibilityScore;
   final Timestamp? updatedAt;
@@ -153,6 +162,7 @@ class TenantProfileDoc {
         wAmenities: map['wAmenities'] as num? ?? 0.30,
         avgRating: map['avgRating'] as num?,
         totalRatings: map['totalRatings'] as num?,
+        ratingSum: map['ratingSum'] as num?,
         profileCompleteness: map['profileCompleteness'] as num?,
         credibilityScore: map['credibilityScore'] as num?,
         updatedAt: map['updatedAt'] as Timestamp?,
@@ -179,6 +189,7 @@ class TenantProfileDoc {
     'isSeeking': isSeeking,
     if (avgRating != null) 'avgRating': avgRating,
     if (totalRatings != null) 'totalRatings': totalRatings,
+    if (ratingSum != null) 'ratingSum': ratingSum,
     if (profileCompleteness != null) 'profileCompleteness': profileCompleteness,
     if (credibilityScore != null) 'credibilityScore': credibilityScore,
     'updatedAt': FieldValue.serverTimestamp(),

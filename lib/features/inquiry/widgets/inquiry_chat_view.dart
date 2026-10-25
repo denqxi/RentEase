@@ -90,7 +90,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text(
-          'Mark as booked?',
+          'Mark as occupied?',
           style: TextStyle(fontFamily: 'DM Sans', fontWeight: FontWeight.w700),
         ),
         content: StatefulBuilder(
@@ -99,8 +99,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'This confirms the booking for ${widget.counterpartName} and '
-                'closes the chat.',
+                'Confirms that ${widget.counterpartName} is now staying at ${widget.propertyTitle}.',
                 style: const TextStyle(fontFamily: 'DM Sans', fontSize: 14),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -120,8 +119,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   ),
                 ),
                 subtitle: Text(
-                  'Hides ${widget.propertyTitle} from new tenants and closes '
-                  'its other open inquiries.',
+                  'Marks ${widget.propertyTitle} as occupied and hides it from new searches.',
                   style: AppTextStyles.caption(ctx),
                 ),
               ),
@@ -503,11 +501,17 @@ class _InquiryChatViewState extends State<InquiryChatView> {
   }
 
   void _openPropertyDetail(PropertyDoc property) {
+    final state = context.read<InquiryThreadCubit>().state;
+    final inq = state.inquiry;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => PropertyDetailScreen(
           propertyId: property.propertyId,
           initialPropertyDoc: property,
+          inquiryId: inq?.inquiryId,
+          initialTenantCi: (inq?.tenantCiSnapshot ?? 0) > 0
+              ? inq!.tenantCiSnapshot.toDouble()
+              : null,
         ),
       ),
     );
@@ -779,7 +783,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                   ),
                                   SizedBox(width: 8),
                                   Text(
-                                    'Mark as booked',
+                                    'Mark as occupied',
                                     style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 12.5,
@@ -790,7 +794,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                 ],
                               ),
                             ),
-                          if (booked)
+                          if (booked && !state.hasRated)
                             PopupMenuItem<String>(
                               value: 'rate',
                               height: 38,
@@ -827,6 +831,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   child: ThreadPropertyBannerCard(
                     property: property,
                     fallbackTitle: widget.propertyTitle,
+                    inquiry: inquiry,
                     onTap: property != null
                         ? () => _openPropertyDetail(property)
                         : null,
@@ -874,14 +879,16 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   _BookedPanel(
                     isOwner: widget.isOwner,
                     counterpartName: widget.counterpartName,
+                    hasRated: state.hasRated,
                     onRate: _openRating,
-                  )
-                else if (closed)
+                  ),
+                if (closed)
                   _ClosedPanel(isOwner: widget.isOwner)
                 else if (state.ownerRejected)
                   RejectedOwnerNotice(isOwner: widget.isOwner)
                 else ...[
                   // Quick-Reply Suggestion Chips (Wrap layout matching mockup)
+                  if (!booked)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
                     child: Align(
@@ -1043,12 +1050,14 @@ class ThreadPropertyBannerCard extends StatelessWidget {
     required this.property,
     required this.fallbackTitle,
     this.onTap,
+    this.inquiry,
     super.key,
   });
 
   final PropertyDoc? property;
   final String fallbackTitle;
   final VoidCallback? onTap;
+  final InquiryDoc? inquiry;
 
   @override
   Widget build(BuildContext context) {
@@ -1072,6 +1081,10 @@ class ThreadPropertyBannerCard extends StatelessWidget {
                     builder: (_) => PropertyDetailScreen(
                       propertyId: property!.propertyId,
                       initialPropertyDoc: property,
+                      inquiryId: inquiry?.inquiryId,
+                      initialTenantCi: (inquiry?.tenantCiSnapshot ?? 0) > 0
+                          ? inquiry!.tenantCiSnapshot.toDouble()
+                          : null,
                     ),
                   ),
                 );
@@ -1441,46 +1454,71 @@ class _BookedPanel extends StatelessWidget {
   const _BookedPanel({
     required this.isOwner,
     required this.counterpartName,
+    required this.hasRated,
     required this.onRate,
   });
 
   final bool isOwner;
   final String counterpartName;
+  final bool hasRated;
   final VoidCallback onRate;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.matchHigh,
-                  size: 18,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Booking confirmed',
-                  style: AppTextStyles.body(
-                    context,
-                  ).copyWith(fontWeight: FontWeight.w700),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.matchHigh,
+                size: 18,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Stay confirmed',
+                style: AppTextStyles.body(
+                  context,
+                ).copyWith(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (hasRated)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7).withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFDE68A)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 18),
+                  SizedBox(width: 6),
+                  Text(
+                    'You rated this stay · Thank you!',
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF92400E),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
             AppButton(
               label: isOwner ? 'Rate $counterpartName' : 'Rate your stay',
               variant: AppButtonVariant.outline,
               onPressed: onRate,
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

@@ -118,7 +118,7 @@ class _FakeRepository implements InquiryRepository {
       messages.add(message);
 
   @override
-  Future<void> createRating(RatingDoc rating) async => ratings.add(rating);
+  Future<void> createRating(RatingDoc rating, {String? parentPropertyId}) async => ratings.add(rating);
 
   @override
   Future<bool> hasRated({required String inquiryId, required String raterId}) async =>
@@ -314,14 +314,14 @@ void main() {
       );
     });
 
-    test('is closed once booked', () {
-      expect(
+    test('allows chat when booked (stay confirmed)', () async {
+      await expectLater(
         service.sendMessage(
           inquiry: _inquiry(stage: 2, ownerDecision: 'accepted', status: 'booked'),
           senderId: _tenant,
           content: 'hi',
         ),
-        throwsA(isA<InquiryException>()),
+        completes,
       );
     });
   });
@@ -341,7 +341,7 @@ void main() {
       });
     });
 
-    test('filling the last vacancy closes every other open inquiry', () async {
+    test('filling the last vacancy marks occupied without closing other inquiries', () async {
       repo.openForProperty = [
         active, // the one being booked — must not close itself
         InquiryDoc.fromMap('tenantB_prop1', {
@@ -357,7 +357,7 @@ void main() {
         fillsLastVacancy: true,
       );
       expect(repo.booking!['fillsLastVacancy'], isTrue);
-      expect(repo.booking!['otherInquiryIds'], ['tenantB_prop1']);
+      expect(repo.booking!['otherInquiryIds'], isEmpty);
     });
 
     test('cannot book an inquiry still in Phase 1', () {

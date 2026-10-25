@@ -99,9 +99,10 @@ class InquiryRepositoryImpl implements InquiryRepository {
       _guard(() => _remote.addMessage(inquiryId, message));
 
   @override
-  Future<void> createRating(RatingDoc rating) async {
+  Future<void> createRating(RatingDoc rating, {String? parentPropertyId}) async {
     try {
-      await _remote.createRating(rating);
+      await _remote.createRating(rating, parentPropertyId: parentPropertyId);
+      return;
     } on FirebaseException catch (e) {
       throw Exception(switch (e.code) {
         'permission-denied' =>

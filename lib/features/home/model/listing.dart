@@ -27,6 +27,7 @@ class Listing extends Equatable {
     this.propertyDoc,
     this.rating,
     this.reviewCount,
+    this.tenantCi,
   });
 
   final String id;
@@ -68,6 +69,10 @@ class Listing extends Equatable {
   /// Total count of reviews received.
   final int? reviewCount;
 
+  final double? tenantCi;
+
+  double get effectiveCi => tenantCi ?? (matchPercent > 0 ? matchPercent / 100.0 : 0.0);
+
   /// Indicator dot color driven by [matchPercent].
   Color get matchDotColor =>
       matchPercent >= 80 ? AppColors.matchHigh : AppColors.matchMedium;
@@ -78,6 +83,7 @@ class Listing extends Equatable {
     int? matchPercent,
     String? propertyName,
     String? roomName,
+    double? tenantCi,
   }) {
     return Listing(
       id: id,
@@ -99,6 +105,7 @@ class Listing extends Equatable {
       propertyDoc: propertyDoc,
       rating: rating,
       reviewCount: reviewCount,
+      tenantCi: tenantCi ?? this.tenantCi,
     );
   }
 
@@ -122,6 +129,7 @@ class Listing extends Equatable {
       beds: 1,
       baths: 1,
       matchPercent: (((match.tenantCi ?? 0) * 100).round()),
+      tenantCi: match.tenantCi?.toDouble(),
       imageSeed: imageSeed,
       photoUrl: property.photos.isNotEmpty ? property.photos.first : null,
       propertyType: property.propertyType,
@@ -129,7 +137,7 @@ class Listing extends Equatable {
       roomName: property.roomName,
       photos: List<String>.from(property.photos),
       propertyDoc: property,
-      rating: property.avgRating?.toDouble(),
+      rating: property.effectiveAvgRating ?? property.avgRating?.toDouble(),
       reviewCount: property.totalRatings?.toInt(),
     );
   }
@@ -157,7 +165,7 @@ class Listing extends Equatable {
       roomName: property.roomName,
       photos: List<String>.from(property.photos),
       propertyDoc: property,
-      rating: property.avgRating?.toDouble(),
+      rating: property.effectiveAvgRating ?? property.avgRating?.toDouble(),
       reviewCount: property.totalRatings?.toInt(),
     );
   }
@@ -176,6 +184,7 @@ class Listing extends Equatable {
         beds: 1,
         baths: 1,
         matchPercent: ((p['tenantCi'] as num) * 100).round(),
+        tenantCi: (p['tenantCi'] as num?)?.toDouble(),
         amenityScore: (p['amenityScore'] as num?)?.toInt() ?? 0,
         imageSeed: i % 5 + 1,
         isSaved: p['propertyId'] == 'bh002',
@@ -203,5 +212,6 @@ class Listing extends Equatable {
     propertyDoc,
     rating,
     reviewCount,
+    tenantCi,
   ];
 }

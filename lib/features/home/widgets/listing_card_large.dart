@@ -145,65 +145,103 @@ class ListingCardLarge extends StatelessWidget {
                         ),
                       ),
 
-                      // Top-left: Match score pill (transparent glass, subtle outline, smaller)
+                      // Top-left: Match score pill & Ci badge
                       Positioned(
                         top: 10,
                         left: 10,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 7,
-                                vertical: 2.5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.28),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: (!isGuest && listing.matchPercent > 0)
-                                      ? listing.matchDotColor.withValues(alpha: 0.45)
-                                      : Colors.white.withValues(alpha: 0.25),
-                                  width: 0.6,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 2.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.28),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: (!isGuest && listing.matchPercent > 0)
+                                          ? listing.matchDotColor.withValues(alpha: 0.45)
+                                          : Colors.white.withValues(alpha: 0.25),
+                                      width: 0.6,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (!isGuest && listing.matchPercent > 0) ...[
+                                        Text(
+                                          '${listing.matchPercent}% Match',
+                                          style: const TextStyle(
+                                            fontFamily: 'DM Sans',
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                            letterSpacing: -0.1,
+                                          ),
+                                        ),
+                                      ] else ...[
+                                        const Icon(
+                                          Icons.lock_outline,
+                                          size: 9.5,
+                                          color: Colors.white70,
+                                        ),
+                                        const SizedBox(width: 3),
+                                        const Text(
+                                          'Match',
+                                          style: TextStyle(
+                                            fontFamily: 'DM Sans',
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                            letterSpacing: -0.1,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
                                 ),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (!isGuest && listing.matchPercent > 0) ...[
-                                    Text(
-                                      '${listing.matchPercent}% Match',
+                            ),
+                            if (!isGuest && listing.matchPercent > 0) ...[
+                              const SizedBox(width: 4),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2.5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.35),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: const Color(0xFF818CF8).withValues(alpha: 0.6),
+                                        width: 0.6,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'ci=${listing.effectiveCi.toStringAsFixed(2)}',
                                       style: const TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w700,
-                                        color: Colors.white,
+                                        color: Color(0xFFC7D2FE),
                                         letterSpacing: -0.1,
                                       ),
                                     ),
-                                  ] else ...[
-                                    const Icon(
-                                      Icons.lock_outline,
-                                      size: 9.5,
-                                      color: Colors.white70,
-                                    ),
-                                    const SizedBox(width: 3),
-                                    const Text(
-                                      'Match',
-                                      style: TextStyle(
-                                        fontFamily: 'DM Sans',
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
-                                        letterSpacing: -0.1,
-                                      ),
-                                    ),
-                                  ],
-                                ],
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
+                            ],
+                          ],
                         ),
                       ),
 

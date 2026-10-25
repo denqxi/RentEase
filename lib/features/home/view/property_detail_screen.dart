@@ -19,7 +19,6 @@ import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../inquiry/view/start_inquiry.dart';
 import '../../landlord_home/view/owner_detail_screen.dart';
-import '../../landlord_home/view/property_reviews_screen.dart';
 import '../../matching/domain/entities/mismatch_reason.dart';
 import '../../owner_onboarding/widgets/listing_form_widgets.dart'
     show amenityIconFor;
@@ -98,6 +97,8 @@ class PropertyDetailScreen extends StatefulWidget {
     this.onPreferencesSaved,
     this.homeCubit,
     this.profile,
+    this.inquiryId,
+    this.initialTenantCi,
     super.key,
   });
 
@@ -109,6 +110,8 @@ class PropertyDetailScreen extends StatefulWidget {
   final VoidCallback? onPreferencesSaved;
   final HomeCubit? homeCubit;
   final TenantProfileDoc? profile;
+  final String? inquiryId;
+  final double? initialTenantCi;
 
   @override
   State<PropertyDetailScreen> createState() => _PropertyDetailScreenState();
@@ -143,8 +146,10 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   Map<String, dynamic> _buildInitialPropertyMap() {
     final doc = widget.initialPropertyDoc;
     if (doc != null) {
+      final double ci = widget.initialTenantCi ?? 0.0;
       return {
         'propertyId': doc.propertyId,
+        'parentPropertyId': doc.parentPropertyId,
         'ownerId': doc.ownerId,
         'title': doc.title,
         'propertyName': doc.propertyName,
@@ -156,7 +161,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         'monthlyRent': doc.monthlyRent,
         'distance': 0.0,
         'amenityScore': doc.amenityScore ?? doc.amenityList.length,
-        'tenantCi': 0.0,
+        'tenantCi': ci,
         'isVerified': doc.isVerified,
         'allowedGender': doc.allowedGender,
         'smokingAllowed': doc.smokingAllowed,
@@ -242,14 +247,6 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     final propId = (_property['propertyId'] as String?) ?? widget.propertyId;
     if (propId == null || propId.isEmpty) return;
 
-    final bool hasOwner = _property['owner'] != null &&
-        _property['ownerName'] != null &&
-        _property['ownerName'] != 'Property Owner';
-    final bool hasAmenities = _property.containsKey('amenityList') &&
-        (_property['amenityList'] as List).isNotEmpty;
-
-    if (hasOwner && hasAmenities) return;
-
     setState(() => _isLoadingDetails = true);
     try {
       Map<String, dynamic>? detail;
@@ -259,9 +256,10 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
 
       detail ??= {};
 
-      PropertyDoc? pDoc = widget.initialPropertyDoc ??
-          (_property['propertyDoc'] as PropertyDoc?);
-      if (pDoc == null || !detail.containsKey('title')) {
+      // Always fetch fresh property document from Firestore to ensure
+      // up-to-date ratings (avgRating, totalRatings), availability, and rooms.
+      PropertyDoc? pDoc;
+      try {
         final snap = await FirebaseFirestore.instance
             .collection(FirestoreCollections.properties)
             .doc(propId)
@@ -270,6 +268,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           pDoc = PropertyDoc.fromSnapshot(snap);
           detail.addAll({
             'propertyId': propId,
+            'parentPropertyId': pDoc.parentPropertyId,
             'ownerId': pDoc.ownerId,
             'title': pDoc.title,
             'propertyName': pDoc.propertyName,
@@ -298,6 +297,33 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             'totalRatings': pDoc.totalRatings ?? 0,
             'propertyDoc': pDoc,
           });
+        }
+      } catch (e) {
+        debugPrint('Error fetching fresh property doc: $e');
+      }
+
+      pDoc ??= widget.initialPropertyDoc ??
+          (_property['propertyDoc'] as PropertyDoc?);
+
+      // If tenantCi is 0 or not populated, query the matches collection
+      final currentCi = (_property['tenantCi'] as num?)?.toDouble() ?? 0.0;
+      if (currentCi <= 0 && !widget.isGuest) {
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (uid != null) {
+          try {
+            final matchSnap = await FirebaseFirestore.instance
+                .collection(FirestoreCollections.matches)
+                .doc('${uid}_$propId')
+                .get();
+            if (matchSnap.exists) {
+              final m = MatchDoc.fromSnapshot(matchSnap);
+              if (m.tenantCi != null && m.tenantCi! > 0) {
+                detail['tenantCi'] = m.tenantCi!.toDouble();
+              }
+            }
+          } catch (e) {
+            debugPrint('Error fetching MatchDoc: $e');
+          }
         }
       }
 
@@ -395,9 +421,9 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   }
 
   PropertyDoc _resolvePropertyDoc() {
-    if (widget.initialPropertyDoc != null) return widget.initialPropertyDoc!;
     final dynamic storedDoc = _property['propertyDoc'];
     if (storedDoc is PropertyDoc) return storedDoc;
+    if (widget.initialPropertyDoc != null) return widget.initialPropertyDoc!;
 
     final lat = (_property['latitude'] as num?)?.toDouble() ?? 0.0;
     final lng = (_property['longitude'] as num?)?.toDouble() ?? 0.0;
@@ -408,6 +434,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
 
     return PropertyDoc(
       propertyId: _property['propertyId'] as String? ?? widget.propertyId ?? '',
+      parentPropertyId: _property['parentPropertyId'] as String?,
       ownerId: _property['ownerId'] as String? ?? '',
       title: _property['title'] as String? ?? '',
       propertyName: _property['propertyName'] as String?,
@@ -803,6 +830,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                         () => widget.homeCubit?.toggleSaved(propId),
                       ),
                       matchPercent: matchPercent,
+                      tenantCi: (_property['tenantCi'] as num?)?.toDouble() ?? widget.initialListing?.effectiveCi,
                       matchDotColor: matchDotColor,
                       isGuest: widget.isGuest,
                       isNonMatch: isNonMatch,
@@ -817,6 +845,8 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                       address: address,
                       monthlyRent: monthlyRent,
                       propertyDoc: propertyDoc,
+                      avgRating: (_property['avgRating'] as num?)?.toDouble(),
+                      totalRatings: (_property['totalRatings'] as num?)?.toInt(),
                       onAddressTap: () => _openMapView(propertyDoc, displayName),
                     ),
                     const SizedBox(height: 14),
@@ -916,6 +946,24 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                     _HostInformationCard(
                       property: _property,
                       propertyDoc: propertyDoc,
+                    ),
+                    const SizedBox(height: 14),
+
+                    // ── 6.1 Property Reviews Card (Non-expandable, scrollable) ─
+                    _PropertyReviewsCard(
+                      propertyId: propertyDoc.propertyId,
+                      parentPropertyId: propertyDoc.parentPropertyId,
+                      inquiryId: widget.inquiryId,
+                      onRatingLoaded: (avg, totalCount) {
+                        if (mounted &&
+                            ((_property['avgRating'] as num?)?.toDouble() != avg ||
+                                (_property['totalRatings'] as num?)?.toInt() != totalCount)) {
+                          setState(() {
+                            _property['avgRating'] = avg;
+                            _property['totalRatings'] = totalCount;
+                          });
+                        }
+                      },
                     ),
                     const SizedBox(height: 14),
 
@@ -1456,6 +1504,7 @@ class _PropertyPhotoGallerySection extends StatefulWidget {
     required this.cubit,
     required this.onSavedToggle,
     required this.matchPercent,
+    this.tenantCi,
     required this.matchDotColor,
     required this.isGuest,
     required this.isNonMatch,
@@ -1468,6 +1517,7 @@ class _PropertyPhotoGallerySection extends StatefulWidget {
   final HomeCubit? cubit;
   final VoidCallback onSavedToggle;
   final int matchPercent;
+  final double? tenantCi;
   final Color matchDotColor;
   final bool isGuest;
   final bool isNonMatch;
@@ -1598,97 +1648,148 @@ class _PropertyPhotoGallerySectionState
               Positioned(
                 top: 10,
                 left: 10,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 2.5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.28),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: (widget.isNonMatch || widget.isFilterMatch)
-                              ? AppColors.amberPrimary.withValues(alpha: 0.6)
-                              : (!widget.isGuest && widget.matchPercent > 0)
-                                  ? widget.matchDotColor.withValues(alpha: 0.45)
-                                  : Colors.white.withValues(alpha: 0.25),
-                          width: 0.6,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.28),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: (widget.isNonMatch || widget.isFilterMatch)
+                                  ? AppColors.amberPrimary.withValues(alpha: 0.6)
+                                  : (!widget.isGuest && widget.matchPercent > 0)
+                                      ? widget.matchDotColor.withValues(alpha: 0.45)
+                                      : Colors.white.withValues(alpha: 0.25),
+                              width: 0.6,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (widget.isNonMatch) ...[
+                                const Icon(
+                                  Icons.info_outline_rounded,
+                                  size: 10.5,
+                                  color: AppColors.amberPrimary,
+                                ),
+                                const SizedBox(width: 3),
+                                const Text(
+                                  "Doesn't match",
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
+                              ] else if (widget.isFilterMatch) ...[
+                                const Icon(
+                                  Icons.tune_rounded,
+                                  size: 10.5,
+                                  color: AppColors.amberPrimary,
+                                ),
+                                const SizedBox(width: 3.5),
+                                const Text(
+                                  'Filter Match',
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
+                              ] else if (!widget.isGuest &&
+                                  widget.matchPercent > 0) ...[
+                                Text(
+                                  '${widget.matchPercent}% Match',
+                                  style: const TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
+                              ] else if (!widget.isGuest) ...[
+                                Text(
+                                  (widget.tenantCi != null && widget.tenantCi! > 0)
+                                      ? '${(widget.tenantCi! * 100).round()}% Match'
+                                      : '0% Match',
+                                  style: const TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
+                              ] else ...[
+                                const Icon(
+                                  Icons.lock_outline,
+                                  size: 9.5,
+                                  color: Colors.white70,
+                                ),
+                                const SizedBox(width: 3),
+                                const Text(
+                                  'Match',
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (widget.isNonMatch) ...[
-                            const Icon(
-                              Icons.info_outline_rounded,
-                              size: 10.5,
-                              color: AppColors.amberPrimary,
+                    ),
+                    if (!widget.isGuest && !widget.isNonMatch && (widget.matchPercent > 0 || (widget.tenantCi != null && widget.tenantCi! > 0))) ...[
+                      const SizedBox(width: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2.5,
                             ),
-                            const SizedBox(width: 3),
-                            const Text(
-                              "Doesn't match",
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: -0.1,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.35),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0xFF818CF8).withValues(alpha: 0.6),
+                                width: 0.6,
                               ),
                             ),
-                          ] else if (widget.isFilterMatch) ...[
-                            const Icon(
-                              Icons.tune_rounded,
-                              size: 10.5,
-                              color: AppColors.amberPrimary,
-                            ),
-                            const SizedBox(width: 3.5),
-                            const Text(
-                              'Filter Match',
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: -0.1,
-                              ),
-                            ),
-                          ] else if (!widget.isGuest &&
-                              widget.matchPercent > 0) ...[
-                            Text(
-                              '${widget.matchPercent}% Match',
+                            child: Text(
+                              'ci=${(widget.tenantCi ?? (widget.matchPercent / 100.0)).toStringAsFixed(2)}',
                               style: const TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: Color(0xFFC7D2FE),
                                 letterSpacing: -0.1,
                               ),
                             ),
-                          ] else ...[
-                            const Icon(
-                              Icons.lock_outline,
-                              size: 9.5,
-                              color: Colors.white70,
-                            ),
-                            const SizedBox(width: 3),
-                            const Text(
-                              'Match',
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    ],
+                  ],
                 ),
               ),
 
@@ -1841,6 +1942,8 @@ class _PropertyMainOverviewCard extends StatefulWidget {
     required this.address,
     required this.monthlyRent,
     required this.propertyDoc,
+    this.avgRating,
+    this.totalRatings,
     this.onAddressTap,
   });
 
@@ -1849,6 +1952,8 @@ class _PropertyMainOverviewCard extends StatefulWidget {
   final String address;
   final num monthlyRent;
   final PropertyDoc propertyDoc;
+  final double? avgRating;
+  final int? totalRatings;
   final VoidCallback? onAddressTap;
 
   @override
@@ -1863,20 +1968,12 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
       .toString()
       .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 
-  String _formatRatingLabel(PropertyDoc property) {
-    final avg = property.avgRating;
-    final total = property.totalRatings ?? 0;
-    if (avg == null || total == 0) return 'No reviews yet';
-    return '${avg.toStringAsFixed(1)} ($total ${total == 1 ? 'review' : 'reviews'})';
-  }
-
   @override
   Widget build(BuildContext context) {
     final displayName = widget.displayName;
     final displayType = widget.displayType;
     final address = widget.address;
     final monthlyRent = widget.monthlyRent;
-    final propertyDoc = widget.propertyDoc;
     final onAddressTap = widget.onAddressTap;
 
     return Container(
@@ -2004,17 +2101,19 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
           ),
           const SizedBox(height: 10),
 
-          // Rating & Reviews Redirect Row
-          InkWell(
-            onTap: () => PropertyReviewsScreen.open(
-              context,
-              property: propertyDoc,
-            ),
-            borderRadius: BorderRadius.circular(6),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+          // Star rating & review count row
+          Builder(
+            builder: (context) {
+              final double avg = (widget.avgRating != null && widget.avgRating! > 0)
+                  ? widget.avgRating!
+                  : ((widget.propertyDoc.avgRating != null && widget.propertyDoc.avgRating! > 0)
+                      ? widget.propertyDoc.avgRating!.toDouble()
+                      : 0.0);
+              final int count = widget.totalRatings ?? widget.propertyDoc.totalRatings?.toInt() ?? 0;
+              final hasReviews = avg > 0 || count > 0;
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Icon(
                     Icons.star_rounded,
@@ -2023,23 +2122,29 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    _formatRatingLabel(propertyDoc),
+                    hasReviews ? avg.toStringAsFixed(1) : '0.0',
                     style: const TextStyle(
                       fontFamily: 'DM Sans',
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
                       color: Color(0xFF0F172A),
                     ),
                   ),
-                  const SizedBox(width: 2),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    size: 16,
-                    color: Color(0xFF94A3B8),
+                  const SizedBox(width: 4),
+                  Text(
+                    count > 0
+                        ? '($count ${count == 1 ? 'review' : 'reviews'})'
+                        : '(No reviews yet)',
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF64748B),
+                    ),
                   ),
                 ],
-              ),
-            ),
+              );
+            },
           ),
 
           const SizedBox(height: 14),
@@ -2526,6 +2631,391 @@ class _HostInformationCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── PROPERTY REVIEWS CARD (NON-EXPANDABLE, SCROLLABLE 5 ROWS) ─────────────────
+
+class _PropertyReviewsCard extends StatefulWidget {
+  const _PropertyReviewsCard({
+    required this.propertyId,
+    this.parentPropertyId,
+    this.inquiryId,
+    this.onRatingLoaded,
+  });
+
+  final String propertyId;
+  final String? parentPropertyId;
+  final String? inquiryId;
+  final void Function(double avg, int count)? onRatingLoaded;
+
+  @override
+  State<_PropertyReviewsCard> createState() => _PropertyReviewsCardState();
+}
+
+class _PropertyReviewData {
+  const _PropertyReviewData({
+    required this.raterName,
+    required this.stars,
+    required this.dateStr,
+    this.comment,
+  });
+
+  final String raterName;
+  final int stars;
+  final String dateStr;
+  final String? comment;
+}
+
+class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
+  bool _isLoading = true;
+  List<_PropertyReviewData> _reviews = [];
+  double _avgRating = 0.0;
+  int _totalCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReviews();
+  }
+
+  Future<void> _loadReviews() async {
+    final pid = widget.propertyId;
+    if (pid.isEmpty) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    try {
+      final targetIds = <String>{pid};
+      if (widget.parentPropertyId != null && widget.parentPropertyId!.isNotEmpty) {
+        targetIds.add(widget.parentPropertyId!);
+      }
+
+      final docsMap = <String, DocumentSnapshot<Map<String, dynamic>>>{};
+
+      // 1. By propertyId
+      try {
+        final snap = await FirebaseFirestore.instance
+            .collection(FirestoreCollections.ratings)
+            .where('propertyId', whereIn: targetIds.take(10).toList())
+            .get();
+        for (final doc in snap.docs) {
+          docsMap[doc.id] = doc;
+        }
+      } catch (e) {
+        debugPrint('Error querying ratings by propertyId: $e');
+      }
+
+      // 2. By parentPropertyId (if targetIds has parent)
+      try {
+        final parentSnap = await FirebaseFirestore.instance
+            .collection(FirestoreCollections.ratings)
+            .where('parentPropertyId', whereIn: targetIds.take(10).toList())
+            .get();
+        for (final doc in parentSnap.docs) {
+          docsMap[doc.id] = doc;
+        }
+      } catch (e) {
+        debugPrint('Error querying ratings by parentPropertyId: $e');
+      }
+
+      // 3. By inquiryId (if thread inquiryId passed, ensures user's rated stay in this thread always shows)
+      if (widget.inquiryId != null && widget.inquiryId!.isNotEmpty) {
+        try {
+          final inqSnap = await FirebaseFirestore.instance
+              .collection(FirestoreCollections.ratings)
+              .where('inquiryId', isEqualTo: widget.inquiryId)
+              .get();
+          for (final doc in inqSnap.docs) {
+            docsMap[doc.id] = doc;
+          }
+        } catch (e) {
+          debugPrint('Error querying ratings by inquiryId: $e');
+        }
+      }
+
+      if (!mounted) return;
+
+      // Only include reviews written by tenants FOR the property.
+      // Never show the owner's review of the tenant in Property Details.
+      final tenantDocs = docsMap.values.where((doc) {
+        final role = doc.data()?['raterRole'] as String?;
+        return role == 'tenant';
+      }).toList();
+
+      if (tenantDocs.isEmpty) {
+        setState(() {
+          _reviews = [];
+          _avgRating = 0.0;
+          _totalCount = 0;
+          _isLoading = false;
+        });
+        widget.onRatingLoaded?.call(0.0, 0);
+        return;
+      }
+
+      final raterIds = <String>{};
+      for (final doc in tenantDocs) {
+        final raterId = doc.data()?['raterId'] as String?;
+        if (raterId != null && raterId.isNotEmpty) {
+          raterIds.add(raterId);
+        }
+      }
+
+      final raterNames = <String, String>{};
+      final currentUid = FirebaseAuth.instance.currentUser?.uid;
+      final currentUserName = FirebaseAuth.instance.currentUser?.displayName;
+      if (currentUid != null) {
+        raterNames[currentUid] = (currentUserName?.isNotEmpty == true) ? currentUserName! : 'You';
+      }
+
+      if (raterIds.isNotEmpty) {
+        try {
+          final usersSnap = await FirebaseFirestore.instance
+              .collection(FirestoreCollections.users)
+              .where(FieldPath.documentId, whereIn: raterIds.take(10).toList())
+              .get();
+          for (final u in usersSnap.docs) {
+            final d = u.data();
+            final fn = (d['firstName'] as String?)?.trim() ?? '';
+            final ln = (d['lastName'] as String?)?.trim() ?? '';
+            final name = '$fn $ln'.trim();
+            if (name.isNotEmpty) {
+              raterNames[u.id] = (u.id == currentUid) ? '$name (You)' : name;
+            }
+          }
+        } catch (e) {
+          debugPrint('Error fetching rater user docs: $e');
+        }
+      }
+
+      final loaded = <_PropertyReviewData>[];
+      num totalStars = 0;
+      for (final doc in tenantDocs) {
+        final r = RatingDoc.fromSnapshot(doc);
+        totalStars += r.stars;
+
+        String dateStr = 'Recent';
+        final at = r.createdAt?.toDate();
+        if (at != null) {
+          const months = [
+            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+          ];
+          dateStr = '${months[at.month - 1]} ${at.day}, ${at.year}';
+        }
+
+        loaded.add(
+          _PropertyReviewData(
+            raterName: raterNames[r.raterId] ?? (r.raterId == currentUid ? 'You' : 'Tenant'),
+            stars: r.stars.toInt().clamp(1, 5),
+            dateStr: dateStr,
+            comment: r.review,
+          ),
+        );
+      }
+
+      if (mounted) {
+        final computedAvg = loaded.isNotEmpty ? (totalStars / loaded.length).toDouble() : 0.0;
+        setState(() {
+          _reviews = loaded;
+          _totalCount = loaded.length;
+          _avgRating = computedAvg;
+          _isLoading = false;
+        });
+        widget.onRatingLoaded?.call(computedAvg, loaded.length);
+      }
+    } catch (e) {
+      debugPrint('Error loading property reviews: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Property reviews',
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              if (!_isLoading && _totalCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        color: Color(0xFFF59E0B),
+                        size: 15,
+                      ),
+                      const SizedBox(width: 3.5),
+                      Text(
+                        '${_avgRating.toStringAsFixed(1)} ($_totalCount)',
+                        style: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, thickness: 0.8, color: Color(0xFFF1F5F9)),
+          const SizedBox(height: 12),
+
+          SizedBox(
+            height: 260,
+            child: _isLoading
+                ? const Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFF00A8F0),
+                      ),
+                    ),
+                  )
+                : _reviews.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.rate_review_outlined,
+                              size: 32,
+                              color: const Color(0xFF94A3B8).withValues(alpha: 0.7),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'No reviews yet for this property',
+                              style: TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Reviews from verified tenants will appear here.',
+                              style: TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 12,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Scrollbar(
+                        thumbVisibility: true,
+                        child: ListView.separated(
+                          padding: const EdgeInsets.only(right: 6),
+                          itemCount: _reviews.length,
+                          separatorBuilder: (_, _) => const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Divider(
+                              height: 1,
+                              thickness: 0.6,
+                              color: Color(0xFFF1F5F9),
+                            ),
+                          ),
+                          itemBuilder: (context, index) {
+                            final rev = _reviews[index];
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      rev.raterName,
+                                      style: const TextStyle(
+                                        fontFamily: 'DM Sans',
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    Text(
+                                      rev.dateStr,
+                                      style: const TextStyle(
+                                        fontFamily: 'DM Sans',
+                                        fontSize: 11,
+                                        color: Color(0xFF94A3B8),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 3),
+                                Row(
+                                  children: List.generate(5, (i) {
+                                    return Icon(
+                                      Icons.star_rounded,
+                                      size: 14,
+                                      color: i < rev.stars
+                                          ? const Color(0xFFF59E0B)
+                                          : const Color(0xFFE2E8F0),
+                                    );
+                                  }),
+                                ),
+                                if (rev.comment != null &&
+                                    rev.comment!.trim().isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    rev.comment!.trim(),
+                                    style: const TextStyle(
+                                      fontFamily: 'DM Sans',
+                                      fontSize: 12.5,
+                                      height: 1.35,
+                                      color: Color(0xFF475569),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+          ),
+        ],
       ),
     );
   }

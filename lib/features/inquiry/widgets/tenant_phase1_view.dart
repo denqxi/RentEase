@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/firestore/models/inquiry_doc.dart';
 import '../../../core/firestore/models/property_doc.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../home/view/property_detail_screen.dart';
@@ -38,7 +39,10 @@ class TenantPhase1View extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
             children: [
               // ── Property Information Card ──────────────────────────────
-              _PropertyInformationCard(property: property),
+              _PropertyInformationCard(
+                property: property,
+                inquiry: inquiry,
+              ),
               const SizedBox(height: 12),
 
               // ── Invitation or Status Card ──────────────────────────────
@@ -132,7 +136,7 @@ class TenantPhase1View extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Decline invitation?'),
+        title: const Text('Decline notification?'),
         content: const Text('The owner will be told you declined.'),
         actions: [
           TextButton(
@@ -159,9 +163,13 @@ class TenantPhase1View extends StatelessWidget {
 // ── Property Information Card ────────────────────────────────────────────────
 
 class _PropertyInformationCard extends StatelessWidget {
-  const _PropertyInformationCard({required this.property});
+  const _PropertyInformationCard({
+    required this.property,
+    this.inquiry,
+  });
 
   final PropertyDoc? property;
+  final InquiryDoc? inquiry;
 
   @override
   Widget build(BuildContext context) {
@@ -182,6 +190,10 @@ class _PropertyInformationCard extends StatelessWidget {
                     builder: (_) => PropertyDetailScreen(
                       propertyId: p.propertyId,
                       initialPropertyDoc: p,
+                      inquiryId: inquiry?.inquiryId,
+                      initialTenantCi: (inquiry?.tenantCiSnapshot ?? 0) > 0
+                          ? inquiry!.tenantCiSnapshot.toDouble()
+                          : null,
                     ),
                   ),
                 )
@@ -535,7 +547,7 @@ class _StatusNoticeCard extends StatelessWidget {
                 ? 'This listing is now fully booked'
                 : declined
                     ? (invite
-                        ? 'You declined this invitation'
+                        ? 'You declined this property notification'
                         : 'The owner declined this inquiry')
                     : 'Waiting for owner response...',
             style: const TextStyle(

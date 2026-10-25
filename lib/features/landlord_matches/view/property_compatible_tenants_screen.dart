@@ -1921,6 +1921,9 @@ class _CompatibleTenantRow extends StatelessWidget {
   }
 
   int _computeFitPercent(CompatibleTenant t) {
+    if (t.tenantCi != null && t.tenantCi! > 0) {
+      return ((t.tenantCi! * 100).round()).clamp(0, 100);
+    }
     final score = t.bScore.toDouble();
     if (score > 1.0 && score <= 100.0) {
       return score.round().clamp(75, 99);
@@ -1982,28 +1985,24 @@ class _CompatibleTenantRow extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
 
-                      // Name + Budget
+                      // Name + Budget (expanded without ellipsis, wraps naturally)
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               tenant.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFF0F172A),
-                                height: 1.2,
+                                height: 1.25,
                               ),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               _formatBudget(tenant.maxBudget.toDouble()),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
@@ -2016,25 +2015,54 @@ class _CompatibleTenantRow extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
 
-                      // % Fit Pill Badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: fitBg,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '$pct% fit',
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            color: fitText,
+                      // % Fit Pill Badge + ci=value Badge
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: fitBg,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '$pct% fit',
+                              style: TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: fitText,
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEEF2FF),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFC7D2FE),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Text(
+                              'ci=${(tenant.tenantCi?.toDouble() ?? (pct / 100.0)).toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF4F46E5),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

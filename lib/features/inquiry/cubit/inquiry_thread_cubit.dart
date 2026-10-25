@@ -93,6 +93,7 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
         _repository.fetchUser(inquiry.ownerId),
         _repository.fetchOwnerProfile(inquiry.ownerId),
       ).wait;
+      final hasRated = await _repository.hasRated(inquiryId: inquiry.inquiryId, raterId: uid);
       if (isClosed) return;
       emit(
         state.copyWith(
@@ -103,6 +104,7 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
           owner: owner,
           ownerVerified: ownerProfile?.verificationStatus == 'verified',
           ownerRejected: ownerProfile?.verificationStatus == 'rejected',
+          hasRated: hasRated,
         ),
       );
     } catch (e) {
@@ -144,14 +146,20 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
     (i) => _service.sendMessage(inquiry: i, senderId: uid, content: text),
   );
 
-  Future<bool> submitRating({required int stars, String? review}) => _run(
-    (i) => _service.submitRating(
-      inquiry: i,
-      raterId: uid,
-      stars: stars,
-      review: review,
-    ),
-  );
+  Future<bool> submitRating({required int stars, String? review}) async {
+    final ok = await _run(
+      (i) => _service.submitRating(
+        inquiry: i,
+        raterId: uid,
+        stars: stars,
+        review: review,
+      ),
+    );
+    if (ok && !isClosed) {
+      emit(state.copyWith(hasRated: true));
+    }
+    return ok;
+  }
 
   /// Runs [action] against the current inquiry; returns whether it
   /// succeeded. Failures land in [InquiryThreadState.errorMessage].

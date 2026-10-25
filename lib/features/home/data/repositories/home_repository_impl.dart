@@ -286,6 +286,11 @@ class HomeRepositoryImpl implements HomeRepository {
       'isAvailable': property.isAvailable,
       'latitude': property.location.latitude,
       'longitude': property.location.longitude,
+      'rating': property.effectiveAvgRating ?? property.avgRating?.toDouble(),
+      'avgRating': property.effectiveAvgRating ?? property.avgRating?.toDouble(),
+      'totalRatings': property.totalRatings ?? 0,
+      'ratingSum': property.ratingSum,
+      'propertyDoc': property,
     };
   }
 

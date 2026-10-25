@@ -494,8 +494,8 @@ class _DocumentsSection extends StatelessWidget {
             onApprove: onApprove,
             onReject: onReject,
           ),
-        if (count > _permitIndex)
-          BusinessPermitCheckButton(ownerName: ownerName, urlOpener: urlOpener),
+        // Always shown (including for testing/lookup even if not yet submitted)
+        BusinessPermitCheckButton(ownerName: ownerName, urlOpener: urlOpener),
         if (count < _labels.length)
           Text(
             'No ${_labels[count].toLowerCase()} submitted (optional).',

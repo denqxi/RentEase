@@ -18,6 +18,7 @@ class OwnerProfileDoc {
     this.rejectionReason,
     this.avgRating,
     this.totalRatings,
+    this.ratingSum,
     this.propertyCount,
     this.updatedAt,
   });
@@ -35,6 +36,14 @@ class OwnerProfileDoc {
   // Computed server-side.
   final num? avgRating;
   final num? totalRatings;
+  final num? ratingSum;
+
+  double? get effectiveAvgRating {
+    if (ratingSum != null && totalRatings != null && totalRatings! > 0) {
+      return (ratingSum! / totalRatings!).toDouble();
+    }
+    return avgRating?.toDouble();
+  }
   final num? propertyCount;
   final Timestamp? updatedAt;
 
@@ -48,6 +57,7 @@ class OwnerProfileDoc {
         rejectionReason: map['rejectionReason'] as String?,
         avgRating: map['avgRating'] as num?,
         totalRatings: map['totalRatings'] as num?,
+        ratingSum: map['ratingSum'] as num?,
         propertyCount: map['propertyCount'] as num?,
         updatedAt: map['updatedAt'] as Timestamp?,
       );
@@ -64,6 +74,7 @@ class OwnerProfileDoc {
     if (rejectionReason != null) 'rejectionReason': rejectionReason,
     if (avgRating != null) 'avgRating': avgRating,
     if (totalRatings != null) 'totalRatings': totalRatings,
+    if (ratingSum != null) 'ratingSum': ratingSum,
     if (propertyCount != null) 'propertyCount': propertyCount,
     'updatedAt': FieldValue.serverTimestamp(),
   };
