@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "374112218940-t0fvkinvqica7apq9s250coefm91cqqi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.rentease",
+            "certificate_hash": "38050e61d6c860eb3b194d053d76c4332ae4d943"
+          }
+        },
+        {
           "client_id": "374112218940-qgcse8qofkc3635jvs09gg5rukh69uvb.apps.googleusercontent.com",
           "client_type": 3
         }

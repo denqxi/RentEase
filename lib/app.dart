@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/cubit/app_theme_cubit.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/utils/onboarding_seen_store.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/screens/auth_screen.dart';
 import 'features/auth/presentation/screens/email_verification_screen.dart';
@@ -102,12 +103,25 @@ class RentEaseApp extends StatelessWidget {
         ),
       );
     } else {
+      // The intro carousel is for first-time visitors only; afterwards a
+      // signed-out user goes straight to sign-in.
+      final seenOnboarding = await OnboardingSeenStore.hasSeen();
+      if (!context.mounted) return;
+      if (seenOnboarding) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(builder: (_) => const _SignInEntry()),
+        );
+        return;
+      }
       Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
           builder: (onboardingCtx) => OnboardingScreen(
-            onComplete: () => Navigator.of(onboardingCtx).push(
-              MaterialPageRoute<void>(builder: (_) => const _SignInEntry()),
-            ),
+            onComplete: () {
+              OnboardingSeenStore.markSeen();
+              Navigator.of(onboardingCtx).push(
+                MaterialPageRoute<void>(builder: (_) => const _SignInEntry()),
+              );
+            },
           ),
         ),
       );

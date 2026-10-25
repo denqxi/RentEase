@@ -149,7 +149,9 @@ class EditPreferencesCubit extends Cubit<EditPreferencesState> {
     final profile = state.profile;
     emit(EditPreferencesState(status: EditPreferencesStatus.saving, profile: profile));
     try {
-      // 1. Update public profile fields
+      // 1. Update public profile fields. The map pin (incl. poiType) is
+      // private and must not be written to this owner-readable doc: the
+      // security rules reject it with permission-denied.
       await _repository.updateFields(uid, {
         'maxBudget': maxBudget,
         'requiredGender': requiredGender,
@@ -157,7 +159,6 @@ class EditPreferencesCubit extends Cubit<EditPreferencesState> {
         'isSmoker': isSmoker,
         'hasPet': hasPet,
         'groupSize': groupSize,
-        'poiType': poiType,
         'maxDistanceKm': maxDistanceKm,
         'roomType': roomType,
         'preferredAmenities': preferredAmenities,

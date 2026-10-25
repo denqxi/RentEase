@@ -22,7 +22,7 @@ import '../../landlord_home/view/owner_detail_screen.dart';
 import '../../matching/domain/entities/mismatch_reason.dart';
 import '../../owner_onboarding/widgets/listing_form_widgets.dart'
     show amenityIconFor;
-import '../../profile/view/edit_constraints_screen.dart';
+import '../../profile/view/edit_rental_preferences_screen.dart';
 import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
 import 'map_view_screen.dart';
@@ -462,7 +462,9 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
 
   Future<void> _editPreferences(BuildContext context) async {
     final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(builder: (_) => const EditConstraintsScreen()),
+      MaterialPageRoute<bool>(
+        builder: (_) => const EditRentalPreferencesScreen(),
+      ),
     );
     if (saved == true) {
       widget.onPreferencesSaved?.call();

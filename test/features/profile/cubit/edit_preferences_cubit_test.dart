@@ -178,11 +178,13 @@ void main() {
       'isSmoker': false,
       'hasPet': true,
       'groupSize': 2,
-      'poiType': 'School',
       'maxDistanceKm': 3.5,
       'roomType': 'Solo',
       'preferredAmenities': ['WiFi', 'Air conditioning'],
     });
+    // The map pin is private: firestore.rules reject poiType on the
+    // owner-readable tenantProfiles doc with permission-denied.
+    expect(repo.lastUpdate, isNot(contains('poiType')));
     expect(repo.lastPrefsUpdate, {
       'poiLatLng': const GeoPoint(7.07, 125.6),
       'poiLabel': 'Ateneo de Davao',
