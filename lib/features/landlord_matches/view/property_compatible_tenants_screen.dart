@@ -1710,7 +1710,7 @@ class _CompatibleTenantsSectionCard extends StatelessWidget {
             Column(
               children: [
                 for (var i = 0; i < pagedTenants.length; i++) ...[
-                  _CompatibleTenantRow(
+                  CompatibleTenantRow(
                     tenant: pagedTenants[i],
                     isNotified:
                         notifiedMatchIds.contains(pagedTenants[i].matchId),
@@ -1909,8 +1909,9 @@ class _CircularNumberPaginationBar extends StatelessWidget {
 // COMPATIBLE TENANT ROW
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _CompatibleTenantRow extends StatelessWidget {
-  const _CompatibleTenantRow({
+@visibleForTesting
+class CompatibleTenantRow extends StatelessWidget {
+  const CompatibleTenantRow({
     required this.tenant,
     required this.isNotified,
     required this.onNotify,
@@ -1953,6 +1954,52 @@ class _CompatibleTenantRow extends StatelessWidget {
     final fitText =
         isHighFit ? AppColors.green700 : AppColors.primary;
 
+    final notifyButton = Material(
+      color: AppColors.transparent,
+      child: InkWell(
+        onTap: isNotified ? null : onNotify,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: isNotified
+                ? AppColors.green100
+                : AppColors.primary.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isNotified
+                  ? AppColors.green300
+                  : AppColors.primary.withValues(alpha: 0.28),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isNotified)
+                const Icon(
+                  Icons.check_rounded,
+                  size: 13,
+                  color: AppColors.green700,
+                )
+              else
+                _buildSendIcon(color: AppColors.primary, size: 12),
+              const SizedBox(width: 4),
+              Text(
+                isNotified ? 'Notified' : 'Notify',
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: isNotified ? AppColors.green700 : AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.slate50,
@@ -1964,45 +2011,50 @@ class _CompatibleTenantRow extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-        child: Row(
-          children: [
-            // Tap area for Tenant Details (Initials avatar, Name + budget, Fit % badge)
-            Expanded(
-              child: Material(
-                color: AppColors.transparent,
-                child: InkWell(
-                  onTap: onTap,
-                  borderRadius: BorderRadius.circular(10),
-                  child: Row(
-                    children: [
-                      // Initials Circle Avatar
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.12),
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          tenant.initials,
-                          style: const TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
+        child: Material(
+          color: AppColors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Initials circle avatar
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    tenant.initials,
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
 
-                      // Name + Budget (expanded without ellipsis, wraps naturally)
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
+                // The name gets the full remaining width; badges and the
+                // Notify button wrap onto their own line below it so a
+                // narrow phone never squeezes the name into a thin column.
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
                               tenant.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 14,
@@ -2011,24 +2063,31 @@ class _CompatibleTenantRow extends StatelessWidget {
                                 height: 1.25,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _formatBudget(tenant.maxBudget.toDouble()),
-                              style: const TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                                color: AppColors.slate500,
-                              ),
-                            ),
-                          ],
+                          ),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: AppColors.slate400,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _formatBudget(tenant.maxBudget.toDouble()),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.slate500,
                         ),
                       ),
-                      const SizedBox(width: 6),
-
-                      // % Fit Pill Badge + ci=value Badge
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -2049,112 +2108,39 @@ class _CompatibleTenantRow extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (pct != null) ...[
-                          const SizedBox(width: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.indigo50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppColors.indigo200,
-                                width: 0.8,
+                          if (pct != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.indigo50,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.indigo200,
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Text(
+                                'ci=${(tenant.tenantCi?.toDouble() ?? (pct / 100.0)).toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontFamily: 'DM Sans',
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.indigo600,
+                                ),
                               ),
                             ),
-                            child: Text(
-                              'ci=${(tenant.tenantCi?.toDouble() ?? (pct / 100.0)).toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.indigo600,
-                              ),
-                            ),
-                          ),
-                          ],
+                          notifyButton,
                         ],
                       ),
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
-            const SizedBox(width: 8),
-
-            // Individual Notify Button (Theme Blue BG & Text, standalone InkWell)
-            Material(
-              color: AppColors.transparent,
-              child: InkWell(
-                onTap: isNotified ? null : onNotify,
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isNotified
-                        ? AppColors.green100
-                        : AppColors.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isNotified
-                          ? AppColors.green300
-                          : AppColors.primary.withValues(alpha: 0.28),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (isNotified)
-                        const Icon(
-                          Icons.check_rounded,
-                          size: 13,
-                          color: AppColors.green700,
-                        )
-                      else
-                        _buildSendIcon(
-                          color: AppColors.primary,
-                          size: 12,
-                        ),
-                      const SizedBox(width: 4),
-                      Text(
-                        isNotified ? 'Notified' : 'Notify',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: isNotified
-                              ? AppColors.green700
-                              : AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Material(
-              color: AppColors.transparent,
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(12),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 2, vertical: 6),
-                  child: Icon(
-                    Icons.chevron_right_rounded,
-                    size: 18,
-                    color: AppColors.slate400,
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
