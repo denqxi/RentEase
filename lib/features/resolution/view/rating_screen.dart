@@ -39,12 +39,12 @@ class RatingScreen extends StatefulWidget {
   String get _heading => 'Stay confirmed!';
 
   String get _prompt =>
-      isOwnerView ? 'Rate this tenant' : 'Rate your experience';
+      isOwnerView ? 'Rate this tenant' : 'Rate this property';
 
   String get _reviewHint => isOwnerView
       ? 'Share your experience with this tenant — future landlords will '
           'see this on their credibility profile...'
-      : 'Share your experience with this boarding house...';
+      : 'Share details about the room, amenities, and overall property experience...';
 
   @override
   State<RatingScreen> createState() => _RatingScreenState();
@@ -171,13 +171,28 @@ class _RatingScreenState extends State<RatingScreen> {
               const SizedBox(height: 28),
               Align(
                 alignment: Alignment.centerLeft,
-                child: Text(
-                  widget._prompt,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget._prompt,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    if (!widget.isOwnerView) ...[
+                      const SizedBox(height: 3),
+                      const Text(
+                        'Your property rating also reflects on the host\'s overall rating.',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               const SizedBox(height: 16),

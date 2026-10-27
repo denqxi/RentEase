@@ -80,18 +80,18 @@ class _AgeInput extends StatelessWidget {
               horizontal: AppSpacing.md,
               vertical: AppSpacing.md,
             ),
-            enabledBorder: _border(context.appColors.fieldBorder),
-            focusedBorder: _border(AppColors.accent),
+            enabledBorder: _border(AppColors.slate300),
+            focusedBorder: _border(AppColors.primary, width: 1.5),
           ),
         ),
       ],
     );
   }
 
-  OutlineInputBorder _border(Color color) {
+  OutlineInputBorder _border(Color color, {double width = 1.0}) {
     return OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppRadii.field),
-      borderSide: BorderSide(color: color),
+      borderSide: BorderSide(color: color, width: width),
     );
   }
 }

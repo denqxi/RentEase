@@ -197,7 +197,7 @@ class _ProgressBarState extends State<_ProgressBar>
           value: _animation.value,
           minHeight: 6,
           backgroundColor: AppColors.fieldFill,
-          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
+          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
         ),
       ),
     );

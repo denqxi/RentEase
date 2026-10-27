@@ -105,7 +105,7 @@ class _Segment extends StatelessWidget {
           vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
-          color: selected ? AppColors.accent : AppColors.transparent,
+          color: selected ? AppColors.primary : AppColors.transparent,
           borderRadius: BorderRadius.circular(AppRadii.chip),
         ),
         child: Text(

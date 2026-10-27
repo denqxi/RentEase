@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/models.dart';
+import '../../../../core/firestore/property_ratings_aggregator.dart';
 import '../../../home/model/listing.dart';
 import '../../domain/repositories/saved_listings_repository.dart';
 
@@ -48,6 +49,15 @@ class SavedListingsRepositoryImpl implements SavedListingsRepository {
       for (final d in snap.docs) {
         final p = PropertyDoc.fromSnapshot(d);
         if (p.isAvailable) byId[p.propertyId] = p;
+      }
+    }
+    if (byId.isNotEmpty) {
+      final hydrated = await PropertyRatingsAggregator.hydrateProperties(
+        _firestore,
+        byId.values.toList(),
+      );
+      for (final p in hydrated) {
+        byId[p.propertyId] = p;
       }
     }
     return [

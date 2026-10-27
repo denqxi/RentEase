@@ -13,6 +13,7 @@ import '../../profile/cubit/profile_cubit.dart';
 import '../../profile/view/edit_constraints_screen.dart';
 import '../../registration/model/user_role.dart';
 import '../cubit/home_cubit.dart';
+import '../widgets/home_content_skeleton.dart';
 import '../widgets/home_header.dart';
 import '../widgets/nearby_section.dart';
 import '../widgets/other_listings_section.dart';
@@ -155,9 +156,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: _ErrorBanner(message: state.errorMessage!),
                           )
                         else if (state.isLoading && state.listings.isEmpty)
-                          const SliverFillRemaining(
-                            hasScrollBody: false,
-                            child: Center(child: CircularProgressIndicator()),
+                          const SliverToBoxAdapter(
+                            child: HomeContentSkeleton(),
                           )
                         else if (state.listings.isEmpty && isGuest)
                           SliverFillRemaining(
@@ -201,11 +201,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SliverToBoxAdapter(child: RecommendedSection()),
                           const SliverToBoxAdapter(
-                            child: SizedBox(height: AppSpacing.lg),
+                            child: SizedBox(height: 12),
                           ),
                           const SliverToBoxAdapter(child: NearbySection()),
                           const SliverToBoxAdapter(
-                            child: SizedBox(height: AppSpacing.lg),
+                            child: SizedBox(height: 16),
                           ),
                           const SliverToBoxAdapter(
                             child: OtherListingsSection(),

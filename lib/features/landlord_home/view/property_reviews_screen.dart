@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/firestore/firestore_collections.dart';
 import '../../../core/firestore/models/models.dart';
+import '../../../core/firestore/property_ratings_aggregator.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 
 // Compiled once instead of on every call.
@@ -65,27 +66,21 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
       num totalStars = 0;
       final counts = <int, int>{5: 0, 4: 0, 3: 0, 2: 0, 1: 0};
 
-      // Query ratings by propertyId and parentPropertyId
       final docsMap = <String, DocumentSnapshot<Map<String, dynamic>>>{};
-      try {
-        final snap = await FirebaseFirestore.instance
-            .collection(FirestoreCollections.ratings)
-            .where('propertyId', whereIn: targetIds.take(10).toList())
-            .get();
-        for (final doc in snap.docs) {
-          docsMap[doc.id] = doc;
-        }
-      } catch (_) {}
-
-      try {
-        final parentSnap = await FirebaseFirestore.instance
-            .collection(FirestoreCollections.ratings)
-            .where('parentPropertyId', whereIn: targetIds.take(10).toList())
-            .get();
-        for (final doc in parentSnap.docs) {
-          docsMap[doc.id] = doc;
-        }
-      } catch (_) {}
+      final aggregatedDocs =
+          await PropertyRatingsAggregator.fetchRatingDocsForProperty(
+        firestore: FirebaseFirestore.instance,
+        propertyId: p.propertyId,
+        parentPropertyId: p.parentPropertyId,
+        ownerId: p.ownerId,
+        propertyName: p.propertyName,
+        title: p.title,
+        extraTargetIds: targetIds,
+        forceRefresh: true,
+      );
+      for (final doc in aggregatedDocs) {
+        docsMap[doc.id] = doc;
+      }
 
       if (docsMap.isNotEmpty) {
         for (final doc in docsMap.values) {
@@ -152,38 +147,12 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
             _isLoading = false;
           });
         } else {
-          // If no ratings in Firestore yet, provide sample preview reviews if property has mock count,
-          // or show clean empty state.
-          final hasSample = (p.totalRatings ?? 0) > 0 || (p.avgRating ?? 0) > 0;
-          if (hasSample) {
-            _reviews = [
-              const _PropertyReviewItem(
-                name: 'Maria Santos',
-                date: 'Oct 12, 2026',
-                stars: 5,
-                comment:
-                    'The room was very clean, quiet, and exactly as pictured. Sir Josh was super accommodating and responsive.',
-                unitLabel: 'Room 101',
-              ),
-              const _PropertyReviewItem(
-                name: 'Kevin Reyes',
-                date: 'Sep 28, 2026',
-                stars: 4,
-                comment:
-                    'Great location near transportation and safe neighborhood. Wi-Fi was strong throughout the stay.',
-                unitLabel: 'Room 102',
-              ),
-            ];
-            _totalCount = _reviews.length;
-            _avgRating = (p.avgRating?.toDouble() ?? 4.5);
-            _starCounts[5] = 1;
-            _starCounts[4] = 1;
-          } else {
+          setState(() {
             _reviews = [];
-            _totalCount = 0;
-            _avgRating = 0.0;
-          }
-          setState(() => _isLoading = false);
+            _totalCount = (p.totalRatings ?? 0).toInt();
+            _avgRating = (p.effectiveAvgRating ?? p.avgRating?.toDouble() ?? 0.0);
+            _isLoading = false;
+          });
         }
       }
     } catch (e) {

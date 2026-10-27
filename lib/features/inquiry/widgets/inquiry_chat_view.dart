@@ -1527,14 +1527,16 @@ class _BookedPanel extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.amberBorder200),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.star_rounded, color: AppColors.matchMedium, size: 18),
-                  SizedBox(width: 6),
+                  const Icon(Icons.star_rounded, color: AppColors.matchMedium, size: 18),
+                  const SizedBox(width: 6),
                   Text(
-                    'You rated this stay · Thank you!',
-                    style: TextStyle(
+                    isOwner
+                        ? 'You rated this tenant · Thank you!'
+                        : 'You rated this property · Thank you!',
+                    style: const TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -1546,7 +1548,7 @@ class _BookedPanel extends StatelessWidget {
             )
           else
             AppButton(
-              label: isOwner ? 'Rate $counterpartName' : 'Rate your stay',
+              label: isOwner ? 'Rate $counterpartName' : 'Rate this property',
               variant: AppButtonVariant.outline,
               onPressed: onRate,
             ),

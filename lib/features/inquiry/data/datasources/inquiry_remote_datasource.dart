@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/models.dart';
+import '../../../../core/firestore/property_ratings_aggregator.dart';
 
 class InquiryRemoteDataSource {
   InquiryRemoteDataSource({FirebaseFirestore? firestore})
@@ -210,6 +211,8 @@ class InquiryRemoteDataSource {
         debugPrint('createRating: tenantProfileRef update failed: $e');
       }
     }
+
+    PropertyRatingsAggregator.invalidateCache();
   }
 
   Future<bool> hasRated({

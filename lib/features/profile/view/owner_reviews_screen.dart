@@ -7,6 +7,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/cubit/app_theme_cubit.dart';
 import '../../../core/firestore/firestore_collections.dart';
 import '../../../core/firestore/models/models.dart';
+import '../../../core/firestore/property_ratings_aggregator.dart';
 
 class OwnerReviewsScreen extends StatefulWidget {
   const OwnerReviewsScreen({super.key});
@@ -51,18 +52,19 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
       try {
-        final snap = await FirebaseFirestore.instance
-            .collection(FirestoreCollections.ratings)
-            .where('ratedId', isEqualTo: uid)
-            .where('raterRole', isEqualTo: 'tenant')
-            .get();
+        final ownerEntries =
+            await PropertyRatingsAggregator.fetchRatingDocsForOwner(
+          firestore: FirebaseFirestore.instance,
+          ownerId: uid,
+          forceRefresh: true,
+        );
 
-        if (snap.docs.isNotEmpty) {
+        if (ownerEntries.isNotEmpty) {
           final loaded = <_ReviewItem>[];
           num totalStars = 0;
 
-          for (final doc in snap.docs) {
-            final rating = RatingDoc.fromSnapshot(doc);
+          for (final entry in ownerEntries) {
+            final rating = RatingDoc.fromSnapshot(entry.doc);
             totalStars += rating.stars;
 
             String raterName = 'Tenant';
@@ -95,6 +97,7 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
                 date: dateStr,
                 stars: rating.stars.toInt(),
                 comment: rating.review,
+                propertyTitle: entry.propertyTitle,
               ),
             );
           }
@@ -225,7 +228,7 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Based on $_totalCount tenant reviews',
+                                  'Total across your properties ($_totalCount ${_totalCount == 1 ? 'review' : 'reviews'})',
                                   style: const TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 13,
@@ -291,21 +294,50 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
 
           const SizedBox(height: 6),
 
-          // Star rating
+          // Star rating + Property badge
           Row(
-            children: List.generate(5, (index) {
-              final isFilled = index < review.stars;
-              return Padding(
-                padding: const EdgeInsets.only(right: 2),
-                child: Icon(
-                  isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
-                  size: 18,
-                  color: isFilled
-                      ? AppColors.matchMedium
-                      : AppColors.slate300,
+            children: [
+              ...List.generate(5, (index) {
+                final isFilled = index < review.stars;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 2),
+                  child: Icon(
+                    isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
+                    size: 18,
+                    color: isFilled
+                        ? AppColors.matchMedium
+                        : AppColors.slate300,
+                  ),
+                );
+              }),
+              if (review.propertyTitle != null &&
+                  review.propertyTitle!.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2.5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.skyFill,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      review.propertyTitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.brandSky,
+                      ),
+                    ),
+                  ),
                 ),
-              );
-            }),
+              ],
+            ],
           ),
 
           const SizedBox(height: 8),
@@ -390,10 +422,12 @@ class _ReviewItem {
     required this.date,
     required this.stars,
     this.comment,
+    this.propertyTitle,
   });
 
   final String name;
   final String date;
   final int stars;
   final String? comment;
+  final String? propertyTitle;
 }

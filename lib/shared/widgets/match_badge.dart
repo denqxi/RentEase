@@ -72,6 +72,12 @@ class MatchBadge extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              const Icon(
+                Icons.auto_awesome,
+                color: AppColors.onInk,
+                size: 11,
+              ),
+              const SizedBox(width: 4),
               Container(
                 width: 6,
                 height: 6,
@@ -85,7 +91,7 @@ class MatchBadge extends StatelessWidget {
                 showLabel ? '$percent% match' : '$percent%',
                 style: AppTextStyles.label(context).copyWith(
                   color: AppColors.onInk,
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -95,7 +101,7 @@ class MatchBadge extends StatelessWidget {
         if (percent > 0) ...[
           const SizedBox(width: 4),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3.5),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
             decoration: BoxDecoration(
               color: AppColors.ownerText.withValues(alpha: 0.75),
               borderRadius: BorderRadius.circular(20),
@@ -109,7 +115,7 @@ class MatchBadge extends StatelessWidget {
               style: const TextStyle(
                 fontFamily: 'DM Sans',
                 color: AppColors.indigo50,
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
             ),

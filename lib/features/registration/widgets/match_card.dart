@@ -12,7 +12,7 @@ class MatchCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final cardContent = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: context.appColors.surface,
@@ -38,13 +38,39 @@ class MatchCard extends StatelessWidget {
             child: SizedBox(
               width: 90,
               height: 90,
-              child: match.imageAsset != null
-                  ? Image.asset(
-                      match.imageAsset!,
+              child: (match.imageUrl != null && match.imageUrl!.isNotEmpty)
+                  ? Image.network(
+                      match.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => _fallbackImage(context),
+                      errorBuilder: (_, _, _) => match.imageAsset != null
+                          ? Image.asset(
+                              match.imageAsset!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) =>
+                                  _fallbackImage(context),
+                            )
+                          : _fallbackImage(context),
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          color: context.appColors.fieldFill,
+                          alignment: Alignment.center,
+                          child: const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        );
+                      },
                     )
-                  : _fallbackImage(context),
+                  : (match.imageAsset != null
+                      ? Image.asset(
+                          match.imageAsset!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) =>
+                              _fallbackImage(context),
+                        )
+                      : _fallbackImage(context)),
             ),
           ),
           const SizedBox(width: 14),
@@ -160,6 +186,8 @@ class MatchCard extends StatelessWidget {
         ],
       ),
     );
+
+    return cardContent;
   }
 
   Widget _fallbackImage(BuildContext context) {

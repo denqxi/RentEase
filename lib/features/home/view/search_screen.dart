@@ -1,4 +1,4 @@
-import 'dart:ui' show ImageFilter;
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -1227,143 +1227,154 @@ class _PropertyCard extends StatelessWidget {
                         ),
                       ),
 
-                      // Top-left: Match score / Doesn't match badge & Ci badge
+                      // Top-left: Match score pill & Rank badge (clean white pill with soft shadow)
                       Positioned(
                         top: 10,
                         left: 10,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 7,
-                                    vertical: 2.5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.scrim.withValues(alpha: 0.28),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: (isNonMatch || isFilterMatch)
-                                          ? AppColors.amberPrimary.withValues(alpha: 0.6)
-                                          : (!isGuest && matchPercent > 0)
-                                              ? matchDotColor.withValues(alpha: 0.45)
-                                              : AppColors.surface.withValues(alpha: 0.25),
-                                      width: 0.6,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (isNonMatch) ...[
-                                        const Icon(
-                                          Icons.info_outline_rounded,
-                                          size: 10.5,
-                                          color: AppColors.amberPrimary,
-                                        ),
-                                        const SizedBox(width: 3),
-                                        const Text(
-                                          "Doesn't match",
-                                          style: TextStyle(
-                                            fontFamily: 'DM Sans',
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppColors.surface,
-                                            letterSpacing: -0.1,
-                                          ),
-                                        ),
-                                      ] else if (isFilterMatch) ...[
-                                        const Icon(
-                                          Icons.tune_rounded,
-                                          size: 10.5,
-                                          color: AppColors.amberPrimary,
-                                        ),
-                                        const SizedBox(width: 3.5),
-                                        const Text(
-                                          'Filter Match',
-                                          style: TextStyle(
-                                            fontFamily: 'DM Sans',
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppColors.surface,
-                                            letterSpacing: -0.1,
-                                          ),
-                                        ),
-                                      ] else if (!isGuest && matchPercent > 0) ...[
-                                        Text(
-                                          '$matchPercent% Match',
-                                          style: const TextStyle(
-                                            fontFamily: 'DM Sans',
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppColors.surface,
-                                            letterSpacing: -0.1,
-                                          ),
-                                        ),
-                                      ] else ...[
-                                        Icon(
-                                          Icons.lock_outline,
-                                          size: 9.5,
-                                          color: AppColors.onInk.withValues(alpha: 0.7),
-                                        ),
-                                        const SizedBox(width: 3),
-                                        const Text(
-                                          'Match',
-                                          style: TextStyle(
-                                            fontFamily: 'DM Sans',
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppColors.surface,
-                                            letterSpacing: -0.1,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            if (!isGuest && !isNonMatch && matchPercent > 0) ...[
-                              const SizedBox(width: 4),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: BackdropFilter(
-                                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2.5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.scrim.withValues(alpha: 0.35),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: AppColors.indigo400.withValues(alpha: 0.6),
-                                        width: 0.6,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'ci=${(tenantCi != null ? tenantCi.toDouble() : (matchPercent / 100.0)).toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontFamily: 'DM Sans',
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.indigo200,
-                                        letterSpacing: -0.1,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 4.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.slate900.withValues(alpha: 0.12),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
                             ],
-                          ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isNonMatch) ...[
+                                const Icon(
+                                  Icons.info_outline_rounded,
+                                  size: 12,
+                                  color: AppColors.amberPrimary,
+                                ),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  "Doesn't match",
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.slate900,
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
+                              ] else if (isFilterMatch) ...[
+                                const Icon(
+                                  Icons.tune_rounded,
+                                  size: 12,
+                                  color: AppColors.amberPrimary,
+                                ),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  'Filter Match',
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.slate900,
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
+                              ] else if (rank != null &&
+                                  rank! >= 1 &&
+                                  rank! <= 3) ...[
+                                if (rank == 1)
+                                  const Icon(
+                                    Icons.workspace_premium_rounded,
+                                    size: 15,
+                                    color: Color(0xFFFCA917),
+                                  )
+                                else if (rank == 2)
+                                  const Icon(
+                                    Icons.workspace_premium_rounded,
+                                    size: 15,
+                                    color: Color(0xFF94A3B8),
+                                  )
+                                else
+                                  const Icon(
+                                    Icons.workspace_premium_rounded,
+                                    size: 15,
+                                    color: Color(0xFFCD7F32),
+                                  ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  '#$rank Top Match',
+                                  style: const TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.slate900,
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  width: 1,
+                                  height: 11,
+                                  color: AppColors.slate300,
+                                ),
+                                const SizedBox(width: 6),
+                                if (!isGuest && matchPercent > 0)
+                                  Text(
+                                    '$matchPercent% Match',
+                                    style: const TextStyle(
+                                      fontFamily: 'DM Sans',
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.slate900,
+                                      letterSpacing: -0.1,
+                                    ),
+                                  ),
+                              ] else if (!isGuest && matchPercent > 0) ...[
+                                Icon(
+                                  Icons.auto_awesome,
+                                  size: 12,
+                                  color: matchDotColor,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$matchPercent% Match',
+                                  style: const TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.slate900,
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
+                              ] else ...[
+                                const Icon(
+                                  Icons.lock_outline,
+                                  size: 11.5,
+                                  color: AppColors.slate500,
+                                ),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  'Match',
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.slate900,
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                       ),
 
-                      // Top-right: Like / Heart button
+                      // Top-right: Like / Heart button (clean white circular button)
                       Positioned(
                         top: 10,
                         right: 10,
@@ -1371,29 +1382,30 @@ class _PropertyCard extends StatelessWidget {
                           color: AppColors.transparent,
                           child: InkWell(
                             onTap: onSavedToggle,
-                            borderRadius: BorderRadius.circular(16),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                                child: Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.scrim.withValues(alpha: 0.28),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: AppColors.surface.withValues(alpha: 0.35),
-                                      width: 0.6,
-                                    ),
+                            customBorder: const CircleBorder(),
+                            child: Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.surface,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.slate900.withValues(alpha: 0.12),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
                                   ),
-                                  child: Center(
-                                    child: Icon(
-                                      isSaved ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
-                                      size: 16,
-                                      color: isSaved ? AppColors.destructive : AppColors.surface,
-                                    ),
-                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  isSaved
+                                      ? Icons.favorite_rounded
+                                      : Icons.favorite_outline_rounded,
+                                  size: 17,
+                                  color: isSaved
+                                      ? AppColors.destructive
+                                      : AppColors.slate600,
                                 ),
                               ),
                             ),
@@ -1401,50 +1413,47 @@ class _PropertyCard extends StatelessWidget {
                         ),
                       ),
 
-                      // Bottom-right: Photo count badge
+                      // Bottom-right: Photo count badge (clean white pill)
                       if (photoCount > 0)
                         Positioned(
                           bottom: 8,
                           right: 8,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6.5,
-                                  vertical: 2.5,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7.5,
+                              vertical: 3.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.slate900.withValues(alpha: 0.12),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
                                 ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.scrim.withValues(alpha: 0.28),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: AppColors.surface.withValues(alpha: 0.35),
-                                    width: 0.6,
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.photo_outlined,
+                                  size: 12,
+                                  color: AppColors.slate600,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$photoCount',
+                                  style: const TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.slate900,
+                                    letterSpacing: -0.1,
                                   ),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.photo_outlined,
-                                      size: 10.5,
-                                      color: AppColors.surface,
-                                    ),
-                                    const SizedBox(width: 3.5),
-                                    Text(
-                                      '$photoCount',
-                                      style: const TextStyle(
-                                        fontFamily: 'DM Sans',
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.surface,
-                                        letterSpacing: -0.1,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              ],
                             ),
                           ),
                         ),

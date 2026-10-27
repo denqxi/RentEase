@@ -36,8 +36,8 @@ class TermsAgreementField extends StatelessWidget {
                 child: Checkbox(
                   value: value,
                   onChanged: (v) => onChanged(v ?? false),
-                  activeColor: AppColors.accent,
-                  side: BorderSide(color: context.appColors.fieldBorder),
+                  activeColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.slate300, width: 1.2),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
                   ),

@@ -1911,7 +1911,7 @@ class _CircularNumberPaginationBar extends StatelessWidget {
 
 @visibleForTesting
 class CompatibleTenantRow extends StatelessWidget {
-  const CompatibleTenantRow({
+  const CompatibleTenantRow({super.key, 
     required this.tenant,
     required this.isNotified,
     required this.onNotify,

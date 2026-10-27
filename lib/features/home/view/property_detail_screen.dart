@@ -3,18 +3,16 @@ import 'dart:ui' show ImageFilter;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
 
+import '../../../core/firestore/property_ratings_aggregator.dart';
 import '../../../core/firestore/tenant_profile_loader.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/firestore/firestore_collections.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../core/utils/date_utils.dart';
-import '../../../shared/widgets/app_svg_icon.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../inquiry/view/start_inquiry.dart';
@@ -29,68 +27,13 @@ import 'map_view_screen.dart';
 
 // Compiled once instead of on every call.
 final RegExp _kThousandsRe = RegExp(r'(\d)(?=(\d{3})+(?!\d))');
+
+String _fmt(num value) => value
+    .round()
+    .toString()
+    .replaceAllMapped(_kThousandsRe, (m) => '${m[1]},');
 final RegExp _kWhitespaceRe = RegExp(r'\s+');
 
-/// The detail-screen heart: transparent glass circular badge on the hero image,
-/// filled destructive when saved. Rebuilds only when this property's saved flag changes.
-class _SaveHeart extends StatelessWidget {
-  const _SaveHeart({
-    required this.propertyId,
-    required this.cubit,
-    required this.onTap,
-  });
-
-  final String propertyId;
-  final HomeCubit? cubit;
-  final void Function(HomeCubit? cubit) onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cubit = this.cubit;
-    Widget button(bool saved) => Material(
-      color: AppColors.transparent,
-      child: InkWell(
-        onTap: () => onTap(cubit),
-        customBorder: const CircleBorder(),
-        child: ClipOval(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.scrim.withValues(alpha: 0.25),
-                border: Border.all(
-                  color: AppColors.surface.withValues(alpha: 0.35),
-                  width: 0.6,
-                ),
-              ),
-              alignment: Alignment.center,
-              child: Icon(
-                saved ? Icons.favorite : Icons.favorite_border,
-                color: saved ? AppColors.destructive : AppColors.surface,
-                size: 16,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    if (cubit == null) return button(false);
-    return BlocBuilder<HomeCubit, HomeState>(
-      bloc: cubit,
-      buildWhen: (a, b) =>
-          a.savedIds.contains(propertyId) != b.savedIds.contains(propertyId),
-      builder: (_, state) => button(state.savedIds.contains(propertyId)),
-    );
-  }
-}
-
-/// Tenant Property Detail screen designed with the modern Property Management style:
-/// Hero photo carousel with thumbnails, main overview card, view-only expandable sections
-/// for Rent & Capacity, House Rules, and Amenities, reviews redirect, and fixed bottom action.
 class PropertyDetailScreen extends StatefulWidget {
   const PropertyDetailScreen({
     this.propertyId,
@@ -125,6 +68,25 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   late Map<String, dynamic> _property;
   bool _isLoadingDetails = false;
   TenantProfileDoc? _profile;
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _reviewsKey = GlobalKey();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToReviews() {
+    final ctx = _reviewsKey.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -282,7 +244,15 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             .doc(propId)
             .get();
         if (snap.exists) {
-          pDoc = PropertyDoc.fromSnapshot(snap);
+          var fetchedDoc = PropertyDoc.fromSnapshot(snap);
+          try {
+            fetchedDoc = await PropertyRatingsAggregator.hydrateProperty(
+              FirebaseFirestore.instance,
+              fetchedDoc,
+              forceRefresh: true,
+            );
+          } catch (_) {}
+          pDoc = fetchedDoc;
           detail.addAll({
             'propertyId': propId,
             'parentPropertyId': pDoc.parentPropertyId,
@@ -474,6 +444,19 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     }
   }
 
+  void _shareProperty() {
+    final title = _property['propertyName'] ?? _property['title'] ?? 'RentEase Property';
+    final address = _property['address'] ?? '';
+    final rent = _property['monthlyRent'] ?? _property['price'] ?? '';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Sharing "$title" (₱$rent/mo, $address)'),
+        backgroundColor: AppColors.slate900,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   void _guardGuestAction(BuildContext context, VoidCallback action) {
     if (widget.isGuest) {
       GuestAccessSheet.show(context);
@@ -514,11 +497,6 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     );
   }
 
-  static String _fmt(num value) => value
-      .round()
-      .toString()
-      .replaceAllMapped(_kThousandsRe, (m) => '${m[1]},');
-
   @override
   Widget build(BuildContext context) {
     final bool isOutside = _property['isOutsidePreference'] == true;
@@ -537,7 +515,32 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         ? (_property['propertyType'] as String).trim()
         : 'Boarding House';
     final address = (_property['address'] as String?) ?? '';
-    final monthlyRent = (_property['monthlyRent'] as num?) ?? 0;
+    final propertyDoc = _resolvePropertyDoc();
+
+    num parseRent(dynamic val) {
+      if (val is num && val > 0) return val;
+      if (val is String) {
+        final parsed = num.tryParse(val.replaceAll(RegExp(r'[^\d.]'), ''));
+        if (parsed != null && parsed > 0) return parsed;
+      }
+      return 0;
+    }
+
+    final num monthlyRent = parseRent(_property['monthlyRent']) > 0
+        ? parseRent(_property['monthlyRent'])
+        : (parseRent(_property['rent']) > 0
+            ? parseRent(_property['rent'])
+            : (parseRent(_property['price']) > 0
+                ? parseRent(_property['price'])
+                : (parseRent(_property['pricePerMonth']) > 0
+                    ? parseRent(_property['pricePerMonth'])
+                    : (parseRent(propertyDoc.monthlyRent) > 0
+                        ? parseRent(propertyDoc.monthlyRent)
+                        : (parseRent(widget.initialListing?.pricePerMonth) > 0
+                            ? parseRent(widget.initialListing?.pricePerMonth)
+                            : (parseRent(widget.initialPropertyDoc?.monthlyRent) > 0
+                                ? parseRent(widget.initialPropertyDoc?.monthlyRent)
+                                : 0))))));
     final depositAmount = (_property['depositAmount'] as num?) ?? 0;
     final advanceMonths = (_property['advanceMonths'] as num?) ?? 0;
     final maxOccupants = ((_property['maxOccupants'] as num?) ?? 1).round();
@@ -556,7 +559,6 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             ? [_property['photoUrl'] as String]
             : const <String>[];
 
-    final propertyDoc = _resolvePropertyDoc();
     final int matchPercent = widget.initialListing?.matchPercent ??
         (((_property['tenantCi'] as num?)?.toDouble() ?? 0.0) * 100).round();
     final Color matchDotColor =
@@ -593,7 +595,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             bottom: false,
             child: Column(
               children: [
-                // Top Custom Header with Back Button and Title
+                // Top Custom Header with Back Button, Title, and Action Buttons (Share & Heart)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
                   child: Row(
@@ -631,15 +633,97 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Text(
-                        'Property Details',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: context.appColors.textPrimary,
-                          letterSpacing: -0.2,
+                      Expanded(
+                        child: Text(
+                          'Property Details',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: context.appColors.textPrimary,
+                            letterSpacing: -0.2,
+                          ),
                         ),
+                      ),
+                      // Share Button
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.slate200.withValues(alpha: 0.6),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.slate900.withValues(alpha: 0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: AppColors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: _shareProperty,
+                            child: const Icon(
+                              Icons.share_outlined,
+                              color: AppColors.slate700,
+                              size: 19,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Heart Button
+                      StreamBuilder<Set<String>>(
+                        stream: widget.homeCubit?.state.savedIds != null
+                            ? null
+                            : null,
+                        builder: (context, _) {
+                          final isSaved = widget.homeCubit?.state.savedIds.contains(propId) ??
+                              widget.initialListing?.isSaved ??
+                              false;
+                          return Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.slate200.withValues(alpha: 0.6),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.slate900.withValues(alpha: 0.04),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: AppColors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () => _guardGuestAction(
+                                  context,
+                                  () => widget.homeCubit?.toggleSaved(propId),
+                                ),
+                                child: Icon(
+                                  isSaved ? Icons.favorite : Icons.favorite_border,
+                                  color: isSaved ? AppColors.destructive : AppColors.slate700,
+                                  size: 19,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -654,6 +738,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             // Scrollable Content
             Expanded(
               child: SingleChildScrollView(
+                controller: _scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -849,97 +934,21 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                       avgRating: (_property['avgRating'] as num?)?.toDouble(),
                       totalRatings: (_property['totalRatings'] as num?)?.toInt(),
                       onAddressTap: () => _openMapView(propertyDoc, displayName),
+                      onReviewsTap: _scrollToReviews,
                     ),
                     const SizedBox(height: 14),
 
-                    // ── 3. Expandable Card 1: Rent & Capacity ─────────────
-                    _ExpandableSection(
-                      svgIcon: AppSvgIcons.rentAndCapacity,
-                      title: 'Rent & Capacity',
-                      subtitle:
-                          '₱${_fmt(monthlyRent)} / month  ·  Max $maxOccupants ${maxOccupants == 1 ? 'occupant' : 'occupants'}',
-                      children: [
-                        _detailRow('Monthly rent', '₱${_fmt(monthlyRent)}'),
-                        _divider(),
-                        _detailRow(
-                          'Security deposit',
-                          depositAmount > 0
-                              ? '₱${_fmt(depositAmount)}'
-                              : 'None',
-                        ),
-                        _divider(),
-                        _detailRow(
-                          'Advance payment',
-                          advanceMonths > 0
-                              ? '$advanceMonths ${advanceMonths == 1 ? 'month' : 'months'}'
-                              : 'None',
-                        ),
-                        _divider(),
-                        _detailRow(
-                          'Maximum occupants',
-                          '$maxOccupants ${maxOccupants == 1 ? 'occupant' : 'occupants'}',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // ── 4. Expandable Card 2: House Rules ─────────────────
-                    _ExpandableSection(
-                      svgIcon: AppSvgIcons.houseRules,
-                      title: 'House Rules',
-                      subtitle:
-                          '${formatCurfew(curfewHours)}  ·  $allowedGender',
-                      children: [
-                        _detailRow('Curfew hours', formatCurfew(curfewHours)),
-                        _divider(),
-                        _detailRow('Gender policy', allowedGender),
-                        _divider(),
-                        _detailRow(
-                          'Smoking policy',
-                          smokingAllowed ? 'Allowed' : 'Not allowed',
-                        ),
-                        _divider(),
-                        _detailRow(
-                          'Pet policy',
-                          petsAllowed ? 'Allowed' : 'Not allowed',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // ── 5. Expandable Card 3: Amenities ───────────────────
-                    _ExpandableSection(
-                      svgIcon: AppSvgIcons.amenities,
-                      title: 'Amenities',
-                      subtitle: amenities.isNotEmpty
-                          ? '${amenities.length} amenities available'
-                          : 'Standard amenities included',
-                      children: [
-                        if (amenities.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                for (final amenity in amenities)
-                                  _TenantAmenityChip(label: amenity),
-                              ],
-                            ),
-                          )
-                        else
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 8),
-                            child: Text(
-                              'No specific amenities listed.',
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 13,
-                                color: AppColors.slate500,
-                              ),
-                            ),
-                          ),
-                      ],
+                    // ── 3. Rental Information Unified Card ─────────────────
+                    _RentalInformationCard(
+                      monthlyRent: monthlyRent,
+                      depositAmount: depositAmount,
+                      advanceMonths: advanceMonths,
+                      maxOccupants: maxOccupants,
+                      curfewHours: curfewHours,
+                      allowedGender: allowedGender,
+                      smokingAllowed: smokingAllowed,
+                      petsAllowed: petsAllowed,
+                      amenities: amenities,
                     ),
                     const SizedBox(height: 14),
 
@@ -951,20 +960,32 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                     const SizedBox(height: 14),
 
                     // ── 6.1 Property Reviews Card (Non-expandable, scrollable) ─
-                    _PropertyReviewsCard(
-                      propertyId: propertyDoc.propertyId,
-                      parentPropertyId: propertyDoc.parentPropertyId,
-                      inquiryId: widget.inquiryId,
-                      onRatingLoaded: (avg, totalCount) {
-                        if (mounted &&
-                            ((_property['avgRating'] as num?)?.toDouble() != avg ||
-                                (_property['totalRatings'] as num?)?.toInt() != totalCount)) {
-                          setState(() {
-                            _property['avgRating'] = avg;
-                            _property['totalRatings'] = totalCount;
-                          });
-                        }
-                      },
+                    KeyedSubtree(
+                      key: _reviewsKey,
+                      child: _PropertyReviewsCard(
+                        propertyId: propertyDoc.propertyId,
+                        parentPropertyId: propertyDoc.parentPropertyId,
+                        ownerId: propertyDoc.ownerId,
+                        propertyName: propertyDoc.propertyName,
+                        title: propertyDoc.title,
+                        initialAvgRating: (propertyDoc.avgRating != null && propertyDoc.avgRating! > 0)
+                            ? propertyDoc.avgRating!.toDouble()
+                            : (_property['avgRating'] as num?)?.toDouble(),
+                        initialTotalRatings: (propertyDoc.totalRatings != null && propertyDoc.totalRatings! > 0)
+                            ? propertyDoc.totalRatings!.toInt()
+                            : (_property['totalRatings'] as num?)?.toInt(),
+                        inquiryId: widget.inquiryId,
+                        onRatingLoaded: (avg, totalCount) {
+                          if (mounted && avg > 0 && totalCount > 0 &&
+                              ((_property['avgRating'] as num?)?.toDouble() != avg ||
+                                  (_property['totalRatings'] as num?)?.toInt() != totalCount)) {
+                            setState(() {
+                              _property['avgRating'] = avg;
+                              _property['totalRatings'] = totalCount;
+                            });
+                          }
+                        },
+                      ),
                     ),
                     const SizedBox(height: 14),
 
@@ -1232,40 +1253,6 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     );
   }
 
-  static Widget _detailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 13.5,
-              fontWeight: FontWeight.w500,
-              color: AppColors.slate500,
-            ),
-          ),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: const TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 13.5,
-                fontWeight: FontWeight.w700,
-                color: AppColors.slate900,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Widget _divider() =>
-      const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1494,6 +1481,7 @@ class _FullScreenSwipeableImageViewerState
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // PHOTO CAROUSEL WITH THUMBNAILS (MATCHING PROPERTY MANAGER SCREEN)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1501,9 +1489,9 @@ class _PropertyPhotoGallerySection extends StatefulWidget {
   const _PropertyPhotoGallerySection({
     required this.photos,
     required this.seed,
-    required this.propertyId,
-    required this.cubit,
-    required this.onSavedToggle,
+    this.propertyId,
+    this.cubit,
+    this.onSavedToggle,
     required this.matchPercent,
     this.tenantCi,
     required this.matchDotColor,
@@ -1514,9 +1502,9 @@ class _PropertyPhotoGallerySection extends StatefulWidget {
 
   final List<String> photos;
   final int seed;
-  final String propertyId;
+  final String? propertyId;
   final HomeCubit? cubit;
-  final VoidCallback onSavedToggle;
+  final VoidCallback? onSavedToggle;
   final int matchPercent;
   final double? tenantCi;
   final Color matchDotColor;
@@ -1568,6 +1556,75 @@ class _PropertyPhotoGallerySectionState
     );
   }
 
+  Widget _buildThumbnail(
+    String photoUrl,
+    int index,
+    bool isSelected, {
+    int? overlayCount,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        if (overlayCount != null) {
+          _openFullScreenViewer(index);
+        } else {
+          setState(() => _selectedPhotoIndex = index);
+          if (_pageController.hasClients) {
+            _pageController.animateToPage(
+              index,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+            );
+          }
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF00ACC1) : AppColors.slate200,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8.5),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                photoUrl,
+                cacheWidth: 300,
+                fit: BoxFit.cover,
+                filterQuality: FilterQuality.medium,
+                errorBuilder: (_, _, _) => Container(
+                  color: AppColors.fieldFill,
+                  child: const Icon(
+                    Icons.broken_image,
+                    size: 18,
+                    color: AppColors.hint,
+                  ),
+                ),
+              ),
+              if (overlayCount != null)
+                Container(
+                  color: AppColors.scrim.withValues(alpha: 0.55),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '+$overlayCount',
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.surface,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final photos = widget.photos;
@@ -1576,366 +1633,312 @@ class _PropertyPhotoGallerySectionState
         ? _selectedPhotoIndex.clamp(0, photoCount - 1)
         : 0;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Main Large Rounded Image (Swipeable PageView)
-        Container(
-          height: 210,
-          width: double.infinity,
-          decoration: BoxDecoration(
+    final mainImageWidget = Container(
+      height: 192,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: AppColors.fieldFill,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.slate900.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            color: AppColors.fieldFill,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.slate900.withValues(alpha: 0.05),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            clipBehavior: Clip.antiAlias,
+            child: photoCount > 0
+                ? PageView.builder(
+                    controller: _pageController,
+                    itemCount: photoCount,
+                    onPageChanged: (index) {
+                      setState(() => _selectedPhotoIndex = index);
+                    },
+                    itemBuilder: (context, index) {
+                      final photoUrl = photos[index];
+                      return GestureDetector(
+                        onTap: () => _openFullScreenViewer(index),
+                        child: Image.network(
+                          photoUrl,
+                          cacheWidth: 1280,
+                          fit: BoxFit.cover,
+                          filterQuality: FilterQuality.medium,
+                          errorBuilder: (_, _, _) =>
+                              ListingImagePlaceholder(
+                            seed: widget.seed,
+                            photoUrl: null,
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                : ListingImagePlaceholder(
+                    seed: widget.seed,
+                    photoUrl: null,
+                  ),
           ),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                clipBehavior: Clip.antiAlias,
-                child: photoCount > 0
-                    ? PageView.builder(
-                        controller: _pageController,
-                        itemCount: photoCount,
-                        onPageChanged: (index) {
-                          setState(() => _selectedPhotoIndex = index);
-                        },
-                        itemBuilder: (context, index) {
-                          final photoUrl = photos[index];
-                          return GestureDetector(
-                            onTap: () => _openFullScreenViewer(index),
-                            child: Image.network(
-                              photoUrl,
-                              cacheWidth: 1280,
-                              fit: BoxFit.cover,
-                              filterQuality: FilterQuality.medium,
-                              errorBuilder: (_, _, _) =>
-                                  ListingImagePlaceholder(
-                                seed: widget.seed,
-                                photoUrl: null,
-                              ),
-                            ),
-                          );
-                        },
-                      )
-                    : ListingImagePlaceholder(
-                        seed: widget.seed,
-                        photoUrl: null,
-                      ),
-              ),
 
-              // Outline border overlay
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.slate200.withValues(alpha: 0.8),
-                        width: 1,
-                      ),
-                    ),
+          // Outline border overlay
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.slate200.withValues(alpha: 0.8),
+                    width: 1,
                   ),
                 ),
               ),
+            ),
+          ),
 
-              // Top-left: Match score / Mismatch badge (transparent glass, matching home cards)
-              Positioned(
-                top: 10,
-                left: 10,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 2.5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.scrim.withValues(alpha: 0.28),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: (widget.isNonMatch || widget.isFilterMatch)
-                                  ? AppColors.amberPrimary.withValues(alpha: 0.6)
-                                  : (!widget.isGuest && widget.matchPercent > 0)
-                                      ? widget.matchDotColor.withValues(alpha: 0.45)
-                                      : AppColors.surface.withValues(alpha: 0.25),
-                              width: 0.6,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (widget.isNonMatch) ...[
-                                const Icon(
-                                  Icons.info_outline_rounded,
-                                  size: 10.5,
-                                  color: AppColors.amberPrimary,
-                                ),
-                                const SizedBox(width: 3),
-                                const Text(
-                                  "Doesn't match",
-                                  style: TextStyle(
-                                    fontFamily: 'DM Sans',
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.surface,
-                                    letterSpacing: -0.1,
-                                  ),
-                                ),
-                              ] else if (widget.isFilterMatch) ...[
-                                const Icon(
-                                  Icons.tune_rounded,
-                                  size: 10.5,
-                                  color: AppColors.amberPrimary,
-                                ),
-                                const SizedBox(width: 3.5),
-                                const Text(
-                                  'Filter Match',
-                                  style: TextStyle(
-                                    fontFamily: 'DM Sans',
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.surface,
-                                    letterSpacing: -0.1,
-                                  ),
-                                ),
-                              ] else if (!widget.isGuest &&
-                                  widget.matchPercent > 0) ...[
-                                Text(
-                                  '${widget.matchPercent}% Match',
-                                  style: const TextStyle(
-                                    fontFamily: 'DM Sans',
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.surface,
-                                    letterSpacing: -0.1,
-                                  ),
-                                ),
-                              ] else if (!widget.isGuest) ...[
-                                Text(
-                                  (widget.tenantCi != null && widget.tenantCi! > 0)
-                                      ? '${(widget.tenantCi! * 100).round()}% Match'
-                                      : '0% Match',
-                                  style: const TextStyle(
-                                    fontFamily: 'DM Sans',
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.surface,
-                                    letterSpacing: -0.1,
-                                  ),
-                                ),
-                              ] else ...[
-                                Icon(
-                                  Icons.lock_outline,
-                                  size: 9.5,
-                                  color: AppColors.onInk.withValues(alpha: 0.7),
-                                ),
-                                const SizedBox(width: 3),
-                                const Text(
-                                  'Match',
-                                  style: TextStyle(
-                                    fontFamily: 'DM Sans',
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.surface,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
+          // Top-left: Match score / Mismatch badge (clean white pill with sparkle icon)
+          Positioned(
+            top: 10,
+            left: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 9,
+                vertical: 4.5,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.slate900.withValues(alpha: 0.12),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.isNonMatch) ...[
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      size: 12,
+                      color: AppColors.amber700,
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      "Doesn't match",
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.amber700,
+                        letterSpacing: -0.1,
                       ),
                     ),
-                    if (!widget.isGuest && !widget.isNonMatch && (widget.matchPercent > 0 || (widget.tenantCi != null && widget.tenantCi! > 0))) ...[
-                      const SizedBox(width: 4),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2.5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.scrim.withValues(alpha: 0.35),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: AppColors.indigo400.withValues(alpha: 0.6),
-                                width: 0.6,
-                              ),
-                            ),
-                            child: Text(
-                              'ci=${(widget.tenantCi ?? (widget.matchPercent / 100.0)).toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.indigo200,
-                                letterSpacing: -0.1,
-                              ),
-                            ),
-                          ),
-                        ),
+                  ] else if (widget.isFilterMatch) ...[
+                    const Icon(
+                      Icons.tune_rounded,
+                      size: 12,
+                      color: AppColors.amber700,
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      'Filter Match',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.amber700,
+                        letterSpacing: -0.1,
                       ),
-                    ],
+                    ),
+                  ] else if (!widget.isGuest &&
+                      widget.matchPercent > 0) ...[
+                    const Icon(
+                      Icons.auto_awesome,
+                      size: 12,
+                      color: Color(0xFF00ACC1),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${widget.matchPercent}% Match',
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF00838F),
+                        letterSpacing: -0.1,
+                      ),
+                    ),
+                  ] else if (!widget.isGuest) ...[
+                    const Icon(
+                      Icons.auto_awesome,
+                      size: 12,
+                      color: Color(0xFF00ACC1),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      (widget.tenantCi != null && widget.tenantCi! > 0)
+                          ? '${(widget.tenantCi! * 100).round()}% Match'
+                          : '0% Match',
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF00838F),
+                        letterSpacing: -0.1,
+                      ),
+                    ),
+                  ] else ...[
+                    const Icon(
+                      Icons.lock_outline,
+                      size: 12,
+                      color: AppColors.slate600,
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      'Match',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.slate900,
+                        letterSpacing: -0.1,
+                      ),
+                    ),
                   ],
-                ),
+                ],
               ),
+            ),
+          ),
 
-              // Top-right: Like / Heart button (transparent glass circle badge)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: _SaveHeart(
-                  propertyId: widget.propertyId,
-                  cubit: widget.cubit,
-                  onTap: (_) => widget.onSavedToggle(),
-                ),
-              ),
-
-              // Bottom-right: Photo count badge (transparent glass badge)
-              if (photoCount > 0)
-                Positioned(
-                  bottom: 8,
-                  right: 8,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6.5,
-                          vertical: 2.5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.scrim.withValues(alpha: 0.28),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: AppColors.surface.withValues(alpha: 0.35),
-                            width: 0.6,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.photo_outlined,
-                              size: 10.5,
-                              color: AppColors.surface,
-                            ),
-                            const SizedBox(width: 3.5),
-                            Text(
-                              photoCount > 1
-                                  ? '${safeIndex + 1} / $photoCount'
-                                  : '$photoCount',
-                              style: const TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.surface,
-                                letterSpacing: -0.1,
-                              ),
-                            ),
-                          ],
-                        ),
+          // Bottom-left: Photo count badge (dark glass pill matching screenshot)
+          if (photoCount > 0)
+            Positioned(
+              bottom: 10,
+              left: 10,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3.5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.scrim.withValues(alpha: 0.45),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppColors.surface.withValues(alpha: 0.35),
+                        width: 0.6,
                       ),
                     ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-
-        if (photoCount > 1) ...[
-          const SizedBox(height: 10),
-          // Horizontal Thumbnails Row
-          SizedBox(
-            height: 56,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: photos.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final isSelected = index == safeIndex;
-                final thumbUrl = photos[index];
-
-                return GestureDetector(
-                  onTap: () {
-                    setState(() => _selectedPhotoIndex = index);
-                    _pageController.animateToPage(
-                      index,
-                      duration: const Duration(milliseconds: 280),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                  child: SizedBox(
-                    width: 56,
-                    height: 56,
-                    child: Stack(
-                      fit: StackFit.expand,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          clipBehavior: Clip.antiAlias,
-                          child: Image.network(
-                            thumbUrl,
-                            cacheWidth: 300,
-                            fit: BoxFit.cover,
-                            filterQuality: FilterQuality.medium,
-                            errorBuilder: (_, _, _) => Container(
-                              color: AppColors.fieldFill,
-                              child: const Icon(
-                                Icons.broken_image,
-                                size: 18,
-                                color: AppColors.hint,
-                              ),
-                            ),
-                          ),
+                        const Icon(
+                          Icons.photo_outlined,
+                          size: 12.5,
+                          color: AppColors.surface,
                         ),
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : AppColors.slate200,
-                                  width: isSelected ? 2 : 1,
-                                ),
-                              ),
-                            ),
+                        const SizedBox(width: 4),
+                        Text(
+                          photoCount > 1
+                              ? '${safeIndex + 1} / $photoCount'
+                              : '$photoCount',
+                          style: const TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.surface,
+                            letterSpacing: -0.1,
                           ),
                         ),
                       ],
                     ),
                   ),
-                );
-              },
+                ),
+              ),
             ),
+        ],
+      ),
+    );
+
+    if (photoCount <= 1) {
+      return mainImageWidget;
+    }
+
+    return SizedBox(
+      height: 192,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: mainImageWidget),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 72,
+            child: photoCount == 2
+                ? Column(
+                    children: [
+                      Expanded(
+                        child: _buildThumbnail(
+                          photos[0],
+                          0,
+                          safeIndex == 0,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Expanded(
+                        child: _buildThumbnail(
+                          photos[1],
+                          1,
+                          safeIndex == 1,
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      Expanded(
+                        child: _buildThumbnail(
+                          photos[0],
+                          0,
+                          safeIndex == 0,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Expanded(
+                        child: _buildThumbnail(
+                          photos[1],
+                          1,
+                          safeIndex == 1,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Expanded(
+                        child: _buildThumbnail(
+                          photos[2],
+                          2,
+                          safeIndex >= 2,
+                          overlayCount:
+                              photoCount > 3 ? photoCount - 3 : null,
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ],
-      ],
+      ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAIN OVERVIEW CARD (NAME, LOCATION, REVIEWS REDIRECT, RENT)
+// MAIN OVERVIEW (NAME, LOCATION, REVIEWS REDIRECT, RENT)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PropertyMainOverviewCard extends StatefulWidget {
@@ -1948,6 +1951,7 @@ class _PropertyMainOverviewCard extends StatefulWidget {
     this.avgRating,
     this.totalRatings,
     this.onAddressTap,
+    this.onReviewsTap,
   });
 
   final String displayName;
@@ -1958,18 +1962,16 @@ class _PropertyMainOverviewCard extends StatefulWidget {
   final double? avgRating;
   final int? totalRatings;
   final VoidCallback? onAddressTap;
+  final VoidCallback? onReviewsTap;
 
   @override
-  State<_PropertyMainOverviewCard> createState() => _PropertyMainOverviewCardState();
+  State<_PropertyMainOverviewCard> createState() =>
+      _PropertyMainOverviewCardState();
 }
 
-class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
+class _PropertyMainOverviewCardState
+    extends State<_PropertyMainOverviewCard> {
   bool _isAddressExpanded = false;
-
-  static String _fmt(num value) => value
-      .round()
-      .toString()
-      .replaceAllMapped(_kThousandsRe, (m) => '${m[1]},');
 
   @override
   Widget build(BuildContext context) {
@@ -1979,238 +1981,211 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
     final monthlyRent = widget.monthlyRent;
     final onAddressTap = widget.onAddressTap;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.slate900.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: AppColors.slate900.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
+    final double avg = (widget.avgRating != null && widget.avgRating! > 0)
+        ? widget.avgRating!
+        : ((widget.propertyDoc.avgRating != null &&
+                widget.propertyDoc.avgRating! > 0)
+            ? widget.propertyDoc.avgRating!.toDouble()
+            : 0.0);
+    final int count = (widget.totalRatings != null && widget.totalRatings! > 0)
+        ? widget.totalRatings!
+        :
+        widget.propertyDoc.totalRatings?.toInt() ??
+        0;
+    final hasReviews = avg > 0 || count > 0;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title
-          Text(
-            displayName,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: AppColors.slate900,
-              letterSpacing: -0.4,
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Address Row with Theme Blue Pin (Click address to show full / hide, Click Map to open Map View)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Pin Icon (Taps to open Map View)
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onAddressTap,
-                  child: const Padding(
-                    padding: EdgeInsets.only(top: 1.5),
-                    child: Icon(
-                      Icons.location_on_outlined,
-                      size: 14.5,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 5),
-
-                // Address Text: 1 line with ellipsis by default, tap to expand to full, tap again to hide
-                Expanded(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      setState(() {
-                        _isAddressExpanded = !_isAddressExpanded;
-                      });
-                    },
-                    child: AnimatedSize(
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeInOut,
-                      alignment: Alignment.topLeft,
-                      child: Text(
-                        address,
-                        maxLines: _isAddressExpanded ? null : 1,
-                        overflow: _isAddressExpanded
-                            ? TextOverflow.visible
-                            : TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.slate500,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-
-                // Map navigation link (plain blue text, no badge)
-                if (onAddressTap != null)
-                  InkWell(
-                    onTap: onAddressTap,
-                    borderRadius: BorderRadius.circular(6),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Map',
-                            style: TextStyle(
-                              fontFamily: 'DM Sans',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          SizedBox(width: 2),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            size: 16,
-                            color: AppColors.primary,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Star rating & review count row
-          Builder(
-            builder: (context) {
-              final double avg = (widget.avgRating != null && widget.avgRating! > 0)
-                  ? widget.avgRating!
-                  : ((widget.propertyDoc.avgRating != null && widget.propertyDoc.avgRating! > 0)
-                      ? widget.propertyDoc.avgRating!.toDouble()
-                      : 0.0);
-              final int count = widget.totalRatings ?? widget.propertyDoc.totalRatings?.toInt() ?? 0;
-              final hasReviews = avg > 0 || count > 0;
-
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.star_rounded,
-                    size: 16.5,
-                    color: AppColors.matchMedium,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    hasReviews ? avg.toStringAsFixed(1) : '0.0',
-                    style: const TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.slate900,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    count > 0
-                        ? '($count ${count == 1 ? 'review' : 'reviews'})'
-                        : '(No reviews yet)',
-                    style: const TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.slate500,
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-
-          const SizedBox(height: 14),
-          const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill),
-          const SizedBox(height: 14),
-
-          // Details Row: Property Type on left, Rent on right
+          // Row 1: Top-left reviews (clickable) & Top-right price in one line (/ mo)
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    const AppSvgIcon(
-                      svgString: AppSvgIcons.propertyType,
-                      size: 16,
-                      color: AppColors.slate900,
-                    ),
-                    const SizedBox(width: 7),
-                    Flexible(
-                      child: Text(
-                        displayType,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.slate900,
+              // Top-left: Yellow Star rating and reviews text (optically aligned with title below)
+              Material(
+                color: AppColors.transparent,
+                child: InkWell(
+                  onTap: widget.onReviewsTap,
+                  borderRadius: BorderRadius.circular(6),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 2, bottom: 2, right: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Transform.translate(
+                          offset: const Offset(-1, 0),
+                          child: const Icon(
+                            Icons.star_rounded,
+                            size: 20,
+                            color: Color(0xFFFFB800), // Vibrant yellow star
+                          ),
                         ),
+                        const SizedBox(width: 3),
+                        Text(
+                          hasReviews
+                              ? '${avg.toStringAsFixed(1)} ($count ${count == 1 ? 'review' : 'reviews'})'
+                              : 'No reviews yet',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 13,
+                            fontWeight:
+                                hasReviews ? FontWeight.w700 : FontWeight.w500,
+                            color: hasReviews
+                                ? context.appColors.textPrimary
+                                : AppColors.slate500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Top-right: Price on one line with / mo
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '₱${_fmt(monthlyRent)}',
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 21.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF00ACC1),
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(width: 3),
+                    const Text(
+                      '/ mo',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.slate500,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    '₱${_fmt(monthlyRent)}',
-                    style: const TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  const Text(
-                    ' / month',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.slate500,
-                    ),
-                  ),
-                ],
-              ),
             ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // Title (same size as price, slightly bigger)
+          Text(
+            displayName,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 21.5,
+              fontWeight: FontWeight.w800,
+              color: context.appColors.textPrimary,
+              letterSpacing: -0.3,
+              height: 1.25,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Property type
+          Text(
+            displayType,
+            style: const TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.slate600,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Location row: Lighter smaller gray pin + Address + Circular map button
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.location_on_outlined,
+                size: 15,
+                color: AppColors.slate400,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    setState(() {
+                      _isAddressExpanded = !_isAddressExpanded;
+                    });
+                  },
+                  child: AnimatedSize(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      address,
+                      maxLines: _isAddressExpanded ? null : 1,
+                      overflow: _isAddressExpanded
+                          ? TextOverflow.visible
+                          : TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.slate600,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              if (onAddressTap != null) ...[
+                const SizedBox(width: 8),
+                Material(
+                  color: AppColors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    onTap: onAddressTap,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.slate200.withValues(alpha: 0.8),
+                          width: 1,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.map_outlined,
+                        size: 15,
+                        color: Color(0xFF00ACC1),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // Separation line below address
+          const Divider(
+            height: 1,
+            thickness: 0.8,
+            color: AppColors.fieldFill,
           ),
         ],
       ),
@@ -2219,28 +2194,182 @@ class _PropertyMainOverviewCardState extends State<_PropertyMainOverviewCard> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// REUSABLE EXPANDABLE VIEW-ONLY SECTION
+// UNIFIED RENTAL INFORMATION CARD (RENT & CAPACITY, HOUSE RULES, AMENITIES)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _ExpandableSection extends StatefulWidget {
-  const _ExpandableSection({
-    required this.svgIcon,
-    required this.title,
-    required this.subtitle,
-    required this.children,
+class _RentalInformationCard extends StatefulWidget {
+  const _RentalInformationCard({
+    required this.monthlyRent,
+    required this.depositAmount,
+    required this.advanceMonths,
+    required this.maxOccupants,
+    required this.curfewHours,
+    required this.allowedGender,
+    required this.smokingAllowed,
+    required this.petsAllowed,
+    required this.amenities,
   });
 
-  final String svgIcon;
-  final String title;
-  final String subtitle;
-  final List<Widget> children;
+  final num monthlyRent;
+  final num depositAmount;
+  final num advanceMonths;
+  final int maxOccupants;
+  final num? curfewHours;
+  final String allowedGender;
+  final bool smokingAllowed;
+  final bool petsAllowed;
+  final List<String> amenities;
 
   @override
-  State<_ExpandableSection> createState() => _ExpandableSectionState();
+  State<_RentalInformationCard> createState() => _RentalInformationCardState();
 }
 
-class _ExpandableSectionState extends State<_ExpandableSection> {
-  bool _isExpanded = false;
+class _RentalInformationCardState extends State<_RentalInformationCard> {
+  int? _expandedIndex; // 0: Rent, 1: Rules, 2: Amenities
+
+  static String _fmt(num value) => value
+      .round()
+      .toString()
+      .replaceAllMapped(_kThousandsRe, (m) => '${m[1]},');
+
+  static Widget _row(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.slate500,
+            ),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: const TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.slate900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _div() =>
+      const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill);
+
+  Widget _buildItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool isExpanded,
+    required VoidCallback onToggle,
+    required List<Widget> children,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: onToggle,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Row(
+              children: [
+                // Soft teal icon container
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F7FA),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    icon,
+                    size: 18,
+                    color: const Color(0xFF00ACC1),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.slate900,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.slate500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Chevron button
+                AnimatedRotation(
+                  turns: isExpanded ? 0.5 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: AppColors.slate50,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 20,
+                      color: AppColors.slate600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOut,
+          alignment: Alignment.topCenter,
+          child: !isExpanded
+              ? const SizedBox.shrink()
+              : Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: children,
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2248,125 +2377,143 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.slate200.withValues(alpha: 0.6),
+          width: 0.8,
+        ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.slate900.withValues(alpha: 0.06),
+            color: AppColors.slate900.withValues(alpha: 0.04),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
-          BoxShadow(
-            color: AppColors.slate900.withValues(alpha: 0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
         ],
       ),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Material(
-            color: AppColors.transparent,
-            child: InkWell(
-              onTap: () => setState(() => _isExpanded = !_isExpanded),
-              borderRadius: BorderRadius.circular(20),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 15,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(11),
-                      ),
-                      alignment: Alignment.center,
-                      child: AppSvgIcon(
-                        svgString: widget.svgIcon,
-                        size: 20,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.title,
-                            style: const TextStyle(
-                              fontFamily: 'DM Sans',
-                              fontSize: 15.5,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.slate900,
-                              letterSpacing: -0.2,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            widget.subtitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: 'DM Sans',
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.slate500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    AnimatedRotation(
-                      turns: _isExpanded ? 0.5 : 0.0,
-                      duration: const Duration(milliseconds: 220),
-                      child: Container(
-                        width: 30,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: AppColors.slate50,
-                          borderRadius: BorderRadius.circular(9),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: 20,
-                          color: AppColors.slate600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          // Header Label (no chevron)
+          const Text(
+            'Rental Information',
+            style: TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppColors.slate900,
+              letterSpacing: -0.2,
             ),
           ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 240),
-            curve: Curves.easeInOut,
-            alignment: Alignment.topCenter,
-            child: !_isExpanded
-                ? const SizedBox.shrink()
-                : Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 12),
+            // Item 1: Rent & Capacity
+            _buildItem(
+              icon: Icons.account_balance_wallet_outlined,
+              title: 'Rent & Capacity',
+              subtitle:
+                  '₱${_fmt(widget.monthlyRent)} / month  ·  Max ${widget.maxOccupants} ${widget.maxOccupants == 1 ? 'occupant' : 'occupants'}',
+              isExpanded: _expandedIndex == 0,
+              onToggle: () =>
+                  setState(() => _expandedIndex = _expandedIndex == 0 ? null : 0),
+              children: [
+                _row('Monthly rent', '₱${_fmt(widget.monthlyRent)}'),
+                _div(),
+                _row(
+                  'Security deposit',
+                  widget.depositAmount > 0
+                      ? '₱${_fmt(widget.depositAmount)}'
+                      : 'None',
+                ),
+                _div(),
+                _row(
+                  'Advance payment',
+                  widget.advanceMonths > 0
+                      ? '${widget.advanceMonths} ${widget.advanceMonths == 1 ? 'month' : 'months'}'
+                      : 'None',
+                ),
+                _div(),
+                _row(
+                  'Maximum occupants',
+                  '${widget.maxOccupants} ${widget.maxOccupants == 1 ? 'occupant' : 'occupants'}',
+                ),
+              ],
+            ),
+
+            const Divider(
+              height: 16,
+              thickness: 0.8,
+              color: AppColors.fieldFill,
+            ),
+
+            // Item 2: House Rules
+            _buildItem(
+              icon: Icons.assignment_outlined,
+              title: 'House Rules',
+              subtitle:
+                  '${formatCurfew(widget.curfewHours)}  ·  ${widget.allowedGender}',
+              isExpanded: _expandedIndex == 1,
+              onToggle: () =>
+                  setState(() => _expandedIndex = _expandedIndex == 1 ? null : 1),
+              children: [
+                _row('Curfew hours', formatCurfew(widget.curfewHours)),
+                _div(),
+                _row('Gender policy', widget.allowedGender),
+                _div(),
+                _row(
+                  'Smoking policy',
+                  widget.smokingAllowed ? 'Allowed' : 'Not allowed',
+                ),
+                _div(),
+                _row(
+                  'Pet policy',
+                  widget.petsAllowed ? 'Allowed' : 'Not allowed',
+                ),
+              ],
+            ),
+
+            const Divider(
+              height: 16,
+              thickness: 0.8,
+              color: AppColors.fieldFill,
+            ),
+
+            // Item 3: Amenities
+            _buildItem(
+              icon: Icons.grid_view_rounded,
+              title: 'Amenities',
+              subtitle: widget.amenities.isNotEmpty
+                  ? '${widget.amenities.length} amenities available'
+                  : 'Standard amenities included',
+              isExpanded: _expandedIndex == 2,
+              onToggle: () =>
+                  setState(() => _expandedIndex = _expandedIndex == 2 ? null : 2),
+              children: [
+                if (widget.amenities.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
-                        const Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: AppColors.fieldFill,
-                        ),
-                        const SizedBox(height: 10),
-                        ...widget.children,
+                        for (final amenity in widget.amenities)
+                          _TenantAmenityChip(label: amenity),
                       ],
                     ),
+                  )
+                else
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      'No specific amenities listed.',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 13,
+                        color: AppColors.slate500,
+                      ),
+                    ),
                   ),
-          ),
+              ],
+            ),
         ],
       ),
     );
@@ -2645,13 +2792,23 @@ class _PropertyReviewsCard extends StatefulWidget {
   const _PropertyReviewsCard({
     required this.propertyId,
     this.parentPropertyId,
+    this.ownerId,
+    this.propertyName,
+    this.title,
     this.inquiryId,
+    this.initialAvgRating,
+    this.initialTotalRatings,
     this.onRatingLoaded,
   });
 
   final String propertyId;
   final String? parentPropertyId;
+  final String? ownerId;
+  final String? propertyName;
+  final String? title;
   final String? inquiryId;
+  final double? initialAvgRating;
+  final int? initialTotalRatings;
   final void Function(double avg, int count)? onRatingLoaded;
 
   @override
@@ -2673,6 +2830,7 @@ class _PropertyReviewData {
 }
 
 class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
+  late final ScrollController _listScrollController;
   bool _isLoading = true;
   List<_PropertyReviewData> _reviews = [];
   double _avgRating = 0.0;
@@ -2681,24 +2839,68 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
   @override
   void initState() {
     super.initState();
+    _listScrollController = ScrollController();
+    _avgRating = widget.initialAvgRating ?? 0.0;
+    _totalCount = widget.initialTotalRatings ?? 0;
     _loadReviews();
   }
 
+  @override
+  void didUpdateWidget(covariant _PropertyReviewsCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.propertyId != widget.propertyId ||
+        oldWidget.parentPropertyId != widget.parentPropertyId ||
+        oldWidget.ownerId != widget.ownerId ||
+        oldWidget.inquiryId != widget.inquiryId) {
+      _loadReviews();
+    }
+  }
+
+  @override
+  void dispose() {
+    _listScrollController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadReviews() async {
-    final pid = widget.propertyId;
+    final pid = widget.propertyId.trim();
     if (pid.isEmpty) {
       if (mounted) setState(() => _isLoading = false);
       return;
     }
+
     try {
       final targetIds = <String>{pid};
-      if (widget.parentPropertyId != null && widget.parentPropertyId!.isNotEmpty) {
-        targetIds.add(widget.parentPropertyId!);
+      if (widget.parentPropertyId != null &&
+          widget.parentPropertyId!.trim().isNotEmpty) {
+        targetIds.add(widget.parentPropertyId!.trim());
       }
 
       final docsMap = <String, DocumentSnapshot<Map<String, dynamic>>>{};
 
-      // 1. By propertyId
+      // 1. Primary: Use PropertyRatingsAggregator for full building/room/parent/inquiry aggregation
+      try {
+        final aggregated =
+            await PropertyRatingsAggregator.fetchRatingDocsForProperty(
+          firestore: FirebaseFirestore.instance,
+          propertyId: pid,
+          parentPropertyId: widget.parentPropertyId,
+          ownerId: widget.ownerId,
+          propertyName: widget.propertyName,
+          title: widget.title,
+          extraTargetIds: targetIds,
+          inquiryId: widget.inquiryId,
+          forceRefresh: true,
+        );
+        for (final doc in aggregated) {
+          docsMap[doc.id] = doc;
+        }
+      } catch (e) {
+        debugPrint('PropertyRatingsAggregator error: $e');
+      }
+
+      // 2. Direct fallback queries to ensure nothing is missed
+      // (a) By propertyId
       try {
         final snap = await FirebaseFirestore.instance
             .collection(FirestoreCollections.ratings)
@@ -2708,54 +2910,56 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
           docsMap[doc.id] = doc;
         }
       } catch (e) {
-        debugPrint('Error querying ratings by propertyId: $e');
+        debugPrint('Direct propertyId query error: $e');
       }
 
-      // 2. By parentPropertyId (if targetIds has parent)
-      try {
-        final parentSnap = await FirebaseFirestore.instance
-            .collection(FirestoreCollections.ratings)
-            .where('parentPropertyId', whereIn: targetIds.take(10).toList())
-            .get();
-        for (final doc in parentSnap.docs) {
-          docsMap[doc.id] = doc;
+      // (b) By parentPropertyId
+      if (widget.parentPropertyId != null &&
+          widget.parentPropertyId!.trim().isNotEmpty) {
+        try {
+          final parentSnap = await FirebaseFirestore.instance
+              .collection(FirestoreCollections.ratings)
+              .where('parentPropertyId',
+                  isEqualTo: widget.parentPropertyId!.trim())
+              .get();
+          for (final doc in parentSnap.docs) {
+            docsMap[doc.id] = doc;
+          }
+        } catch (e) {
+          debugPrint('Direct parentPropertyId query error: $e');
         }
-      } catch (e) {
-        debugPrint('Error querying ratings by parentPropertyId: $e');
       }
 
-      // 3. By inquiryId (if thread inquiryId passed, ensures user's rated stay in this thread always shows)
-      if (widget.inquiryId != null && widget.inquiryId!.isNotEmpty) {
+      // (c) By inquiryId
+      if (widget.inquiryId != null && widget.inquiryId!.trim().isNotEmpty) {
         try {
           final inqSnap = await FirebaseFirestore.instance
               .collection(FirestoreCollections.ratings)
-              .where('inquiryId', isEqualTo: widget.inquiryId)
+              .where('inquiryId', isEqualTo: widget.inquiryId!.trim())
               .get();
           for (final doc in inqSnap.docs) {
             docsMap[doc.id] = doc;
           }
         } catch (e) {
-          debugPrint('Error querying ratings by inquiryId: $e');
+          debugPrint('Direct inquiryId query error: $e');
         }
       }
 
       if (!mounted) return;
 
-      // Only include reviews written by tenants FOR the property.
-      // Never show the owner's review of the tenant in Property Details.
+      // Filter: Only include tenant reviews FOR the property
       final tenantDocs = docsMap.values.where((doc) {
         final role = doc.data()?['raterRole'] as String?;
         return role == 'tenant';
       }).toList();
 
       if (tenantDocs.isEmpty) {
-        setState(() {
-          _reviews = [];
-          _avgRating = 0.0;
-          _totalCount = 0;
-          _isLoading = false;
-        });
-        widget.onRatingLoaded?.call(0.0, 0);
+        if (mounted) {
+          setState(() {
+            _reviews = [];
+            _isLoading = false;
+          });
+        }
         return;
       }
 
@@ -2771,37 +2975,48 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
       final currentUid = FirebaseAuth.instance.currentUser?.uid;
       final currentUserName = FirebaseAuth.instance.currentUser?.displayName;
       if (currentUid != null) {
-        raterNames[currentUid] = (currentUserName?.isNotEmpty == true) ? currentUserName! : 'You';
+        raterNames[currentUid] =
+            (currentUserName?.isNotEmpty == true) ? currentUserName! : 'You';
       }
 
       if (raterIds.isNotEmpty) {
-        try {
-          final usersSnap = await FirebaseFirestore.instance
-              .collection(FirestoreCollections.users)
-              .where(FieldPath.documentId, whereIn: raterIds.take(10).toList())
-              .get();
-          for (final u in usersSnap.docs) {
-            final d = u.data();
-            final fn = (d['firstName'] as String?)?.trim() ?? '';
-            final ln = (d['lastName'] as String?)?.trim() ?? '';
-            final name = '$fn $ln'.trim();
-            if (name.isNotEmpty) {
-              raterNames[u.id] = (u.id == currentUid) ? '$name (You)' : name;
+        final idsList = raterIds.where((id) => id != currentUid).toList();
+        for (var i = 0; i < idsList.length; i += 10) {
+          final chunk = idsList.sublist(
+              i, (i + 10 > idsList.length) ? idsList.length : i + 10);
+          try {
+            final usersSnap = await FirebaseFirestore.instance
+                .collection(FirestoreCollections.users)
+                .where(FieldPath.documentId, whereIn: chunk)
+                .get();
+            for (final u in usersSnap.docs) {
+              final d = u.data();
+              final fn = (d['firstName'] as String?)?.trim() ?? '';
+              final ln = (d['lastName'] as String?)?.trim() ?? '';
+              final name = '$fn $ln'.trim();
+              if (name.isNotEmpty) {
+                raterNames[u.id] = name;
+              }
             }
+          } catch (e) {
+            debugPrint('Error fetching rater user docs: $e');
           }
-        } catch (e) {
-          debugPrint('Error fetching rater user docs: $e');
         }
       }
 
       final loaded = <_PropertyReviewData>[];
       num totalStars = 0;
       for (final doc in tenantDocs) {
+        final data = doc.data() ?? {};
         final r = RatingDoc.fromSnapshot(doc);
-        totalStars += r.stars;
+        final stars = r.stars > 0
+            ? r.stars.toInt().clamp(1, 5)
+            : parseNum(data['stars'], 5).toInt().clamp(1, 5);
+        totalStars += stars;
 
         String dateStr = 'Recent';
-        final at = r.createdAt?.toDate();
+        final at =
+            r.createdAt?.toDate() ?? parseTimestamp(data['createdAt'])?.toDate();
         if (at != null) {
           const months = [
             'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -2810,18 +3025,28 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
           dateStr = '${months[at.month - 1]} ${at.day}, ${at.year}';
         }
 
+        final comment = (r.review?.trim().isNotEmpty ?? false)
+            ? r.review!.trim()
+            : ((data['comment'] as String?)?.trim().isNotEmpty ?? false)
+                ? (data['comment'] as String).trim()
+                : ((data['feedback'] as String?)?.trim().isNotEmpty ?? false)
+                    ? (data['feedback'] as String).trim()
+                    : null;
+
         loaded.add(
           _PropertyReviewData(
-            raterName: raterNames[r.raterId] ?? (r.raterId == currentUid ? 'You' : 'Tenant'),
-            stars: r.stars.toInt().clamp(1, 5),
+            raterName: raterNames[r.raterId] ??
+                (r.raterId == currentUid ? 'You' : 'Verified Tenant'),
+            stars: stars,
             dateStr: dateStr,
-            comment: r.review,
+            comment: comment,
           ),
         );
       }
 
       if (mounted) {
-        final computedAvg = loaded.isNotEmpty ? (totalStars / loaded.length).toDouble() : 0.0;
+        final computedAvg =
+            loaded.isNotEmpty ? (totalStars / loaded.length).toDouble() : 0.0;
         setState(() {
           _reviews = loaded;
           _totalCount = loaded.length;
@@ -2838,6 +3063,13 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
 
   @override
   Widget build(BuildContext context) {
+    final double effectiveAvg = _avgRating > 0
+        ? _avgRating
+        : (widget.initialAvgRating ?? 0.0);
+    final int effectiveCount = _totalCount > 0
+        ? _totalCount
+        : (widget.initialTotalRatings ?? 0);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -2868,9 +3100,10 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                   color: AppColors.slate900,
                 ),
               ),
-              if (!_isLoading && _totalCount > 0)
+              if (!_isLoading && effectiveCount > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                   decoration: BoxDecoration(
                     color: AppColors.warningFill,
                     borderRadius: BorderRadius.circular(8),
@@ -2885,7 +3118,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                       ),
                       const SizedBox(width: 3.5),
                       Text(
-                        '${_avgRating.toStringAsFixed(1)} ($_totalCount)',
+                        '${effectiveAvg.toStringAsFixed(1)} ($effectiveCount)',
                         style: const TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12,
@@ -2948,8 +3181,11 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                         ),
                       )
                     : Scrollbar(
-                        thumbVisibility: true,
+                        controller: _listScrollController,
+                        thumbVisibility: _reviews.length > 2,
                         child: ListView.separated(
+                          controller: _listScrollController,
+                          primary: false,
                           padding: const EdgeInsets.only(right: 6),
                           itemCount: _reviews.length,
                           separatorBuilder: (_, _) => const Padding(
@@ -2966,17 +3202,23 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      rev.raterName,
-                                      style: const TextStyle(
-                                        fontFamily: 'DM Sans',
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.slate900,
+                                    Expanded(
+                                      child: Text(
+                                        rev.raterName,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontFamily: 'DM Sans',
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.slate900,
+                                        ),
                                       ),
                                     ),
+                                    const SizedBox(width: 8),
                                     Text(
                                       rev.dateStr,
                                       style: const TextStyle(

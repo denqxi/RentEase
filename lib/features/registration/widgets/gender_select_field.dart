@@ -82,11 +82,11 @@ class _GenderPillButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = selected
-        ? AppColors.accent
-        : (hasError ? AppColors.destructive : context.appColors.fieldBorder);
+        ? AppColors.primary
+        : (hasError ? AppColors.destructive : AppColors.slate300);
 
     final backgroundColor = selected
-        ? AppColors.accent
+        ? AppColors.primary
         : context.appColors.fieldFill;
 
     final textColor = selected

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
@@ -5,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../home/data/repositories/home_repository_impl.dart';
 import '../model/match_result.dart';
 import '../widgets/match_card.dart';
 
@@ -18,6 +20,7 @@ class SuccessView extends StatefulWidget {
     required this.onExplore,
     this.isOwner = false,
     this.onBackToStart,
+    this.initialMatches,
     super.key,
   });
 
@@ -31,6 +34,9 @@ class SuccessView extends StatefulWidget {
   /// flow, where restarting is meaningful).
   final VoidCallback? onBackToStart;
 
+  /// Optional preloaded real matched properties.
+  final List<MatchResult>? initialMatches;
+
   @override
   State<SuccessView> createState() => _SuccessViewState();
 }
@@ -41,7 +47,7 @@ class _SuccessViewState extends State<SuccessView>
 
   /// Interval windows for each staggered component:
   /// 0: Title & Subtitle
-  /// 1: Match Card 1
+  /// 1: Match Card 1 / Empty State
   /// 2: Match Card 2
   /// 3: Match Card 3
   /// 4: Explore Action Button
@@ -60,9 +66,18 @@ class _SuccessViewState extends State<SuccessView>
   late final AnimationController _componentsCtrl;
   late final List<Animation<double>> _componentAnimations;
 
+  late List<MatchResult> _matches;
+
   @override
   void initState() {
     super.initState();
+
+    if (widget.initialMatches != null) {
+      _matches = widget.initialMatches!;
+    } else {
+      _matches = <MatchResult>[];
+      _fetchRealMatches();
+    }
 
     // 1. Lottie checkmark graphic animation controller
     _lottieAnimCtrl = AnimationController(
@@ -97,6 +112,31 @@ class _SuccessViewState extends State<SuccessView>
     _componentsCtrl.forward();
   }
 
+  Future<void> _fetchRealMatches() async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (!widget.isOwner) {
+        if (uid != null && uid.isNotEmpty) {
+          final repo = HomeRepositoryImpl();
+          final listings = await repo.fetchCompatibleListings(uid);
+          if (mounted) {
+            setState(() {
+              _matches = listings.take(3).map(MatchResult.fromListing).toList();
+            });
+            return;
+          }
+        }
+        if (mounted) {
+          setState(() {
+            _matches = <MatchResult>[];
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('SuccessView: error fetching real matches: $e');
+    }
+  }
+
   @override
   void dispose() {
     _lottieAnimCtrl.dispose();
@@ -106,11 +146,7 @@ class _SuccessViewState extends State<SuccessView>
 
   @override
   Widget build(BuildContext context) {
-    final matches = (widget.isOwner
-            ? MatchResult.landlordTopMatches
-            : MatchResult.tenantTopMatches)
-        .take(3)
-        .toList(growable: false);
+    final matches = _matches.take(3).toList(growable: false);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -153,19 +189,86 @@ class _SuccessViewState extends State<SuccessView>
                   // Component 1: Slide-up Header Text (Title & Subtitle)
                   _SlideUpComponent(
                     animation: _componentAnimations[0],
-                    child: _HeaderTexts(isOwner: widget.isOwner),
+                    child: _HeaderTexts(
+                      isOwner: widget.isOwner,
+                      hasMatches: matches.isNotEmpty,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
-                  // Components 2, 3, 4: Slide-up Match Cards
-                  for (int i = 0; i < matches.length; i++) ...<Widget>[
+                  // Components 2, 3, 4: Slide-up Match Cards OR Empty State
+                  if (matches.isEmpty)
                     _SlideUpComponent(
-                      animation: _componentAnimations[1 + i],
-                      child: MatchCard(match: matches[i]),
-                    ),
-                    if (i < matches.length - 1)
-                      const SizedBox(height: AppSpacing.sm),
-                  ],
+                      animation: _componentAnimations[1],
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 24,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.appColors.fieldFill,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: context.appColors.fieldBorder,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.search_off_rounded,
+                                color: AppColors.primary,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              widget.isOwner
+                                  ? 'No matching tenants yet'
+                                  : 'No exact matches found yet',
+                              style: TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: context.appColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              widget.isOwner
+                                  ? 'Your listing is active. You will receive notifications when matching tenants view or inquire.'
+                                  : 'We didn\'t find properties matching all your criteria right now. You can explore all available properties on the home screen or adjust your preferences anytime.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                color: context.appColors.textSecondary,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    for (int i = 0; i < matches.length; i++) ...<Widget>[
+                      _SlideUpComponent(
+                        animation: i + 1 < _componentAnimations.length
+                            ? _componentAnimations[1 + i]
+                            : _componentAnimations.last,
+                        child: MatchCard(match: matches[i]),
+                      ),
+                      if (i < matches.length - 1)
+                        const SizedBox(height: AppSpacing.sm),
+                    ],
                   const SizedBox(height: AppSpacing.md),
                 ],
               ),
@@ -211,9 +314,10 @@ class _SuccessViewState extends State<SuccessView>
 
 /// Header title and subtitle text.
 class _HeaderTexts extends StatelessWidget {
-  const _HeaderTexts({required this.isOwner});
+  const _HeaderTexts({required this.isOwner, this.hasMatches = true});
 
   final bool isOwner;
+  final bool hasMatches;
 
   @override
   Widget build(BuildContext context) {
@@ -227,10 +331,12 @@ class _HeaderTexts extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         Text(
           isOwner
-              ? 'Your listing is live. We found tenants that fit your '
-                  'requirements.'
-              : 'Your tenant profile is ready. Here are homes matched to '
-                  'your preferences.',
+              ? (hasMatches
+                  ? 'Your listing is live. We found tenants that fit your requirements.'
+                  : 'Your listing is live! We will notify you once matching tenants arrive.')
+              : (hasMatches
+                  ? 'Your tenant profile is ready. Here are homes matched to your preferences.'
+                  : 'Your tenant profile is ready! There are no exact property matches yet, but you can explore all available properties anytime.'),
           textAlign: TextAlign.center,
           style: AppTextStyles.body(context),
         ),

@@ -230,6 +230,7 @@ class AppPrimaryButton extends StatelessWidget {
     required this.onPressed,
     this.height,
     this.borderRadius,
+    this.color,
     super.key,
   });
 
@@ -245,9 +246,12 @@ class AppPrimaryButton extends StatelessWidget {
   /// Optional border radius override (defaults to [AppRadii.button]).
   final double? borderRadius;
 
+  /// Optional background fill color override. Defaults to [context.appColors.ink].
+  final Color? color;
+
   @override
   Widget build(BuildContext context) {
-    final inkColor = context.appColors.ink;
+    final inkColor = color ?? context.appColors.ink;
 
     return SizedBox(
       width: double.infinity,

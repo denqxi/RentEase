@@ -23,6 +23,8 @@ class AppTextField extends StatelessWidget {
     this.minLines,
     this.inputFormatters,
     this.focusNode,
+    this.enabledBorderColor,
+    this.focusedBorderColor,
     super.key,
   });
 
@@ -42,6 +44,8 @@ class AppTextField extends StatelessWidget {
   final int? minLines;
   final List<TextInputFormatter>? inputFormatters;
   final FocusNode? focusNode;
+  final Color? enabledBorderColor;
+  final Color? focusedBorderColor;
 
   @override
   Widget build(BuildContext context) {
@@ -97,11 +101,16 @@ class AppTextField extends StatelessWidget {
             : context.appColors.fieldFill.withValues(alpha: 0.6),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: context.appColors.fieldBorder),
+          borderSide: BorderSide(
+            color: enabledBorderColor ?? context.appColors.fieldBorder,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+          borderSide: BorderSide(
+            color: focusedBorderColor ?? AppColors.accent,
+            width: 1.5,
+          ),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

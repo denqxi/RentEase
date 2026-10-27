@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/models.dart';
+import '../../../../core/firestore/property_ratings_aggregator.dart';
 import '../../../../core/firestore/tenant_profile_loader.dart';
 
 class HomeRemoteDataSource {
@@ -36,7 +37,8 @@ class HomeRemoteDataSource {
         .orderBy('createdAt', descending: true)
         .limit(limit)
         .get();
-    return snap.docs.map(PropertyDoc.fromSnapshot).toList();
+    final list = snap.docs.map(PropertyDoc.fromSnapshot).toList();
+    return PropertyRatingsAggregator.hydrateProperties(_firestore, list);
   }
 
   Future<PropertyDoc?> fetchProperty(String propertyId) async {
@@ -45,7 +47,8 @@ class HomeRemoteDataSource {
         .doc(propertyId)
         .get();
     if (!snap.exists) return null;
-    return PropertyDoc.fromSnapshot(snap);
+    final prop = PropertyDoc.fromSnapshot(snap);
+    return PropertyRatingsAggregator.hydrateProperty(_firestore, prop);
   }
 
   Future<UserDoc?> fetchUser(String uid) async {

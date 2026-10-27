@@ -59,22 +59,22 @@ class _TenantInquiriesViewState extends State<_TenantInquiriesView> {
       backgroundColor: context.appColors.surface,
       body: Stack(
         children: <Widget>[
-          // Subtle top-left gradient
+          // Subtle top-left gradient (matching Home & Search)
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            height: 195,
+            height: 220,
             child: IgnorePointer(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
                     center: Alignment.topLeft,
-                    radius: 1.05,
+                    radius: 1.15,
                     colors: <Color>[
-                      AppColors.accentSoft.withValues(alpha: 0.70),
-                      AppColors.accentSoft.withValues(alpha: 0.35),
-                      AppColors.accentSoft.withValues(alpha: 0.0),
+                      AppColors.onboardingSky.withValues(alpha: 0.75),
+                      AppColors.skyFill.withValues(alpha: 0.40),
+                      AppColors.skyFill.withValues(alpha: 0.0),
                     ],
                     stops: const <double>[0.0, 0.45, 0.88],
                   ),
@@ -219,15 +219,49 @@ class _InboxMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'DM Sans',
-            fontSize: 14,
-            color: context.appColors.textSecondary,
-          ),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              decoration: const BoxDecoration(
+                color: AppColors.skyFill,
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  size: 24,
+                  color: AppColors.blue600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'No Inquiries',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: context.appColors.textPrimary,
+                letterSpacing: -0.2,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: context.appColors.textSecondary,
+                height: 1.35,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -274,12 +308,10 @@ class _InquiryList extends StatelessWidget {
           child: _InquiryCard(
             propertyInitials: item.propertyInitials,
             propertyName: item.propertyTitle,
-            ownerName: item.counterpartName,
             phase: inquiry.stage.toInt(),
             isInvitation: InquiryService.isInvite(inquiry),
             date: inquiryDateLabel(inquiry.updatedAt?.toDate()),
             isUnread: isUnread,
-            tenantCi: inquiry.tenantCiSnapshot > 0 ? inquiry.tenantCiSnapshot : null,
             resolvedStatus: switch (inquiry.status) {
               'booked' => 'Booked',
               'declined' => 'Declined',
@@ -314,9 +346,13 @@ class _SegmentedControl extends StatelessWidget {
       height: 44,
       decoration: BoxDecoration(
         color: AppColors.fieldFill,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.slate200.withValues(alpha: 0.8),
+          width: 0.8,
+        ),
       ),
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3.5),
       child: Row(
         children: <Widget>[
           _SegTab(
@@ -355,15 +391,16 @@ class _SegTab extends StatelessWidget {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
+        behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(
             color: isSelected ? AppColors.surface : AppColors.transparent,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(11),
             boxShadow: isSelected
                 ? <BoxShadow>[
                     BoxShadow(
-                      color: AppColors.textPrimary.withValues(alpha: 0.06),
+                      color: AppColors.slate900.withValues(alpha: 0.05),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -380,8 +417,7 @@ class _SegTab extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 13.5,
-                  fontWeight:
-                      isSelected ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: isSelected
                       ? AppColors.textPrimary
                       : AppColors.textSecondary,
@@ -390,8 +426,8 @@ class _SegTab extends StatelessWidget {
               if (hasDot) ...[
                 const SizedBox(width: 5),
                 Container(
-                  width: 7,
-                  height: 7,
+                  width: 6.5,
+                  height: 6.5,
                   decoration: const BoxDecoration(
                     color: AppColors.primary,
                     shape: BoxShape.circle,
@@ -412,23 +448,19 @@ class _InquiryCard extends StatelessWidget {
   const _InquiryCard({
     required this.propertyInitials,
     required this.propertyName,
-    required this.ownerName,
     required this.phase,
     required this.date,
     this.isInvitation = false,
     this.isUnread = false,
-    this.tenantCi,
     this.resolvedStatus,
   });
 
   /// Owner-initiated: the tenant is the one who has to answer.
   final bool isInvitation;
   final bool isUnread;
-  final num? tenantCi;
 
   final String propertyInitials;
   final String propertyName;
-  final String ownerName;
   final int phase;
   final String date;
 
@@ -442,55 +474,56 @@ class _InquiryCard extends StatelessWidget {
     final bool isPhase1 = phase == 1;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      margin: const EdgeInsets.only(bottom: 11),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isUnread ? AppColors.accentSoft : AppColors.fieldBorder,
+          color: isUnread
+              ? AppColors.primary.withValues(alpha: 0.40)
+              : AppColors.slate200.withValues(alpha: 0.8),
           width: isUnread ? 1.2 : 0.8,
         ),
         boxShadow: [
           BoxShadow(
             color: isUnread
-                ? AppColors.primary.withValues(alpha: 0.07)
-                : AppColors.textPrimary.withValues(alpha: 0.035),
+                ? AppColors.primary.withValues(alpha: 0.08)
+                : AppColors.slate900.withValues(alpha: 0.035),
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          // Initials Avatar
+          // 1. Clean Initials Avatar
           Container(
             width: 44,
             height: 44,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: isUnread
-                  ? AppColors.accentSoft
-                  : (isResolved
-                      ? AppColors.fieldFill
-                      : AppColors.accentSoft),
+                  ? AppColors.skyFill
+                  : (isResolved ? AppColors.fieldFill : AppColors.tenantFillBlue),
               shape: BoxShape.circle,
             ),
             child: Text(
               propertyInitials,
               style: TextStyle(
                 fontFamily: 'DM Sans',
-                fontSize: 15,
+                fontSize: 14.5,
                 fontWeight: isUnread ? FontWeight.w800 : FontWeight.w700,
                 color: isResolved
-                    ? AppColors.textSecondary
-                    : AppColors.primary,
+                    ? AppColors.slate500
+                    : (isUnread ? AppColors.blue600 : AppColors.primary),
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          // Info
+          const SizedBox(width: 13),
+
+          // 2. Main Content: Property Name & Status Badge (Arrow, CI and Match removed)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -502,125 +535,27 @@ class _InquiryCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: 'DM Sans',
-                    fontSize: 15,
+                    fontSize: 14.5,
                     fontWeight: isUnread ? FontWeight.w800 : FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: AppColors.slate900,
+                    letterSpacing: -0.2,
                   ),
                 ),
-                if (tenantCi != null && tenantCi! > 0) ...[
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                        decoration: BoxDecoration(
-                          color: AppColors.greenFill,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppColors.matchHigh, width: 0.8),
-                        ),
-                        child: Text(
-                          '${(tenantCi! * 100).round()}%',
-                          style: const TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.greenPrimary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
-                        decoration: BoxDecoration(
-                          color: AppColors.fieldFill,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppColors.slate200, width: 0.8),
-                        ),
-                        child: Text(
-                          'ci=${tenantCi!.toDouble().toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.slate700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 2),
-                Text(
-                  ownerName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 12.5,
-                    fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
-                    color: isUnread
-                        ? AppColors.textPrimary
-                        : AppColors.textSecondary,
-                  ),
+                const SizedBox(height: 5),
+                _buildStatusBadge(
+                  isResolved: isResolved,
+                  resolvedStatus: resolvedStatus,
+                  isInvitation: isInvitation,
+                  isPhase1: isPhase1,
                 ),
-                const SizedBox(height: 4),
-                if (isResolved)
-                  Text(
-                    resolvedStatus == 'Booked'
-                        ? 'Tap to rate your stay'
-                        : 'Completed',
-                    style: const TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.hint,
-                    ),
-                  )
-                else if (isInvitation)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      const Icon(
-                        Icons.notifications_rounded,
-                        size: 15,
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          'Property available',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 12,
-                            fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                else
-                  Text(
-                    isPhase1 ? 'Awaiting response' : 'Chat open',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 12,
-                      fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
-                      color: isPhase1
-                          ? AppColors.matchMedium
-                          : AppColors.primary,
-                    ),
-                  ),
               ],
             ),
           ),
           const SizedBox(width: 10),
-          // Trailing: Date + unread dot + chevron
+
+          // 3. Trailing: Date & Unread indicator (Arrow removed)
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               if (date.isNotEmpty)
@@ -630,34 +565,135 @@ class _InquiryCard extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 11.5,
                     fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
-                    color: isUnread
-                        ? AppColors.textPrimary
-                        : AppColors.hint,
+                    color: isUnread ? AppColors.primary : AppColors.slate400,
                   ),
                 ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (isUnread) ...[
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                  ],
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    size: 20,
-                    color: AppColors.hint,
+              if (isUnread) ...[
+                const SizedBox(height: 6),
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
                   ),
-                ],
-              ),
+                ),
+              ],
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge({
+    required bool isResolved,
+    required String? resolvedStatus,
+    required bool isInvitation,
+    required bool isPhase1,
+  }) {
+    // Unbadged, clean colored text and non-bold with icon for Awaiting response
+    if (!isResolved && !isInvitation && isPhase1) {
+      return const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.schedule_rounded,
+            size: 13,
+            color: AppColors.amberPrimary,
+          ),
+          SizedBox(width: 4),
+          Text(
+            'Awaiting response',
+            style: TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.amberPrimary,
+            ),
+          ),
+        ],
+      );
+    }
+
+    final String label;
+    final Color bg;
+    final Color textColor;
+    final Color borderColor;
+    final IconData icon;
+
+    // Unbadged, clean colored text and non-bold with icon for Booked in History
+    if (isResolved && resolvedStatus == 'Booked') {
+      return const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.check_circle_outline_rounded,
+            size: 13,
+            color: AppColors.green700,
+          ),
+          SizedBox(width: 4),
+          Text(
+            'Booked',
+            style: TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.green700,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (isResolved) {
+      if (resolvedStatus == 'Declined') {
+        label = 'Declined';
+        bg = AppColors.fieldFill;
+        textColor = AppColors.slate500;
+        borderColor = AppColors.slate200;
+        icon = Icons.cancel_outlined;
+      } else {
+        label = 'Closed';
+        bg = AppColors.fieldFill;
+        textColor = AppColors.slate500;
+        borderColor = AppColors.slate200;
+        icon = Icons.archive_outlined;
+      }
+    } else if (isInvitation) {
+      label = 'Invitation';
+      bg = AppColors.skyFill;
+      textColor = AppColors.blue600;
+      borderColor = AppColors.sky200;
+      icon = Icons.mail_outline_rounded;
+    } else {
+      label = 'Chat open';
+      bg = AppColors.emerald50;
+      textColor = AppColors.emerald600;
+      borderColor = AppColors.emerald400.withValues(alpha: 0.4);
+      icon = Icons.chat_bubble_outline_rounded;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: borderColor, width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 10.5, color: textColor),
+          const SizedBox(width: 3.5),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
           ),
         ],
       ),

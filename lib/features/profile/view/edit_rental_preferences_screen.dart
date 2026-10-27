@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_options.dart';
+import '../../../core/utils/location_permission_helper.dart';
 import '../../../shared/widgets/map_zoom_controls.dart';
 import '../../tenant_onboarding/view/poi_setup_screen.dart';
 import '../cubit/edit_preferences_cubit.dart';
@@ -54,6 +55,7 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
   LatLng _markerPos = const LatLng(AppOptions.defaultMapLat, AppOptions.defaultMapLng);
   String _resolvedAddress = AppOptions.defaultMapLabel;
   bool _isAddressExpanded = false;
+  bool _isLocating = false;
   double _maxKm = 3.0;
   List<Map<String, dynamic>> _suggestions = const [];
 
@@ -194,11 +196,31 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
     });
   }
 
-  void _recenterDefault() {
-    _dropPin(_markerPos, label: _resolvedAddress);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _mapController.move(_markerPos, 14.5);
-    });
+  Future<void> _locateCurrentPosition() async {
+    if (_isLocating) return;
+    setState(() => _isLocating = true);
+    try {
+      final loc = await LocationPermissionHelper.getCurrentLocation(
+        context,
+        customPurposeMessage:
+            'RentEase needs your location to update your main commute destination on the map.',
+      );
+      if (loc != null && mounted) {
+        _dropPin(loc);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _mapController.move(loc, 15.5);
+        });
+      } else if (mounted) {
+        _dropPin(_markerPos, label: _resolvedAddress);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _mapController.move(_markerPos, 14.5);
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLocating = false);
+      }
+    }
   }
 
   // ── Priority Slider Auto-Balancing ──────────────────────────────────────
@@ -896,6 +918,7 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
                     ],
                   ),
                   MarkerLayer(
+                    rotate: true,
                     markers: [
                       Marker(
                         point: _markerPos,
@@ -928,16 +951,28 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
                       ),
                     ],
                   ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.my_location_rounded,
-                      color: AppColors.primaryCyan,
-                      size: 16,
-                    ),
-                    onPressed: _recenterDefault,
-                    padding: const EdgeInsets.all(5),
-                    constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
-                  ),
+                  child: _isLocating
+                      ? const SizedBox(
+                          width: 30,
+                          height: 30,
+                          child: Padding(
+                            padding: EdgeInsets.all(7.0),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primaryCyan,
+                            ),
+                          ),
+                        )
+                      : IconButton(
+                          icon: const Icon(
+                            Icons.my_location_rounded,
+                            color: AppColors.primaryCyan,
+                            size: 16,
+                          ),
+                          onPressed: _locateCurrentPosition,
+                          padding: const EdgeInsets.all(5),
+                          constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                        ),
                 ),
               ),
               Positioned(

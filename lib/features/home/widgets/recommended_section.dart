@@ -115,7 +115,7 @@ class _RecommendedSectionState extends State<RecommendedSection> {
         ),
         const SizedBox(height: AppSpacing.sm),
         SizedBox(
-          height: 308,
+          height: 296,
           child: PageView.builder(
             controller: _pageController,
             clipBehavior: Clip.none,
@@ -130,11 +130,12 @@ class _RecommendedSectionState extends State<RecommendedSection> {
                 padding: const EdgeInsets.only(
                   left: 6,
                   right: 6,
-                  bottom: 8,
+                  bottom: 4,
                 ),
                 child: ListingCardLarge(
                   listing: listing,
                   isGuest: isGuest,
+                  rank: i + 1,
                   onSavedToggle: () {
                     if (isGuest) {
                       GuestAccessSheet.show(ctx);

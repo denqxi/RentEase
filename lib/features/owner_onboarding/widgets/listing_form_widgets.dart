@@ -886,6 +886,7 @@ class AmenityChip extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.showCloseIcon = true,
+    this.activeColor,
     super.key,
   });
 
@@ -893,10 +894,12 @@ class AmenityChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final bool showCloseIcon;
+  final Color? activeColor;
 
   @override
   Widget build(BuildContext context) {
     final iconData = amenityIconFor(label);
+    final effectiveActiveColor = activeColor ?? AppColors.accent;
 
     return Semantics(
       button: true,
@@ -915,11 +918,11 @@ class AmenityChip extends StatelessWidget {
             5,
           ),
           decoration: BoxDecoration(
-            color: selected ? AppColors.accent : AppColors.fieldFill,
+            color: selected ? effectiveActiveColor : AppColors.fieldFill,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: selected
-                  ? AppColors.accent
+                  ? effectiveActiveColor
                   : AppColors.slate200.withValues(alpha: 0.8),
               width: 1,
             ),
@@ -940,7 +943,7 @@ class AmenityChip extends StatelessWidget {
                 child: Icon(
                   iconData,
                   size: 13,
-                  color: selected ? AppColors.onInk : AppColors.accent,
+                  color: selected ? AppColors.onInk : effectiveActiveColor,
                 ),
               ),
               const SizedBox(width: 7),

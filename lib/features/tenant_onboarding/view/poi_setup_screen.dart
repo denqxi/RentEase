@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_options.dart';
+import '../../../core/utils/location_permission_helper.dart';
 import '../../../shared/widgets/map_zoom_controls.dart';
 import '../cubit/tenant_onboarding_cubit.dart';
 import 'topsis_weight_screen.dart';
@@ -59,6 +60,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
   LatLng? _markerPos;
   List<Map<String, dynamic>> _suggestions = const [];
   double _maxKm = 3.0;
+  bool _isLocating = false;
 
   // Map hint auto-hide after 15 seconds
   bool _showMapHint = true;
@@ -164,16 +166,36 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
     });
   }
 
-  void _recenterDefault() {
-    // Only re-centers the map; never drops a pin the tenant did not choose.
-    final pos = _markerPos ??
-        const LatLng(
-          AppOptions.defaultMapLat,
-          AppOptions.defaultMapLng,
-        );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _mapController.move(pos, 14.5);
-    });
+  Future<void> _locateCurrentPosition() async {
+    if (_isLocating) return;
+    setState(() => _isLocating = true);
+    try {
+      final loc = await LocationPermissionHelper.getCurrentLocation(
+        context,
+        customPurposeMessage:
+            'RentEase needs your location to set your main destination point on the map.',
+      );
+      if (loc != null && mounted) {
+        _dropPin(loc);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _mapController.move(loc, 15.5);
+        });
+      } else if (mounted) {
+        // Fallback to recenter default if permission was cancelled or not obtained
+        final pos = _markerPos ??
+            const LatLng(
+              AppOptions.defaultMapLat,
+              AppOptions.defaultMapLng,
+            );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _mapController.move(pos, 14.5);
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLocating = false);
+      }
+    }
   }
 
   void _continue() {
@@ -542,6 +564,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                                     ],
                                   ),
                                 MarkerLayer(
+                                  rotate: true,
                                   markers: [
                                     // Known school and workplace landmarks
                                     for (final place in AppOptions.davaoPlaces)
@@ -598,15 +621,17 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                               ],
                             ),
                             MapZoomControls(controller: _mapController),
-                            // GPS Recenter Button
+                            // GPS Recenter Button (matches width of MapZoomControls: 38px)
                             Positioned(
                               top: 8,
                               right: 8,
                               child: Container(
+                                width: 38,
+                                height: 38,
                                 decoration: BoxDecoration(
-                                  color: AppColors.onInk,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: _borderStroke),
+                                  color: context.appColors.surface,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: context.appColors.fieldBorder),
                                   boxShadow: [
                                     BoxShadow(
                                       color:
@@ -615,17 +640,27 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                                     ),
                                   ],
                                 ),
-                                child: IconButton(
-                                  icon: const Icon(
-                                    Icons.my_location_rounded,
-                                    color: _primaryTeal,
-                                    size: 18,
-                                  ),
-                                  onPressed: _recenterDefault,
-                                  padding: const EdgeInsets.all(6),
-                                  constraints: const BoxConstraints(
-                                    minWidth: 34,
-                                    minHeight: 34,
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(10),
+                                    onTap: _isLocating ? null : _locateCurrentPosition,
+                                    child: Center(
+                                      child: _isLocating
+                                          ? const SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: _primaryTeal,
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.my_location_rounded,
+                                              color: _primaryTeal,
+                                              size: 18,
+                                            ),
+                                    ),
                                   ),
                                 ),
                               ),

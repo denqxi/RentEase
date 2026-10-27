@@ -76,6 +76,50 @@ class PropertyDoc {
     return avgRating?.toDouble();
   }
 
+  PropertyDoc withRatings({
+    num? avgRating,
+    num? totalRatings,
+    num? ratingSum,
+  }) =>
+      PropertyDoc(
+        propertyId: propertyId,
+        ownerId: ownerId,
+        title: title,
+        description: description,
+        address: address,
+        location: location,
+        geoHash: geoHash,
+        photos: photos,
+        photoPublicIds: photoPublicIds,
+        monthlyRent: monthlyRent,
+        depositAmount: depositAmount,
+        advanceMonths: advanceMonths,
+        isAvailable: isAvailable,
+        vacancyStatus: vacancyStatus,
+        isVerified: isVerified,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        allowedGender: allowedGender,
+        smokingAllowed: smokingAllowed,
+        petsAllowed: petsAllowed,
+        maxOccupants: maxOccupants,
+        curfewHours: curfewHours,
+        hasWifi: hasWifi,
+        amenityList: amenityList,
+        amenityScore: amenityScore,
+        adminUnlisted: adminUnlisted,
+        rentalType: rentalType,
+        propertyName: propertyName,
+        roomName: roomName,
+        propertyType: propertyType,
+        parentPropertyId: parentPropertyId,
+        propertyCoverPhoto: propertyCoverPhoto,
+        propertyCoverPublicId: propertyCoverPublicId,
+        avgRating: avgRating ?? this.avgRating,
+        totalRatings: totalRatings ?? this.totalRatings,
+        ratingSum: ratingSum ?? this.ratingSum,
+      );
+
   /// Returns the building cover photo if set, falling back to the first listing photo.
   String? get effectiveBuildingCoverPhoto =>
       (propertyCoverPhoto?.trim().isNotEmpty ?? false)
@@ -187,7 +231,7 @@ class PropertyDoc {
         geoHash: map['geoHash'] as String? ?? '',
         photos: _parseStringList(map['photos']),
         photoPublicIds: _parseStringList(map['photoPublicIds']),
-        monthlyRent: _parseNum(map['monthlyRent'], 0),
+        monthlyRent: _parseNum(map['monthlyRent'] ?? map['rent'] ?? map['price'] ?? map['pricePerMonth'], 0),
         depositAmount: _parseNum(map['depositAmount'], 0),
         advanceMonths: _parseNum(map['advanceMonths'], 0),
         isAvailable: _parseBool(map['isAvailable'], false),

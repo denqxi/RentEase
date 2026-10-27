@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/firestore/firestore_collections.dart';
 import '../../../core/firestore/models/models.dart';
+import '../../../core/firestore/property_ratings_aggregator.dart';
 import '../../../core/utils/date_utils.dart';
 
 // Compiled once instead of on every call.
@@ -112,17 +113,18 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
       return;
     }
     try {
-      final snap = await FirebaseFirestore.instance
-          .collection(FirestoreCollections.ratings)
-          .where('ratedId', isEqualTo: uid)
-          .where('raterRole', isEqualTo: 'tenant')
-          .get();
+      final ownerEntries =
+          await PropertyRatingsAggregator.fetchRatingDocsForOwner(
+        firestore: FirebaseFirestore.instance,
+        ownerId: uid,
+        forceRefresh: true,
+      );
 
       if (!mounted) return;
 
       final ratersToFetch = <String>{};
-      for (final doc in snap.docs) {
-        final raterId = doc.data()['raterId'] as String?;
+      for (final entry in ownerEntries) {
+        final raterId = entry.doc.data()['raterId'] as String?;
         if (raterId != null && raterId.isNotEmpty) {
           ratersToFetch.add(raterId);
         }
@@ -147,8 +149,8 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
 
       final loaded = <_OwnerReviewItem>[];
       num totalStars = 0;
-      for (final doc in snap.docs) {
-        final rating = RatingDoc.fromSnapshot(doc);
+      for (final entry in ownerEntries) {
+        final rating = RatingDoc.fromSnapshot(entry.doc);
         totalStars += rating.stars;
         final rName = ratersMap[rating.raterId] ?? 'Tenant';
         final dt = rating.createdAt?.toDate();
@@ -159,6 +161,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
             stars: rating.stars.toInt(),
             date: dateStr,
             comment: rating.review?.trim(),
+            propertyTitle: entry.propertyTitle,
           ),
         );
       }
@@ -484,7 +487,18 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                 _divider(),
                                 _detailRow(
                                   label: 'Host rating',
-                                  value: '★ ${((_ownerProfile?.avgRating ?? _avgRating)).toStringAsFixed(1)} (${_ownerProfile?.totalRatings ?? _totalReviews} ${(_ownerProfile?.totalRatings ?? _totalReviews) == 1 ? 'review' : 'reviews'})',
+                                  value: () {
+                                    final c = _totalReviews > 0
+                                        ? _totalReviews
+                                        : (_ownerProfile?.totalRatings ?? 0);
+                                    final a = _totalReviews > 0
+                                        ? _avgRating
+                                        : ((_ownerProfile?.effectiveAvgRating ??
+                                                _ownerProfile?.avgRating ??
+                                                0.0)
+                                            .toDouble());
+                                    return '★ ${a.toStringAsFixed(1)} ($c ${c == 1 ? 'review' : 'reviews'})';
+                                  }(),
                                 ),
                               ],
                             ],
@@ -591,7 +605,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
   Widget _buildRatingsSection() {
     Widget? badge;
     final count = _totalReviews > 0 ? _totalReviews : (_ownerProfile?.totalRatings ?? 0);
-    final avg = _totalReviews > 0 ? _avgRating : ((_ownerProfile?.avgRating ?? 0.0).toDouble());
+    final avg = _totalReviews > 0 ? _avgRating : ((_ownerProfile?.effectiveAvgRating ?? _ownerProfile?.avgRating ?? 0.0).toDouble());
 
     if (count > 0) {
       badge = Container(
@@ -768,7 +782,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
-                                  'Based on $count review${count == 1 ? '' : 's'}',
+                                  'Total across host\'s properties ($count review${count == 1 ? '' : 's'})',
                                   style: const TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 12,
@@ -838,21 +852,51 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Row(
-                                  children: List.generate(5, (sIndex) {
-                                    final isFilled = sIndex < review.stars;
-                                    return Padding(
-                                      padding: const EdgeInsets.only(right: 2),
-                                      child: Icon(
-                                        isFilled
-                                            ? Icons.star_rounded
-                                            : Icons.star_outline_rounded,
-                                        size: 15,
-                                        color: isFilled
-                                            ? AppColors.matchMedium
-                                            : AppColors.slate300,
+                                  children: [
+                                    ...List.generate(5, (sIndex) {
+                                      final isFilled = sIndex < review.stars;
+                                      return Padding(
+                                        padding: const EdgeInsets.only(right: 2),
+                                        child: Icon(
+                                          isFilled
+                                              ? Icons.star_rounded
+                                              : Icons.star_outline_rounded,
+                                          size: 15,
+                                          color: isFilled
+                                              ? AppColors.matchMedium
+                                              : AppColors.slate300,
+                                        ),
+                                      );
+                                    }),
+                                    if (review.propertyTitle != null &&
+                                        review.propertyTitle!.isNotEmpty) ...[
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 7,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.skyFill,
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            review.propertyTitle!,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontFamily: 'DM Sans',
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.brandSky,
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                    );
-                                  }),
+                                    ],
+                                  ],
                                 ),
                                 if (review.comment != null &&
                                     review.comment!.isNotEmpty) ...[
@@ -910,12 +954,14 @@ class _OwnerReviewItem {
     required this.stars,
     required this.date,
     this.comment,
+    this.propertyTitle,
   });
 
   final String raterName;
   final int stars;
   final String date;
   final String? comment;
+  final String? propertyTitle;
 
   String get raterInitials {
     final parts =

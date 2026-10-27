@@ -4,13 +4,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/firestore/firestore_collections.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/firestore/models/models.dart';
+import '../../../core/firestore/property_ratings_aggregator.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/pending_listing_banner.dart';
@@ -1091,17 +1091,21 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
         for (final r in widget.rooms) {
           targetIds.add(r.propertyId);
         }
-        final snap = await FirebaseFirestore.instance
-            .collection(FirestoreCollections.ratings)
-            .where('propertyId', whereIn: targetIds.take(10).toList())
-            .get();
-        if (snap.docs.isNotEmpty) {
+        final docs = await PropertyRatingsAggregator.fetchRatingDocsForProperty(
+          firestore: FirebaseFirestore.instance,
+          propertyId: widget.property.propertyId,
+          parentPropertyId: widget.property.parentPropertyId,
+          ownerId: widget.property.ownerId,
+          propertyName: widget.property.propertyName,
+          extraTargetIds: targetIds,
+        );
+        if (docs.isNotEmpty) {
           num sum = 0;
-          for (final d in snap.docs) {
-            sum += (d.data()['stars'] as num?) ?? 0;
+          for (final d in docs) {
+            sum += (d.data()?['stars'] as num?) ?? 0;
           }
-          final avg = (sum / snap.docs.length).toDouble();
-          _ModernPropertyCard._ratingsCache[widget.property.propertyId] = (avg, snap.docs.length);
+          final avg = (sum / docs.length).toDouble();
+          _ModernPropertyCard._ratingsCache[widget.property.propertyId] = (avg, docs.length);
           if (mounted) setState(() {});
         }
       } catch (_) {}

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_options.dart';
+import '../../../core/utils/location_permission_helper.dart';
 import '../../../core/services/geocoding_service.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_text_field.dart';
@@ -72,185 +72,19 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
     }
   }
 
-  Future<void> _showLocationServiceDialog() async {
-    if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Location Services Turned Off',
-          style: TextStyle(
-            fontFamily: 'DM Sans',
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        content: const Text(
-          'Cannot pinpoint your location because location services are turned off on your device. Please turn them on in settings, or tap directly on the map to place your pin.',
-          style: TextStyle(fontFamily: 'DM Sans', fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              try {
-                await Geolocator.openLocationSettings();
-              } catch (_) {}
-            },
-            child: const Text(
-              'Open Settings',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontWeight: FontWeight.w700,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showPermissionDeniedDialog() async {
-    if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Location Permission Needed',
-          style: TextStyle(
-            fontFamily: 'DM Sans',
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        content: const Text(
-          'Cannot pinpoint your location because location permission is disabled. Please allow location access in your device settings, or tap directly on the map to place your pin.',
-          style: TextStyle(fontFamily: 'DM Sans', fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              try {
-                await Geolocator.openAppSettings();
-              } catch (_) {}
-            },
-            child: const Text(
-              'Open Settings',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontWeight: FontWeight.w700,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _locateCurrentPosition() async {
     if (_isLocatingCurrent) return;
     setState(() => _isLocatingCurrent = true);
 
     try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        await _showLocationServiceDialog();
-        return;
-      }
-
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Cannot pinpoint location because permission was denied. Tap the map to place your pin.',
-                ),
-                backgroundColor: AppColors.slate900,
-              ),
-            );
-          }
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        await _showPermissionDeniedDialog();
-        return;
-      }
-
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('timeout'),
+      final latLng = await LocationPermissionHelper.getCurrentLocation(
+        context,
+        customPurposeMessage:
+            'RentEase needs location access to pinpoint your property on the map. You can also tap directly on the map to set your pin.',
       );
-
-      final latLng = LatLng(position.latitude, position.longitude);
-      _mapController.move(latLng, 16);
-      await _onMapTapped(latLng);
-    } on LocationServiceDisabledException {
-      await _showLocationServiceDialog();
-    } on PermissionDeniedException {
-      await _showPermissionDeniedDialog();
-    } catch (e) {
-      final errorStr = e.toString().toLowerCase();
-      if (errorStr.contains('locationservicedisabled') ||
-          (errorStr.contains('location service') && errorStr.contains('disabled'))) {
-        await _showLocationServiceDialog();
-      } else if (errorStr.contains('permissiondenied') ||
-          errorStr.contains('permission denied')) {
-        await _showPermissionDeniedDialog();
-      } else if (errorStr.contains('missingplugin') ||
-          errorStr.contains('no implementation found')) {
-        // Human-friendly message for PC/desktop testing or unlinked native plugin
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Cannot pinpoint location on this device. Please tap directly on the map to set your location.',
-              ),
-              backgroundColor: AppColors.slate900,
-            ),
-          );
-        }
-      } else if (errorStr.contains('timeout')) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Location request timed out. Please tap directly on the map to place your pin.',
-              ),
-              backgroundColor: AppColors.slate900,
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Cannot pinpoint your location right now. Please tap directly on the map to set your pin.',
-              ),
-              backgroundColor: AppColors.slate900,
-            ),
-          );
-        }
+      if (latLng != null && mounted) {
+        _mapController.move(latLng, 16);
+        await _onMapTapped(latLng);
       }
     } finally {
       if (mounted) setState(() => _isLocatingCurrent = false);
@@ -326,6 +160,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                   ),
                   if (_pinnedLocation != null)
                     MarkerLayer(
+                      rotate: true,
                       markers: [
                         Marker(
                           point: _pinnedLocation!,

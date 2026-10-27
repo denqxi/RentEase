@@ -34,16 +34,16 @@ class BudgetRangeField extends StatelessWidget {
             ),
             Text(
               '${CurrencyUtils.formatDollars(value)}/mo',
-              style: AppTextStyles.label(context).copyWith(color: AppColors.accent),
+              style: AppTextStyles.label(context).copyWith(color: AppColors.primary),
             ),
           ],
         ),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
-            activeTrackColor: AppColors.accent,
+            activeTrackColor: AppColors.primary,
             inactiveTrackColor: context.appColors.fieldFill,
-            thumbColor: AppColors.accent,
-            overlayColor: AppColors.accent.withValues(alpha: 0.15),
+            thumbColor: AppColors.primary,
+            overlayColor: AppColors.primary.withValues(alpha: 0.15),
             trackHeight: 4,
           ),
           child: Slider(

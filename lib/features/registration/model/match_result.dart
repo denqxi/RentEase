@@ -1,5 +1,8 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../core/firestore/models/models.dart';
+import '../../home/model/listing.dart';
+
 /// A single listing match shown on the success screen.
 class MatchResult extends Equatable {
   const MatchResult({
@@ -8,6 +11,8 @@ class MatchResult extends Equatable {
     required this.location,
     this.price,
     this.imageAsset,
+    this.imageUrl,
+    this.propertyId,
   });
 
   /// Compatibility score, 0–100.
@@ -24,6 +29,43 @@ class MatchResult extends Equatable {
 
   /// Image asset path for property thumbnail.
   final String? imageAsset;
+
+  /// Remote network image URL for property photo.
+  final String? imageUrl;
+
+  /// Associated property document ID.
+  final String? propertyId;
+
+  /// Converts a real matched [Listing] from TOPSIS into a [MatchResult].
+  factory MatchResult.fromListing(Listing listing) {
+    final formattedPrice =
+        '₱${listing.pricePerMonth.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}/mo';
+    final photo = listing.photoUrl ??
+        (listing.photos.isNotEmpty ? listing.photos.first : null);
+    return MatchResult(
+      scorePercent: listing.matchPercent,
+      title: listing.title,
+      location: listing.location,
+      price: formattedPrice,
+      imageUrl: photo,
+      propertyId: listing.id,
+    );
+  }
+
+  /// Converts a real [PropertyDoc] from Firestore into a [MatchResult].
+  factory MatchResult.fromProperty(PropertyDoc property, {int scorePercent = 92}) {
+    final formattedPrice =
+        '₱${property.monthlyRent.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}/mo';
+    final photo = property.photos.isNotEmpty ? property.photos.first : null;
+    return MatchResult(
+      scorePercent: scorePercent,
+      title: property.title,
+      location: property.address,
+      price: formattedPrice,
+      imageUrl: photo,
+      propertyId: property.propertyId,
+    );
+  }
 
   /// Sample presented to tenants once registration completes.
   static const MatchResult tenantSample = MatchResult(
@@ -91,5 +133,7 @@ class MatchResult extends Equatable {
         location,
         price,
         imageAsset,
+        imageUrl,
+        propertyId,
       ];
 }

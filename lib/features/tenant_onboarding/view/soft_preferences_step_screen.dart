@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../owner_onboarding/widgets/listing_form_widgets.dart';
 import '../cubit/tenant_onboarding_cubit.dart';
 import 'poi_setup_screen.dart';
 
@@ -20,24 +21,6 @@ class SoftPreferencesStepScreen extends StatefulWidget {
 class _SoftPreferencesStepScreenState extends State<SoftPreferencesStepScreen> {
   String _roomType = 'Either';
   final Set<String> _preferredAmenities = <String>{};
-
-  // Fixed list of amenities ordered to match design layout
-  static const List<String> _displayAmenities = [
-    'WiFi',
-    'Air conditioning',
-    'Electric fan',
-    'Private bathroom',
-    'Laundry facility',
-    'CCTV or security camera',
-    'Parking space',
-    'Study area or desk',
-    'Refrigerator access',
-    '24-hour access',
-    'Water included in rent',
-    'Electricity included in rent',
-    'Furnished room',
-    'Kitchen or cooking area',
-  ];
 
   @override
   void initState() {
@@ -179,38 +162,68 @@ class _SoftPreferencesStepScreenState extends State<SoftPreferencesStepScreen> {
                       ),
 
                       // Spacing between room type and preferred amenities section
-                      const SizedBox(height: 26),
+                      const SizedBox(height: 24),
 
-                      // Preferred amenities Section
-                      Text(
-                        'Preferred amenities (${_preferredAmenities.length} selected)',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          color: context.appColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 10,
+                      // Preferred amenities Section Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          for (final amenity in _displayAmenities)
-                            _AmenityChip(
-                              label: amenity,
-                              isSelected: _preferredAmenities.contains(amenity),
-                              onTap: () {
-                                setState(() {
-                                  if (!_preferredAmenities.remove(amenity)) {
-                                    _preferredAmenities.add(amenity);
-                                  }
-                                });
-                              },
+                          Text(
+                            'Preferred amenities',
+                            style: TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: context.appColors.textPrimary,
                             ),
+                          ),
+                          Text(
+                            '${_preferredAmenities.length} selected',
+                            style: TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w500,
+                              color: context.appColors.textSecondary,
+                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 12),
+
+                      // Amenities categorized by kAmenityGroups (matching Owner create property layout)
+                      for (final (group, items) in kAmenityGroups) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          group,
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: context.appColors.textSecondary,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final a in items)
+                              AmenityChip(
+                                label: a,
+                                selected: _preferredAmenities.contains(a),
+                                activeColor: AppColors.primary,
+                                onTap: () => setState(() {
+                                  if (!_preferredAmenities.remove(a)) {
+                                    _preferredAmenities.add(a);
+                                  }
+                                }),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
@@ -274,8 +287,11 @@ class _RoomTypePill extends StatelessWidget {
         height: 42,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.accent : context.appColors.fieldFill,
+          color: isSelected ? AppColors.primary : context.appColors.fieldFill,
           borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.slate300,
+          ),
         ),
         child: Text(
           label,
@@ -285,63 +301,6 @@ class _RoomTypePill extends StatelessWidget {
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             color: isSelected ? AppColors.onInk : context.appColors.textSecondary,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Outline/tinted pill chip for preferred amenities with a checkmark when selected.
-class _AmenityChip extends StatelessWidget {
-  const _AmenityChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8.5),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.accentSoft : context.appColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color:
-                isSelected ? AppColors.accent : context.appColors.fieldBorder,
-            width: isSelected ? 1.2 : 1.0,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isSelected) ...[
-              const Icon(
-                Icons.check,
-                size: 14,
-                color: AppColors.accent,
-              ),
-              const SizedBox(width: 5),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected
-                    ? AppColors.accent
-                    : context.appColors.textPrimary,
-              ),
-            ),
-          ],
         ),
       ),
     );

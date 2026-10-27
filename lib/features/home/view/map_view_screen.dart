@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -14,6 +15,7 @@ import '../model/navigation_models.dart';
 import '../services/navigation_service.dart';
 import '../widgets/listing_card_large.dart';
 import '../widgets/live_navigation_bottom_bar.dart';
+import '../../../core/utils/location_permission_helper.dart';
 import '../widgets/live_user_puck.dart';
 import 'property_detail_screen.dart';
 
@@ -86,10 +88,12 @@ class _MapViewScreenState extends State<MapViewScreen> {
   // ── Live Navigation State ──────────────────────────────────────────────────
   final _navigationService = NavigationService();
   bool _isNavigating = false;
+  bool _isLocatingUser = false;
   bool _isLoadingRoute = false;
   RoutePlan? _currentRoutePlan;
   RouteProfile _currentProfile = RouteProfile.driving;
   LatLng? _userLocation;
+  double _currentRotation = 0.0;
   double? _userHeading;
   StreamSubscription<Position>? _positionSubscription;
   bool _isCameraTrackingUser = true;
@@ -299,6 +303,28 @@ class _MapViewScreenState extends State<MapViewScreen> {
     );
   }
 
+  Future<void> _handleMyLocationPressed() async {
+    if (_isLocatingUser) return;
+    setState(() => _isLocatingUser = true);
+    try {
+      final loc = await LocationPermissionHelper.getCurrentLocation(
+        context,
+        customPurposeMessage:
+            'RentEase needs your location to pinpoint where you are on the map and find properties near you.',
+      );
+      if (loc != null && mounted) {
+        setState(() {
+          _userLocation = loc;
+        });
+        _mapController.move(loc, 16.0);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLocatingUser = false);
+      }
+    }
+  }
+
   LatLng _resolveInitialCenter() {
     if (_selectedIndex != null && _selectedIndex! < widget.properties.length) {
       final p = widget.properties[_selectedIndex!];
@@ -418,6 +444,11 @@ class _MapViewScreenState extends State<MapViewScreen> {
                   // Tapping empty map space dismisses selected property card.
                   onTap: (_, _) => _dismissSelection(),
                   onPositionChanged: (camera, hasGesture) {
+                    if ((camera.rotation - _currentRotation).abs() > 0.4) {
+                      setState(() {
+                        _currentRotation = camera.rotation;
+                      });
+                    }
                     if (hasGesture && _isNavigating && _isCameraTrackingUser) {
                       setState(() {
                         _isCameraTrackingUser = false;
@@ -463,233 +494,244 @@ class _MapViewScreenState extends State<MapViewScreen> {
                     ),
 
                   MarkerLayer(
-                  markers: [
-                    // Tenant POI marker — exactly anchored to widget.poi!
-                    if (widget.poi != null &&
-                        !(widget.isSinglePropertyMode &&
-                            properties.isNotEmpty &&
-                            (widget.poi!.latitude - (properties.first['latitude'] as num).toDouble()).abs() < 0.0001 &&
-                            (widget.poi!.longitude - (properties.first['longitude'] as num).toDouble()).abs() < 0.0001))
-                      Marker(
-                        point: widget.poi!,
-                        width: 260,
-                        height: 110,
-                        alignment: Alignment.bottomCenter,
-                        child: Align(
-                          alignment: Alignment.bottomCenter,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              // Destination Label Card with Icon and Subtitle
-                              Container(
-                                margin: const EdgeInsets.only(bottom: 2),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                constraints: const BoxConstraints(maxWidth: 240),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(11),
-                                  border: Border.all(
-                                    color: AppColors.slate200,
-                                    width: 0.8,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.scrim.withValues(alpha: 0.08),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    // Light soft blue circular container with destination icon
-                                    Container(
-                                      width: 22,
-                                      height: 22,
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.skyFill,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Center(
-                                        child: Icon(
-                                          _resolvePoiIcon(),
-                                          size: 12,
-                                          color: AppColors.blue600,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-
-                                    // Title & Location Subtitle
-                                    Flexible(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            widget.poiLabel?.isNotEmpty == true
-                                                ? widget.poiLabel!
-                                                : 'Your Destination',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontFamily: 'DM Sans',
-                                              fontSize: 10.5,
-                                              fontWeight: FontWeight.w700,
-                                              color: AppColors.slate900,
-                                              letterSpacing: -0.1,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 1),
-                                          const Text(
-                                            'Davao City',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontFamily: 'DM Sans',
-                                              fontSize: 8.5,
-                                              fontWeight: FontWeight.w500,
-                                              color: AppColors.slate500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Connecting tiny dot directly below card
-                              Container(
-                                width: 4.5,
-                                height: 4.5,
-                                margin: const EdgeInsets.only(bottom: 2),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.blue600,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-
-                              // Concentric rings with circular badge anchored to coordinates
-                              SizedBox(
-                                width: 38,
-                                height: 38,
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    // Outer subtle ring
-                                    Container(
-                                      width: 38,
-                                      height: 38,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: AppColors.blue600.withValues(alpha: 0.12),
-                                      ),
-                                    ),
-                                    // Middle subtle ring
-                                    Container(
-                                      width: 30,
-                                      height: 30,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: AppColors.blue600.withValues(alpha: 0.22),
-                                      ),
-                                    ),
-                                    // Core solid blue circular badge with white outline
-                                    Container(
-                                      width: 22,
-                                      height: 22,
-                                      decoration: BoxDecoration(
-                                        color: AppColors.blue600,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: AppColors.surface,
-                                          width: 1.8,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppColors.blue600.withValues(alpha: 0.4),
-                                            blurRadius: 4,
-                                            offset: const Offset(0, 1.5),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Center(
-                                        child: Icon(
-                                          _resolvePoiIcon(),
-                                          color: AppColors.surface,
-                                          size: 11,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                    // Unselected property markers — anchored exactly to coordinates with ample headroom
-                    for (int i = 0; i < properties.length; i++)
-                      if (i != _selectedIndex)
+                    rotate: true,
+                    alignment: Alignment.topCenter,
+                    markers: [
+                      // Tenant POI marker — exactly anchored to widget.poi at the badge center!
+                      if (widget.poi != null &&
+                          !(widget.isSinglePropertyMode &&
+                              properties.isNotEmpty &&
+                              (widget.poi!.latitude - (properties.first['latitude'] as num).toDouble()).abs() < 0.0001 &&
+                              (widget.poi!.longitude - (properties.first['longitude'] as num).toDouble()).abs() < 0.0001))
                         Marker(
-                          point: LatLng(
-                            (properties[i]['latitude'] as num).toDouble(),
-                            (properties[i]['longitude'] as num).toDouble(),
+                          point: widget.poi!,
+                          width: 260,
+                          height: 84,
+                          alignment: Marker.computePixelAlignment(
+                            width: 260,
+                            height: 84,
+                            left: 130,
+                            top: 65,
                           ),
-                          width: 52,
-                          height: 62,
-                          alignment: Alignment.bottomCenter,
+                          rotate: true,
                           child: Align(
                             alignment: Alignment.bottomCenter,
-                            child: _PropertyPinMarker(
-                              property: properties[i],
-                              isSelected: false,
-                              onTap: () => _onPinTapped(i),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                // Destination Label Card with Icon and Subtitle
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  constraints: const BoxConstraints(maxWidth: 240),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    borderRadius: BorderRadius.circular(11),
+                                    border: Border.all(
+                                      color: AppColors.slate200,
+                                      width: 0.8,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.scrim.withValues(alpha: 0.08),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      // Light soft blue circular container with destination icon
+                                      Container(
+                                        width: 22,
+                                        height: 22,
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.skyFill,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Center(
+                                          child: Icon(
+                                            _resolvePoiIcon(),
+                                            size: 12,
+                                            color: AppColors.blue600,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+
+                                      // Title & Location Subtitle
+                                      Flexible(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              widget.poiLabel?.isNotEmpty == true
+                                                  ? widget.poiLabel!
+                                                  : 'Your Destination',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontFamily: 'DM Sans',
+                                                fontSize: 10.5,
+                                                fontWeight: FontWeight.w700,
+                                                color: AppColors.slate900,
+                                                letterSpacing: -0.1,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 1),
+                                            const Text(
+                                              'Davao City',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontFamily: 'DM Sans',
+                                                fontSize: 8.5,
+                                                fontWeight: FontWeight.w500,
+                                                color: AppColors.slate500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Connecting tiny dot directly below card
+                                Container(
+                                  width: 4.5,
+                                  height: 4.5,
+                                  margin: const EdgeInsets.only(bottom: 2),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.blue600,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+
+                                // Concentric rings with circular badge anchored to coordinates
+                                SizedBox(
+                                  width: 38,
+                                  height: 38,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      // Outer subtle ring
+                                      Container(
+                                        width: 38,
+                                        height: 38,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: AppColors.blue600.withValues(alpha: 0.12),
+                                        ),
+                                      ),
+                                      // Middle subtle ring
+                                      Container(
+                                        width: 30,
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: AppColors.blue600.withValues(alpha: 0.22),
+                                        ),
+                                      ),
+                                      // Core solid blue circular badge with white outline
+                                      Container(
+                                        width: 22,
+                                        height: 22,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.blue600,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: AppColors.surface,
+                                            width: 1.8,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: AppColors.blue600.withValues(alpha: 0.4),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 1.5),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Center(
+                                          child: Icon(
+                                            _resolvePoiIcon(),
+                                            color: AppColors.surface,
+                                            size: 11,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
 
-                    // Selected property marker rendered LAST so it sits on top with cyan halo
-                    if (_selectedIndex != null && _selectedIndex! < properties.length)
-                      Marker(
-                        point: LatLng(
-                          (properties[_selectedIndex!]['latitude'] as num).toDouble(),
-                          (properties[_selectedIndex!]['longitude'] as num).toDouble(),
-                        ),
-                        width: 62,
-                        height: 72,
-                        alignment: Alignment.bottomCenter,
-                        child: Align(
-                          alignment: Alignment.bottomCenter,
-                          child: _PropertyPinMarker(
-                            property: properties[_selectedIndex!],
-                            isSelected: true,
-                            onTap: () => _onPinTapped(_selectedIndex!),
+                      // Unselected property markers — bottom tip planted exactly on coordinates
+                      for (int i = 0; i < properties.length; i++)
+                        if (i != _selectedIndex)
+                          Marker(
+                            point: LatLng(
+                              (properties[i]['latitude'] as num).toDouble(),
+                              (properties[i]['longitude'] as num).toDouble(),
+                            ),
+                            width: 52,
+                            height: 52,
+                            alignment: Alignment.topCenter,
+                            rotate: true,
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: _PropertyPinMarker(
+                                property: properties[i],
+                                isSelected: false,
+                                onTap: () => _onPinTapped(i),
+                              ),
+                            ),
+                          ),
+
+                      // Selected property marker rendered LAST so it sits on top with cyan halo
+                      if (_selectedIndex != null && _selectedIndex! < properties.length)
+                        Marker(
+                          point: LatLng(
+                            (properties[_selectedIndex!]['latitude'] as num).toDouble(),
+                            (properties[_selectedIndex!]['longitude'] as num).toDouble(),
+                          ),
+                          width: 62,
+                          height: 62,
+                          alignment: Alignment.topCenter,
+                          rotate: true,
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: _PropertyPinMarker(
+                              property: properties[_selectedIndex!],
+                              isSelected: true,
+                              onTap: () => _onPinTapped(_selectedIndex!),
+                            ),
                           ),
                         ),
-                      ),
 
-                    // Live Navigation User Puck with Heading Cone (only shown if navigating without a POI)
-                    if (_isNavigating && widget.poi == null && _userLocation != null)
-                      Marker(
-                        point: _userLocation!,
-                        width: 52,
-                        height: 52,
-                        alignment: Alignment.center,
-                        child: LiveUserPuck(
-                          heading: _userHeading,
+                      // Live Location Puck with Heading Cone
+                      if (_userLocation != null)
+                        Marker(
+                          point: _userLocation!,
+                          width: 52,
+                          height: 52,
+                          alignment: Alignment.center,
+                          rotate: false,
+                          child: LiveUserPuck(
+                            heading: _userHeading,
+                          ),
                         ),
-                      ),
-                  ],
-                ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -753,14 +795,11 @@ class _MapViewScreenState extends State<MapViewScreen> {
                   ),
                 ),
 
-                  // Current Location Button (centers to user POI or initial center)
+                  // Current Location Button (requests GPS & centers live user location)
                   Material(
                     color: AppColors.transparent,
                     child: InkWell(
-                      onTap: () {
-                        final center = _resolveInitialCenter();
-                        _mapController.move(center, 14.5);
-                      },
+                      onTap: _handleMyLocationPressed,
                       borderRadius: BorderRadius.circular(19),
                       child: Container(
                         width: 38,
@@ -776,15 +815,71 @@ class _MapViewScreenState extends State<MapViewScreen> {
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.my_location_rounded,
-                          size: 18,
-                          color: AppColors.blue600,
-                        ),
+                        child: _isLocatingUser
+                            ? const Padding(
+                                padding: EdgeInsets.all(10.0),
+                                child: SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.blue600,
+                                  ),
+                                ),
+                              )
+                            : const Icon(
+                                Icons.my_location_rounded,
+                                size: 18,
+                                color: AppColors.blue600,
+                              ),
                       ),
                     ),
                   ),
                 ],
+              ),
+            ),
+
+          // ── Google Maps Compass (only visible when map is rotated) ───────
+          if (_currentRotation.abs() > 0.8)
+            Positioned(
+              right: 16,
+              top: MediaQuery.of(context).size.height * 0.42 - 42,
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.scrim.withValues(alpha: 0.10),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: AppColors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () {
+                      _mapController.rotate(0);
+                      setState(() {
+                        _currentRotation = 0.0;
+                      });
+                    },
+                    child: Transform.rotate(
+                      angle: -_currentRotation * (math.pi / 180.0),
+                      child: const Center(
+                        child: CustomPaint(
+                          size: Size(14, 20),
+                          painter: _CompassNeedlePainter(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
 
@@ -1063,12 +1158,10 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
         children: [
-          // Animated Pulse Effect when selected
+          // Animated Pulse Effect when selected (centered on needle tip)
           if (widget.isSelected)
             Positioned(
-              bottom: -4,
-              // Keeps the per-frame pulse repaint off the rest of the marker
-              // layer.
+              bottom: -14,
               child: RepaintBoundary(
                 child: AnimatedBuilder(
                   animation: _pulseController,
@@ -1097,10 +1190,10 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
               ),
             ),
 
-          // Secondary subtle inner glow ring
+          // Secondary subtle inner glow ring (centered on needle tip)
           if (widget.isSelected)
             Positioned(
-              bottom: 0,
+              bottom: -11,
               child: Container(
                 width: 22,
                 height: 22,
@@ -2125,4 +2218,52 @@ List<Map<String, dynamic>> sortNearbyProperties(
     });
   }
   return sorted;
+}
+
+/// Google Maps-style North compass needle painter.
+class _CompassNeedlePainter extends CustomPainter {
+  const _CompassNeedlePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final h = size.height;
+    final w = size.width;
+
+    // Top red needle (North)
+    final northPath = Path()
+      ..moveTo(cx, 0)
+      ..lineTo(cx + w * 0.42, cy)
+      ..lineTo(cx, cy - 1.5)
+      ..lineTo(cx - w * 0.42, cy)
+      ..close();
+
+    final northPaint = Paint()
+      ..color = AppColors.red600
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(northPath, northPaint);
+
+    // Bottom grey needle (South)
+    final southPath = Path()
+      ..moveTo(cx, h)
+      ..lineTo(cx + w * 0.42, cy)
+      ..lineTo(cx, cy + 1.5)
+      ..lineTo(cx - w * 0.42, cy)
+      ..close();
+
+    final southPaint = Paint()
+      ..color = AppColors.slate400
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(southPath, southPaint);
+
+    // Center pivot dot
+    final pivotPaint = Paint()
+      ..color = AppColors.surface
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(cx, cy), 1.8, pivotPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

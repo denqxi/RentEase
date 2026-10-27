@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -245,54 +244,51 @@ class OtherListingCard extends StatelessWidget {
                         ),
                       ),
 
-                      // Top-left: Mismatch warning badge (transparent glass, subtle outline, smaller)
+                      // Top-left: Mismatch warning badge (white pill with shadow)
                       Positioned(
                         top: 10,
                         left: 10,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 7,
-                                vertical: 2.5,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7.5,
+                            vertical: 3.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.slate900.withValues(alpha: 0.12),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
-                              decoration: BoxDecoration(
-                                color: AppColors.scrim.withValues(alpha: 0.28),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: AppColors.amberPrimary.withValues(alpha: 0.45),
-                                  width: 0.6,
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.info_outline_rounded,
+                                size: 11,
+                                color: AppColors.amberPrimary,
+                              ),
+                              SizedBox(width: 3.5),
+                              Text(
+                                "Doesn't match",
+                                style: TextStyle(
+                                  fontFamily: 'DM Sans',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.slate900,
+                                  letterSpacing: -0.1,
                                 ),
                               ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.info_outline_rounded,
-                                    size: 9.5,
-                                    color: AppColors.amberPrimary,
-                                  ),
-                                  SizedBox(width: 3.5),
-                                  Text(
-                                    "Doesn't match",
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.surface,
-                                      letterSpacing: -0.1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            ],
                           ),
                         ),
                       ),
 
-                      // Top-right: Like / Heart button (transparent glass)
+                      // Top-right: Like / Heart button (white circle with shadow)
                       if (onSavedToggle != null)
                         Positioned(
                           top: 10,
@@ -302,86 +298,80 @@ class OtherListingCard extends StatelessWidget {
                             child: InkWell(
                               onTap: onSavedToggle,
                               customBorder: const CircleBorder(),
-                              child: ClipOval(
-                                child: BackdropFilter(
-                                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                                  child: Container(
-                                    width: 28,
-                                    height: 28,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppColors.scrim.withValues(alpha: 0.25),
-                                      border: Border.all(
-                                        color: AppColors.surface.withValues(alpha: 0.35),
-                                        width: 0.6,
-                                      ),
+                              child: Container(
+                                width: 30,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppColors.surface,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.slate900.withValues(alpha: 0.12),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
                                     ),
-                                    alignment: Alignment.center,
-                                    child: Icon(
-                                      isSaved ? Icons.favorite : Icons.favorite_border,
-                                      color: isSaved
-                                          ? AppColors.destructive
-                                          : AppColors.surface,
-                                      size: 15,
-                                    ),
-                                  ),
+                                  ],
+                                ),
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  isSaved ? Icons.favorite : Icons.favorite_border,
+                                  color: isSaved
+                                      ? AppColors.destructive
+                                      : AppColors.slate600,
+                                  size: 16,
                                 ),
                               ),
                             ),
                           ),
                         ),
 
-                      // Bottom-right: Photo count badge (transparent glass badge)
+                      // Bottom-right: Photo count badge (clean white pill)
                       if (photoCount > 0)
                         Positioned(
                           bottom: 8,
                           right: 8,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6.5,
-                                  vertical: 2.5,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.slate900.withValues(alpha: 0.12),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
                                 ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.scrim.withValues(alpha: 0.28),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: AppColors.surface.withValues(alpha: 0.35),
-                                    width: 0.6,
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.photo_outlined,
+                                  size: 11,
+                                  color: AppColors.slate600,
+                                ),
+                                const SizedBox(width: 3.5),
+                                Text(
+                                  '$photoCount',
+                                  style: const TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.slate900,
                                   ),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.photo_outlined,
-                                      size: 10.5,
-                                      color: AppColors.surface,
-                                    ),
-                                    const SizedBox(width: 3.5),
-                                    Text(
-                                      '$photoCount',
-                                      style: const TextStyle(
-                                        fontFamily: 'DM Sans',
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.surface,
-                                        letterSpacing: -0.1,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              ],
                             ),
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
               // ── Details ───────────────────────────────────────────────
               Padding(

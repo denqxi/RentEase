@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/models.dart';
+import '../../../../core/firestore/property_ratings_aggregator.dart';
 import '../../domain/repositories/owner_property_repository.dart';
 
 class OwnerPropertyRepositoryImpl implements OwnerPropertyRepository {
@@ -18,7 +19,7 @@ class OwnerPropertyRepositoryImpl implements OwnerPropertyRepository {
       .collection(FirestoreCollections.properties)
       .where('ownerId', isEqualTo: ownerId)
       .snapshots()
-      .map((s) {
+      .asyncMap((s) async {
         final list = <PropertyDoc>[];
         for (final doc in s.docs) {
           try {
@@ -35,7 +36,7 @@ class OwnerPropertyRepositoryImpl implements OwnerPropertyRepository {
           if (bt == null) return -1;
           return bt.compareTo(at);
         });
-        return list;
+        return PropertyRatingsAggregator.hydrateProperties(_firestore, list);
       });
 
   @override
