@@ -38,9 +38,14 @@ class PreviewAdminRepository implements AdminRepository {
       const VerificationDocuments(
         urls: [
           'https://res.cloudinary.com/demo/image/upload/sample.jpg',
+          'https://res.cloudinary.com/demo/image/upload/sample.jpg',
           'https://res.cloudinary.com/demo/image/upload/balloons.jpg',
         ],
-        publicIds: ['rentease/docs/gov_id', 'rentease/docs/ownership'],
+        publicIds: [
+          'rentease/docs/gov_id_front',
+          'rentease/docs/gov_id_back',
+          'rentease/docs/ownership',
+        ],
       );
 
   @override

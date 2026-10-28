@@ -7,6 +7,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/app_back_handler.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
@@ -337,15 +338,28 @@ class _SignInScreenState extends State<SignInScreen>
     final authBloc = _getAuthBloc();
     final scaffold = _buildScaffold(context, authBloc);
 
+    final wrapped = PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (_expandCtrl.value > 0) {
+          _expandCtrl.reverse();
+        } else {
+          await AppBackHandler.minimizeOrPop();
+        }
+      },
+      child: scaffold,
+    );
+
     if (authBloc != null) {
       return BlocListener<AuthBloc, AuthState>(
         bloc: authBloc,
         listener: _onAuthStateChanged,
-        child: scaffold,
+        child: wrapped,
       );
     }
 
-    return scaffold;
+    return wrapped;
   }
 
   Widget _buildScaffold(BuildContext context, AuthBloc? authBloc) {
@@ -803,23 +817,33 @@ class _ExpandedCardContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Header (Welcome back)
-                Text(
-                  'Welcome back.',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: context.appColors.textPrimary,
-                    letterSpacing: -0.4,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Sign in to continue your rental journey.',
-                  style: AppTextStyles.body(context).copyWith(
-                    color: context.appColors.textSecondary,
-                    fontSize: 14,
+                // 1. Header (Welcome back) - Long press opens Admin Login
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onLongPress: () =>
+                      Navigator.of(context).pushNamed(AppRouter.adminLogin),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Welcome back.',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          color: context.appColors.textPrimary,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Sign in to continue your rental journey.',
+                        style: AppTextStyles.body(context).copyWith(
+                          color: context.appColors.textSecondary,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 

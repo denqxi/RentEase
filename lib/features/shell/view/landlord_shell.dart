@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../activity/cubit/activity_cubit.dart';
-import '../../activity/data/repositories/notification_repository_impl.dart';
-import '../../owner/view/owner_inquiries_screen.dart';
-import '../../auth/presentation/current_uid.dart';
-import '../../landlord_home/cubit/landlord_home_cubit.dart';
-import '../../owner/data/repositories/find_tenants_repository_impl.dart';
-import '../../owner/data/repositories/owner_property_repository_impl.dart';
-import '../../landlord_home/view/landlord_home_screen.dart';
-import '../../landlord_matches/view/landlord_matches_screen.dart';
-import '../../profile/view/owner_profile_screen.dart';
 import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/utils/app_back_handler.dart';
+import '../../activity/cubit/activity_cubit.dart';
+import '../../activity/data/repositories/notification_repository_impl.dart';
+import '../../auth/presentation/current_uid.dart';
+import '../../landlord_home/cubit/landlord_home_cubit.dart';
+import '../../landlord_home/view/landlord_home_screen.dart';
+import '../../landlord_matches/view/landlord_matches_screen.dart';
+import '../../owner/data/repositories/find_tenants_repository_impl.dart';
+import '../../owner/data/repositories/owner_property_repository_impl.dart';
+import '../../owner/view/owner_inquiries_screen.dart';
+import '../../profile/view/owner_profile_screen.dart';
 import '../cubit/shell_cubit.dart';
 import '../widgets/floating_nav_bar.dart';
 
@@ -88,23 +89,35 @@ class _LandlordShellView extends StatelessWidget {
       (c) => c.state.unreadInquiriesCount,
     );
 
-    return Scaffold(
-      extendBody: true,
-      body: IndexedStack(
-        index: tab.index,
-        children: _screens,
-      ),
-      bottomNavigationBar: FloatingNavBar(
-        items: _items(unreadInquiries),
-        selectedIndex: tab.index,
-        onTap: (i) {
-          if (i == 2) {
-            // "Add" shortcut — navigate to Add Property without changing tab
-            Navigator.of(context).pushNamed(AppRouter.addProperty);
-          } else {
-            context.read<ShellCubit>().selectTab(ShellTab.values[i]);
-          }
-        },
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shellCubit = context.read<ShellCubit>();
+        if (shellCubit.state.tab != ShellTab.home) {
+          shellCubit.selectTab(ShellTab.home);
+        } else {
+          await AppBackHandler.minimizeOrPop();
+        }
+      },
+      child: Scaffold(
+        extendBody: true,
+        body: IndexedStack(
+          index: tab.index,
+          children: _screens,
+        ),
+        bottomNavigationBar: FloatingNavBar(
+          items: _items(unreadInquiries),
+          selectedIndex: tab.index,
+          onTap: (i) {
+            if (i == 2) {
+              // "Add" shortcut — navigate to Add Property without changing tab
+              Navigator.of(context).pushNamed(AppRouter.addProperty);
+            } else {
+              context.read<ShellCubit>().selectTab(ShellTab.values[i]);
+            }
+          },
+        ),
       ),
     );
   }

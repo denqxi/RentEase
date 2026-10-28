@@ -3,11 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/card_over_hero_layout.dart';
-import '../../auth/presentation/bloc/auth_bloc.dart';import '../cubit/admin_login_cubit.dart';
+import '../../auth/presentation/bloc/auth_bloc.dart';
+import '../cubit/admin_login_cubit.dart';
 import '../data/repositories/admin_repository_impl.dart';
 import '../domain/repositories/admin_repository.dart';
 import 'admin_shell.dart';
@@ -170,7 +172,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   }
 }
 
-/// Dark ink hero with the brand mark and an admin badge chip.
+/// Dark ink hero with the brand mark, admin badge chip, and back-to-user-sign-in icon.
 class _AdminHero extends StatelessWidget {
   const _AdminHero();
 
@@ -182,71 +184,99 @@ class _AdminHero extends StatelessWidget {
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.xl,
+            AppSpacing.md,
+            AppSpacing.sm,
             AppSpacing.lg,
             0,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppColors.accent,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.admin_panel_settings_rounded,
-                  color: AppColors.onInk,
-                  size: 30,
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: AppColors.onInk,
+                    size: 24,
+                  ),
+                  tooltip: 'Back to sign in',
+                  onPressed: () {
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    } else {
+                      Navigator.of(context).pushReplacementNamed(AppRouter.signIn);
+                    }
+                  },
                 ),
               ),
-              const SizedBox(height: AppSpacing.md),
-              Row(
-                children: [
-                  const Text(
-                    'RentEase',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                      color: AppColors.onInk,
-                    ),
+              const SizedBox(height: AppSpacing.xs),
+              Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.xs),
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: AppColors.accent,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(AppRadii.chip),
-                      border: Border.all(color: AppColors.accent, width: 0.5),
-                    ),
-                    child: const Text(
-                      'ADMIN',
+                  child: const Icon(
+                    Icons.admin_panel_settings_rounded,
+                    color: AppColors.onInk,
+                    size: 28,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.xs),
+                child: Row(
+                  children: [
+                    const Text(
+                      'RentEase',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
-                        fontSize: 10,
+                        fontSize: 26,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: 1,
-                        color: AppColors.primary,
+                        letterSpacing: -0.5,
+                        color: AppColors.onInk,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: AppSpacing.sm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(AppRadii.chip),
+                        border: Border.all(color: AppColors.accent, width: 0.5),
+                      ),
+                      child: const Text(
+                        'ADMIN',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 4),
-              Text(
-                'Platform verification, users, and listings.',
-                style: TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 13,
-                  color: context.appColors.indicatorInactive,
+              Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.xs),
+                child: Text(
+                  'Platform verification, users, and listings.',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 13,
+                    color: context.appColors.indicatorInactive,
+                  ),
                 ),
               ),
             ],

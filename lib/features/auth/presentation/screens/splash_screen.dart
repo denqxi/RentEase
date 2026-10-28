@@ -1,7 +1,8 @@
-import '../../../../core/constants/app_colors.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../../../core/constants/app_colors.dart';
 import '../../../../features/onboarding/model/onboarding_page_data.dart';
 
 /// Splash screen that plays the introductory video and pre-caches
@@ -42,6 +43,19 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initVideo() async {
+    // If returning user already has a saved Firebase Auth session, skip the introductory video
+    // so returning users land immediately on their home screen without unnecessary loading.
+    try {
+      if (FirebaseAuth.instance.currentUser != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _finishSplash();
+        });
+        return;
+      }
+    } catch (_) {
+      // In isolated tests where Firebase is not initialized, proceed normally.
+    }
+
     final controller = VideoPlayerController.asset('assets/images/splash.mp4');
     _controller = controller;
 

@@ -427,14 +427,6 @@ class _DocumentsSection extends StatelessWidget {
   final VoidCallback? onApprove;
   final VoidCallback? onReject;
 
-  static const _permitIndex = 2;
-
-  static const _labels = [
-    'Government ID',
-    'Property ownership document',
-    'Business permit',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final docs = documents;
@@ -469,6 +461,29 @@ class _DocumentsSection extends StatelessWidget {
     final count = docs.publicIds.length > docs.urls.length
         ? docs.publicIds.length
         : docs.urls.length;
+
+    final hasMultipleDocs = count >= 3;
+    final frontUrl = docs.urls.isNotEmpty ? docs.urls[0] : null;
+    final frontPublicId = docs.publicIds.isNotEmpty ? docs.publicIds[0] : null;
+    final backUrl =
+        (hasMultipleDocs && docs.urls.length > 1) ? docs.urls[1] : null;
+    final backPublicId =
+        (hasMultipleDocs && docs.publicIds.length > 1) ? docs.publicIds[1] : null;
+
+    final propertyUrl = hasMultipleDocs
+        ? (docs.urls.length > 2 ? docs.urls[2] : null)
+        : (docs.urls.length > 1 ? docs.urls[1] : null);
+    final propertyPublicId = hasMultipleDocs
+        ? (docs.publicIds.length > 2 ? docs.publicIds[2] : null)
+        : (docs.publicIds.length > 1 ? docs.publicIds[1] : null);
+
+    final permitUrl =
+        hasMultipleDocs && docs.urls.length > 3 ? docs.urls[3] : null;
+    final permitPublicId =
+        hasMultipleDocs && docs.publicIds.length > 3 ? docs.publicIds[3] : null;
+
+    final hasBackId = backUrl != null || backPublicId != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -483,24 +498,96 @@ class _DocumentsSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        for (var i = 0; i < count; i++)
+        if (hasBackId) ...[
           _DocumentRow(
-            label: i < _labels.length ? _labels[i] : 'Document ${i + 1}',
-            publicId: i < docs.publicIds.length ? docs.publicIds[i] : null,
-            url: i < docs.urls.length ? docs.urls[i] : null,
+            label: 'Government ID (Front)',
+            publicId: frontPublicId,
+            url: frontUrl,
+            secondaryTitle: 'Government ID (Back)',
+            secondaryUrl: backUrl,
+            secondaryPublicId: backPublicId,
+            initialSideIsSecondary: false,
+            primaryLabel: 'Front side',
+            secondaryLabel: 'Back side',
             ownerName: ownerName,
             urlOpener: urlOpener,
-            isPermit: i == _permitIndex,
             onApprove: onApprove,
             onReject: onReject,
           ),
-        // Always shown (including for testing/lookup even if not yet submitted)
-        BusinessPermitCheckButton(ownerName: ownerName, urlOpener: urlOpener),
-        if (count < _labels.length)
-          Text(
-            'No ${_labels[count].toLowerCase()} submitted (optional).',
-            style: AppTextStyles.caption(context),
+          _DocumentRow(
+            label: 'Government ID (Back)',
+            publicId: backPublicId,
+            url: backUrl,
+            secondaryTitle: 'Government ID (Front)',
+            secondaryUrl: frontUrl,
+            secondaryPublicId: frontPublicId,
+            initialSideIsSecondary: false,
+            primaryLabel: 'Back side',
+            secondaryLabel: 'Front side',
+            ownerName: ownerName,
+            urlOpener: urlOpener,
+            onApprove: onApprove,
+            onReject: onReject,
           ),
+        ] else
+          _DocumentRow(
+            label: 'Government ID',
+            publicId: frontPublicId,
+            url: frontUrl,
+            ownerName: ownerName,
+            urlOpener: urlOpener,
+            onApprove: onApprove,
+            onReject: onReject,
+          ),
+        if (propertyUrl != null || propertyPublicId != null)
+          _DocumentRow(
+            label: 'Property ownership document',
+            publicId: propertyPublicId,
+            url: propertyUrl,
+            ownerName: ownerName,
+            urlOpener: urlOpener,
+            onApprove: onApprove,
+            onReject: onReject,
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              'No property ownership document submitted.',
+              style: AppTextStyles.caption(context),
+            ),
+          ),
+        if (permitUrl != null || permitPublicId != null)
+          _DocumentRow(
+            label: 'Business permit',
+            publicId: permitPublicId,
+            url: permitUrl,
+            ownerName: ownerName,
+            urlOpener: urlOpener,
+            isPermit: true,
+            onApprove: onApprove,
+            onReject: onReject,
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              'No business permit submitted (optional).',
+              style: AppTextStyles.caption(context),
+            ),
+          ),
+        BusinessPermitCheckButton(ownerName: ownerName, urlOpener: urlOpener),
+        if (hasMultipleDocs && count > 4)
+          for (var i = 4; i < count; i++)
+            _DocumentRow(
+              label: 'Document ${i + 1}',
+              publicId: i < docs.publicIds.length ? docs.publicIds[i] : null,
+              url: i < docs.urls.length ? docs.urls[i] : null,
+              ownerName: ownerName,
+              urlOpener: urlOpener,
+              onApprove: onApprove,
+              onReject: onReject,
+            ),
       ],
     );
   }
@@ -511,14 +598,21 @@ const documentLoadErrorMessage =
     'set the documents upload preset delivery type to Upload (public) or '
     'open it in the Cloudinary Media Library';
 
-/// Full-screen, pinch-zoomable document viewer. Approve/Reject stay reachable
-/// so the admin keeps the document in view while deciding.
-class DocumentViewerDialog extends StatelessWidget {
+/// Full-screen, pinch-zoomable document viewer with support for switching
+/// between Front and Back sides of multi-sided documents (like IDs).
+/// Approve/Reject stay reachable so the admin keeps the document in view while deciding.
+class DocumentViewerDialog extends StatefulWidget {
   const DocumentViewerDialog({
     super.key,
     required this.title,
     required this.url,
     required this.reference,
+    this.secondaryTitle,
+    this.secondaryUrl,
+    this.secondaryReference,
+    this.primaryLabel = 'Front side',
+    this.secondaryLabel = 'Back side',
+    this.initialSideIsSecondary = false,
     this.onApprove,
     this.onReject,
     this.permitCheck,
@@ -527,6 +621,12 @@ class DocumentViewerDialog extends StatelessWidget {
   final String title;
   final String url;
   final String reference;
+  final String? secondaryTitle;
+  final String? secondaryUrl;
+  final String? secondaryReference;
+  final String primaryLabel;
+  final String secondaryLabel;
+  final bool initialSideIsSecondary;
 
   /// Set for the business permit only; shows the NegosyoKonek lookup button.
   final ({String ownerName, UrlOpener urlOpener})? permitCheck;
@@ -534,7 +634,26 @@ class DocumentViewerDialog extends StatelessWidget {
   final VoidCallback? onReject;
 
   @override
+  State<DocumentViewerDialog> createState() => _DocumentViewerDialogState();
+}
+
+class _DocumentViewerDialogState extends State<DocumentViewerDialog> {
+  late bool _showSecondary = widget.initialSideIsSecondary &&
+      widget.secondaryUrl != null &&
+      widget.secondaryUrl!.isNotEmpty;
+
+  @override
   Widget build(BuildContext context) {
+    final hasSecondary =
+        widget.secondaryUrl != null && widget.secondaryUrl!.isNotEmpty;
+    final currentTitle = _showSecondary
+        ? (widget.secondaryTitle ?? widget.title)
+        : widget.title;
+    final currentUrl = _showSecondary ? widget.secondaryUrl! : widget.url;
+    final currentReference = _showSecondary
+        ? (widget.secondaryReference ?? widget.reference)
+        : widget.reference;
+
     return Dialog.fullscreen(
       backgroundColor: AppColors.ink,
       child: SafeArea(
@@ -549,7 +668,7 @@ class DocumentViewerDialog extends StatelessWidget {
                 ),
                 Expanded(
                   child: Text(
-                    title,
+                    currentTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -562,13 +681,52 @@ class DocumentViewerDialog extends StatelessWidget {
                 ),
               ],
             ),
+            if (hasSecondary)
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: AppSpacing.md,
+                  right: AppSpacing.md,
+                  bottom: AppSpacing.xs,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.onInk.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.all(3),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _SideToggleButton(
+                        label: widget.primaryLabel,
+                        isSelected: !_showSecondary,
+                        onTap: () {
+                          if (_showSecondary) {
+                            setState(() => _showSecondary = false);
+                          }
+                        },
+                      ),
+                      _SideToggleButton(
+                        label: widget.secondaryLabel,
+                        isSelected: _showSecondary,
+                        onTap: () {
+                          if (!_showSecondary) {
+                            setState(() => _showSecondary = true);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             Expanded(
               child: InteractiveViewer(
+                key: ValueKey(currentUrl),
                 minScale: 1,
                 maxScale: 5,
                 child: Center(
                   child: Image.network(
-                    CloudinaryUrl.optimized(url, width: 1600),
+                    CloudinaryUrl.optimized(currentUrl, width: 1600),
                     fit: BoxFit.contain,
                     loadingBuilder: (_, child, progress) => progress == null
                         ? child
@@ -594,7 +752,7 @@ class DocumentViewerDialog extends StatelessWidget {
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             SelectableText(
-                              reference,
+                              currentReference,
                               style: const TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
@@ -602,11 +760,11 @@ class DocumentViewerDialog extends StatelessWidget {
                               ),
                             ),
                             TextButton.icon(
-                              onPressed: reference.isEmpty
+                              onPressed: currentReference.isEmpty
                                   ? null
                                   : () {
                                       Clipboard.setData(
-                                        ClipboardData(text: reference),
+                                        ClipboardData(text: currentReference),
                                       );
                                       showAdminNotice(context, 'Copied');
                                     },
@@ -628,7 +786,7 @@ class DocumentViewerDialog extends StatelessWidget {
                 ),
               ),
             ),
-            if (permitCheck != null)
+            if (widget.permitCheck != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.md,
@@ -637,39 +795,78 @@ class DocumentViewerDialog extends StatelessWidget {
                   0,
                 ),
                 child: BusinessPermitCheckButton(
-                  ownerName: permitCheck!.ownerName,
-                  urlOpener: permitCheck!.urlOpener,
+                  ownerName: widget.permitCheck!.ownerName,
+                  urlOpener: widget.permitCheck!.urlOpener,
                   onDark: true,
                 ),
               ),
-            if (onApprove != null || onReject != null)
+            if (widget.onApprove != null || widget.onReject != null)
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 child: Row(
                   children: [
-                    if (onApprove != null)
+                    if (widget.onApprove != null)
                       Expanded(
                         child: AppButton(
                           label: 'Approve',
                           isSmall: true,
-                          onPressed: onApprove,
+                          onPressed: widget.onApprove,
                         ),
                       ),
-                    if (onApprove != null && onReject != null)
+                    if (widget.onApprove != null && widget.onReject != null)
                       const SizedBox(width: AppSpacing.sm),
-                    if (onReject != null)
+                    if (widget.onReject != null)
                       Expanded(
                         child: AppButton(
                           label: 'Reject',
                           variant: AppButtonVariant.destructiveOutline,
                           isSmall: true,
-                          onPressed: onReject,
+                          onPressed: widget.onReject,
                         ),
                       ),
                   ],
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SideToggleButton extends StatelessWidget {
+  const _SideToggleButton({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'DM Sans',
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected
+                ? AppColors.onInk
+                : AppColors.onInk.withValues(alpha: 0.75),
+          ),
         ),
       ),
     );
@@ -684,6 +881,12 @@ class _DocumentRow extends StatelessWidget {
     this.isPermit = false,
     this.publicId,
     this.url,
+    this.secondaryTitle,
+    this.secondaryUrl,
+    this.secondaryPublicId,
+    this.primaryLabel = 'Front side',
+    this.secondaryLabel = 'Back side',
+    this.initialSideIsSecondary = false,
     this.onApprove,
     this.onReject,
   });
@@ -694,6 +897,12 @@ class _DocumentRow extends StatelessWidget {
   final bool isPermit;
   final String? publicId;
   final String? url;
+  final String? secondaryTitle;
+  final String? secondaryUrl;
+  final String? secondaryPublicId;
+  final String primaryLabel;
+  final String secondaryLabel;
+  final bool initialSideIsSecondary;
   final VoidCallback? onApprove;
   final VoidCallback? onReject;
 
@@ -701,12 +910,23 @@ class _DocumentRow extends StatelessWidget {
       (publicId != null && publicId!.isNotEmpty) ? publicId! : (url ?? '');
 
   void _openViewer(BuildContext context) {
+    final bRef = (secondaryPublicId != null && secondaryPublicId!.isNotEmpty)
+        ? secondaryPublicId!
+        : (secondaryUrl ?? '');
+
     showDialog<void>(
       context: context,
       builder: (ctx) => DocumentViewerDialog(
         title: '$label - $ownerName',
         url: url!,
         reference: _reference,
+        secondaryTitle:
+            secondaryTitle != null ? '$secondaryTitle - $ownerName' : null,
+        secondaryUrl: secondaryUrl,
+        secondaryReference: bRef.isNotEmpty ? bRef : null,
+        primaryLabel: primaryLabel,
+        secondaryLabel: secondaryLabel,
+        initialSideIsSecondary: initialSideIsSecondary,
         permitCheck: isPermit
             ? (ownerName: ownerName, urlOpener: urlOpener)
             : null,
@@ -783,27 +1003,31 @@ class _DocumentRow extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.accent,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: hasUrl ? () => _openViewer(context) : null,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.accent,
+                    ),
                   ),
-                ),
-                Text(
-                  shown,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.caption(context),
-                ),
-                if (hasUrl)
-                  Text('Tap to enlarge', style: AppTextStyles.caption(context)),
-              ],
+                  Text(
+                    shown,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption(context),
+                  ),
+                  if (hasUrl)
+                    Text('Tap to enlarge', style: AppTextStyles.caption(context)),
+                ],
+              ),
             ),
           ),
           IconButton(

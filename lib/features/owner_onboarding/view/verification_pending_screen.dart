@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
@@ -68,10 +67,11 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
           ),
           _ => (
             'Verification in progress',
-            "Our team is reviewing your documents. You'll be notified once "
-                'approved.',
+            'We’re reviewing your documents. You’ll be notified once your '
+                'account is verified.',
           ),
         };
+
         return Scaffold(
           backgroundColor: context.appColors.surface,
           body: SafeArea(
@@ -102,11 +102,29 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(title, style: AppTextStyles.title(context)),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(body, style: AppTextStyles.body(context)),
-                        const SizedBox(height: AppSpacing.xl),
-                        _StatusCard(status: status),
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: context.appColors.textPrimary,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          body,
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: context.appColors.textSecondary,
+                            height: 1.35,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        _TimelineStatusCard(status: status),
                         const Spacer(),
                         if (status == 'verified') ...[
                           AppPrimaryButton(
@@ -154,8 +172,9 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
   }
 }
 
-class _StatusCard extends StatelessWidget {
-  const _StatusCard({required this.status});
+/// Stepper timeline card matching the attached design.
+class _TimelineStatusCard extends StatelessWidget {
+  const _TimelineStatusCard({required this.status});
 
   /// 'pending' | 'verified' | 'rejected' (anything else renders as pending).
   final String status;
@@ -164,156 +183,261 @@ class _StatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final verified = status == 'verified';
     final rejected = status == 'rejected';
-    final headlineColor = verified
-        ? AppColors.matchHigh
-        : rejected
-        ? AppColors.destructive
-        : AppColors.matchMedium;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
       decoration: BoxDecoration(
-        color: context.appColors.fieldFill,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        border: Border.all(color: context.appColors.fieldBorder),
+        color: context.appColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: context.appColors.fieldBorder,
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.scrim.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: headlineColor.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  verified
-                      ? Icons.verified_rounded
-                      : rejected
-                      ? Icons.cancel_rounded
-                      : Icons.access_time_rounded,
-                  color: headlineColor,
-                  size: 24,
+          // Step 1: Documents submitted (Completed)
+          _TimelineRow(
+            indicator: Container(
+              width: 34,
+              height: 34,
+              decoration: const BoxDecoration(
+                color: Color(0xFF10B981),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_rounded,
+                size: 20,
+                color: AppColors.onInk,
+              ),
+            ),
+            title: 'Documents submitted',
+            subtitle: 'Your documents have been received.',
+            connector: Container(
+              width: 2,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF10B981),
+                    Color(0xFFF59E0B),
+                  ],
                 ),
               ),
-              const SizedBox(width: AppSpacing.md),
-              Text(
-                verified
-                    ? 'Approved'
-                    : rejected
-                    ? 'Not approved'
-                    : 'Under review',
-                style: TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: context.appColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          const _ChecklistRow(
-            icon: Icons.check_circle_rounded,
-            color: AppColors.matchHigh,
-            label: 'Documents submitted',
-          ),
-          const SizedBox(height: AppSpacing.md),
-          if (verified)
-            const _ChecklistRow(
-              icon: Icons.check_circle_rounded,
-              color: AppColors.matchHigh,
-              label: 'Identity verification',
-            )
-          else if (rejected)
-            const _ChecklistRow(
-              icon: Icons.cancel_rounded,
-              color: AppColors.destructive,
-              label: 'Identity verification',
-              badge: 'Rejected',
-              badgeColor: AppColors.destructive,
-            )
-          else
-            const _ChecklistRow(
-              icon: Icons.access_time_rounded,
-              color: AppColors.matchMedium,
-              label: 'Identity verification',
-              badge: 'In progress',
-              badgeColor: AppColors.matchMedium,
             ),
-          const SizedBox(height: AppSpacing.md),
-          if (verified)
-            const _ChecklistRow(
-              icon: Icons.check_circle_rounded,
-              color: AppColors.matchHigh,
-              label: 'Account activation',
-            )
-          else
-            _ChecklistRow(
-              icon: Icons.circle_outlined,
-              color: context.appColors.indicatorInactive,
-              label: 'Account activation',
-              badge: 'Waiting',
-              badgeColor: context.appColors.indicatorInactive,
-            ),
+          ),
+
+          // Step 2: Identity verification (In progress or Approved/Rejected)
+          _TimelineRow(
+            indicator: verified
+                ? Container(
+                    width: 34,
+                    height: 34,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF10B981),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      size: 20,
+                      color: AppColors.onInk,
+                    ),
+                  )
+                : (rejected
+                    ? Container(
+                        width: 34,
+                        height: 34,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFEE2E2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: Color(0xFFDC2626),
+                        ),
+                      )
+                    : Container(
+                        width: 34,
+                        height: 34,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFEF3C7),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.access_time_rounded,
+                          size: 18,
+                          color: Color(0xFFD97706),
+                        ),
+                      )),
+            title: 'Identity verification',
+            subtitle: verified
+                ? 'Your identity has been verified.'
+                : (rejected
+                    ? 'Could not verify your documents.'
+                    : 'Our team is reviewing your documents.'),
+            connector: verified
+                ? Container(
+                    width: 2,
+                    color: const Color(0xFF10B981),
+                  )
+                : CustomPaint(
+                    size: const Size(2, 30),
+                    painter: const _DashedLinePainter(
+                      color: Color(0xFFCBD5E1),
+                    ),
+                  ),
+          ),
+
+          // Step 3: Account activation (Waiting or Activated)
+          _TimelineRow(
+            isLast: true,
+            indicator: verified
+                ? Container(
+                    width: 34,
+                    height: 34,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF10B981),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      size: 20,
+                      color: AppColors.onInk,
+                    ),
+                  )
+                : Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFCBD5E1),
+                        width: 2.5,
+                      ),
+                    ),
+                  ),
+            title: 'Account activation',
+            subtitle: verified
+                ? 'Your account is fully activated.'
+                : 'You’ll get a notification once approved.',
+          ),
         ],
       ),
     );
   }
 }
 
-class _ChecklistRow extends StatelessWidget {
-  const _ChecklistRow({
-    required this.icon,
-    required this.color,
-    required this.label,
-    this.badge,
-    this.badgeColor,
+class _TimelineRow extends StatelessWidget {
+  const _TimelineRow({
+    required this.indicator,
+    required this.title,
+    required this.subtitle,
+    this.connector,
+    this.isLast = false,
   });
 
-  final IconData icon;
-  final Color color;
-  final String label;
-  final String? badge;
-  final Color? badgeColor;
+  final Widget indicator;
+  final String title;
+  final String subtitle;
+  final Widget? connector;
+  final bool isLast;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 14,
-              color: context.appColors.textPrimary,
-            ),
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Left: Indicator + vertical connector
+          Column(
+            children: [
+              indicator,
+              if (!isLast && connector != null)
+                Expanded(
+                  child: connector!,
+                ),
+            ],
           ),
-        ),
-        if (badge != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: badgeColor?.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              badge!,
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: badgeColor,
+          const SizedBox(width: 14),
+
+          // Right: Content
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: 4,
+                bottom: isLast ? 0 : 22,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: context.appColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: context.appColors.textSecondary,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
+}
+
+class _DashedLinePainter extends CustomPainter {
+  const _DashedLinePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    const dashHeight = 4.0;
+    const dashSpace = 4.0;
+    double startY = 0;
+    while (startY < size.height) {
+      canvas.drawLine(
+        Offset(size.width / 2, startY),
+        Offset(size.width / 2, startY + dashHeight),
+        paint,
+      );
+      startY += dashHeight + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedLinePainter oldDelegate) =>
+      color != oldDelegate.color;
 }

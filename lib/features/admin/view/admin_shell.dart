@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/utils/app_back_handler.dart';
 import '../../shell/widgets/floating_nav_bar.dart';
 import '../domain/repositories/admin_repository.dart';
 import '../widgets/admin_providers.dart';
@@ -33,23 +34,34 @@ class _AdminShellState extends State<AdminShell> {
 
   @override
   Widget build(BuildContext context) {
-    return AdminProviders(
-      repository: widget.repository,
-      child: Scaffold(
-        extendBody: true,
-        body: IndexedStack(
-          index: _index,
-          children: <Widget>[
-            AnalyticsScreen(onGoToVerify: () => setState(() => _index = 1)),
-            const PendingVerificationsScreen(),
-            const UserManagementScreen(),
-            const PropertyManagementScreen(),
-          ],
-        ),
-        bottomNavigationBar: FloatingNavBar(
-          items: _items,
-          selectedIndex: _index,
-          onTap: (i) => setState(() => _index = i),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (_index != 0) {
+          setState(() => _index = 0);
+        } else {
+          await AppBackHandler.minimizeOrPop();
+        }
+      },
+      child: AdminProviders(
+        repository: widget.repository,
+        child: Scaffold(
+          extendBody: true,
+          body: IndexedStack(
+            index: _index,
+            children: <Widget>[
+              AnalyticsScreen(onGoToVerify: () => setState(() => _index = 1)),
+              const PendingVerificationsScreen(),
+              const UserManagementScreen(),
+              const PropertyManagementScreen(),
+            ],
+          ),
+          bottomNavigationBar: FloatingNavBar(
+            items: _items,
+            selectedIndex: _index,
+            onTap: (i) => setState(() => _index = i),
+          ),
         ),
       ),
     );

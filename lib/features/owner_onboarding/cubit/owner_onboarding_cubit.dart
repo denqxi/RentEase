@@ -27,14 +27,14 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
     String uid, {
     List<UploadedImage> documents = const [],
   }) async {
-    // Two required documents (ID, ownership); the business permit is optional.
+    // Three required documents (Front ID, Back ID, ownership); the business permit is optional.
     if (documents.length < CloudinaryConfig.requiredDocumentCount ||
         documents.length > CloudinaryConfig.documentCount) {
       emit(
         state.copyWith(
           status: OwnerOnboardingStatus.failure,
           errorMessage:
-              'Please upload your government ID and property ownership document.',
+              'Please upload your government ID (front and back) and property ownership document.',
         ),
       );
       return;

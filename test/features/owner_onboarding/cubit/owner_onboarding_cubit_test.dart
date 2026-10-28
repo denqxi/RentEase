@@ -102,15 +102,7 @@ List<UploadedImage> _docs(int n) => [
 
 void main() {
   group('submitForVerification', () {
-    test('accepts two documents (business permit omitted)', () async {
-      final repo = _FakeRepo();
-      final cubit = OwnerOnboardingCubit(repository: repo);
-      await cubit.submitForVerification('u1', documents: _docs(2));
-      expect(cubit.state.status, OwnerOnboardingStatus.saved);
-      expect(repo.submitted, hasLength(2));
-    });
-
-    test('accepts three documents', () async {
+    test('accepts three documents (business permit omitted)', () async {
       final repo = _FakeRepo();
       final cubit = OwnerOnboardingCubit(repository: repo);
       await cubit.submitForVerification('u1', documents: _docs(3));
@@ -118,10 +110,18 @@ void main() {
       expect(repo.submitted, hasLength(3));
     });
 
-    test('rejects fewer than two documents without touching the repo', () async {
+    test('accepts four documents', () async {
       final repo = _FakeRepo();
       final cubit = OwnerOnboardingCubit(repository: repo);
-      await cubit.submitForVerification('u1', documents: _docs(1));
+      await cubit.submitForVerification('u1', documents: _docs(4));
+      expect(cubit.state.status, OwnerOnboardingStatus.saved);
+      expect(repo.submitted, hasLength(4));
+    });
+
+    test('rejects fewer than three documents without touching the repo', () async {
+      final repo = _FakeRepo();
+      final cubit = OwnerOnboardingCubit(repository: repo);
+      await cubit.submitForVerification('u1', documents: _docs(2));
       expect(cubit.state.status, OwnerOnboardingStatus.failure);
       expect(repo.submitted, isNull);
     });
