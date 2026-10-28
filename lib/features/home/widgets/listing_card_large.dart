@@ -1,8 +1,5 @@
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-
-import '../../../core/firestore/property_ratings_aggregator.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_svg_icons.dart';
@@ -86,53 +83,10 @@ class ListingCardLarge extends StatefulWidget {
 }
 
 class _ListingCardLargeState extends State<ListingCardLarge> {
-  static final Set<String> _checkedProperties = <String>{};
-
   bool _isAddressExpanded = false;
-  double? _liveAvgRating;
-  int? _liveReviewCount;
 
-  @override
-  void initState() {
-    super.initState();
-    _maybeLoadLiveRating();
-  }
-
-  @override
-  void didUpdateWidget(covariant ListingCardLarge oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.listing.id != widget.listing.id) {
-      _liveAvgRating = null;
-      _liveReviewCount = null;
-      _maybeLoadLiveRating();
-    }
-  }
-
-  Future<void> _maybeLoadLiveRating() async {
-    final l = widget.listing;
-    // Skip if rating is already known from initial batch hydration or checked this session
-    if ((l.reviewCount != null && l.rating != null) ||
-        _checkedProperties.contains(l.id)) {
-      return;
-    }
-    _checkedProperties.add(l.id);
-    try {
-      final res = await PropertyRatingsAggregator.getRatingForProperty(
-        firestore: FirebaseFirestore.instance,
-        propertyId: l.id,
-        parentPropertyId: l.propertyDoc?.parentPropertyId,
-        ownerId: l.propertyDoc?.ownerId,
-        propertyName: l.propertyName ?? l.propertyDoc?.propertyName,
-        title: l.title,
-      );
-      if (mounted && res != null && res.$2 > 0) {
-        setState(() {
-          _liveAvgRating = res.$1;
-          _liveReviewCount = res.$2;
-        });
-      }
-    } catch (_) {}
-  }
+  // Rating comes from the counters on the listing's property doc (no extra
+  // per-card reads); an unrated or legacy listing shows no rating.
 
   @override
   Widget build(BuildContext context) {
@@ -146,12 +100,10 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
         : 'Boarding House';
     final int photoCount =
         listing.photos.isNotEmpty ? listing.photos.length : 1;
-    final double? effectiveRating = _liveAvgRating ??
-        listing.rating ??
+    final double? effectiveRating = listing.rating ??
         listing.propertyDoc?.effectiveAvgRating ??
         listing.propertyDoc?.avgRating?.toDouble();
-    final int effectiveReviewCount = _liveReviewCount ??
-        listing.reviewCount ??
+    final int effectiveReviewCount = listing.reviewCount ??
         listing.propertyDoc?.totalRatings?.toInt() ??
         0;
     final bool hasRating =
@@ -251,20 +203,20 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                                       widget.rank! <= 3) ...[
                                     if (widget.rank == 1)
                                       const _CrownIcon(
-                                        color: Color(0xFFFCA917),
+                                        color: AppColors.rankGold,
                                         size: 14,
                                       )
                                     else if (widget.rank == 2)
                                       const Icon(
                                         Icons.workspace_premium_rounded,
                                         size: 15,
-                                        color: Color(0xFF94A3B8),
+                                        color: AppColors.slate400,
                                       )
                                     else
                                       const Icon(
                                         Icons.workspace_premium_rounded,
                                         size: 15,
-                                        color: Color(0xFFCD7F32),
+                                        color: AppColors.rankBronze,
                                       ),
                                     const SizedBox(width: 5),
                                     Text(

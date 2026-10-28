@@ -41,6 +41,10 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
   List<_ReviewItem> _reviews = [];
   double _avgRating = 0.0;
   int _totalCount = 0;
+  // Pagination of the written-review list (newest first, one page at a time).
+  DocumentSnapshot<Object?>? _lastDoc;
+  bool _hasMore = false;
+  bool _loadingMore = false;
 
   @override
   void initState() {
@@ -48,24 +52,47 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
     _loadReviews();
   }
 
-  Future<void> _loadReviews() async {
+  // Load the next page when the list is scrolled near its end.
+  bool _onScroll(ScrollNotification n) {
+    if (_hasMore &&
+        !_loadingMore &&
+        n.metrics.pixels >= n.metrics.maxScrollExtent - 200) {
+      _loadReviews(more: true);
+    }
+    return false;
+  }
+
+  Future<void> _loadReviews({bool more = false}) async {
+    if (more && (_loadingMore || !_hasMore)) return;
+    _loadingMore = more;
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
       try {
+        // Summary = roll-up of this owner's properties' counters (one small
+        // properties query); the list is paged from `ratings`.
+        if (!more) {
+          final summary = await PropertyRatingsAggregator.getOwnerRollupRating(
+            firestore: FirebaseFirestore.instance,
+            ownerId: uid,
+          );
+          _totalCount = summary.totalRatings;
+          _avgRating = summary.average;
+        }
         final ownerEntries =
             await PropertyRatingsAggregator.fetchRatingDocsForOwner(
           firestore: FirebaseFirestore.instance,
           ownerId: uid,
-          forceRefresh: true,
+          startAfter: more ? _lastDoc : null,
         );
+        _hasMore =
+            ownerEntries.length >= PropertyRatingsAggregator.reviewsPageSize;
+        if (ownerEntries.isNotEmpty) _lastDoc = ownerEntries.last.doc;
 
         if (ownerEntries.isNotEmpty) {
           final loaded = <_ReviewItem>[];
-          num totalStars = 0;
 
           for (final entry in ownerEntries) {
             final rating = RatingDoc.fromSnapshot(entry.doc);
-            totalStars += rating.stars;
 
             String raterName = 'Tenant';
             try {
@@ -104,19 +131,20 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
 
           if (mounted) {
             setState(() {
-              _reviews = loaded;
-              _totalCount = loaded.length;
-              _avgRating = (totalStars / loaded.length);
+              _reviews = more ? [..._reviews, ...loaded] : loaded;
               _isLoading = false;
             });
-            return;
           }
+          _loadingMore = false;
+          return;
         }
       } catch (e) {
         debugPrint('Error loading ratings: $e');
       }
     }
 
+    _loadingMore = false;
+    if (more) return; // keep what is already shown
     if (mounted) {
       setState(() {
         _reviews = [];
@@ -181,7 +209,9 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
           : SafeArea(
               child: isShowingEmpty
                   ? _buildEmptyState(textColor)
-                  : SingleChildScrollView(
+                  : NotificationListener<ScrollNotification>(
+                    onNotification: _onScroll,
+                    child: SingleChildScrollView(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -252,6 +282,7 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
                         ],
                       ),
                     ),
+                  ),
             ),
     );
   }

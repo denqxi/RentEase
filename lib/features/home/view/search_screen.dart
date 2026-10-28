@@ -1291,19 +1291,19 @@ class _PropertyCard extends StatelessWidget {
                                   const Icon(
                                     Icons.workspace_premium_rounded,
                                     size: 15,
-                                    color: Color(0xFFFCA917),
+                                    color: AppColors.rankGold,
                                   )
                                 else if (rank == 2)
                                   const Icon(
                                     Icons.workspace_premium_rounded,
                                     size: 15,
-                                    color: Color(0xFF94A3B8),
+                                    color: AppColors.slate400,
                                   )
                                 else
                                   const Icon(
                                     Icons.workspace_premium_rounded,
                                     size: 15,
-                                    color: Color(0xFFCD7F32),
+                                    color: AppColors.rankBronze,
                                   ),
                                 const SizedBox(width: 5),
                                 Text(

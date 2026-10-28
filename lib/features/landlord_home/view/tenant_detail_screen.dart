@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/firestore/firestore_collections.dart';
 import '../../../core/firestore/models/models.dart';
+import '../../../core/firestore/property_ratings_aggregator.dart';
 import '../../inquiry/widgets/invite_button.dart';
 import '../../owner/model/compatible_tenant.dart';
 import '../../owner_onboarding/widgets/listing_form_widgets.dart';
@@ -65,37 +66,62 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
 
   bool _isLoadingReviews = true;
   List<_TenantReviewItem> _reviews = const [];
-  double _avgRating = 0.0;
-  int _totalReviews = 0;
+  // Pagination of the written-review list (newest first, one page at a time).
+  DocumentSnapshot<Object?>? _lastDoc;
+  bool _hasMore = false;
+  bool _loadingMore = false;
+  // Rater names / listing titles already fetched, so a later page only reads
+  // the ones it has not seen yet.
+  final Map<String, String> _raterNames = {};
+  final Map<String, String> _propertyTitles = {};
+
+  /// Header / summary: the tenant's stored counters on tenantProfiles/{uid}
+  /// (avg derived), never a count of the loaded review pages.
+  OwnerRatingSummary get _rating =>
+      OwnerRatingSummary.fromTenantProfile(_profile);
+  double get _avgRating => _rating.average;
+  int get _totalReviews => _rating.totalRatings;
 
   @override
   void initState() {
     super.initState();
     _user = widget.user;
     _profile = widget.profile;
-    if (_profile != null) {
-      _avgRating = (_profile!.avgRating ?? 0.0).toDouble();
-      _totalReviews = (_profile!.totalRatings ?? 0).toInt();
-    }
     if (_profile == null || _user == null) {
       _loadData();
     }
     _loadReviews();
   }
 
-  Future<void> _loadReviews() async {
+  // Load the next page when the screen is scrolled near its end (the reviews
+  // card is the last section).
+  bool _onScroll(ScrollNotification n) {
+    if (_hasMore &&
+        !_loadingMore &&
+        n.metrics.pixels >= n.metrics.maxScrollExtent - 200) {
+      _loadReviews(more: true);
+    }
+    return false;
+  }
+
+  Future<void> _loadReviews({bool more = false}) async {
+    if (more && (_loadingMore || !_hasMore)) return;
+    _loadingMore = more;
     try {
       final firestore = FirebaseFirestore.instance;
-      final snap = await firestore
-          .collection(FirestoreCollections.ratings)
-          .where('ratedId', isEqualTo: widget.tenant.tenantId)
-          .where('raterRole', isEqualTo: 'owner')
-          .get();
+      final entries = await PropertyRatingsAggregator.fetchRatingDocsForTenant(
+        firestore: firestore,
+        tenantId: widget.tenant.tenantId,
+        startAfter: more ? _lastDoc : null,
+      );
+      _hasMore = entries.length >= PropertyRatingsAggregator.reviewsPageSize;
+      if (entries.isNotEmpty) _lastDoc = entries.last.doc;
 
-      if (snap.docs.isNotEmpty) {
-        final raterIds = snap.docs
-            .map((d) => d.data()['raterId'] as String?)
+      if (entries.isNotEmpty) {
+        final raterIds = entries
+            .map((e) => e.doc.data()['raterId'] as String?)
             .whereType<String>()
+            .where((id) => id.isNotEmpty && !_raterNames.containsKey(id))
             .toSet();
 
         final userDocs = await Future.wait(
@@ -103,20 +129,24 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
               firestore.collection(FirestoreCollections.users).doc(id).get()),
         );
 
-        final namesMap = <String, String>{};
         for (final doc in userDocs) {
           if (doc.exists) {
             final d = doc.data() ?? {};
             final name =
                 '${d['firstName'] ?? ''} ${d['lastName'] ?? ''}'.trim();
-            namesMap[doc.id] = name.isNotEmpty ? name : 'Property Owner';
+            _raterNames[doc.id] = name.isNotEmpty ? name : 'Property Owner';
           }
         }
 
-        final propIds = snap.docs
-            .map((d) => d.data()['propertyId'] as String?)
+        for (final e in entries) {
+          final id = (e.doc.data()['propertyId'] as String?)?.trim() ?? '';
+          final title = e.propertyTitle;
+          if (id.isNotEmpty && title != null) _propertyTitles[id] = title;
+        }
+        final propIds = entries
+            .map((e) => (e.doc.data()['propertyId'] as String?)?.trim())
             .whereType<String>()
-            .where((id) => id.isNotEmpty)
+            .where((id) => id.isNotEmpty && !_propertyTitles.containsKey(id))
             .toSet();
 
         final propDocs = await Future.wait(
@@ -126,33 +156,19 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
               .get()),
         );
 
-        final propsMap = <String, String>{};
         for (final doc in propDocs) {
           if (doc.exists) {
             final d = doc.data() ?? {};
-            propsMap[doc.id] = (d['title'] as String?) ?? 'Listing';
+            _propertyTitles[doc.id] = (d['title'] as String?) ?? 'Listing';
           }
         }
 
         final loaded = <_TenantReviewItem>[];
-        num totalStars = 0;
 
-        final sortedDocs =
-            List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(snap.docs)
-              ..sort((a, b) {
-                final aTime = a.data()['createdAt'] as Timestamp?;
-                final bTime = b.data()['createdAt'] as Timestamp?;
-                if (aTime == null && bTime == null) return 0;
-                if (aTime == null) return 1;
-                if (bTime == null) return -1;
-                return bTime.compareTo(aTime);
-              });
+        for (final entry in entries) {
+          final rating = RatingDoc.fromSnapshot(entry.doc);
 
-        for (final doc in sortedDocs) {
-          final rating = RatingDoc.fromSnapshot(doc);
-          totalStars += rating.stars;
-
-          final rName = namesMap[rating.raterId] ?? 'Property Owner';
+          final rName = _raterNames[rating.raterId] ?? 'Property Owner';
           final parts = rName.split(_kWhitespaceRe).where((p) => p.isNotEmpty);
           final initials = parts.take(2).map((p) => p[0].toUpperCase()).join();
 
@@ -173,7 +189,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
               date: dateStr,
               comment: rating.review?.trim(),
               propertyTitle: rating.propertyId != null
-                  ? propsMap[rating.propertyId]
+                  ? _propertyTitles[rating.propertyId!.trim()]
                   : null,
               raterInitials: initials.isNotEmpty ? initials : 'O',
             ),
@@ -182,26 +198,21 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
 
         if (mounted) {
           setState(() {
-            _reviews = loaded;
-            _totalReviews = loaded.length;
-            _avgRating = totalStars / loaded.length;
+            _reviews = more ? [..._reviews, ...loaded] : loaded;
             _isLoadingReviews = false;
           });
-          return;
         }
+        _loadingMore = false;
+        return;
       }
     } catch (e) {
       debugPrint('Error loading tenant ratings: $e');
     }
 
+    _loadingMore = false;
+    if (more) return; // keep what is already shown
     if (mounted) {
-      setState(() {
-        if (_reviews.isEmpty) {
-          _totalReviews = (_profile?.totalRatings ?? 0).toInt();
-          _avgRating = (_profile?.avgRating ?? 0.0).toDouble();
-        }
-        _isLoadingReviews = false;
-      });
+      setState(() => _isLoadingReviews = false);
     }
   }
 
@@ -218,11 +229,8 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
               .then((snap) {
             if (snap.exists && mounted) {
               setState(() {
+                // Also carries the rating counters shown in the header.
                 _profile = TenantProfileDoc.fromSnapshot(snap);
-                if (_reviews.isEmpty && _totalReviews == 0) {
-                  _totalReviews = (_profile?.totalRatings ?? 0).toInt();
-                  _avgRating = (_profile?.avgRating ?? 0.0).toDouble();
-                }
               });
             }
           }),
@@ -364,7 +372,9 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
 
                 // ── Content ──────────────────────────────────────────────────
                 Expanded(
-                  child: SingleChildScrollView(
+                  child: NotificationListener<ScrollNotification>(
+                    onNotification: _onScroll,
+                    child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -661,6 +671,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                         ],
                       ],
                     ),
+                  ),
                   ),
                 ),
               ],

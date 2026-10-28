@@ -641,7 +641,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                                   ],
                                 ),
                                 child: Material(
-                                  color: Colors.transparent,
+                                  color: AppColors.transparent,
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(10),
                                     onTap: _isLocating ? null : _locateCurrentPosition,

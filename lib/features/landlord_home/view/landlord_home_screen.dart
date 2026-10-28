@@ -1,6 +1,5 @@
 import 'dart:ui';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -10,7 +9,6 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/firestore/models/models.dart';
-import '../../../core/firestore/property_ratings_aggregator.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/pending_listing_banner.dart';
@@ -339,7 +337,6 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
                                     backgroundColor: AppColors.surface,
                                     edgeOffset: 0,
                                     onRefresh: () async {
-                                      _ModernPropertyCard.clearCache();
                                       await cubit.refresh();
                                     },
                                     child: CustomScrollView(
@@ -1056,12 +1053,6 @@ class _ModernPropertyCard extends StatefulWidget {
   final VoidCallback onTap;
   final int compatibleCount;
 
-  static final Map<String, (double, int)> _ratingsCache = {};
-
-  static void clearCache() {
-    _ratingsCache.clear();
-  }
-
   @override
   State<_ModernPropertyCard> createState() => _ModernPropertyCardState();
 }
@@ -1069,48 +1060,8 @@ class _ModernPropertyCard extends StatefulWidget {
 class _ModernPropertyCardState extends State<_ModernPropertyCard> {
   // The compatible-tenant count comes from LandlordHomeCubit
   // (`compatibleCount`), computed from one owner-wide matches query.
-  @override
-  void initState() {
-    super.initState();
-    _loadRatings();
-  }
-
-  @override
-  void didUpdateWidget(covariant _ModernPropertyCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.property.propertyId != widget.property.propertyId) {
-      _loadRatings();
-    }
-  }
-
-  Future<void> _loadRatings() async {
-    if ((widget.property.totalRatings ?? 0) == 0 &&
-        !_ModernPropertyCard._ratingsCache.containsKey(widget.property.propertyId)) {
-      try {
-        final targetIds = <String>{widget.property.propertyId};
-        for (final r in widget.rooms) {
-          targetIds.add(r.propertyId);
-        }
-        final docs = await PropertyRatingsAggregator.fetchRatingDocsForProperty(
-          firestore: FirebaseFirestore.instance,
-          propertyId: widget.property.propertyId,
-          parentPropertyId: widget.property.parentPropertyId,
-          ownerId: widget.property.ownerId,
-          propertyName: widget.property.propertyName,
-          extraTargetIds: targetIds,
-        );
-        if (docs.isNotEmpty) {
-          num sum = 0;
-          for (final d in docs) {
-            sum += (d.data()?['stars'] as num?) ?? 0;
-          }
-          final avg = (sum / docs.length).toDouble();
-          _ModernPropertyCard._ratingsCache[widget.property.propertyId] = (avg, docs.length);
-          if (mounted) setState(() {});
-        }
-      } catch (_) {}
-    }
-  }
+  // The rating badge reads the counters on the property/room docs the cubit
+  // already streams (no per-card `ratings` reads).
 
   String _fmt(num value) => value.round().toString().replaceAllMapped(
     _kThousandsRe,
@@ -1531,12 +1482,6 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
         effectiveAvg = sum / count;
         effectiveCount = count;
       }
-    }
-
-    if (effectiveCount == 0 && _ModernPropertyCard._ratingsCache.containsKey(property.propertyId)) {
-      final cached = _ModernPropertyCard._ratingsCache[property.propertyId]!;
-      effectiveAvg = cached.$1;
-      effectiveCount = cached.$2;
     }
 
     final bool hasRating = effectiveAvg != null && effectiveCount > 0;

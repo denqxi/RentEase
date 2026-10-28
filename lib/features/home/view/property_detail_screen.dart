@@ -975,16 +975,6 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                             ? propertyDoc.totalRatings!.toInt()
                             : (_property['totalRatings'] as num?)?.toInt(),
                         inquiryId: widget.inquiryId,
-                        onRatingLoaded: (avg, totalCount) {
-                          if (mounted && avg > 0 && totalCount > 0 &&
-                              ((_property['avgRating'] as num?)?.toDouble() != avg ||
-                                  (_property['totalRatings'] as num?)?.toInt() != totalCount)) {
-                            setState(() {
-                              _property['avgRating'] = avg;
-                              _property['totalRatings'] = totalCount;
-                            });
-                          }
-                        },
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -1581,7 +1571,7 @@ class _PropertyPhotoGallerySectionState
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? const Color(0xFF00ACC1) : AppColors.slate200,
+            color: isSelected ? AppColors.primaryCyan : AppColors.slate200,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -1760,7 +1750,7 @@ class _PropertyPhotoGallerySectionState
                     const Icon(
                       Icons.auto_awesome,
                       size: 12,
-                      color: Color(0xFF00ACC1),
+                      color: AppColors.primaryCyan,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -1769,7 +1759,7 @@ class _PropertyPhotoGallerySectionState
                         fontFamily: 'DM Sans',
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF00838F),
+                        color: AppColors.accent,
                         letterSpacing: -0.1,
                       ),
                     ),
@@ -1777,7 +1767,7 @@ class _PropertyPhotoGallerySectionState
                     const Icon(
                       Icons.auto_awesome,
                       size: 12,
-                      color: Color(0xFF00ACC1),
+                      color: AppColors.primaryCyan,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -1788,7 +1778,7 @@ class _PropertyPhotoGallerySectionState
                         fontFamily: 'DM Sans',
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF00838F),
+                        color: AppColors.accent,
                         letterSpacing: -0.1,
                       ),
                     ),
@@ -2020,7 +2010,7 @@ class _PropertyMainOverviewCardState
                           child: const Icon(
                             Icons.star_rounded,
                             size: 20,
-                            color: Color(0xFFFFB800), // Vibrant yellow star
+                            color: AppColors.matchMedium, // Vibrant yellow star
                           ),
                         ),
                         const SizedBox(width: 3),
@@ -2058,7 +2048,7 @@ class _PropertyMainOverviewCardState
                         fontFamily: 'DM Sans',
                         fontSize: 21.5,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF00ACC1),
+                        color: AppColors.primaryCyan,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -2170,7 +2160,7 @@ class _PropertyMainOverviewCardState
                       child: const Icon(
                         Icons.map_outlined,
                         size: 15,
-                        color: Color(0xFF00ACC1),
+                        color: AppColors.primaryCyan,
                       ),
                     ),
                   ),
@@ -2290,14 +2280,14 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE0F7FA),
+                    color: AppColors.tenantFillCyan,
                     borderRadius: BorderRadius.circular(9),
                   ),
                   alignment: Alignment.center,
                   child: Icon(
                     icon,
                     size: 18,
-                    color: const Color(0xFF00ACC1),
+                    color: AppColors.primaryCyan,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -2798,7 +2788,6 @@ class _PropertyReviewsCard extends StatefulWidget {
     this.inquiryId,
     this.initialAvgRating,
     this.initialTotalRatings,
-    this.onRatingLoaded,
   });
 
   final String propertyId;
@@ -2809,7 +2798,6 @@ class _PropertyReviewsCard extends StatefulWidget {
   final String? inquiryId;
   final double? initialAvgRating;
   final int? initialTotalRatings;
-  final void Function(double avg, int count)? onRatingLoaded;
 
   @override
   State<_PropertyReviewsCard> createState() => _PropertyReviewsCardState();
@@ -2833,13 +2821,18 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
   late final ScrollController _listScrollController;
   bool _isLoading = true;
   List<_PropertyReviewData> _reviews = [];
+  // Header numbers: the property doc's stored counters (never the page).
   double _avgRating = 0.0;
   int _totalCount = 0;
+  // Pagination of the written-review list.
+  DocumentSnapshot<Object?>? _lastDoc;
+  bool _hasMore = false;
+  bool _loadingMore = false;
 
   @override
   void initState() {
     super.initState();
-    _listScrollController = ScrollController();
+    _listScrollController = ScrollController()..addListener(_onListScroll);
     _avgRating = widget.initialAvgRating ?? 0.0;
     _totalCount = widget.initialTotalRatings ?? 0;
     _loadReviews();
@@ -2848,124 +2841,66 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
   @override
   void didUpdateWidget(covariant _PropertyReviewsCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _avgRating = widget.initialAvgRating ?? 0.0;
+    _totalCount = widget.initialTotalRatings ?? 0;
     if (oldWidget.propertyId != widget.propertyId ||
         oldWidget.parentPropertyId != widget.parentPropertyId ||
         oldWidget.ownerId != widget.ownerId ||
         oldWidget.inquiryId != widget.inquiryId) {
+      _lastDoc = null;
+      _hasMore = false;
       _loadReviews();
     }
   }
 
   @override
   void dispose() {
-    _listScrollController.dispose();
+    _listScrollController
+      ..removeListener(_onListScroll)
+      ..dispose();
     super.dispose();
   }
 
-  Future<void> _loadReviews() async {
+  Future<void> _loadReviews({bool more = false}) async {
     final pid = widget.propertyId.trim();
     if (pid.isEmpty) {
       if (mounted) setState(() => _isLoading = false);
       return;
     }
 
+    if (more && (_loadingMore || !_hasMore)) return;
+    _loadingMore = more;
+
     try {
-      final targetIds = <String>{pid};
-      if (widget.parentPropertyId != null &&
-          widget.parentPropertyId!.trim().isNotEmpty) {
-        targetIds.add(widget.parentPropertyId!.trim());
-      }
-
-      final docsMap = <String, DocumentSnapshot<Map<String, dynamic>>>{};
-
-      // 1. Primary: Use PropertyRatingsAggregator for full building/room/parent/inquiry aggregation
-      try {
-        final aggregated =
-            await PropertyRatingsAggregator.fetchRatingDocsForProperty(
-          firestore: FirebaseFirestore.instance,
-          propertyId: pid,
-          parentPropertyId: widget.parentPropertyId,
-          ownerId: widget.ownerId,
-          propertyName: widget.propertyName,
-          title: widget.title,
-          extraTargetIds: targetIds,
-          inquiryId: widget.inquiryId,
-          forceRefresh: true,
-        );
-        for (final doc in aggregated) {
-          docsMap[doc.id] = doc;
-        }
-      } catch (e) {
-        debugPrint('PropertyRatingsAggregator error: $e');
-      }
-
-      // 2. Direct fallback queries to ensure nothing is missed
-      // (a) By propertyId
-      try {
-        final snap = await FirebaseFirestore.instance
-            .collection(FirestoreCollections.ratings)
-            .where('propertyId', whereIn: targetIds.take(10).toList())
-            .get();
-        for (final doc in snap.docs) {
-          docsMap[doc.id] = doc;
-        }
-      } catch (e) {
-        debugPrint('Direct propertyId query error: $e');
-      }
-
-      // (b) By parentPropertyId
-      if (widget.parentPropertyId != null &&
-          widget.parentPropertyId!.trim().isNotEmpty) {
-        try {
-          final parentSnap = await FirebaseFirestore.instance
-              .collection(FirestoreCollections.ratings)
-              .where('parentPropertyId',
-                  isEqualTo: widget.parentPropertyId!.trim())
-              .get();
-          for (final doc in parentSnap.docs) {
-            docsMap[doc.id] = doc;
-          }
-        } catch (e) {
-          debugPrint('Direct parentPropertyId query error: $e');
-        }
-      }
-
-      // (c) By inquiryId
-      if (widget.inquiryId != null && widget.inquiryId!.trim().isNotEmpty) {
-        try {
-          final inqSnap = await FirebaseFirestore.instance
-              .collection(FirestoreCollections.ratings)
-              .where('inquiryId', isEqualTo: widget.inquiryId!.trim())
-              .get();
-          for (final doc in inqSnap.docs) {
-            docsMap[doc.id] = doc;
-          }
-        } catch (e) {
-          debugPrint('Direct inquiryId query error: $e');
-        }
-      }
+      // One page of this listing's tenant reviews, newest first. The header
+      // average/count come from the property doc's counters (initial*), not
+      // from the loaded page.
+      final tenantDocs =
+          await PropertyRatingsAggregator.fetchRatingDocsForProperty(
+        firestore: FirebaseFirestore.instance,
+        propertyId: pid,
+        startAfter: more ? _lastDoc : null,
+      );
+      _hasMore =
+          tenantDocs.length >= PropertyRatingsAggregator.reviewsPageSize;
+      if (tenantDocs.isNotEmpty) _lastDoc = tenantDocs.last;
 
       if (!mounted) return;
-
-      // Filter: Only include tenant reviews FOR the property
-      final tenantDocs = docsMap.values.where((doc) {
-        final role = doc.data()?['raterRole'] as String?;
-        return role == 'tenant';
-      }).toList();
 
       if (tenantDocs.isEmpty) {
         if (mounted) {
           setState(() {
-            _reviews = [];
+            if (!more) _reviews = [];
             _isLoading = false;
           });
         }
+        _loadingMore = false;
         return;
       }
 
       final raterIds = <String>{};
       for (final doc in tenantDocs) {
-        final raterId = doc.data()?['raterId'] as String?;
+        final raterId = doc.data()['raterId'] as String?;
         if (raterId != null && raterId.isNotEmpty) {
           raterIds.add(raterId);
         }
@@ -3005,14 +2940,12 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
       }
 
       final loaded = <_PropertyReviewData>[];
-      num totalStars = 0;
       for (final doc in tenantDocs) {
-        final data = doc.data() ?? {};
+        final data = doc.data();
         final r = RatingDoc.fromSnapshot(doc);
         final stars = r.stars > 0
             ? r.stars.toInt().clamp(1, 5)
             : parseNum(data['stars'], 5).toInt().clamp(1, 5);
-        totalStars += stars;
 
         String dateStr = 'Recent';
         final at =
@@ -3045,19 +2978,23 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
       }
 
       if (mounted) {
-        final computedAvg =
-            loaded.isNotEmpty ? (totalStars / loaded.length).toDouble() : 0.0;
         setState(() {
-          _reviews = loaded;
-          _totalCount = loaded.length;
-          _avgRating = computedAvg;
+          _reviews = more ? [..._reviews, ...loaded] : loaded;
           _isLoading = false;
         });
-        widget.onRatingLoaded?.call(computedAvg, loaded.length);
       }
     } catch (e) {
       debugPrint('Error loading property reviews: $e');
       if (mounted) setState(() => _isLoading = false);
+    }
+    _loadingMore = false;
+  }
+
+  // Load the next page when the reviews list is scrolled near its end.
+  void _onListScroll() {
+    final pos = _listScrollController.position;
+    if (_hasMore && !_loadingMore && pos.pixels >= pos.maxScrollExtent - 48) {
+      _loadReviews(more: true);
     }
   }
 

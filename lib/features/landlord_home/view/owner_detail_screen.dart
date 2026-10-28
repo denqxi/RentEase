@@ -113,11 +113,18 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
       return;
     }
     try {
+      // Host rating = roll-up of the owner's properties' counters (one small
+      // `properties where ownerId == uid` query; the owner has no counter of
+      // their own). The list shows only the 10 most recent written reviews.
+      final summary = await PropertyRatingsAggregator.getOwnerRollupRating(
+        firestore: FirebaseFirestore.instance,
+        ownerId: uid,
+      );
       final ownerEntries =
           await PropertyRatingsAggregator.fetchRatingDocsForOwner(
         firestore: FirebaseFirestore.instance,
         ownerId: uid,
-        forceRefresh: true,
+        limit: 10,
       );
 
       if (!mounted) return;
@@ -148,10 +155,8 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
       }
 
       final loaded = <_OwnerReviewItem>[];
-      num totalStars = 0;
       for (final entry in ownerEntries) {
         final rating = RatingDoc.fromSnapshot(entry.doc);
-        totalStars += rating.stars;
         final rName = ratersMap[rating.raterId] ?? 'Tenant';
         final dt = rating.createdAt?.toDate();
         final dateStr = dt != null ? _formatMemberSince(dt) : 'Recent';
@@ -169,8 +174,8 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
       if (mounted) {
         setState(() {
           _reviews = loaded;
-          _totalReviews = loaded.length;
-          _avgRating = loaded.isNotEmpty ? (totalStars / loaded.length).toDouble() : 0.0;
+          _totalReviews = summary.totalRatings;
+          _avgRating = summary.average;
           _isLoadingReviews = false;
         });
       }
@@ -483,20 +488,15 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                                   value: '${_ownerProfile!.propertyCount} ${_ownerProfile!.propertyCount == 1 ? 'property' : 'properties'}',
                                 ),
                               ],
-                              if ((_ownerProfile?.totalRatings ?? 0) > 0 || _totalReviews > 0) ...[
+                              // Roll-up of the owner's properties' counters
+                              // (ownerProfiles has no live rating counter).
+                              if (_totalReviews > 0) ...[
                                 _divider(),
                                 _detailRow(
                                   label: 'Host rating',
                                   value: () {
-                                    final c = _totalReviews > 0
-                                        ? _totalReviews
-                                        : (_ownerProfile?.totalRatings ?? 0);
-                                    final a = _totalReviews > 0
-                                        ? _avgRating
-                                        : ((_ownerProfile?.effectiveAvgRating ??
-                                                _ownerProfile?.avgRating ??
-                                                0.0)
-                                            .toDouble());
+                                    final c = _totalReviews;
+                                    final a = _avgRating;
                                     return '★ ${a.toStringAsFixed(1)} ($c ${c == 1 ? 'review' : 'reviews'})';
                                   }(),
                                 ),
@@ -604,8 +604,9 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
 
   Widget _buildRatingsSection() {
     Widget? badge;
-    final count = _totalReviews > 0 ? _totalReviews : (_ownerProfile?.totalRatings ?? 0);
-    final avg = _totalReviews > 0 ? _avgRating : ((_ownerProfile?.effectiveAvgRating ?? _ownerProfile?.avgRating ?? 0.0).toDouble());
+    // Roll-up of the owner's properties' counters (see _loadReviews).
+    final count = _totalReviews;
+    final avg = _avgRating;
 
     if (count > 0) {
       badge = Container(

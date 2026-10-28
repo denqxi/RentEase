@@ -298,8 +298,8 @@ class PropertyDoc {
     if (propertyCoverPhoto != null) 'propertyCoverPhoto': propertyCoverPhoto,
     if (propertyCoverPublicId != null)
       'propertyCoverPublicId': propertyCoverPublicId,
-    if (avgRating != null) 'avgRating': avgRating,
-    if (totalRatings != null) 'totalRatings': totalRatings,
-    if (ratingSum != null) 'ratingSum': ratingSum,
+    // avgRating / totalRatings / ratingSum are never written from here: the
+    // counters are bumped only with a backing rating (firestore.rules deny
+    // any owner write to them) and avgRating is derived, never stored.
   };
 }

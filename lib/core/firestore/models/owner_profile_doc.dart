@@ -35,7 +35,9 @@ class OwnerProfileDoc {
   final Timestamp? rejectedAt;
   final String? rejectionReason;
 
-  // Computed server-side.
+  // Legacy, read-only: no longer written by the app (firestore.rules deny
+  // every non-admin write). The owner's rating shown in the UI is the
+  // roll-up of their properties (OwnerRatingSummary.fromProperties).
   final num? avgRating;
   final num? totalRatings;
   final num? ratingSum;
@@ -74,9 +76,8 @@ class OwnerProfileDoc {
     if (verifiedAt != null) 'verifiedAt': verifiedAt,
     if (rejectedAt != null) 'rejectedAt': rejectedAt,
     if (rejectionReason != null) 'rejectionReason': rejectionReason,
-    if (avgRating != null) 'avgRating': avgRating,
-    if (totalRatings != null) 'totalRatings': totalRatings,
-    if (ratingSum != null) 'ratingSum': ratingSum,
+    // No rating fields: the owner's rating is the roll-up of their
+    // properties' counters (OwnerRatingSummary); nobody writes them here.
     if (propertyCount != null) 'propertyCount': propertyCount,
     'updatedAt': FieldValue.serverTimestamp(),
   };

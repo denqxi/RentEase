@@ -854,7 +854,7 @@ class _SideToggleButton extends StatelessWidget {
         curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.transparent,
+          color: isSelected ? AppColors.primary : AppColors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Text(

@@ -105,7 +105,7 @@ class _HomeContentSkeletonState extends State<HomeContentSkeleton>
                         height: 8,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Color(0xFFCBD5E1),
+                          color: AppColors.slate300,
                         ),
                       ),
                       const SizedBox(width: 5),
@@ -114,7 +114,7 @@ class _HomeContentSkeletonState extends State<HomeContentSkeleton>
                         height: 8,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Color(0xFFCBD5E1),
+                          color: AppColors.slate300,
                         ),
                       ),
                       const SizedBox(width: 5),
@@ -123,7 +123,7 @@ class _HomeContentSkeletonState extends State<HomeContentSkeleton>
                         height: 8,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Color(0xFFCBD5E1),
+                          color: AppColors.slate300,
                         ),
                       ),
                     ],
@@ -203,9 +203,9 @@ class _HomeContentSkeletonState extends State<HomeContentSkeleton>
 class _SkeletonCard extends StatelessWidget {
   const _SkeletonCard();
 
-  static const Color _placeholderColor = Color(0xFFDCE2EA);
-  static const Color _iconPlaceholderColor = Color(0xFFB0BAC7);
-  static const Color _borderColor = Color(0xFFE2E8F0);
+  static const Color _placeholderColor = AppColors.slate200;
+  static const Color _iconPlaceholderColor = AppColors.slate400;
+  static const Color _borderColor = AppColors.slate200;
 
   @override
   Widget build(BuildContext context) {
@@ -280,7 +280,7 @@ class _SkeletonCard extends StatelessWidget {
               const Icon(
                 Icons.location_on_rounded,
                 size: 15,
-                color: Color(0xFFCBD5E1),
+                color: AppColors.slate300,
               ),
               const SizedBox(width: 5),
               Container(

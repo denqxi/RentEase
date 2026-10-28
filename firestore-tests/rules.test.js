@@ -333,56 +333,117 @@ describe('ownerProfiles / properties — owners can only read/write their own', 
     );
   });
 
-  it('authenticated non-suspended users can update rating aggregates on properties and rooms', async () => {
-    await seed(async (db) => {
-      await db.doc(`properties/${PROPERTY}/rooms/room1`).set({
-        name: 'Room 101',
-        rent: 2000,
+  describe('rating counters are backed by a rating created in the same batch', () => {
+    const INQ = MATCH_ID;
+    const RID = `${INQ}_${TENANT_A}`;
+    const ORID = `${INQ}_${OWNER_A}`;
+    const rating = (stars = 5) => ({
+      inquiryId: INQ, raterId: TENANT_A, ratedId: OWNER_A, raterRole: 'tenant', stars, propertyId: PROPERTY,
+    });
+    const ownerRating = (stars = 4) => ({
+      inquiryId: INQ, raterId: OWNER_A, ratedId: TENANT_A, raterRole: 'owner', stars, propertyId: PROPERTY,
+    });
+    const bump = (sum, total = 1, id = RID) => ({
+      ratingSum: sum, totalRatings: total, lastRatingId: id, updatedAt: '2026-10-26T00:00:00Z',
+    });
+    beforeEach(async () => {
+      await seed(async (db) => {
+        await db.doc(`ownerProfiles/${OWNER_B}`).set({ verificationStatus: 'verified' });
+        await db.doc(`matches/${MATCH_ID}`).set({ tenantId: TENANT_A, ownerId: OWNER_A, propertyId: PROPERTY, bScore: 1 });
+        await db.doc(`inquiries/${INQ}`).set({
+          matchId: MATCH_ID, tenantId: TENANT_A, ownerId: OWNER_A, propertyId: PROPERTY,
+          stage: 2, ownerDecision: 'accepted', status: 'booked',
+        });
+        await db.doc(`properties/${PROPERTY}/rooms/room1`).set({ name: 'Room 101', rent: 2000 });
       });
     });
+    function batchOf(db, { stars = 5, sum = 5, withRating = true, id = RID } = {}) {
+      const b = db.batch();
+      if (withRating) b.set(db.doc(`ratings/${RID}`), rating(stars));
+      b.update(db.doc(`properties/${PROPERTY}`), bump(sum, 1, id));
+      return b;
+    }
 
-    // Tenant A (not the owner) can update rating aggregates on property
-    await assertSucceeds(
-      asTenant(TENANT_A).doc(`properties/${PROPERTY}`).update({
-        ratingSum: 9.5,
-        totalRatings: 2,
-        avgRating: 4.75,
-        updatedAt: '2026-10-23T00:00:00Z',
-      }),
-    );
-
-    // Tenant A can update rating aggregates on room
-    await assertSucceeds(
-      asTenant(TENANT_A).doc(`properties/${PROPERTY}/rooms/room1`).update({
-        ratingSum: 5,
-        totalRatings: 1,
-        avgRating: 5.0,
-      }),
-    );
-
-    // Cannot update forbidden keys along with rating aggregates
-    await assertFails(
-      asTenant(TENANT_A).doc(`properties/${PROPERTY}`).update({
-        ratingSum: 10,
-        monthlyRent: 1500,
-      }),
-    );
-
-    // totalRatings must be int, not string or float
-    await assertFails(
-      asTenant(TENANT_A).doc(`properties/${PROPERTY}`).update({
-        totalRatings: '5',
-      }),
-    );
-
-    // Unauthenticated user cannot update rating aggregates
-    await assertFails(
-      testEnv.unauthenticatedContext().firestore().doc(`properties/${PROPERTY}`).update({
-        ratingSum: 15,
-        totalRatings: 3,
-        avgRating: 5.0,
-      }),
-    );
+    it('tenant rating + property bump commit together', async () => {
+      await assertSucceeds(batchOf(asTenant(TENANT_A)).commit());
+    });
+    it('a rating must name the inquiry\'s own property', async () => {
+      await seed(async (db) => {
+        await db.doc('properties/otherProp').set({ ownerId: OWNER_A, amenityList: [], amenityScore: 0 });
+      });
+      const ref = () => asTenant(TENANT_A).doc(`ratings/${RID}`);
+      await assertFails(ref().set({ ...rating(5), propertyId: 'otherProp' }));
+      await assertSucceeds(ref().set(rating(5)));
+    });
+    it('parentPropertyId must be the inquiry property\'s own parent', async () => {
+      await seed(async (db) => {
+        await db.doc(`properties/${PROPERTY}`).set({ parentPropertyId: 'b1' }, { merge: true });
+      });
+      const ref = () => asTenant(TENANT_A).doc(`ratings/${RID}`);
+      await assertFails(ref().set({ ...rating(5), parentPropertyId: 'b2' }));
+      await assertSucceeds(ref().set({ ...rating(5), parentPropertyId: 'b1' }));
+    });
+    it('a property with no parent cannot be given a fake parent', async () => {
+      await assertFails(
+        asTenant(TENANT_A).doc(`ratings/${RID}`).set({ ...rating(5), parentPropertyId: 'b1' }),
+      );
+    });
+    it('owner rating + tenantProfiles bump commit together', async () => {
+      const db = asOwner(OWNER_A);
+      const b = db.batch();
+      b.set(db.doc(`ratings/${ORID}`), ownerRating(4));
+      b.update(db.doc(`tenantProfiles/${TENANT_A}`), bump(4, 1, ORID));
+      await assertSucceeds(b.commit());
+    });
+    it('a bump with no rating behind it is denied', async () => {
+      const db = asTenant(TENANT_A);
+      await assertFails(db.doc(`properties/${PROPERTY}`).update(bump(5)));
+      await assertFails(db.doc(`properties/${PROPERTY}`).update({ ratingSum: 5, totalRatings: 1 }));
+      await assertFails(batchOf(db, { withRating: false }).commit());
+    });
+    it('the bump must equal the rating stars', async () => {
+      await assertFails(batchOf(asTenant(TENANT_A), { stars: 2, sum: 5 }).commit());
+    });
+    it('one rating cannot justify a second bump later', async () => {
+      await assertSucceeds(batchOf(asTenant(TENANT_A)).commit());
+      const db = asTenant(TENANT_A);
+      await assertFails(db.doc(`properties/${PROPERTY}`).update(bump(10, 2)));
+      await assertFails(batchOf(db, { sum: 5 }).commit());
+    });
+    it('the owner cannot bump their own property', async () => {
+      const db = asOwner(OWNER_A);
+      const b = db.batch();
+      b.set(db.doc(`ratings/${ORID}`), ownerRating(4));
+      b.update(db.doc(`properties/${PROPERTY}`), bump(4, 1, ORID));
+      await assertFails(b.commit());
+    });
+    it('ownerProfiles cannot be bumped (owner rating is a roll-up)', async () => {
+      const db = asTenant(TENANT_A);
+      const b = db.batch();
+      b.set(db.doc(`ratings/${RID}`), rating(5));
+      b.update(db.doc(`ownerProfiles/${OWNER_A}`), bump(5));
+      await assertFails(b.commit());
+    });
+    it('a stranger without a booked inquiry cannot rate or bump', async () => {
+      const db = asTenant(TENANT_B);
+      const b = db.batch();
+      b.set(db.doc(`ratings/${INQ}_${TENANT_B}`), { ...rating(5), raterId: TENANT_B });
+      b.update(db.doc(`properties/${PROPERTY}`), bump(5, 1, `${INQ}_${TENANT_B}`));
+      await assertFails(b.commit());
+    });
+    it('rating fields cannot be forged on your own docs (incl. rooms)', async () => {
+      await assertFails(asOwner(OWNER_A).doc(`properties/${PROPERTY}`).update({ ratingSum: 99, totalRatings: 50 }));
+      await assertFails(asOwner(OWNER_A).doc(`properties/${PROPERTY}`).update({ avgRating: 5 }));
+      await assertFails(asOwner(OWNER_A).doc(`properties/${PROPERTY}/rooms/room1`).update({ ratingSum: 5, totalRatings: 1 }));
+      await assertFails(asTenant(TENANT_A).doc(`properties/${PROPERTY}/rooms/room1`).update({ ratingSum: 5, totalRatings: 1 }));
+      await assertFails(asOwner(OWNER_A).doc(`ownerProfiles/${OWNER_A}`).update({ ratingSum: 99, totalRatings: 50 }));
+      await assertFails(asTenant(TENANT_A).doc(`tenantProfiles/${TENANT_A}`).update({ ratingSum: 99, totalRatings: 50 }));
+    });
+    it('guests cannot bump', async () => {
+      await assertFails(
+        testEnv.unauthenticatedContext().firestore().doc(`properties/${PROPERTY}`).update(bump(5)),
+      );
+    });
   });
 
   it('a new owner can submit for verification (create as pending)', async () => {

@@ -158,6 +158,10 @@ abstract final class AppColors {
   static const Color sky300 = Color(0xFF7DD3FC);
   static const Color sky600 = Color(0xFF0284C7);
   static const Color sky700 = Color(0xFF0369A1);
+
+  // Top-match rank medals (#1 gold, #3 bronze; #2 silver uses slate400).
+  static const Color rankGold = Color(0xFFFCA917);
+  static const Color rankBronze = Color(0xFFCD7F32);
 }
 
 /// Theme-adaptive color tokens that flip between light and dark values.

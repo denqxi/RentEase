@@ -17,6 +17,11 @@ class PrivacyNoticeContent {
 
   static const String title = 'Privacy Notice';
 
+  /// Bump [version] and [lastUpdated] whenever the text below changes
+  /// materially, so it is clear which notice a user agreed to.
+  static const String version = '1.1';
+  static const String lastUpdated = 'October 29, 2026';
+
   static const String intro =
       'RentEase is a boarding house matching app for Davao City. This notice '
       'explains what personal data we collect, why, who can see it, and what '

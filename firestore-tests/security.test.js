@@ -684,6 +684,126 @@ describe('ATTACK ratings', () => {
   });
 });
 
+// ------------------------------------------------------ rating counters
+// Counters (ratingSum/totalRatings) live on properties (tenant -> listing,
+// + parent listing doc) and tenantProfiles (owner -> tenant); the owner's
+// rating is a client-side roll-up, so ownerProfiles has no counter path.
+describe('ATTACK rating counters', () => {
+  const tr = (over = {}) => ({ inquiryId: 'bk', raterId: TA, ratedId: OA, raterRole: 'tenant', stars: 4, propertyId: PA, ...over });
+  const or = (over = {}) => ({ inquiryId: 'bk', raterId: OA, ratedId: TA, raterRole: 'owner', stars: 3, propertyId: PA, ...over });
+  const bump = (sum, id, over = {}) => ({ ratingSum: FieldValue.increment(sum), totalRatings: FieldValue.increment(1), lastRatingId: id, updatedAt: FieldValue.serverTimestamp(), ...over });
+  beforeEach(async () => {
+    await seed(async (db) => {
+      await db.doc('ratings/bk_tenantA').delete();
+      // A room listing whose parent listing doc is PA, booked by TA.
+      await db.doc('properties/room9').set({ ownerId: OA, isAvailable: false, parentPropertyId: PA, rentalType: 'room', ...AM });
+      await db.doc('inquiries/bkRoom').set({
+        matchId: 'bkRoom', tenantId: TA, ownerId: OA, propertyId: 'room9',
+        stage: 2, ownerDecision: 'accepted', status: 'booked',
+      });
+    });
+  });
+  const tenantBatch = (db, { stars = 4, sum = 4, target = PA, rating = tr(), id = 'bk_tenantA', extra = {} } = {}) => {
+    const b = db.batch();
+    b.set(db.doc(`ratings/${id}`), { ...rating, stars });
+    b.update(db.doc(`properties/${target}`), bump(sum, id, extra));
+    return b;
+  };
+
+  it('control: tenant rating + listing bump commit together', async () =>
+    assertSucceeds(tenantBatch(as(TA)).commit()));
+  it('control: room rating bumps the room and its parent listing doc', async () => {
+    const db = as(TA);
+    const b = db.batch();
+    b.set(db.doc('ratings/bkRoom_tenantA'), tr({ inquiryId: 'bkRoom', propertyId: 'room9', parentPropertyId: PA, stars: 5 }));
+    b.update(db.doc('properties/room9'), bump(5, 'bkRoom_tenantA'));
+    b.update(db.doc(`properties/${PA}`), bump(5, 'bkRoom_tenantA'));
+    await assertSucceeds(b.commit());
+  });
+  it('control: owner rating + tenantProfiles bump commit together', async () => {
+    const db = as(OA);
+    const b = db.batch();
+    b.set(db.doc('ratings/bk_ownerA'), or());
+    b.update(db.doc(`tenantProfiles/${TA}`), bump(3, 'bk_ownerA'));
+    await assertSucceeds(b.commit());
+  });
+  it('bump without lastRatingId is denied', async () => {
+    const db = as(TA);
+    await assertFails(db.doc(`properties/${PA}`).update({ ratingSum: FieldValue.increment(4), totalRatings: FieldValue.increment(1) }));
+    const b = db.batch();
+    b.set(db.doc('ratings/bk_tenantA'), tr());
+    b.update(db.doc(`properties/${PA}`), { ratingSum: FieldValue.increment(4), totalRatings: FieldValue.increment(1) });
+    await assertFails(b.commit());
+  });
+  it('bump with no rating created in the same batch is denied', async () => {
+    await assertFails(as(TA).doc(`properties/${PA}`).update(bump(4, 'bk_tenantA')));
+    // A rating that already exists cannot back a new bump either.
+    await seed((db) => db.doc('ratings/bk_tenantA').set(tr()));
+    await assertFails(as(TA).doc(`properties/${PA}`).update(bump(4, 'bk_tenantA')));
+  });
+  it('wrong stars delta, +2 count, or an avgRating write are denied', async () => {
+    await assertFails(tenantBatch(as(TA), { stars: 2, sum: 5 }).commit());
+    await assertFails(tenantBatch(as(TA), { extra: { totalRatings: FieldValue.increment(2) } }).commit());
+    await assertFails(tenantBatch(as(TA), { extra: { avgRating: 4 } }).commit());
+  });
+  it('bump on a listing the rating is not about is denied', async () => {
+    // PB belongs to another owner; a forged propertyId on the rating does not help.
+    await assertFails(tenantBatch(as(TA), { target: PB }).commit());
+    await assertFails(tenantBatch(as(TA), { target: PB, rating: tr({ propertyId: PB }) }).commit());
+    // Forged parent listing: room9's real parent is PA, not PB.
+    const db = as(TA);
+    const b = db.batch();
+    b.set(db.doc('ratings/bkRoom_tenantA'), tr({ inquiryId: 'bkRoom', propertyId: 'room9', parentPropertyId: PB }));
+    b.update(db.doc(`properties/${PB}`), bump(4, 'bkRoom_tenantA'));
+    await assertFails(b.commit());
+  });
+  it('the owner cannot bump their own listing (even with a real rating)', async () => {
+    const db = as(OA);
+    const b = db.batch();
+    b.set(db.doc('ratings/bk_ownerA'), or());
+    b.update(db.doc(`properties/${PA}`), bump(3, 'bk_ownerA'));
+    await assertFails(b.commit());
+  });
+  it('ownerProfiles has no rating bump path', async () => {
+    const db = as(TA);
+    const b = db.batch();
+    b.set(db.doc('ratings/bk_tenantA'), tr());
+    b.update(db.doc(`ownerProfiles/${OA}`), bump(4, 'bk_tenantA'));
+    await assertFails(b.commit());
+    await assertFails(as(OA).doc(`ownerProfiles/${OA}`).update({ ratingSum: 99, totalRatings: 50 }));
+    await assertFails(as(OA).doc(`ownerProfiles/${OA}`).update({ lastRatingId: 'x' }));
+  });
+  it('tenantProfiles bump: only the rated tenant, never by the tenant themselves', async () => {
+    const db = as(OA);
+    const b = db.batch();
+    b.set(db.doc('ratings/bk_ownerA'), or());
+    b.update(db.doc(`tenantProfiles/${TB}`), bump(3, 'bk_ownerA')); // not the rated tenant
+    await assertFails(b.commit());
+    // The tenant's own rating (ratedId = owner) cannot bump their own profile.
+    const t = as(TA);
+    const tb = t.batch();
+    tb.set(t.doc('ratings/bk_tenantA'), tr());
+    tb.update(t.doc(`tenantProfiles/${TA}`), bump(4, 'bk_tenantA'));
+    await assertFails(tb.commit());
+    await assertFails(t.doc(`tenantProfiles/${TA}`).update({ ratingSum: 50, totalRatings: 10 }));
+  });
+  it('counters are never owner-writable on their own listings or rooms', async () => {
+    const db = as(OA);
+    await assertFails(db.doc(`properties/${PA}`).update({ ratingSum: 99, totalRatings: 50 }));
+    await assertFails(db.doc(`properties/${PA}`).update({ avgRating: 5 }));
+    await assertFails(db.doc(`properties/${PA}`).update({ lastRatingId: 'x' }));
+    await assertFails(db.doc('properties/seeded').set({ ownerId: OA, isAvailable: true, totalRatings: 9, ratingSum: 45, ...AM }));
+    await assertFails(db.doc(`properties/${PA}/rooms/r1`).update({ totalRatings: 3, ratingSum: 15 }));
+    await assertSucceeds(db.doc(`properties/${PA}/rooms/r1`).update({ name: 'r1b' }));
+    // Nobody else writes room counters either.
+    await assertFails(as(TA).doc(`properties/${PA}/rooms/r1`).update({ totalRatings: 1, ratingSum: 5 }));
+  });
+  it('guests and suspended users cannot bump', async () => {
+    await assertFails(guest().doc(`properties/${PA}`).update(bump(4, 'bk_tenantA')));
+    await assertFails(as(TS).doc(`properties/${PA}`).update(bump(4, 'bk_tenantA')));
+  });
+});
+
 // ------------------------------------------------------- notifications
 describe('ATTACK notifications', () => {
   const n = (over = {}) => ({ recipientId: OA, type: 'inquiry', relatedType: 'inquiry', relatedId: 'acc', isRead: false, title: 't', body: 'b', ...over });

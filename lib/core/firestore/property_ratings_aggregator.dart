@@ -1,457 +1,197 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'firestore_collections.dart';
-import 'models/firestore_parse.dart';
 import 'models/property_doc.dart';
+import 'models/tenant_profile_doc.dart';
 
-/// Aggregates and hydrates property ratings directly from `ratings/{ratingId}`
-/// across the app (Tenant Home, Compatible Properties, Other Listings, Search,
-/// Saved Screen, Property Details, and Landlord screens).
+/// Star-rating roll-up over a set of `properties` docs, from their stored
+/// counters only (`ratingSum` / `totalRatings`, bumped atomically with each
+/// tenant rating; see InquiryRemoteDataSource.createRating). No `ratings`
+/// reads. `avgRating` is never stored: it is derived here.
+///
+/// Used for the owner's rating (the owner has NO counter of their own: their
+/// rating is the roll-up of their properties) and for a building card that
+/// groups several room listings.
+class OwnerRatingSummary {
+  const OwnerRatingSummary({required this.ratingSum, required this.totalRatings});
+
+  static const empty = OwnerRatingSummary(ratingSum: 0, totalRatings: 0);
+
+  final num ratingSum;
+  final int totalRatings;
+
+  bool get hasRatings => totalRatings > 0 && ratingSum > 0;
+
+  /// 0.0 when there are no ratings yet.
+  double get average => hasRatings ? (ratingSum / totalRatings).toDouble() : 0.0;
+
+  /// sum(ratingSum) / sum(totalRatings) across [properties].
+  ///
+  /// - A doc without valid counters (legacy data, never rated) contributes
+  ///   nothing: it shows "no rating yet" rather than triggering a scan.
+  /// - Duplicate docs (same propertyId) are counted once.
+  /// - A room whose parent listing doc is also in [properties] is skipped:
+  ///   the parent's counters already include that room's ratings (both are
+  ///   bumped by the same rating), so counting both would double-count.
+  factory OwnerRatingSummary.fromProperties(Iterable<PropertyDoc> properties) {
+    final byId = <String, PropertyDoc>{};
+    for (final p in properties) {
+      byId.putIfAbsent(p.propertyId, () => p);
+    }
+    num sum = 0;
+    var count = 0;
+    for (final p in byId.values) {
+      final parent = p.parentPropertyId?.trim() ?? '';
+      if (parent.isNotEmpty && parent != p.propertyId && byId.containsKey(parent)) {
+        continue;
+      }
+      final c = countersOf(p);
+      if (c == null) continue;
+      sum += c.sum;
+      count += c.total;
+    }
+    return OwnerRatingSummary(ratingSum: sum, totalRatings: count);
+  }
+
+  /// A tenant's rating from the counters on `tenantProfiles/{uid}` (bumped
+  /// atomically with each owner rating). No `ratings` reads. A null profile
+  /// or missing / zero / malformed counters give [empty] ("no rating yet").
+  factory OwnerRatingSummary.fromTenantProfile(TenantProfileDoc? profile) {
+    final total = profile?.totalRatings;
+    final sum = profile?.ratingSum;
+    if (total == null || sum == null || total <= 0 || sum <= 0) return empty;
+    return OwnerRatingSummary(ratingSum: sum, totalRatings: total.toInt());
+  }
+
+  /// Valid stored counters of [p], or null (missing, zero or malformed).
+  static ({num sum, int total})? countersOf(PropertyDoc p) {
+    final total = p.totalRatings;
+    final sum = p.ratingSum;
+    if (total == null || sum == null || total <= 0 || sum <= 0) return null;
+    return (sum: sum, total: total.toInt());
+  }
+}
+
+/// Rating reads for the property / landlord / owner screens.
+///
+/// Displays (cards, search, detail, saved, landlord screens) use the counters
+/// already on the property docs those screens fetch: zero extra reads.
+/// Written-review lists use small, indexed `ratings` queries, newest first,
+/// one page ([reviewsPageSize]) at a time.
 class PropertyRatingsAggregator {
   PropertyRatingsAggregator._();
 
-  static final Map<FirebaseFirestore, _CachedRatingsSnapshot> _cache = {};
-  static final Map<FirebaseFirestore, Future<_CachedRatingsSnapshot>> _inFlight = {};
-  static final Map<String, _PropertyGroupMeta> _propertyMetaCache = {};
+  /// Page size for the written-review lists.
+  static const int reviewsPageSize = 20;
 
-  static const Duration _cacheTtl = Duration(seconds: 60);
-  static final RegExp _dashRe = RegExp(r'^(.+?)\s+[—–-]\s+(.+)$');
+  /// propertyId -> display title, learned from property docs this app
+  /// session already loaded (used to label owner reviews; no extra reads).
+  static final Map<String, String> _titleCache = {};
 
-  /// Clears the in-memory ratings cache (call after submitting a new rating).
-  static void invalidateCache() {
-    _cache.clear();
-    _inFlight.clear();
-  }
-
-  /// Extracts the target `propertyId` from a `ratings` document map.
-  ///
-  /// Handles both explicit `propertyId` fields and legacy rating documents
-  /// where `inquiryId` follows the deterministic `{tenantId}_{propertyId}` format.
-  static String? extractPropertyId(
-    Map<String, dynamic> data, {
-    String? docId,
-  }) {
-    final explicit = (data['propertyId'] as String?)?.trim();
-    if (explicit != null && explicit.isNotEmpty) {
-      return explicit;
-    }
-
-    final inqId = (data['inquiryId'] as String?)?.trim() ?? '';
-    final raterId = (data['raterId'] as String?)?.trim() ?? '';
-
-    if (raterId.isNotEmpty &&
-        inqId.startsWith('${raterId}_') &&
-        inqId.length > raterId.length + 1) {
-      return inqId.substring(raterId.length + 1);
-    }
-
-    final firstUnderscore = inqId.indexOf('_');
-    if (firstUnderscore > 0 && firstUnderscore + 1 < inqId.length) {
-      return inqId.substring(firstUnderscore + 1);
-    }
-
-    if (docId != null &&
-        raterId.isNotEmpty &&
-        docId.startsWith('${raterId}_') &&
-        docId.endsWith('_$raterId') &&
-        docId.length > (raterId.length * 2) + 2) {
-      return docId.substring(
-        raterId.length + 1,
-        docId.length - raterId.length - 1,
-      );
-    }
-
-    return null;
-  }
-
-  static String _normalizeBuildingName({String? propertyName, String? title}) {
-    if (propertyName != null && propertyName.trim().isNotEmpty) {
-      return propertyName.trim().toLowerCase();
-    }
-    if (title != null && title.trim().isNotEmpty) {
-      final raw = title.trim();
-      final match = _dashRe.firstMatch(raw);
-      if (match != null && match.group(1) != null) {
-        return match.group(1)!.trim().toLowerCase();
-      }
-      return raw.toLowerCase();
-    }
-    return '';
-  }
-
-  static void _recordPropertyMeta(PropertyDoc p) {
-    final bName = _normalizeBuildingName(
-      propertyName: p.propertyName,
-      title: p.title,
-    );
-    final displayTitle = p.title.trim().isNotEmpty
-        ? p.title.trim()
-        : (p.propertyName?.trim() ?? '');
-    _propertyMetaCache[p.propertyId] = _PropertyGroupMeta(
-      propertyId: p.propertyId,
-      parentPropertyId: p.parentPropertyId?.trim(),
-      ownerId: p.ownerId.trim(),
-      normalizedBuildingName: bName,
-      displayTitle: displayTitle,
-    );
-  }
-
-  static Future<_CachedRatingsSnapshot> _getSnapshot(
-    FirebaseFirestore firestore, {
-    bool forceRefresh = false,
-  }) async {
-    final now = DateTime.now();
-    if (!forceRefresh) {
-      final existing = _cache[firestore];
-      if (existing != null && now.difference(existing.fetchedAt) < _cacheTtl) {
-        return existing;
-      }
-      final activeFuture = _inFlight[firestore];
-      if (activeFuture != null) {
-        return activeFuture;
-      }
-    }
-
-    final future = _fetchSnapshotInternal(firestore);
-    _inFlight[firestore] = future;
-    try {
-      final result = await future;
-      _cache[firestore] = result;
-      return result;
-    } finally {
-      if (_inFlight[firestore] == future) {
-        _inFlight.remove(firestore);
-      }
+  static void _rememberTitles(Iterable<PropertyDoc> properties) {
+    for (final p in properties) {
+      final title = p.title.trim().isNotEmpty
+          ? p.title.trim()
+          : (p.propertyName?.trim() ?? '');
+      if (title.isNotEmpty) _titleCache[p.propertyId] = title;
     }
   }
 
-  static Future<_CachedRatingsSnapshot> _fetchSnapshotInternal(
-    FirebaseFirestore firestore,
-  ) async {
-    final entries = <_ResolvedRatingEntry>[];
-    try {
-      final snap = await firestore
-          .collection(FirestoreCollections.ratings)
-          .where('raterRole', isEqualTo: 'tenant')
-          .get();
-
-      final missingPropIds = <String>{};
-      for (final doc in snap.docs) {
-        final data = doc.data();
-        final propId = extractPropertyId(data, docId: doc.id);
-        if (propId != null &&
-            propId.isNotEmpty &&
-            !_propertyMetaCache.containsKey(propId)) {
-          missingPropIds.add(propId);
-        }
-      }
-
-      // Fetch metadata for any rated propertyId not yet in _propertyMetaCache
-      // so we know its parentPropertyId and building name even if that room is booked.
-      if (missingPropIds.isNotEmpty) {
-        final idsList = missingPropIds.toList();
-        for (var i = 0; i < idsList.length; i += 10) {
-          final chunk = idsList.sublist(
-            i,
-            i + 10 > idsList.length ? idsList.length : i + 10,
-          );
-          try {
-            final propSnap = await firestore
-                .collection(FirestoreCollections.properties)
-                .where(FieldPath.documentId, whereIn: chunk)
-                .get();
-            for (final pDoc in propSnap.docs) {
-              try {
-                _recordPropertyMeta(PropertyDoc.fromSnapshot(pDoc));
-              } catch (_) {}
-            }
-          } catch (_) {}
-        }
-      }
-
-      for (final doc in snap.docs) {
-        final data = doc.data();
-        final stars = parseNum(data['stars'], 0);
-        if (stars <= 0) continue;
-
-        final propId = extractPropertyId(data, docId: doc.id);
-        final explicitParentId = (data['parentPropertyId'] as String?)?.trim();
-        final meta = propId != null ? _propertyMetaCache[propId] : null;
-        final parentId = (explicitParentId != null && explicitParentId.isNotEmpty)
-            ? explicitParentId
-            : meta?.parentPropertyId;
-        final ownerId = ((data['ratedId'] as String?)?.trim().isNotEmpty ?? false)
-            ? (data['ratedId'] as String).trim()
-            : (meta?.ownerId ?? '');
-
-        entries.add(
-          _ResolvedRatingEntry(
-            doc: doc,
-            stars: stars,
-            propertyId: propId,
-            parentPropertyId: parentId,
-            ownerId: ownerId,
-            normalizedBuildingName: meta?.normalizedBuildingName ?? '',
-          ),
-        );
-      }
-    } catch (_) {
-      // Guest users or restricted environments without read access to `ratings`
-      // fall back cleanly to the fields already stored on PropertyDoc.
-    }
-
-    return _CachedRatingsSnapshot(
-      entries: entries,
-      fetchedAt: DateTime.now(),
-    );
-  }
-
-  /// Hydrates a single [PropertyDoc] with its aggregated ratings from `ratings`.
+  /// [property] with `avgRating` derived from its stored counters. No reads:
+  /// [firestore] and [forceRefresh] are kept only so existing callers
+  /// compile unchanged.
   static Future<PropertyDoc> hydrateProperty(
     FirebaseFirestore firestore,
     PropertyDoc property, {
     bool forceRefresh = false,
-  }) async {
-    final list = await hydrateProperties(
-      firestore,
-      [property],
-      forceRefresh: forceRefresh,
-    );
-    return list.first;
-  }
+  }) async =>
+      withDerivedAverage(property);
 
-  /// Hydrates a list of [PropertyDoc]s with aggregated ratings from `ratings`.
+  /// [properties] with `avgRating` derived from their stored counters. No
+  /// reads (see [hydrateProperty]).
   static Future<List<PropertyDoc>> hydrateProperties(
     FirebaseFirestore firestore,
     List<PropertyDoc> properties, {
     bool forceRefresh = false,
-  }) async {
-    if (properties.isEmpty) return properties;
+  }) async =>
+      [for (final p in properties) withDerivedAverage(p)];
 
-    for (final p in properties) {
-      _recordPropertyMeta(p);
-    }
-
-    final snapshot = await _getSnapshot(firestore, forceRefresh: forceRefresh);
-    if (snapshot.entries.isEmpty) return properties;
-
-    return [
-      for (final p in properties) _applyRatingsToProperty(p, snapshot.entries),
-    ];
+  /// [p] with `avgRating` = ratingSum / totalRatings when it has valid
+  /// counters; unchanged otherwise (legacy / unrated: "no rating yet").
+  static PropertyDoc withDerivedAverage(PropertyDoc p) {
+    _rememberTitles([p]);
+    final c = OwnerRatingSummary.countersOf(p);
+    if (c == null) return p;
+    return p.withRatings(avgRating: c.sum / c.total);
   }
 
-  /// Returns `(avgRating, totalCount)` for a property/building from `ratings`,
-  /// or `null` if there are no ratings for it.
-  static Future<(double avg, int count)?> getRatingForProperty({
+  /// The owner's rating: roll-up of their properties' counters. Pass the
+  /// owner's property docs when the screen already has them (zero reads);
+  /// otherwise this runs ONE `properties where ownerId == X` query. Returns
+  /// [OwnerRatingSummary.empty] when nothing is readable (e.g. a guest).
+  static Future<OwnerRatingSummary> getOwnerRollupRating({
     required FirebaseFirestore firestore,
-    required String propertyId,
-    String? parentPropertyId,
-    String? ownerId,
-    String? propertyName,
-    String? title,
-    bool forceRefresh = false,
+    required String ownerId,
+    List<PropertyDoc>? properties,
   }) async {
-    if (propertyId.trim().isEmpty) return null;
-    final snapshot = await _getSnapshot(firestore, forceRefresh: forceRefresh);
-    if (snapshot.entries.isEmpty) return null;
-
-    final matched = _matchEntriesForProperty(
-      entries: snapshot.entries,
-      propertyId: propertyId,
-      parentPropertyId: parentPropertyId,
-      ownerId: ownerId,
-      propertyName: propertyName,
-      title: title,
-    );
-    if (matched.isEmpty) return null;
-
-    num sum = 0;
-    for (final e in matched) {
-      sum += e.stars;
+    if (properties != null) {
+      _rememberTitles(properties);
+      return OwnerRatingSummary.fromProperties(properties);
     }
-    return ((sum / matched.length).toDouble(), matched.length);
+    final cleanOwnerId = ownerId.trim();
+    if (cleanOwnerId.isEmpty) return OwnerRatingSummary.empty;
+    try {
+      final snap = await firestore
+          .collection(FirestoreCollections.properties)
+          .where('ownerId', isEqualTo: cleanOwnerId)
+          .get();
+      final list = <PropertyDoc>[];
+      for (final d in snap.docs) {
+        try {
+          list.add(PropertyDoc.fromSnapshot(d));
+        } catch (_) {}
+      }
+      _rememberTitles(list);
+      return OwnerRatingSummary.fromProperties(list);
+    } catch (_) {
+      return OwnerRatingSummary.empty;
+    }
   }
 
-  static PropertyDoc _applyRatingsToProperty(
-    PropertyDoc p,
-    List<_ResolvedRatingEntry> entries,
-  ) {
-    final matched = _matchEntriesForProperty(
-      entries: entries,
-      propertyId: p.propertyId,
-      parentPropertyId: p.parentPropertyId,
-      ownerId: p.ownerId,
-      propertyName: p.propertyName,
-      title: p.title,
-    );
-
-    if (matched.isEmpty) return p;
-
-    num sum = 0;
-    for (final e in matched) {
-      sum += e.stars;
-    }
-    final count = matched.length;
-    final avg = (sum / count).toDouble();
-
-    return p.withRatings(
-      avgRating: avg,
-      totalRatings: count,
-      ratingSum: sum,
-    );
-  }
-
-  static List<_ResolvedRatingEntry> _matchEntriesForProperty({
-    required List<_ResolvedRatingEntry> entries,
-    required String propertyId,
-    String? parentPropertyId,
-    String? ownerId,
-    String? propertyName,
-    String? title,
-    Set<String>? extraTargetIds,
-    String? inquiryId,
-  }) {
-    final propMeta = _propertyMetaCache[propertyId.trim()];
-    final effectiveParentId =
-        (parentPropertyId != null && parentPropertyId.trim().isNotEmpty)
-            ? parentPropertyId.trim()
-            : propMeta?.parentPropertyId;
-    final effectiveOwnerId = (ownerId != null && ownerId.trim().isNotEmpty)
-        ? ownerId.trim()
-        : (propMeta?.ownerId ?? '');
-    final normBuilding = _normalizeBuildingName(
-      propertyName: propertyName,
-      title: title,
-    );
-    final effectiveBuilding = normBuilding.isNotEmpty
-        ? normBuilding
-        : (propMeta?.normalizedBuildingName ?? '');
-
-    final targetIds = <String>{
-      if (propertyId.trim().isNotEmpty) propertyId.trim(),
-      if (effectiveParentId != null && effectiveParentId.isNotEmpty)
-        effectiveParentId,
-      ...?extraTargetIds,
-    };
-
-    final byId = <String, _ResolvedRatingEntry>{};
-    for (final e in entries) {
-      final inq = (e.doc.data()['inquiryId'] as String?)?.trim() ?? '';
-      final entryMeta =
-          e.propertyId != null ? _propertyMetaCache[e.propertyId!] : null;
-      final entryParent = e.parentPropertyId ?? entryMeta?.parentPropertyId;
-      final entryBuilding = e.normalizedBuildingName.isNotEmpty
-          ? e.normalizedBuildingName
-          : (entryMeta?.normalizedBuildingName ?? '');
-      final entryOwner =
-          e.ownerId.isNotEmpty ? e.ownerId : (entryMeta?.ownerId ?? '');
-
-      if (inquiryId != null && inquiryId.isNotEmpty && inq == inquiryId) {
-        byId[e.doc.id] = e;
-        continue;
-      }
-      if (e.propertyId != null && targetIds.contains(e.propertyId)) {
-        byId[e.doc.id] = e;
-        continue;
-      }
-      if (entryParent != null &&
-          entryParent.isNotEmpty &&
-          targetIds.contains(entryParent)) {
-        byId[e.doc.id] = e;
-        continue;
-      }
-      if (targetIds.any((id) => inq.endsWith('_$id') || inq == id)) {
-        byId[e.doc.id] = e;
-        continue;
-      }
-      if (effectiveBuilding.isNotEmpty &&
-          effectiveOwnerId.isNotEmpty &&
-          entryOwner == effectiveOwnerId &&
-          entryBuilding == effectiveBuilding) {
-        byId[e.doc.id] = e;
-        continue;
-      }
-      // If the rating's original property doc no longer exists in Firestore
-      // (or had no propertyId), match by ownerId so orphaned ratings still show.
-      final hasKnownExistingProperty =
-          e.propertyId != null && _propertyMetaCache.containsKey(e.propertyId!);
-      if (!hasKnownExistingProperty &&
-          effectiveOwnerId.isNotEmpty &&
-          entryOwner == effectiveOwnerId) {
-        byId[e.doc.id] = e;
-        continue;
-      }
-    }
-
-    final result = byId.values.toList()
-      ..sort((a, b) {
-        final tA =
-            parseTimestamp(a.doc.data()['createdAt'])?.millisecondsSinceEpoch ??
-                0;
-        final tB =
-            parseTimestamp(b.doc.data()['createdAt'])?.millisecondsSinceEpoch ??
-                0;
-        return tB.compareTo(tA);
-      });
-    return result;
-  }
-
-  /// Returns all matching tenant rating documents for a property/building,
-  /// sorted newest-first. Used by `PropertyDetailScreen` and `PropertyReviewsScreen`.
-  static Future<List<DocumentSnapshot<Map<String, dynamic>>>>
+  /// One page of tenant reviews for a property, newest first.
+  ///
+  /// [listingLevel] false: ratings of this exact listing (`propertyId == X`).
+  /// [listingLevel] true: ratings of every room of the building/listing X
+  /// (`parentPropertyId == X`). Pass the last doc of the previous page as
+  /// [startAfter] to load more; a page shorter than [limit] is the last one.
+  /// Needs the (propertyId|parentPropertyId, raterRole, createdAt desc)
+  /// indexes in firestore.indexes.json.
+  static Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
       fetchRatingDocsForProperty({
     required FirebaseFirestore firestore,
     required String propertyId,
-    String? parentPropertyId,
-    String? ownerId,
-    String? propertyName,
-    String? title,
-    Set<String>? extraTargetIds,
-    String? inquiryId,
-    bool forceRefresh = false,
+    bool listingLevel = false,
+    int limit = reviewsPageSize,
+    DocumentSnapshot<Object?>? startAfter,
   }) async {
-    final snapshot = await _getSnapshot(firestore, forceRefresh: forceRefresh);
-    final matched = _matchEntriesForProperty(
-      entries: snapshot.entries,
-      propertyId: propertyId,
-      parentPropertyId: parentPropertyId,
-      ownerId: ownerId,
-      propertyName: propertyName,
-      title: title,
-      extraTargetIds: extraTargetIds,
-      inquiryId: inquiryId,
-    );
-    return [for (final m in matched) m.doc];
+    final id = propertyId.trim();
+    if (id.isEmpty) return const [];
+    Query<Map<String, dynamic>> q = firestore
+        .collection(FirestoreCollections.ratings)
+        .where(listingLevel ? 'parentPropertyId' : 'propertyId', isEqualTo: id)
+        // Owners' ratings of tenants carry the propertyId too: tenant reviews only.
+        .where('raterRole', isEqualTo: 'tenant')
+        .orderBy('createdAt', descending: true);
+    if (startAfter != null) q = q.startAfterDocument(startAfter);
+    final snap = await q.limit(limit).get();
+    return snap.docs;
   }
 
-  /// Returns `(avgRating, totalCount)` rolled up across all properties owned by [ownerId],
-  /// or `null` if the owner's properties have no tenant ratings yet.
-  static Future<(double avg, int count)?> getOwnerRollupRating({
-    required FirebaseFirestore firestore,
-    required String ownerId,
-    bool forceRefresh = false,
-  }) async {
-    final cleanOwnerId = ownerId.trim();
-    if (cleanOwnerId.isEmpty) return null;
-
-    final snapshot = await _getSnapshot(firestore, forceRefresh: forceRefresh);
-    if (snapshot.entries.isEmpty) return null;
-
-    final matched = _matchEntriesForOwner(
-      entries: snapshot.entries,
-      ownerId: cleanOwnerId,
-    );
-    if (matched.isEmpty) return null;
-
-    num sum = 0;
-    for (final e in matched) {
-      sum += e.stars;
-    }
-    return ((sum / matched.length).toDouble(), matched.length);
-  }
-
-  /// Returns all tenant property rating documents rolled up for [ownerId],
-  /// sorted newest-first, paired with the resolved `propertyTitle` of each rated property/room.
+  /// One page of the tenant reviews an owner received across all their
+  /// properties (`ratedId == ownerId`, newest first; existing ratedId +
+  /// createdAt index), each with the rated listing's title when it is known
+  /// from property docs already loaded. Paginate with [startAfter] (the last
+  /// returned `doc`).
   static Future<
       List<
           ({
@@ -460,120 +200,64 @@ class PropertyRatingsAggregator {
           })>> fetchRatingDocsForOwner({
     required FirebaseFirestore firestore,
     required String ownerId,
-    bool forceRefresh = false,
+    int limit = reviewsPageSize,
+    DocumentSnapshot<Object?>? startAfter,
   }) async {
     final cleanOwnerId = ownerId.trim();
     if (cleanOwnerId.isEmpty) return const [];
-
-    final snapshot = await _getSnapshot(firestore, forceRefresh: forceRefresh);
-    if (snapshot.entries.isEmpty) return const [];
-
-    final matched = _matchEntriesForOwner(
-      entries: snapshot.entries,
-      ownerId: cleanOwnerId,
-    );
-
+    Query<Map<String, dynamic>> q = firestore
+        .collection(FirestoreCollections.ratings)
+        .where('ratedId', isEqualTo: cleanOwnerId)
+        .orderBy('createdAt', descending: true);
+    if (startAfter != null) q = q.startAfterDocument(startAfter);
+    final snap = await q.limit(limit).get();
+    // Every rating with ratedId == an owner is a tenant's rating (rules: a
+    // tenant rates the inquiry's owner, an owner rates the tenant, and roles
+    // are permanent), so no raterRole filter is needed and pages stay exact.
     return [
-      for (final m in matched)
-        (
-          doc: m.doc,
-          propertyTitle: _resolveTitleForEntry(m),
-        ),
+      for (final d in snap.docs) (doc: d, propertyTitle: _titleFor(d.data())),
     ];
   }
 
-  static String? _resolveTitleForEntry(_ResolvedRatingEntry e) {
-    if (e.propertyId != null) {
-      final meta = _propertyMetaCache[e.propertyId!];
-      if (meta != null && meta.displayTitle.isNotEmpty) {
-        return meta.displayTitle;
-      }
-    }
-    if (e.parentPropertyId != null) {
-      final parentMeta = _propertyMetaCache[e.parentPropertyId!];
-      if (parentMeta != null && parentMeta.displayTitle.isNotEmpty) {
-        return parentMeta.displayTitle;
+  /// One page of the owner reviews a tenant received (`ratedId == tenantId`,
+  /// `raterRole == 'owner'`, newest first), each with the rated listing's
+  /// title when it is known from property docs already loaded. Paginate with
+  /// [startAfter] (the last returned `doc`); a page shorter than [limit] is
+  /// the last one. Needs the (ratedId, raterRole, createdAt desc) index in
+  /// firestore.indexes.json. The summary comes from the tenant's counters
+  /// ([OwnerRatingSummary.fromTenantProfile]), not from these pages.
+  static Future<
+      List<
+          ({
+            QueryDocumentSnapshot<Map<String, dynamic>> doc,
+            String? propertyTitle,
+          })>> fetchRatingDocsForTenant({
+    required FirebaseFirestore firestore,
+    required String tenantId,
+    int limit = reviewsPageSize,
+    DocumentSnapshot<Object?>? startAfter,
+  }) async {
+    final cleanTenantId = tenantId.trim();
+    if (cleanTenantId.isEmpty) return const [];
+    Query<Map<String, dynamic>> q = firestore
+        .collection(FirestoreCollections.ratings)
+        .where('ratedId', isEqualTo: cleanTenantId)
+        .where('raterRole', isEqualTo: 'owner')
+        .orderBy('createdAt', descending: true);
+    if (startAfter != null) q = q.startAfterDocument(startAfter);
+    final snap = await q.limit(limit).get();
+    return [
+      for (final d in snap.docs) (doc: d, propertyTitle: _titleFor(d.data())),
+    ];
+  }
+
+  static String? _titleFor(Map<String, dynamic> rating) {
+    for (final key in const ['propertyId', 'parentPropertyId']) {
+      final id = (rating[key] as String?)?.trim();
+      if (id != null && id.isNotEmpty && _titleCache[id] != null) {
+        return _titleCache[id];
       }
     }
     return null;
   }
-
-  static List<_ResolvedRatingEntry> _matchEntriesForOwner({
-    required List<_ResolvedRatingEntry> entries,
-    required String ownerId,
-  }) {
-    final byId = <String, _ResolvedRatingEntry>{};
-    for (final e in entries) {
-      final entryMeta =
-          e.propertyId != null ? _propertyMetaCache[e.propertyId!] : null;
-      final parentMeta = e.parentPropertyId != null
-          ? _propertyMetaCache[e.parentPropertyId!]
-          : null;
-      final resolvedOwner = e.ownerId.isNotEmpty
-          ? e.ownerId
-          : (entryMeta?.ownerId.isNotEmpty == true
-              ? entryMeta!.ownerId
-              : (parentMeta?.ownerId ?? ''));
-
-      if (resolvedOwner == ownerId) {
-        byId[e.doc.id] = e;
-      }
-    }
-
-    final result = byId.values.toList()
-      ..sort((a, b) {
-        final tA =
-            parseTimestamp(a.doc.data()['createdAt'])?.millisecondsSinceEpoch ??
-                0;
-        final tB =
-            parseTimestamp(b.doc.data()['createdAt'])?.millisecondsSinceEpoch ??
-                0;
-        return tB.compareTo(tA);
-      });
-    return result;
-  }
-}
-
-class _PropertyGroupMeta {
-  const _PropertyGroupMeta({
-    required this.propertyId,
-    this.parentPropertyId,
-    required this.ownerId,
-    required this.normalizedBuildingName,
-    this.displayTitle = '',
-  });
-
-  final String propertyId;
-  final String? parentPropertyId;
-  final String ownerId;
-  final String normalizedBuildingName;
-  final String displayTitle;
-}
-
-class _ResolvedRatingEntry {
-  const _ResolvedRatingEntry({
-    required this.doc,
-    required this.stars,
-    this.propertyId,
-    this.parentPropertyId,
-    required this.ownerId,
-    required this.normalizedBuildingName,
-  });
-
-  final QueryDocumentSnapshot<Map<String, dynamic>> doc;
-  final num stars;
-  final String? propertyId;
-  final String? parentPropertyId;
-  final String ownerId;
-  final String normalizedBuildingName;
-}
-
-class _CachedRatingsSnapshot {
-  const _CachedRatingsSnapshot({
-    required this.entries,
-    required this.fetchedAt,
-  });
-
-  final List<_ResolvedRatingEntry> entries;
-  final DateTime fetchedAt;
 }

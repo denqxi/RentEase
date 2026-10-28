@@ -536,7 +536,7 @@ class _SignInScreenState extends State<SignInScreen>
                                 const TextSpan(
                                   text: 'Rent',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.onInk,
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
@@ -557,7 +557,7 @@ class _SignInScreenState extends State<SignInScreen>
                               fontFamily: 'DM Sans',
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: AppColors.onInk,
                               height: 1.3,
                             ),
                           ),

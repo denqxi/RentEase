@@ -211,7 +211,7 @@ class _TimelineStatusCard extends StatelessWidget {
               width: 34,
               height: 34,
               decoration: const BoxDecoration(
-                color: Color(0xFF10B981),
+                color: AppColors.emerald500,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -229,8 +229,8 @@ class _TimelineStatusCard extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xFF10B981),
-                    Color(0xFFF59E0B),
+                    AppColors.emerald500,
+                    AppColors.matchMedium,
                   ],
                 ),
               ),
@@ -244,7 +244,7 @@ class _TimelineStatusCard extends StatelessWidget {
                     width: 34,
                     height: 34,
                     decoration: const BoxDecoration(
-                      color: Color(0xFF10B981),
+                      color: AppColors.emerald500,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -258,26 +258,26 @@ class _TimelineStatusCard extends StatelessWidget {
                         width: 34,
                         height: 34,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFFEE2E2),
+                          color: AppColors.redFill100,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.close_rounded,
                           size: 18,
-                          color: Color(0xFFDC2626),
+                          color: AppColors.red600,
                         ),
                       )
                     : Container(
                         width: 34,
                         height: 34,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFFEF3C7),
+                          color: AppColors.warningFill,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.access_time_rounded,
                           size: 18,
-                          color: Color(0xFFD97706),
+                          color: AppColors.amber600,
                         ),
                       )),
             title: 'Identity verification',
@@ -289,12 +289,12 @@ class _TimelineStatusCard extends StatelessWidget {
             connector: verified
                 ? Container(
                     width: 2,
-                    color: const Color(0xFF10B981),
+                    color: AppColors.emerald500,
                   )
                 : CustomPaint(
                     size: const Size(2, 30),
                     painter: const _DashedLinePainter(
-                      color: Color(0xFFCBD5E1),
+                      color: AppColors.slate300,
                     ),
                   ),
           ),
@@ -307,7 +307,7 @@ class _TimelineStatusCard extends StatelessWidget {
                     width: 34,
                     height: 34,
                     decoration: const BoxDecoration(
-                      color: Color(0xFF10B981),
+                      color: AppColors.emerald500,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -320,10 +320,10 @@ class _TimelineStatusCard extends StatelessWidget {
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
-                      color: Colors.transparent,
+                      color: AppColors.transparent,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFFCBD5E1),
+                        color: AppColors.slate300,
                         width: 2.5,
                       ),
                     ),

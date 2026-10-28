@@ -421,7 +421,7 @@ class _SectionHeader extends StatelessWidget {
             const TextSpan(
               text: ' *',
               style: TextStyle(
-                color: Color(0xFFEF4444),
+                color: AppColors.destructive,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -469,7 +469,7 @@ class _DocumentCard extends StatelessWidget {
       height: 110,
       decoration: BoxDecoration(
         color: status == SlotStatus.success
-            ? const Color(0xFFF8FAFC)
+            ? AppColors.slate50
             : context.appColors.fieldFill,
         borderRadius: BorderRadius.circular(14),
         border: !isDashed
@@ -720,7 +720,7 @@ class _DocumentCard extends StatelessWidget {
 
   Widget _uploadedPlaceholder(BuildContext context) {
     return Container(
-      color: const Color(0xFFF1F5F9),
+      color: AppColors.fieldFill,
       alignment: Alignment.center,
       child: const Icon(
         Icons.description_outlined,

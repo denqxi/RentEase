@@ -44,7 +44,13 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
   List<_PropertyReviewItem> _reviews = [];
   double _avgRating = 0.0;
   int _totalCount = 0;
+  // Distribution of the reviews loaded so far (the header average/count come
+  // from the stored counters).
   final Map<int, int> _starCounts = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0};
+  // Pagination of the written-review list (newest first).
+  DocumentSnapshot<Object?>? _lastDoc;
+  bool _hasMore = false;
+  bool _loadingMore = false;
 
   @override
   void initState() {
@@ -52,42 +58,49 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
     _loadReviews();
   }
 
-  Future<void> _loadReviews() async {
+  // Load the next page when the list is scrolled near its end.
+  bool _onScroll(ScrollNotification n) {
+    if (_hasMore &&
+        !_loadingMore &&
+        n.metrics.pixels >= n.metrics.maxScrollExtent - 200) {
+      _loadReviews(more: true);
+    }
+    return false;
+  }
+
+  Future<void> _loadReviews({bool more = false}) async {
+    if (more && (_loadingMore || !_hasMore)) return;
+    _loadingMore = more;
     final p = widget.property;
-    final targetIds = <String>{
-      p.propertyId,
-      if (p.parentPropertyId != null && p.parentPropertyId!.isNotEmpty)
-        p.parentPropertyId!,
-      for (final r in widget.rooms) r.propertyId,
-    };
+    // A building card (room with a parentPropertyId) lists every room's
+    // reviews (parentPropertyId == building); otherwise this listing's own.
+    final parentId = p.parentPropertyId?.trim() ?? '';
+    final listingLevel = p.isRoom && parentId.isNotEmpty;
+    // Header numbers from the docs' counters (no ratings scan).
+    final summary = OwnerRatingSummary.fromProperties([p, ...widget.rooms]);
 
     try {
       final loaded = <_PropertyReviewItem>[];
-      num totalStars = 0;
-      final counts = <int, int>{5: 0, 4: 0, 3: 0, 2: 0, 1: 0};
+      final counts = more
+          ? Map<int, int>.of(_starCounts)
+          : <int, int>{5: 0, 4: 0, 3: 0, 2: 0, 1: 0};
 
-      final docsMap = <String, DocumentSnapshot<Map<String, dynamic>>>{};
-      final aggregatedDocs =
+      final pageDocs =
           await PropertyRatingsAggregator.fetchRatingDocsForProperty(
         firestore: FirebaseFirestore.instance,
-        propertyId: p.propertyId,
-        parentPropertyId: p.parentPropertyId,
-        ownerId: p.ownerId,
-        propertyName: p.propertyName,
-        title: p.title,
-        extraTargetIds: targetIds,
-        forceRefresh: true,
+        propertyId: listingLevel ? parentId : p.propertyId,
+        listingLevel: listingLevel,
+        startAfter: more ? _lastDoc : null,
       );
-      for (final doc in aggregatedDocs) {
-        docsMap[doc.id] = doc;
-      }
+      _hasMore =
+          pageDocs.length >= PropertyRatingsAggregator.reviewsPageSize;
+      if (pageDocs.isNotEmpty) _lastDoc = pageDocs.last;
 
-      if (docsMap.isNotEmpty) {
-        for (final doc in docsMap.values) {
+      if (pageDocs.isNotEmpty) {
+        for (final doc in pageDocs) {
           final rating = RatingDoc.fromSnapshot(doc);
           if (rating.raterRole != 'tenant') continue;
           final stars = rating.stars.toInt().clamp(1, 5);
-          totalStars += stars;
           counts[stars] = (counts[stars] ?? 0) + 1;
 
           String raterName = 'Tenant';
@@ -138,19 +151,19 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
       }
 
       if (mounted) {
-        if (loaded.isNotEmpty) {
+        if (loaded.isNotEmpty || more) {
           setState(() {
-            _reviews = loaded;
-            _totalCount = loaded.length;
-            _avgRating = totalStars / loaded.length;
+            _reviews = more ? [..._reviews, ...loaded] : loaded;
+            _totalCount = summary.totalRatings;
+            _avgRating = summary.average;
             _starCounts.addAll(counts);
             _isLoading = false;
           });
         } else {
           setState(() {
             _reviews = [];
-            _totalCount = (p.totalRatings ?? 0).toInt();
-            _avgRating = (p.effectiveAvgRating ?? p.avgRating?.toDouble() ?? 0.0);
+            _totalCount = summary.totalRatings;
+            _avgRating = summary.average;
             _isLoading = false;
           });
         }
@@ -159,6 +172,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
       debugPrint('Error loading property ratings: $e');
       if (mounted) setState(() => _isLoading = false);
     }
+    _loadingMore = false;
   }
 
   @override
@@ -199,7 +213,9 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
           : SafeArea(
               child: _reviews.isEmpty
                   ? _buildEmptyState(displayName)
-                  : SingleChildScrollView(
+                  : NotificationListener<ScrollNotification>(
+                    onNotification: _onScroll,
+                    child: SingleChildScrollView(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 16,
@@ -219,7 +235,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                           Row(
                             children: [
                               Text(
-                                'Tenant Reviews (${_reviews.length})',
+                                'Tenant Reviews (${_totalCount > _reviews.length ? _totalCount : _reviews.length})',
                                 style: const TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 16,
@@ -240,6 +256,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                         ],
                       ),
                     ),
+                  ),
             ),
     );
   }
@@ -401,7 +418,8 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
             child: Column(
               children: [5, 4, 3, 2, 1].map((star) {
                 final count = _starCounts[star] ?? 0;
-                final pct = _totalCount > 0 ? (count / _totalCount) : 0.0;
+                // Share of the reviews loaded so far (pages load on scroll).
+                final pct = _reviews.isNotEmpty ? (count / _reviews.length) : 0.0;
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Row(

@@ -71,6 +71,7 @@ class TenantProfileDoc {
       wAmenities: prefs.wAmenities ?? wAmenities,
       avgRating: avgRating,
       totalRatings: totalRatings,
+      ratingSum: ratingSum,
       profileCompleteness: profileCompleteness,
       credibilityScore: credibilityScore,
       updatedAt: updatedAt,
@@ -188,9 +189,8 @@ class TenantProfileDoc {
     if (occupation != null) 'occupation': occupation,
     if (moveInDate != null) 'moveInDate': moveInDate,
     'isSeeking': isSeeking,
-    if (avgRating != null) 'avgRating': avgRating,
-    if (totalRatings != null) 'totalRatings': totalRatings,
-    if (ratingSum != null) 'ratingSum': ratingSum,
+    // Rating counters are never self-written (firestore.rules): only an
+    // owner's rating batch bumps them.
     if (profileCompleteness != null) 'profileCompleteness': profileCompleteness,
     if (credibilityScore != null) 'credibilityScore': credibilityScore,
     'updatedAt': FieldValue.serverTimestamp(),

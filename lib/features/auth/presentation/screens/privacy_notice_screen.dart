@@ -47,6 +47,14 @@ class PrivacyNoticeScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                        child: Text(
+                          'Version ${PrivacyNoticeContent.version} · '
+                          'Last updated ${PrivacyNoticeContent.lastUpdated}',
+                          style: AppTextStyles.caption(context),
+                        ),
+                      ),
+                      Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                         child: Text(
                           PrivacyNoticeContent.intro,

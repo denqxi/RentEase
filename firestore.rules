@@ -85,6 +85,72 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
+    // ---------- rating counters ----------
+    // Counters (ratingSum / totalRatings) are bumped by the rater's device
+    // (no Cloud Functions): exactly one more rating of 1-5 stars on someone
+    // else's doc. avgRating is never stored (derived from sum / total). They
+    // live on properties (tenant -> property, and its parent listing doc when
+    // that doc exists) and on tenantProfiles (owner -> tenant). The owner has
+    // NO counter: their rating is the client-side roll-up of their properties'
+    // counters, so ownerProfiles rating fields are not writable at all.
+    //
+    // Each bump must be BACKED by a rating created in the SAME atomic batch:
+    // the write carries `lastRatingId`, that ratings/{id} doc must not exist
+    // yet (!exists) and must exist after the batch (existsAfter), be the
+    // caller's own (raterId), and its `stars` must equal the sum delta. Rating
+    // creates are one-per-inquiry-and-rater and never updatable, so one real
+    // booked-inquiry rating can justify exactly one bump per counter doc.
+    function ratingPath(ratingId) {
+      return /databases/$(database)/documents/ratings/$(ratingId);
+    }
+    function ratingBumpBase(ratingId) {
+      let d = request.resource.data;
+      let r = resource.data;
+      return signedIn()
+        && notSuspended()
+        && d.diff(r).affectedKeys().hasOnly(['ratingSum', 'totalRatings', 'updatedAt',
+                                             'lastRatingId'])
+        && d.get('totalRatings', 0) is int
+        && d.get('totalRatings', 0) == r.get('totalRatings', 0) + 1
+        && d.get('ratingSum', 0) is number
+        && !exists(ratingPath(ratingId))
+        && existsAfter(ratingPath(ratingId))
+        && getAfter(ratingPath(ratingId)).data.raterId == request.auth.uid
+        && getAfter(ratingPath(ratingId)).data.stars
+             == d.get('ratingSum', 0) - r.get('ratingSum', 0);
+    }
+    // tenantProfiles/{tenantId}: an owner's rating whose ratedId is this tenant
+    // (the ratings create rule ties ratedId to the inquiry's tenant).
+    function ratingBumpTenantProfile(tenantId) {
+      return !isSelf(tenantId)
+        && request.resource.data.get('lastRatingId', null) is string
+        && ratingBumpBase(request.resource.data.lastRatingId)
+        && getAfter(ratingPath(request.resource.data.lastRatingId)).data.raterRole == 'owner'
+        && getAfter(ratingPath(request.resource.data.lastRatingId)).data.ratedId == tenantId;
+    }
+    // properties/{propertyId}: a tenant's rating of THIS listing or of a room
+    // whose parent listing is this doc. Bound to the rating's inquiry (not
+    // only the rating's own propertyId field): the inquiry's property must be
+    // this doc, or a room whose parentPropertyId is this doc. The listing's
+    // owner can never bump their own listing.
+    function ratingBumpProperty(propertyId) {
+      return resource.data.ownerId != request.auth.uid
+        && request.resource.data.get('lastRatingId', null) is string
+        && ratingBumpBase(request.resource.data.lastRatingId)
+        && getAfter(ratingPath(request.resource.data.lastRatingId)).data.raterRole == 'tenant'
+        && ratingTargetsProperty(
+             getAfter(ratingPath(request.resource.data.lastRatingId)).data, propertyId);
+    }
+    function ratingTargetsProperty(rating, propertyId) {
+      let inqProp = get(/databases/$(database)/documents/inquiries/$(rating.inquiryId))
+                      .data.propertyId;
+      return (rating.get('propertyId', '') == propertyId && inqProp == propertyId)
+        || (rating.get('parentPropertyId', '') == propertyId
+            && inqProp != propertyId
+            && get(/databases/$(database)/documents/properties/$(inqProp))
+                 .data.get('parentPropertyId', '') == propertyId);
+    }
+
     function isVerifiedOwner() {
       return signedIn()
         && userDoc(request.auth.uid).role == 'owner'
@@ -271,23 +337,19 @@ service cloud.firestore {
         && noPrivatePrefs()
         // computed fields are server-side only
         && !request.resource.data.diff(resource == null ? {} : resource.data)
-              .affectedKeys().hasAny(['avgRating', 'totalRatings',
+              .affectedKeys().hasAny(['avgRating', 'totalRatings', 'ratingSum',
+                                      'lastRatingId',
                                       'profileCompleteness', 'credibilityScore']);
       allow update: if (isSelf(userId) && notSuspended()
           && !('emergencyContact' in request.resource.data)
           && noPrivatePrefs()
           // computed fields are server-side only
           && !request.resource.data.diff(resource.data)
-                .affectedKeys().hasAny(['avgRating', 'totalRatings',
+                .affectedKeys().hasAny(['avgRating', 'totalRatings', 'ratingSum',
+                                        'lastRatingId',
                                         'profileCompleteness', 'credibilityScore']))
-        // Allow rating aggregate updates by authenticated users
-        || (signedIn()
-            && notSuspended()
-            && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['ratingSum', 'totalRatings', 'avgRating', 'updatedAt'])
-            && request.resource.data.get('totalRatings', 0) is int
-            && request.resource.data.get('ratingSum', 0) is number
-            && request.resource.data.get('avgRating', 0) is number);
+        // An owner's rating batch bumps this tenant's counters (never self).
+        || ratingBumpTenantProfile(userId);
       allow delete: if (isSelf(userId) && notSuspended()) || isAdmin();
 
       // Map pin + TOPSIS weights: that tenant and admins only (owners cannot
@@ -326,24 +388,19 @@ service cloud.firestore {
       allow create: if isSelf(userId) && notSuspended()
         && request.resource.data.verificationStatus in ['none', 'pending']
         && !request.resource.data.keys().hasAny(['verifiedAt', 'rejectedAt',
-             'avgRating', 'totalRatings', 'totalListings']);
+             'avgRating', 'totalRatings', 'ratingSum', 'lastRatingId', 'totalListings']);
+      // No rating-counter path: the owner's rating is the client-side roll-up
+      // of their properties' counters, so ownerProfiles rating fields are
+      // written by nobody (admin console only).
       allow update: if (isSelf(userId) && notSuspended()
           // owner can only move none -> pending (document submission)
           && (request.resource.data.verificationStatus == resource.data.verificationStatus
               || (resource.data.verificationStatus == 'none'
                   && request.resource.data.verificationStatus == 'pending'))
           && !request.resource.data.diff(resource.data).affectedKeys()
-                .hasAny(['verifiedAt', 'rejectedAt', 'avgRating',
-                         'totalRatings', 'totalListings']))
-        || isAdmin() // admin approves/rejects
-        // Allow rating aggregate updates by authenticated users
-        || (signedIn()
-            && notSuspended()
-            && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['ratingSum', 'totalRatings', 'avgRating', 'updatedAt'])
-            && request.resource.data.get('totalRatings', 0) is int
-            && request.resource.data.get('ratingSum', 0) is number
-            && request.resource.data.get('avgRating', 0) is number);
+                .hasAny(['verifiedAt', 'rejectedAt', 'avgRating', 'ratingSum',
+                         'lastRatingId', 'totalRatings', 'totalListings']))
+        || isAdmin(); // admin approves/rejects
       // Self-service account deletion (a rejected / pending owner included).
       allow delete: if (isSelf(userId) && notSuspended()) || isAdmin();
 
@@ -420,15 +477,23 @@ service cloud.firestore {
       // tenantProfiles and inquiries stay private.
       allow read: if signedIn()
         || resource.data.get('isAvailable', false) == true;
+      // Rating counters are never owner-writable (not even seeded at create).
+      function noRatingFieldChange() {
+        return !request.resource.data.diff(resource == null ? {} : resource.data)
+          .affectedKeys().hasAny(['ratingSum', 'totalRatings', 'avgRating',
+                                  'lastRatingId']);
+      }
       allow create: if ownerMayWrite()
         && request.resource.data.ownerId == request.auth.uid
         && publishOk()
-        && validAmenities();
+        && validAmenities()
+        && noRatingFieldChange();
       allow update: if (ownerMayWrite()
           && resource.data.ownerId == request.auth.uid
           && request.resource.data.ownerId == resource.data.ownerId
           && publishOk()
           && validAmenities()
+          && noRatingFieldChange()
           // Admin unlisting (adminUnlisted) cannot be undone by the owner.
           && request.resource.data.get('adminUnlisted', false)
                == resource.data.get('adminUnlisted', false)
@@ -439,14 +504,9 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['isAvailable', 'adminUnlisted', 'isVerified',
                            'updatedAt']))
-        // Allow rating aggregate updates by authenticated users
-        || (signedIn()
-            && notSuspended()
-            && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['ratingSum', 'totalRatings', 'avgRating', 'updatedAt'])
-            && request.resource.data.get('totalRatings', 0) is int
-            && request.resource.data.get('ratingSum', 0) is number
-            && request.resource.data.get('avgRating', 0) is number);
+        // A tenant's rating batch bumps this listing's counters (never the
+        // owner's own; see ratingBumpProperty).
+        || ratingBumpProperty(propertyId);
       // Account deletion must also work for a rejected owner, so delete needs ownership (+ email verified, not suspended; a listing can
       // only exist if its creator had a verified email).
       allow delete: if (emailVerified() && notSuspended()
@@ -458,20 +518,20 @@ service cloud.firestore {
         allow read: if signedIn()
           || get(/databases/$(database)/documents/properties/$(propertyId))
                .data.get('isAvailable', false) == true;
+        // Room rating counters are not used by the app: nobody writes them.
+        function noRoomRatingFields() {
+          return !request.resource.data.diff(resource == null ? {} : resource.data)
+            .affectedKeys().hasAny(['ratingSum', 'totalRatings', 'avgRating',
+                                    'lastRatingId']);
+        }
         allow create: if ownerMayWrite()
           && get(/databases/$(database)/documents/properties/$(propertyId))
-               .data.ownerId == request.auth.uid;
-        allow update: if (ownerMayWrite()
+               .data.ownerId == request.auth.uid
+          && noRoomRatingFields();
+        allow update: if ownerMayWrite()
             && get(/databases/$(database)/documents/properties/$(propertyId))
-                 .data.ownerId == request.auth.uid)
-          // Allow rating aggregate updates by authenticated users
-          || (signedIn()
-              && notSuspended()
-              && request.resource.data.diff(resource.data).affectedKeys()
-                   .hasOnly(['ratingSum', 'totalRatings', 'avgRating', 'updatedAt'])
-              && request.resource.data.get('totalRatings', 0) is int
-              && request.resource.data.get('ratingSum', 0) is number
-              && request.resource.data.get('avgRating', 0) is number);
+                 .data.ownerId == request.auth.uid
+            && noRoomRatingFields();
         // Delete only needs ownership (account deletion; rooms go before the
         // property so this get() still resolves).
         allow delete: if (emailVerified() && notSuspended()
@@ -806,7 +866,21 @@ service cloud.firestore {
         && (get(/databases/$(database)/documents/inquiries/$(request.resource.data.inquiryId))
               .data.tenantId == request.auth.uid
             || get(/databases/$(database)/documents/inquiries/$(request.resource.data.inquiryId))
-              .data.ownerId == request.auth.uid);
+              .data.ownerId == request.auth.uid)
+        // The property fields must describe the inquiry's own property, so a
+        // review cannot be filed under a listing the rater never booked:
+        // propertyId is the inquiry's property, parentPropertyId is that
+        // property's own parent listing (both optional, never anything else).
+        && (!('propertyId' in request.resource.data)
+            || request.resource.data.propertyId ==
+                 get(/databases/$(database)/documents/inquiries/$(request.resource.data.inquiryId))
+                   .data.propertyId)
+        && (!('parentPropertyId' in request.resource.data)
+            || request.resource.data.parentPropertyId ==
+                 get(/databases/$(database)/documents/properties/$(
+                       get(/databases/$(database)/documents/inquiries/$(request.resource.data.inquiryId))
+                         .data.propertyId))
+                   .data.get('parentPropertyId', ''));
       allow update, delete: if isAdmin();
     }
 

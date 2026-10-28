@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -206,9 +207,21 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
     await reloadTenants();
   }
 
+  /// True once the user has signed out: the live listeners then lose
+  /// permission and error out, which is a side effect of logging out, not a
+  /// failure worth a banner on the screen that is closing.
+  static bool get _isSignedOut {
+    try {
+      return FirebaseAuth.instance.currentUser == null;
+    } catch (_) {
+      // No Firebase app (unit tests / offline preview): treat as signed in.
+      return false;
+    }
+  }
+
   void _onError(Object e) {
     debugPrint('LandlordHomeCubit stream error: $e');
-    if (isClosed) return;
+    if (isClosed || _isSignedOut) return;
     emit(
       state.copyWith(
         isLoading: false,

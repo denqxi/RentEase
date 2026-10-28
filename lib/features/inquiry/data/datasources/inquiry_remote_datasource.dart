@@ -3,7 +3,50 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/models.dart';
-import '../../../../core/firestore/property_ratings_aggregator.dart';
+
+/// Which counter docs one rating bumps, and with what (pure; unit-tested).
+/// Must stay in sync with ratingBumpBase / ratingBumpProperty /
+/// ratingBumpProfile in firestore.rules.
+class RatingBumpPlan {
+  RatingBumpPlan._();
+
+  static String ratingIdFor(RatingDoc rating) =>
+      '${rating.inquiryId}_${rating.raterId}';
+
+  /// totalRatings +1, ratingSum +stars, tagged with the backing rating id.
+  /// avgRating is never stored (derived from ratingSum / totalRatings).
+  static Map<String, dynamic> bumpFields(String ratingId, num stars) => {
+    'totalRatings': FieldValue.increment(1),
+    'ratingSum': FieldValue.increment(stars),
+    'lastRatingId': ratingId,
+    'updatedAt': FieldValue.serverTimestamp(),
+  };
+
+  /// Tenant rater: the rated property, plus its parent listing doc when
+  /// [parentPropertyId] names a different doc. Owner rater: the rated
+  /// tenant's tenantProfiles doc. Never ownerProfiles.
+  static List<({String collection, String docId})> targetsFor(
+    RatingDoc rating, {
+    String? parentPropertyId,
+  }) {
+    if (rating.raterRole == 'owner') {
+      final tenantId = rating.ratedId.trim();
+      return [
+        if (tenantId.isNotEmpty)
+          (collection: FirestoreCollections.tenantProfiles, docId: tenantId),
+      ];
+    }
+    if (rating.raterRole != 'tenant') return const [];
+    final propertyId = rating.propertyId?.trim() ?? '';
+    if (propertyId.isEmpty) return const [];
+    final parent = parentPropertyId?.trim() ?? '';
+    return [
+      (collection: FirestoreCollections.properties, docId: propertyId),
+      if (parent.isNotEmpty && parent != propertyId)
+        (collection: FirestoreCollections.properties, docId: parent),
+    ];
+  }
+}
 
 class InquiryRemoteDataSource {
   InquiryRemoteDataSource({FirebaseFirestore? firestore})
@@ -134,85 +177,38 @@ class InquiryRemoteDataSource {
 
   // Deterministic ID (one rating per inquiry + rater): a double-tap that slips
   // past the hasRated check becomes an update, which firestore.rules deny.
+  // The rating and its counter bumps go in ONE atomic batch: firestore.rules
+  // only accept a bump (totalRatings +1, ratingSum +stars) whose
+  // `lastRatingId` names a rating created in the same batch, so a counter
+  // can never move without a real booked-inquiry rating behind it.
+  // Tenant -> property (+ parent listing doc); owner -> tenantProfiles. The
+  // owner has no counter of their own (their rating is the roll-up of their
+  // properties), so ownerProfiles is never written here.
   Future<void> createRating(RatingDoc rating, {String? parentPropertyId}) async {
-    final map = rating.toMap();
-    final ratingRef = _firestore
-        .collection(FirestoreCollections.ratings)
-        .doc('${rating.inquiryId}_${rating.raterId}');
-
-    // 1. Write the rating document directly first
-    try {
-      await ratingRef.set(map);
-    } catch (_) {
-      final legacyMap = Map<String, dynamic>.from(map)
-        ..remove('propertyId')
-        ..remove('parentPropertyId');
-      await ratingRef.set(legacyMap);
-    }
-
-    // 2. Update property aggregate ratings
-    if (rating.propertyId != null && rating.propertyId!.isNotEmpty) {
+    final ratingId = RatingBumpPlan.ratingIdFor(rating);
+    final batch = _firestore.batch()
+      ..set(
+        _firestore.collection(FirestoreCollections.ratings).doc(ratingId),
+        rating.toMap(),
+      );
+    final bump = RatingBumpPlan.bumpFields(ratingId, rating.stars);
+    for (final t in RatingBumpPlan.targetsFor(
+      rating,
+      parentPropertyId: parentPropertyId,
+    )) {
+      final ref = _firestore.collection(t.collection).doc(t.docId);
+      // Only bump docs that exist: a set/update on a missing doc would be a
+      // create the rater may not make and would abort the whole batch (room
+      // listings' parentPropertyId is usually a building id, not a doc).
       try {
-        final propRef = _firestore
-            .collection(FirestoreCollections.properties)
-            .doc(rating.propertyId);
-        await propRef.set({
-          'totalRatings': FieldValue.increment(1),
-          'ratingSum': FieldValue.increment(rating.stars),
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        if (!(await ref.get()).exists) continue;
       } catch (e) {
-        debugPrint('createRating: propRef update failed: $e');
+        debugPrint('createRating: cannot read ${ref.path}: $e');
+        continue;
       }
-
-      if (parentPropertyId != null &&
-          parentPropertyId.isNotEmpty &&
-          parentPropertyId != rating.propertyId) {
-        try {
-          final parentRef = _firestore
-              .collection(FirestoreCollections.properties)
-              .doc(parentPropertyId);
-          await parentRef.set({
-            'totalRatings': FieldValue.increment(1),
-            'ratingSum': FieldValue.increment(rating.stars),
-            'updatedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
-        } catch (e) {
-          debugPrint('createRating: parentRef update failed: $e');
-        }
-      }
+      batch.update(ref, bump);
     }
-
-    // 3. Update counterparty profile aggregate ratings
-    if (rating.raterRole == 'tenant') {
-      try {
-        final ownerProfileRef = _firestore
-            .collection(FirestoreCollections.ownerProfiles)
-            .doc(rating.ratedId);
-        await ownerProfileRef.set({
-          'totalRatings': FieldValue.increment(1),
-          'ratingSum': FieldValue.increment(rating.stars),
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-      } catch (e) {
-        debugPrint('createRating: ownerProfileRef update failed: $e');
-      }
-    } else {
-      try {
-        final tenantProfileRef = _firestore
-            .collection(FirestoreCollections.tenantProfiles)
-            .doc(rating.ratedId);
-        await tenantProfileRef.set({
-          'totalRatings': FieldValue.increment(1),
-          'ratingSum': FieldValue.increment(rating.stars),
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-      } catch (e) {
-        debugPrint('createRating: tenantProfileRef update failed: $e');
-      }
-    }
-
-    PropertyRatingsAggregator.invalidateCache();
+    await batch.commit();
   }
 
   Future<bool> hasRated({

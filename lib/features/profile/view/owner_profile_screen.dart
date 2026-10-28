@@ -9,6 +9,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/cubit/app_theme_cubit.dart';
 import '../../../core/firestore/firestore_collections.dart';
+import '../../../core/firestore/property_ratings_aggregator.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_svg_icon.dart';
 import '../../../shared/widgets/app_toggle.dart';
@@ -72,11 +73,8 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
       ];
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _inquiriesSub;
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _ratingsSub;
   String? _subscribedUid;
   int _inquiriesCount = 0;
-  double _avgRating = 0.0;
-  int _totalReviews = 0;
 
   @override
   void initState() {
@@ -93,7 +91,6 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
   @override
   void dispose() {
     _inquiriesSub?.cancel();
-    _ratingsSub?.cancel();
     super.dispose();
   }
 
@@ -104,7 +101,6 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     _subscribedUid = uid;
 
     _inquiriesSub?.cancel();
-    _ratingsSub?.cancel();
 
     try {
       // One-shot aggregate count (1 read per 1000 docs) instead of a live
@@ -123,42 +119,9 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     } catch (e) {
       debugPrint('Error subscribing to inquiries: $e');
     }
-
-    try {
-      _ratingsSub = FirebaseFirestore.instance
-          .collection(FirestoreCollections.ratings)
-          .where('ratedId', isEqualTo: uid)
-          .where('raterRole', isEqualTo: 'tenant')
-          .snapshots()
-          .listen(
-            (snap) {
-              if (mounted) {
-                if (snap.docs.isEmpty) {
-                  setState(() {
-                    _avgRating = 0.0;
-                    _totalReviews = 0;
-                  });
-                } else {
-                  num totalStars = 0;
-                  for (final doc in snap.docs) {
-                    final data = doc.data();
-                    final stars = (data['stars'] as num?) ?? 0;
-                    totalStars += stars;
-                  }
-                  setState(() {
-                    _totalReviews = snap.docs.length;
-                    _avgRating = totalStars / snap.docs.length;
-                  });
-                }
-              }
-            },
-            onError: (e) {
-              debugPrint('Error streaming owner ratings: $e');
-            },
-          );
-    } catch (e) {
-      debugPrint('Error subscribing to ratings: $e');
-    }
+    // The rating is NOT read here: it is the roll-up of the owner's
+    // properties' counters, taken in build() from the properties the
+    // LandlordHomeCubit already streams (zero extra reads, stays live).
   }
 
   Future<void> _confirmLogOut(BuildContext context) async {
@@ -246,14 +209,22 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     final isDark = context.watch<AppThemeCubit>().state;
     // Rebuild only when a field shown here changes (not on tenant reloads or
     // search emissions); the record compares structurally.
-    context.select<LandlordHomeCubit, (String, String?, String?, int)>(
-      (c) => (
+    final (_, _, _, _, ratingSum, totalReviews) = context.select<
+        LandlordHomeCubit, (String, String?, String?, int, num, int)>((c) {
+      // Owner rating = roll-up of their own properties' stored counters.
+      final rating = OwnerRatingSummary.fromProperties(c.state.properties);
+      return (
         c.state.fullName,
         c.state.photoUrl,
         c.state.verificationStatus,
         c.state.properties.length,
-      ),
-    );
+        rating.ratingSum,
+        rating.totalRatings,
+      );
+    });
+    final rating =
+        OwnerRatingSummary(ratingSum: ratingSum, totalRatings: totalReviews);
+    final avgRating = rating.average;
     final state = context.read<LandlordHomeCubit>().state;
     final user = FirebaseAuth.instance.currentUser;
     final email = user?.email ?? 'josh.samuel@rentease.ph';
@@ -602,10 +573,10 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                         icon: Icons.star_rounded,
                         iconBg: AppColors.amberFill,
                         iconColor: AppColors.matchMedium,
-                        value: _totalReviews > 0
-                            ? _avgRating.toStringAsFixed(1)
+                        value: totalReviews > 0
+                            ? avgRating.toStringAsFixed(1)
                             : '0',
-                        subCount: '($_totalReviews)',
+                        subCount: '($totalReviews)',
                         label: 'Reviews',
                         onTap: () => OwnerReviewsScreen.open(context),
                       ),
@@ -650,8 +621,8 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                       iconColor: AppColors.matchMedium,
                       title: 'My reviews',
                       textColor: textColor,
-                      trailingText: _totalReviews > 0
-                          ? '${_avgRating.toStringAsFixed(1)} ★'
+                      trailingText: totalReviews > 0
+                          ? '${avgRating.toStringAsFixed(1)} ★'
                           : 'No reviews yet',
                       trailingTextColor: AppColors.slate900,
                       onTap: () => OwnerReviewsScreen.open(context),
