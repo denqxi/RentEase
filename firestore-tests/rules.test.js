@@ -462,11 +462,11 @@ describe('ownerProfiles / properties — owners can only read/write their own', 
     );
   });
 
-  it('a rejected owner cannot move themselves back to pending', async () => {
+  it('a rejected owner can move themselves back to pending (resubmission)', async () => {
     await seed((db) =>
       db.doc(`ownerProfiles/${OWNER_B}`).set({ verificationStatus: 'rejected' }),
     );
-    await assertFails(
+    await assertSucceeds(
       asOwner(OWNER_B)
         .doc(`ownerProfiles/${OWNER_B}`)
         .update({ verificationStatus: 'pending' }),
@@ -1274,6 +1274,11 @@ describe('ownerProfiles/{uid}/private/documents � private verification links',
 
   it('owner can resubmit while pending', async () => {
     await seed((db) => db.doc(`ownerProfiles/${OWNER_B}`).set({ verificationStatus: 'pending' }));
+    await assertSucceeds(asOwner(OWNER_B).doc(path(OWNER_B)).set(DOCS));
+  });
+
+  it('owner can resubmit documents when rejected', async () => {
+    await seed((db) => db.doc(`ownerProfiles/${OWNER_B}`).set({ verificationStatus: 'rejected' }));
     await assertSucceeds(asOwner(OWNER_B).doc(path(OWNER_B)).set(DOCS));
   });
 

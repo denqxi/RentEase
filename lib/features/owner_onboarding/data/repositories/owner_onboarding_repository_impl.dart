@@ -24,6 +24,10 @@ class OwnerOnboardingRepositoryImpl implements OwnerOnboardingRepository {
       _remote.watchVerificationStatus(uid);
 
   @override
+  Stream<OwnerProfileDoc?> watchOwnerProfile(String uid) =>
+      _remote.watchOwnerProfile(uid);
+
+  @override
   Future<String> createProperty(PropertyDoc property) =>
       _guard(() => _remote.createProperty(property));
 

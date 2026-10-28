@@ -3,15 +3,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/firestore/models/models.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../cubit/owner_onboarding_cubit.dart';
+import 'document_upload_screen.dart';
 
-/// Follows `ownerProfiles/{uid}.verificationStatus` live, so the screen
-/// flips to "verified" the moment an admin approves — no refresh needed.
+/// Follows `ownerProfiles/{uid}` live, so the screen
+/// flips to "verified" or shows "rejected" with admin reason live.
 class VerificationPendingScreen extends StatefulWidget {
   const VerificationPendingScreen({super.key});
 
@@ -21,7 +22,7 @@ class VerificationPendingScreen extends StatefulWidget {
 }
 
 class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
-  Stream<String>? _status;
+  Stream<OwnerProfileDoc?>? _profileStream;
 
   @override
   void initState() {
@@ -29,12 +30,11 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
     final uid = currentUidOrNull(context);
     if (uid == null) return;
     try {
-      _status = context
+      _profileStream = context
           .read<OwnerOnboardingCubit>()
-          .watchVerificationStatus(uid);
+          .watchOwnerProfile(uid);
     } catch (_) {
-      // No cubit/Firebase (screenshot harness) — render the static pending
-      // state rather than failing.
+      // No cubit/Firebase (screenshot harness)
     }
   }
 
@@ -47,13 +47,25 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
     context,
   ).pushNamedAndRemoveUntil(AppRouter.landlordHome, (_) => false);
 
+  void _resubmitDocuments() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const DocumentUploadScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<String>(
-      stream: _status,
-      initialData: 'pending',
+    return StreamBuilder<OwnerProfileDoc?>(
+      stream: _profileStream,
       builder: (context, snapshot) {
-        final status = snapshot.data ?? 'pending';
+        final profile = snapshot.data;
+        final status = profile?.verificationStatus ?? 'pending';
+        final reason = profile?.rejectionReason;
+        final isRejected = status == 'rejected';
+        final isVerified = status == 'verified';
+
         final (title, body) = switch (status) {
           'verified' => (
             "You're verified",
@@ -61,9 +73,8 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
                 'tenants can find you.',
           ),
           'rejected' => (
-            'Verification not approved',
-            'Our team could not verify your documents. Please contact '
-                'support to resubmit.',
+            'Verification needs revision',
+            'Your documents require revision before your account can be verified. Please review the admin feedback below.',
           ),
           _ => (
             'Verification in progress',
@@ -74,28 +85,52 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
 
         return Scaffold(
           backgroundColor: context.appColors.surface,
+          appBar: AppBar(
+            backgroundColor: context.appColors.surface,
+            elevation: 0,
+            leadingWidth: 56,
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: Center(
+                child: InkWell(
+                  onTap: () => Navigator.of(context).maybePop(),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: context.appColors.fieldFill,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.arrow_back_rounded,
+                      color: context.appColors.textPrimary,
+                      size: 19,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            title: Text(
+              'Verification status',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: context.appColors.textPrimary,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ),
           body: SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    AppSpacing.md,
-                    AppSpacing.lg,
-                    0,
-                  ),
-                  child: RegistrationAppBar(
-                    onBack: () => Navigator.of(context).maybePop(),
-                    stepNumber: 2,
-                    stepCount: 2,
-                  ),
-                ),
                 Expanded(
-                  child: Padding(
+                  child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.lg,
-                      AppSpacing.lg,
+                      AppSpacing.md,
                       AppSpacing.lg,
                       AppSpacing.lg,
                     ),
@@ -106,7 +141,7 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
                           title,
                           style: TextStyle(
                             fontFamily: 'DM Sans',
-                            fontSize: 24,
+                            fontSize: 22,
                             fontWeight: FontWeight.w800,
                             color: context.appColors.textPrimary,
                             letterSpacing: -0.3,
@@ -117,51 +152,155 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
                           body,
                           style: TextStyle(
                             fontFamily: 'DM Sans',
-                            fontSize: 14,
+                            fontSize: 13.5,
                             fontWeight: FontWeight.w400,
                             color: context.appColors.textSecondary,
                             height: 1.35,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                         _TimelineStatusCard(status: status),
-                        const Spacer(),
-                        if (status == 'verified') ...[
-                          AppPrimaryButton(
-                            label: 'Add your first property',
-                            onPressed: _addFirstProperty,
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Center(
-                            child: TextButton(
-                              onPressed: _goToDashboard,
-                              child: const Text(
-                                'Skip for now',
-                                style: TextStyle(
-                                  fontFamily: 'DM Sans',
-                                  fontSize: 14,
-                                  color: AppColors.primary,
-                                ),
+                        if (isRejected) ...[
+                          const SizedBox(height: 20),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: context.appColors.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: context.appColors.fieldBorder,
+                                width: 1.2,
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.scrim.withValues(alpha: 0.03),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
-                          ),
-                        ] else ...[
-                          AppPrimaryButton(
-                            label: 'Continue to Dashboard',
-                            onPressed: _goToDashboard,
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Center(
-                            child: Text(
-                              'This usually takes 1–2 business days.',
-                              style: AppTextStyles.caption(context),
-                              textAlign: TextAlign.center,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.info_outline_rounded,
+                                      size: 18,
+                                      color: AppColors.destructive,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Reason for rejection',
+                                      style: TextStyle(
+                                        fontFamily: 'DM Sans',
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: context.appColors.textPrimary,
+                                        letterSpacing: -0.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                TextFormField(
+                                  key: ValueKey(reason),
+                                  initialValue: (reason != null && reason.trim().isNotEmpty)
+                                      ? reason.trim()
+                                      : 'Please review and resubmit clear, valid copies of your verification documents.',
+                                  readOnly: true,
+                                  maxLines: null,
+                                  minLines: 3,
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 13.5,
+                                    color: context.appColors.textPrimary,
+                                    height: 1.45,
+                                  ),
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: context.appColors.fieldFill,
+                                    contentPadding: const EdgeInsets.all(14),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppRadii.field),
+                                      borderSide: BorderSide(
+                                        color: context.appColors.fieldBorder.withValues(alpha: 0.6),
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppRadii.field),
+                                      borderSide: BorderSide(
+                                        color: context.appColors.fieldBorder.withValues(alpha: 0.6),
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppRadii.field),
+                                      borderSide: BorderSide(
+                                        color: context.appColors.fieldBorder.withValues(alpha: 0.6),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ],
                     ),
                   ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                  ),
+                  child: isVerified
+                      ? Column(
+                          children: [
+                            AppPrimaryButton(
+                              label: 'Add your first property',
+                              onPressed: _addFirstProperty,
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Center(
+                              child: TextButton(
+                                onPressed: _goToDashboard,
+                                child: const Text(
+                                  'Skip for now',
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 14,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : isRejected
+                          ? AppPrimaryButton(
+                              label: 'Resubmit documents',
+                              onPressed: _resubmitDocuments,
+                            )
+                          : Column(
+                              children: [
+                                AppPrimaryButton(
+                                  label: 'Continue to Dashboard',
+                                  onPressed: _goToDashboard,
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                Center(
+                                  child: Text(
+                                    'This usually takes 1–2 business days.',
+                                    style: AppTextStyles.caption(context),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
+                            ),
                 ),
               ],
             ),
@@ -172,7 +311,6 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
   }
 }
 
-/// Stepper timeline card matching the attached design.
 class _TimelineStatusCard extends StatelessWidget {
   const _TimelineStatusCard({required this.status});
 
@@ -280,11 +418,11 @@ class _TimelineStatusCard extends StatelessWidget {
                           color: AppColors.amber600,
                         ),
                       )),
-            title: 'Identity verification',
+            title: rejected ? 'Verification needs revision' : 'Identity verification',
             subtitle: verified
                 ? 'Your identity has been verified.'
                 : (rejected
-                    ? 'Could not verify your documents.'
+                    ? 'Needs revision — see feedback below.'
                     : 'Our team is reviewing your documents.'),
             connector: verified
                 ? Container(

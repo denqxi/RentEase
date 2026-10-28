@@ -23,20 +23,33 @@ class DeleteAccountCubit extends Cubit<DeleteAccountState> {
   final bool isOwner;
   final AccountDeletionService _service;
 
-  /// Whether the form is complete enough to submit.
-  static bool canSubmit({required String password, required String typed}) =>
-      password.isNotEmpty && typed.trim() == confirmWord;
+  bool get isGoogleUser => _service.isGoogleUser;
 
-  Future<void> delete({required String password, required String typed}) async {
+  /// Whether the form is complete enough to submit.
+  static bool canSubmit({
+    required bool isGoogle,
+    required String password,
+    required String typed,
+  }) {
+    final typedOk = typed.trim() == confirmWord;
+    return isGoogle ? typedOk : (password.isNotEmpty && typedOk);
+  }
+
+  Future<void> delete({String? password, required String typed}) async {
     if (state.status == DeleteAccountStatus.deleting ||
         state.status == DeleteAccountStatus.success) {
       return; // double-tap guard
     }
-    if (!canSubmit(password: password, typed: typed)) {
+    final isGoogle = isGoogleUser;
+    if (!canSubmit(
+      isGoogle: isGoogle,
+      password: password ?? '',
+      typed: typed,
+    )) {
       emit(
         DeleteAccountState(
           status: DeleteAccountStatus.failure,
-          errorMessage: password.isEmpty
+          errorMessage: (!isGoogle && (password == null || password.isEmpty))
               ? 'Enter your current password.'
               : 'Type $confirmWord to confirm.',
         ),

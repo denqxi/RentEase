@@ -33,64 +33,11 @@ class PendingVerificationsScreen extends StatelessWidget {
 
   Future<void> _reject(BuildContext context, String ownerId) async {
     final cubit = context.read<VerificationsCubit>();
-    final reasonCtrl = TextEditingController();
-    final confirmed = await showDialog<bool>(
+    final reason = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ctx.appColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Reject verification',
-          style: TextStyle(fontFamily: 'DM Sans', fontWeight: FontWeight.w700),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Reason for rejection (optional):',
-              style: TextStyle(fontFamily: 'DM Sans', fontSize: 14),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: reasonCtrl,
-              maxLines: 3,
-              maxLength: 300,
-              decoration: InputDecoration(
-                hintText: 'Enter reason...',
-                filled: true,
-                fillColor: ctx.appColors.fieldFill,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.field),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: ctx.appColors.textSecondary),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'Reject',
-              style: TextStyle(
-                color: AppColors.destructive,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
+      builder: (ctx) => const _RejectReasonDialog(),
     );
-    final reason = reasonCtrl.text;
-    reasonCtrl.dispose();
-    if (confirmed == true) cubit.reject(ownerId, reason: reason);
+    if (reason != null) cubit.reject(ownerId, reason: reason);
   }
 
   Future<void> _approve(BuildContext context, VerificationItem item) async {
@@ -1105,6 +1052,87 @@ class BusinessPermitCheckButton extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+
+class _RejectReasonDialog extends StatefulWidget {
+  const _RejectReasonDialog();
+
+  @override
+  State<_RejectReasonDialog> createState() => _RejectReasonDialogState();
+}
+
+class _RejectReasonDialogState extends State<_RejectReasonDialog> {
+  late final TextEditingController _reasonCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _reasonCtrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _reasonCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: context.appColors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text(
+        'Reject verification',
+        style: TextStyle(fontFamily: 'DM Sans', fontWeight: FontWeight.w700),
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Reason for rejection (optional):',
+              style: TextStyle(fontFamily: 'DM Sans', fontSize: 14),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _reasonCtrl,
+              maxLines: 3,
+              maxLength: 300,
+              decoration: InputDecoration(
+                hintText: 'Enter reason...',
+                filled: true,
+                fillColor: context.appColors.fieldFill,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.field),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: context.appColors.textSecondary),
+          ),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_reasonCtrl.text),
+          child: const Text(
+            'Reject',
+            style: TextStyle(
+              color: AppColors.destructive,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -64,6 +64,9 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
   Stream<String> watchVerificationStatus(String uid) =>
       _repository.watchVerificationStatus(uid);
 
+  Stream<OwnerProfileDoc?> watchOwnerProfile(String uid) =>
+      _repository.watchOwnerProfile(uid);
+
   // ── Create-listing wizard ────────────────────────────────────────────────
 
   /// Commits the full wizard draft (all 6 steps) to state.

@@ -22,6 +22,9 @@ abstract class OwnerOnboardingRepository {
   /// 'rejected'), so the pending screen advances the moment an admin approves.
   Stream<String> watchVerificationStatus(String uid);
 
+  /// Live full `ownerProfiles/{uid}` doc including `rejectionReason`.
+  Stream<OwnerProfileDoc?> watchOwnerProfile(String uid);
+
   /// Creates the listing and returns its new document ID.
   Future<String> createProperty(PropertyDoc property);
 

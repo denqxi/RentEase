@@ -704,10 +704,11 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
     return BlocConsumer<DeleteAccountCubit, DeleteAccountState>(
       listener: _onState,
       builder: (context, state) {
+        final isGoogle = context.read<DeleteAccountCubit>().isGoogleUser;
         final busy = state.isDeleting;
         final isConfirmed = _confirmController.text.trim() == 'DELETE';
         final hasPassword = _passwordController.text.isNotEmpty;
-        final canDelete = !busy && isConfirmed && hasPassword;
+        final canDelete = !busy && isConfirmed && (isGoogle || hasPassword);
 
         return Container(
           padding: EdgeInsets.fromLTRB(
@@ -787,66 +788,92 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
 
                 const SizedBox(height: 20),
 
-                // Password input for backend re-authentication
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Enter current password:',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.slate700,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.slate200),
-                  ),
-                  child: TextField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    enabled: !busy,
-                    onChanged: (_) => setState(() {}),
-                    style: const TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 14,
-                      color: AppColors.slate900,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Enter your password',
-                      hintStyle: const TextStyle(
+                if (!isGoogle) ...[
+                  // Password input for backend re-authentication
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Enter current password:',
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 13,
-                        color: AppColors.slate400,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.slate700,
                       ),
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.slate200),
+                    ),
+                    child: TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      enabled: !busy,
+                      onChanged: (_) => setState(() {}),
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 14,
+                        color: AppColors.slate900,
                       ),
-                      border: InputBorder.none,
-                      suffixIcon: IconButton(
-                        onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword,
-                        ),
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          size: 18,
+                      decoration: InputDecoration(
+                        hintText: 'Enter your password',
+                        hintStyle: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 13,
                           color: AppColors.slate400,
+                        ),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 13,
+                        ),
+                        border: InputBorder.none,
+                        suffixIcon: IconButton(
+                          onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            size: 18,
+                            color: AppColors.slate400,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-
-                const SizedBox(height: 14),
+                  const SizedBox(height: 14),
+                ] else ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.fieldFill,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline_rounded, size: 18, color: AppColors.primary),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Signed in with Google. You will be prompted to re-authenticate with Google upon confirmation.',
+                            style: TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 12.5,
+                              color: AppColors.slate600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
 
                 // Type DELETE prompt
                 Align(
@@ -961,7 +988,7 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
                         child: ElevatedButton(
                           onPressed: canDelete
                               ? () => context.read<DeleteAccountCubit>().delete(
-                                    password: _passwordController.text,
+                                    password: isGoogle ? null : _passwordController.text,
                                     typed: _confirmController.text,
                                   )
                               : null,

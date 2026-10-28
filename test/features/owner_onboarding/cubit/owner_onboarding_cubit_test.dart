@@ -20,6 +20,9 @@ class _FakeRepo implements OwnerOnboardingRepository {
   @override
   Stream<String> watchVerificationStatus(String uid) => const Stream.empty();
 
+  @override
+  Stream<OwnerProfileDoc?> watchOwnerProfile(String uid) => const Stream.empty();
+
   PropertyDoc? created;
   List<PropertyDoc> existing = const [];
 

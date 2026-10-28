@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../domain/repositories/account_deletion_repository.dart';
@@ -11,11 +13,14 @@ class AccountDeletionRepositoryImpl implements AccountDeletionRepository {
   AccountDeletionRepositoryImpl({
     fb.FirebaseAuth? auth,
     FirebaseFirestore? firestore,
+    GoogleSignIn? googleSignIn,
   }) : _auth = auth ?? fb.FirebaseAuth.instance,
-       _db = firestore ?? FirebaseFirestore.instance;
+       _db = firestore ?? FirebaseFirestore.instance,
+       _googleSignIn = googleSignIn ?? GoogleSignIn();
 
   final fb.FirebaseAuth _auth;
   final FirebaseFirestore _db;
+  final GoogleSignIn _googleSignIn;
 
   static const int _chunk = 20;
 
@@ -67,6 +72,15 @@ class AccountDeletionRepositoryImpl implements AccountDeletionRepository {
   }
 
   @override
+  bool get isGoogleUser {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    final hasGoogle = user.providerData.any((p) => p.providerId == 'google.com');
+    final hasPassword = user.providerData.any((p) => p.providerId == 'password');
+    return hasGoogle && !hasPassword;
+  }
+
+  @override
   Future<void> reauthenticate(String password) => _guard(() async {
     final user = _auth.currentUser;
     final email = user?.email;
@@ -76,6 +90,29 @@ class AccountDeletionRepositoryImpl implements AccountDeletionRepository {
     await user.reauthenticateWithCredential(
       fb.EmailAuthProvider.credential(email: email, password: password),
     );
+  });
+
+  @override
+  Future<void> reauthenticateWithGoogle() => _guard(() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw const AccountDeletionFailure(AccountDeletionFailureKind.unknown);
+    }
+    if (kIsWeb) {
+      final googleProvider = fb.GoogleAuthProvider();
+      await user.reauthenticateWithPopup(googleProvider);
+      return;
+    }
+    final googleUser = await _googleSignIn.signIn();
+    if (googleUser == null) {
+      throw const AccountDeletionFailure(AccountDeletionFailureKind.unknown);
+    }
+    final googleAuth = await googleUser.authentication;
+    final credential = fb.GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+    await user.reauthenticateWithCredential(credential);
   });
 
   @override

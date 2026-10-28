@@ -21,14 +21,6 @@ class OwnerOnboardingRemoteDataSource {
     final snap = await ref.get();
     final current = snap.data()?['verificationStatus'] as String?;
     if (current == 'verified' || current == 'pending') return current!;
-    if (current == 'rejected') {
-      // The security rules only let an owner move none → pending; reopening
-      // a rejected application is an admin action.
-      throw Exception(
-        'Your verification was not approved. Please contact support to '
-        'resubmit your documents.',
-      );
-    }
 
     // Documents are uploaded to Cloudinary (Firebase Storage needs Blaze);
     // only their URLs/public_ids are stored. The status transition is what
@@ -39,6 +31,7 @@ class OwnerOnboardingRemoteDataSource {
       'verificationStatus': 'pending',
       'submittedAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
+      'rejectionReason': FieldValue.delete(),
     };
     final privateRef = ref
         .collection(FirestoreCollections.ownerPrivate)
@@ -61,6 +54,10 @@ class OwnerOnboardingRemoteDataSource {
   Stream<String> watchVerificationStatus(String uid) => _ownerProfile(uid)
       .snapshots()
       .map((s) => s.data()?['verificationStatus'] as String? ?? 'none');
+
+  Stream<OwnerProfileDoc?> watchOwnerProfile(String uid) => _ownerProfile(uid)
+      .snapshots()
+      .map((s) => s.exists ? OwnerProfileDoc.fromSnapshot(s) : null);
 
   Future<String> createProperty(PropertyDoc property) async {
     final ref = _firestore.collection(FirestoreCollections.properties).doc();

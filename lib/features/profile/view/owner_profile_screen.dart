@@ -16,7 +16,6 @@ import '../../../shared/widgets/app_toggle.dart';
 import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
 import '../../owner/view/owner_inquiries_screen.dart';
-import '../../owner_onboarding/view/document_upload_screen.dart';
 import '../../owner_onboarding/view/verification_pending_screen.dart';
 import '../../shell/cubit/shell_cubit.dart';
 import 'account_security_screen.dart';
@@ -815,7 +814,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     Color cardColor,
     Color textColor,
   ) {
-    final bool isVerified = status == 'verified';
+    final bool isVerified = status == 'verified' || status == 'approved';
     final bool isPending = status == 'pending';
 
     final Color statusColor = isVerified
@@ -849,21 +848,15 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
             : 'Needs revision';
 
     return InkWell(
-      onTap: () {
-        if (isPending) {
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => const VerificationPendingScreen(),
-            ),
-          );
-        } else {
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => const DocumentUploadScreen(),
-            ),
-          );
-        }
-      },
+      onTap: isVerified
+          ? null
+          : () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const VerificationPendingScreen(),
+                ),
+              );
+            },
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -928,12 +921,14 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 4),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.slate400,
-              size: 18,
-            ),
+            if (!isVerified) ...[
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.slate400,
+                size: 18,
+              ),
+            ],
           ],
         ),
       ),

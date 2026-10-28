@@ -41,7 +41,7 @@ const guest = () => testEnv.unauthenticatedContext().firestore();
 
 const TA = 'tenantA', TB = 'tenantB', TS = 'tenantSusp';
 const OA = 'ownerA', OB = 'ownerB', OR = 'ownerRej', OS = 'ownerSusp', OU = 'ownerUnver';
-const AD = 'admin1';
+const AD = 'admin1', ADS = 'adminSusp';
 const PA = 'propA', PB = 'propB', PUN = 'propUnavail';
 const MA = `${TA}_${PA}`;
 const CLD = (n) => `https://res.cloudinary.com/demo/image/upload/${n}.jpg`;
@@ -54,6 +54,7 @@ async function world() {
       [TS, 'tenant', { status: 'suspended', gender: 'Male' }],
       [OA, 'owner', {}], [OB, 'owner', {}], [OR, 'owner', {}], [OU, 'owner', {}],
       [OS, 'owner', { status: 'suspended' }], [AD, 'admin', {}],
+      [ADS, 'admin', { status: 'suspended' }],
     ]) {
       await db.doc(`users/${u}`).set({ role, status: 'active', ...extra });
     }
@@ -239,9 +240,10 @@ describe('ATTACK role confusion / field escalation', () => {
     await assertFails(as(AD).doc(`users/${TB}`).update({ role: 'admin' }));
     await assertFails(as(AD).doc(`users/${TB}`).update({ status: 'suspended', gender: 'x' }));
   });
-  it('owner cannot self-verify, tenants cannot create/verify ownerProfiles', async () => {
+  it('owner cannot self-verify, tenants cannot create/verify ownerProfiles; rejected owner can resubmit to pending', async () => {
     await assertFails(as(OB).doc(`ownerProfiles/${OB}`).update({ verificationStatus: 'verified' }));
-    await assertFails(as(OR).doc(`ownerProfiles/${OR}`).update({ verificationStatus: 'pending' }));
+    await assertSucceeds(as(OR).doc(`ownerProfiles/${OR}`).update({ verificationStatus: 'pending' }));
+    await assertFails(as(OR).doc(`ownerProfiles/${OR}`).update({ verificationStatus: 'verified' }));
     await assertFails(as(OR).doc(`ownerProfiles/${OR}`).update({ verificationStatus: 'none' }));
     await assertFails(as(OB).doc(`ownerProfiles/${OB}`).update({ verifiedAt: new Date() }));
     await assertFails(as(OB).doc(`ownerProfiles/${OB}`).update({ avgRating: 5, totalRatings: 99 }));
@@ -272,6 +274,16 @@ describe('ATTACK role confusion / field escalation', () => {
     await assertFails(as(OB).doc(`properties/${PB}`).update({ isAvailable: true }));
     await assertFails(as(OB).doc(`properties/${PB}`).update({ adminUnlisted: false }));
   });
+  it('owner cannot delete an adminUnlisted property; can delete if not unlisted; admin can delete regardless', async () => {
+    await seed((db) => db.doc(`properties/${PB}`).update({ adminUnlisted: true, isAvailable: false }));
+    await assertFails(as(OB).doc(`properties/${PB}`).delete());
+    await assertSucceeds(as(AD).doc(`properties/${PB}`).delete());
+
+    await seed((db) => db.doc(`properties/${PB}`).set({
+      ownerId: OB, isAvailable: true, adminUnlisted: false, ...AM,
+    }));
+    await assertSucceeds(as(OB).doc(`properties/${PB}`).delete());
+  });
   it('tenant cannot forge computed tenantProfiles fields or emergency contact / private pins', async () => {
     const t = as(TA).doc(`tenantProfiles/${TA}`);
     await assertFails(t.update({ avgRating: 5 }));
@@ -296,9 +308,9 @@ describe('ATTACK role confusion / field escalation', () => {
     await assertFails(c.set({ phone: '1', role: 'admin' }));
     await assertFails(c.set({ emergencyContact: ['x'] }));
   });
-  it('owner documents: rejected/verified owners cannot rewrite; too few docs rejected', async () => {
+  it('owner documents: verified owners cannot rewrite, rejected owner can resubmit; too few docs rejected', async () => {
     await assertFails(as(OA).doc(`ownerProfiles/${OA}/private/documents`).set({ documentUrls: [CLD('a'), CLD('b')] }));
-    await assertFails(as(OR).doc(`ownerProfiles/${OR}/private/documents`).set({ documentUrls: [CLD('a'), CLD('b')] }));
+    await assertSucceeds(as(OR).doc(`ownerProfiles/${OR}/private/documents`).set({ documentUrls: [CLD('a'), CLD('b')] }));
     await assertFails(as(OB).doc(`ownerProfiles/${OB}/private/documents`).set({ documentUrls: ['a'] }));
     await assertFails(as(OB).doc(`ownerProfiles/${OB}/private/documents`).set({ documentUrls: 'abc' }));
     await assertFails(as(OB).doc(`ownerProfiles/${OB}/private/documents`).set({ documentUrls: [CLD('a'), CLD('b')], isVerified: true }));
@@ -898,6 +910,25 @@ describe('ATTACK admin-only operations by non-admins', () => {
     await assertFails(as('ghostuser').doc(`properties/${PA}`).update({ monthlyRent: 1 }));
     await assertFails(as('ghostuser').doc('properties/n').set({ ownerId: 'ghostuser', ...AM }));
     await assertFails(as('ghostuser').doc('matches/ghostuser_propA').set({ tenantId: 'ghostuser', ownerId: OA, propertyId: PA, bScore: 1 }));
+  });
+  it('active admin can perform admin actions (suspend user, update properties, create admin logs, approve verification)', async () => {
+    await assertSucceeds(as(AD).doc(`users/${TB}`).update({ status: 'suspended' }));
+    await assertSucceeds(as(AD).doc(`properties/${PA}`).update({ isAvailable: false, adminUnlisted: true }));
+    const log = { adminId: AD, action: 'suspend_user', targetId: TB, targetType: 'user', createdAt: FieldValue.serverTimestamp() };
+    await assertSucceeds(as(AD).doc('adminLogs/log_act').set(log));
+    await assertSucceeds(as(AD).doc(`ownerProfiles/${OB}`).update({ verificationStatus: 'verified', verifiedAt: new Date() }));
+  });
+  it('when admin user doc has status suspended, administrative writes are denied', async () => {
+    await assertFails(as(ADS).doc(`users/${TB}`).update({ status: 'suspended' }));
+    await assertFails(as(ADS).doc(`ownerProfiles/${OB}`).update({ verificationStatus: 'verified', verifiedAt: new Date() }));
+    await assertFails(as(ADS).doc(`ownerProfiles/${OB}`).update({ verificationStatus: 'rejected' }));
+    const log = { adminId: ADS, action: 'suspend_user', targetId: TB, targetType: 'user', createdAt: FieldValue.serverTimestamp() };
+    await assertFails(as(ADS).doc('adminLogs/log_susp').set(log));
+    await assertFails(as(ADS).doc(`properties/${PA}`).update({ isAvailable: false, adminUnlisted: true }));
+    await assertFails(as(ADS).doc(`properties/${PA}`).delete());
+    await assertFails(as(ADS).doc('inquiries/acc').delete());
+    await assertFails(as(ADS).doc('adminLogs/l1').get());
+    await assertFails(as(ADS).collection('adminLogs').get());
   });
 });
 

@@ -29,8 +29,14 @@ class AccountDeletionFailure implements Exception {
 /// doc that is already gone succeeds) so the whole flow can be retried after
 /// a partial failure. Implementations throw [AccountDeletionFailure].
 abstract class AccountDeletionRepository {
+  /// Whether the currently signed-in user is authenticated via Google.
+  bool get isGoogleUser;
+
   /// Re-authenticates the signed-in user with their current password.
   Future<void> reauthenticate(String password);
+
+  /// Re-authenticates the signed-in user with Google.
+  Future<void> reauthenticateWithGoogle();
 
   /// Owner: best-effort close of the owner's pending/active inquiries (never
   /// throws; rules may refuse, e.g. for a rejected owner).

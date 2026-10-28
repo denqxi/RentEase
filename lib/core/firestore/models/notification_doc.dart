@@ -34,15 +34,33 @@ class NotificationDoc {
   factory NotificationDoc.fromMap(String id, Map<String, dynamic> map) =>
       NotificationDoc(
         notifId: id,
-        recipientId: map['recipientId'] as String? ?? '',
-        type: map['type'] as String? ?? '',
-        title: map['title'] as String? ?? '',
-        body: map['body'] as String? ?? '',
-        relatedId: map['relatedId'] as String?,
-        relatedType: map['relatedType'] as String?,
-        isRead: map['isRead'] as bool? ?? false,
-        createdAt: map['createdAt'] as Timestamp?,
+        recipientId: map['recipientId']?.toString() ?? '',
+        type: map['type']?.toString() ?? '',
+        title: map['title']?.toString() ?? '',
+        body: map['body']?.toString() ?? '',
+        relatedId: map['relatedId']?.toString(),
+        relatedType: map['relatedType']?.toString(),
+        isRead: _parseBool(map['isRead']),
+        createdAt: _parseTimestamp(map['createdAt']),
       );
+
+  static bool _parseBool(dynamic value, {bool fallback = false}) {
+    if (value is bool) return value;
+    if (value == 1 || value == '1' || value == 'true') return true;
+    if (value == 0 || value == '0' || value == 'false') return false;
+    return fallback;
+  }
+
+  static Timestamp? _parseTimestamp(dynamic value) {
+    if (value is Timestamp) return value;
+    if (value is DateTime) return Timestamp.fromDate(value);
+    if (value is int) return Timestamp.fromMillisecondsSinceEpoch(value);
+    if (value is String) {
+      final parsed = DateTime.tryParse(value);
+      if (parsed != null) return Timestamp.fromDate(parsed);
+    }
+    return null;
+  }
 
   factory NotificationDoc.fromSnapshot(
           DocumentSnapshot<Map<String, dynamic>> doc) =>

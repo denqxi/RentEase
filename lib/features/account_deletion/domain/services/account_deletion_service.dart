@@ -17,13 +17,22 @@ class AccountDeletionService {
 
   final AccountDeletionRepository _repository;
 
+  bool get isGoogleUser => _repository.isGoogleUser;
+
   Future<void> deleteAccount({
     required String uid,
     required bool isOwner,
-    required String password,
+    String? password,
   }) async {
     try {
-      await _repository.reauthenticate(password);
+      if (_repository.isGoogleUser) {
+        await _repository.reauthenticateWithGoogle();
+      } else {
+        if (password == null || password.isEmpty) {
+          throw const AccountDeletionFailure(AccountDeletionFailureKind.wrongPassword);
+        }
+        await _repository.reauthenticate(password);
+      }
       await _repository.deleteNotifications(uid);
       if (isOwner) {
         await _repository.closeOwnerOpenInquiries(uid);

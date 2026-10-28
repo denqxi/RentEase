@@ -47,8 +47,8 @@ class NotificationRepositoryImpl implements NotificationRepository {
     final docs = snap.docs.map(NotificationDoc.fromSnapshot).toList();
     // Pending server timestamps (null) count as newest.
     docs.sort((a, b) {
-      final at = a.createdAt?.millisecondsSinceEpoch ?? 1 << 62;
-      final bt = b.createdAt?.millisecondsSinceEpoch ?? 1 << 62;
+      final at = a.createdAt?.millisecondsSinceEpoch ?? 9007199254740991;
+      final bt = b.createdAt?.millisecondsSinceEpoch ?? 9007199254740991;
       return bt.compareTo(at);
     });
     return docs;

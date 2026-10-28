@@ -252,59 +252,11 @@ class OwnerPhase1View extends StatelessWidget {
 
   Future<void> _showDeclineDialog(BuildContext context) async {
     final cubit = context.read<InquiryThreadCubit>();
-    final reasonController = TextEditingController();
-    final confirmed = await showDialog<bool>(
+    final reason = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text(
-          'Decline inquiry',
-          style: TextStyle(fontFamily: 'DM Sans', fontWeight: FontWeight.w700),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Provide a reason for declining (optional):',
-              style: TextStyle(fontFamily: 'DM Sans', fontSize: 14),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: reasonController,
-              decoration: InputDecoration(
-                hintText: 'Enter reason...',
-                filled: true,
-                fillColor: ctx.appColors.fieldFill,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.field),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: ctx.appColors.textSecondary),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'Confirm',
-              style: TextStyle(
-                color: AppColors.destructive,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
+      builder: (ctx) => const _DeclineInquiryDialog(),
     );
-    final reason = reasonController.text;
-    reasonController.dispose();
-    if (confirmed == true) await cubit.decline(reason);
+    if (reason != null) await cubit.decline(reason);
   }
 }
 
@@ -338,6 +290,82 @@ class _SummaryRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+
+class _DeclineInquiryDialog extends StatefulWidget {
+  const _DeclineInquiryDialog();
+
+  @override
+  State<_DeclineInquiryDialog> createState() => _DeclineInquiryDialogState();
+}
+
+class _DeclineInquiryDialogState extends State<_DeclineInquiryDialog> {
+  late final TextEditingController _reasonController;
+
+  @override
+  void initState() {
+    super.initState();
+    _reasonController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(
+        'Decline inquiry',
+        style: TextStyle(fontFamily: 'DM Sans', fontWeight: FontWeight.w700),
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Provide a reason for declining (optional):',
+              style: TextStyle(fontFamily: 'DM Sans', fontSize: 14),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _reasonController,
+              decoration: InputDecoration(
+                hintText: 'Enter reason...',
+                filled: true,
+                fillColor: context.appColors.fieldFill,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.field),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: context.appColors.textSecondary),
+          ),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_reasonController.text),
+          child: const Text(
+            'Confirm',
+            style: TextStyle(
+              color: AppColors.destructive,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
