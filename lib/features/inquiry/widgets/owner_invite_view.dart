@@ -109,7 +109,23 @@ class OwnerInviteView extends StatelessWidget {
             ],
           ),
         ),
-        if (state.ownerRejected) const RejectedOwnerNotice(isOwner: true),
+        if (state.isCounterpartDeleted(isOwner: true))
+          const Padding(
+            padding: EdgeInsets.only(top: 16),
+            child: Center(
+              child: Text(
+                'This user is not available.',
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.slate500,
+                ),
+              ),
+            ),
+          )
+        else if (state.ownerRejected)
+          const RejectedOwnerNotice(isOwner: true),
       ],
     );
   }

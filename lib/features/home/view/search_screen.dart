@@ -573,6 +573,7 @@ class _SearchViewState extends State<_SearchView> {
                           properties: [
                             ...categorized.compatible,
                             ...categorized.filterMatches,
+                            ...categorized.others,
                           ],
                           isGuest: widget.isGuest,
                           homeCubit: context.read<HomeCubit>(),

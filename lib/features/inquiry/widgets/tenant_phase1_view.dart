@@ -28,6 +28,7 @@ class TenantPhase1View extends StatelessWidget {
     // Owner invitation: the tenant is the one who answers.
     final invite = InquiryService.isInvite(inquiry);
     final awaitingMyAnswer = invite && InquiryService.isPhase1Pending(inquiry);
+    final isCounterpartDeleted = state.isCounterpartDeleted(isOwner: false);
     // The owner's verification was rejected: they can't reply, so no waiting
     // card and no locked chat input — just a neutral note.
     final ownerCantReply = state.ownerRejected && !ended && !awaitingMyAnswer;
@@ -46,7 +47,7 @@ class TenantPhase1View extends StatelessWidget {
               const SizedBox(height: 12),
 
               // ── Invitation or Status Card ──────────────────────────────
-              if (awaitingMyAnswer) ...[
+              if (awaitingMyAnswer && !isCounterpartDeleted) ...[
                 _InvitationNotificationCard(
                   propertyTitle: property?.title ?? 'this property',
                 ),
@@ -76,7 +77,25 @@ class TenantPhase1View extends StatelessWidget {
         ),
 
         // ── Locked Input Bar (Messaging unavailable) ────────────────────
-        if (!ownerCantReply)
+        if (isCounterpartDeleted)
+          const SafeArea(
+            top: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 20),
+              child: Center(
+                child: Text(
+                  'This user is not available.',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.slate500,
+                  ),
+                ),
+              ),
+            ),
+          )
+        else if (!ownerCantReply)
           SafeArea(
             top: false,
             child: Padding(

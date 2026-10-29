@@ -208,7 +208,25 @@ class OwnerPhase1View extends StatelessWidget {
             ],
           ),
         ),
-        if (state.ownerRejected && pending)
+        if (state.isCounterpartDeleted(isOwner: true))
+          const SafeArea(
+            top: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 20),
+              child: Center(
+                child: Text(
+                  'This user is not available.',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.slate500,
+                  ),
+                ),
+              ),
+            ),
+          )
+        else if (state.ownerRejected && pending)
           const RejectedOwnerNotice(isOwner: true)
         else
           Padding(

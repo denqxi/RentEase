@@ -677,7 +677,11 @@ class _MapViewScreenState extends State<MapViewScreen> {
 
                       // Unselected property markers — bottom tip planted exactly on coordinates
                       for (int i = 0; i < properties.length; i++)
-                        if (i != _selectedIndex)
+                        if (i != _selectedIndex &&
+                            (properties[i]['latitude'] as num?)?.toDouble() != null &&
+                            (properties[i]['longitude'] as num?)?.toDouble() != null &&
+                            !((properties[i]['latitude'] as num?)?.toDouble() == 0.0 &&
+                              (properties[i]['longitude'] as num?)?.toDouble() == 0.0))
                           Marker(
                             point: LatLng(
                               (properties[i]['latitude'] as num).toDouble(),
@@ -697,8 +701,12 @@ class _MapViewScreenState extends State<MapViewScreen> {
                             ),
                           ),
 
-                      // Selected property marker rendered LAST so it sits on top with cyan halo
-                      if (_selectedIndex != null && _selectedIndex! < properties.length)
+                      // Selected property marker rendered LAST so it sits on top with halo
+                      if (_selectedIndex != null && _selectedIndex! < properties.length &&
+                          (properties[_selectedIndex!]['latitude'] as num?)?.toDouble() != null &&
+                          (properties[_selectedIndex!]['longitude'] as num?)?.toDouble() != null &&
+                          !((properties[_selectedIndex!]['latitude'] as num?)?.toDouble() == 0.0 &&
+                            (properties[_selectedIndex!]['longitude'] as num?)?.toDouble() == 0.0))
                         Marker(
                           point: LatLng(
                             (properties[_selectedIndex!]['latitude'] as num).toDouble(),
@@ -1138,18 +1146,22 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
 
   @override
   Widget build(BuildContext context) {
-    final double ci = (widget.property['tenantCi'] as num?)?.toDouble() ?? 0.0;
+    final bool isNonMatch = (widget.property['isNonMatch'] == true) ||
+        (widget.property['bScore'] == 0);
+    final double ci = isNonMatch ? 0.0 : ((widget.property['tenantCi'] as num?)?.toDouble() ?? 0.0);
     final int percent = (ci * 100).round();
-    final tier = _SubtleTierColor.forPercent(percent);
+    final tier = _SubtleTierColor.forPercent(percent, isNonMatch: isNonMatch);
 
     final double pinW = widget.isSelected ? 22 : 18.5;
     final double pinH = widget.isSelected ? 31 : 26;
     final double iconSize = widget.isSelected ? 13.5 : 11.0;
-    const Color lightCyanBlue = AppColors.sky400;
 
-    final Color pinFillColor = widget.isSelected ? lightCyanBlue : AppColors.surface;
-    final Color pinStrokeColor = widget.isSelected ? AppColors.surface : lightCyanBlue;
-    final Color pinIconColor = widget.isSelected ? AppColors.surface : lightCyanBlue;
+    final bool isGray = isNonMatch || percent <= 0;
+    final Color themeColor = isGray ? AppColors.slate400 : AppColors.sky400;
+
+    final Color pinFillColor = widget.isSelected ? themeColor : AppColors.surface;
+    final Color pinStrokeColor = widget.isSelected ? AppColors.surface : themeColor;
+    final Color pinIconColor = widget.isSelected ? AppColors.surface : themeColor;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -1173,11 +1185,11 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
                         height: 28,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: lightCyanBlue.withValues(
+                          color: themeColor.withValues(
                             alpha: _pulseOpacityAnimation.value,
                           ),
                           border: Border.all(
-                            color: lightCyanBlue.withValues(
+                            color: themeColor.withValues(
                               alpha: _pulseOpacityAnimation.value * 0.8,
                             ),
                             width: 1.1,
@@ -1199,7 +1211,7 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
                 height: 22,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: lightCyanBlue.withValues(alpha: 0.15),
+                  color: themeColor.withValues(alpha: 0.15),
                 ),
               ),
             ),
@@ -1516,9 +1528,11 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
 
                 final monthlyRent = (property['monthlyRent'] as num?)?.round() ?? 0;
                 final dist = (property['distance'] as num?)?.toDouble();
-                final double ci = (property['tenantCi'] as num?)?.toDouble() ?? 0.0;
+                final bool isNonMatch = (property['isNonMatch'] == true) ||
+                    (property['bScore'] == 0);
+                final double ci = isNonMatch ? 0.0 : ((property['tenantCi'] as num?)?.toDouble() ?? 0.0);
                 final int percent = (ci * 100).round();
-                final tier = _SubtleTierColor.forPercent(percent);
+                final tier = _SubtleTierColor.forPercent(percent, isNonMatch: isNonMatch);
 
                 final photoUrl = (property['photoUrl'] as String?) ??
                     ((property['photos'] as List?)?.firstOrNull as String?) ??
@@ -1792,9 +1806,11 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
         !(propLat == 0 && propLng == 0) && poi != null) {
       dist = const Distance().as(LengthUnit.Kilometer, LatLng(propLat, propLng), poi);
     }
-    final double ci = (property['tenantCi'] as num?)?.toDouble() ?? 0.0;
+    final bool isNonMatch = (property['isNonMatch'] == true) ||
+        (property['bScore'] == 0);
+    final double ci = isNonMatch ? 0.0 : ((property['tenantCi'] as num?)?.toDouble() ?? 0.0);
     final int percent = (ci * 100).round();
-    final tier = _SubtleTierColor.forPercent(percent);
+    final tier = _SubtleTierColor.forPercent(percent, isNonMatch: isNonMatch);
 
     final photoUrl = (property['photoUrl'] as String?) ??
         ((property['photos'] as List?)?.firstOrNull as String?) ??
@@ -2171,8 +2187,15 @@ class _SubtleTierColor {
     required this.textColor,
   });
 
-  static _SubtleTierColor forPercent(int percent) {
-    if (percent >= 80) {
+  static _SubtleTierColor forPercent(int percent, {bool isNonMatch = false}) {
+    if (isNonMatch || percent <= 0) {
+      return const _SubtleTierColor(
+        bg: AppColors.fieldFill,
+        fillColor: AppColors.slate400, // Neutral gray for 0% / incompatible
+        borderColor: AppColors.slate300,
+        textColor: AppColors.slate500,
+      );
+    } else if (percent >= 80) {
       return const _SubtleTierColor(
         bg: AppColors.greenFill,
         fillColor: AppColors.primaryTeal, // Soft pastel teal/emerald

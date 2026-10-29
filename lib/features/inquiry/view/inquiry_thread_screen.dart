@@ -130,6 +130,7 @@ class _ThreadView extends StatelessWidget {
           counterpartName: counterpartName,
           property: state.property,
           onTapHeader: () {
+            if (state.isCounterpartDeleted(isOwner: effectiveIsOwner)) return;
             if (effectiveIsOwner) {
               final tenant = state.tenant;
               final profile = state.tenantProfile;

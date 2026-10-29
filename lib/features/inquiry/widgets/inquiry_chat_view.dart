@@ -15,7 +15,6 @@ import '../../resolution/view/rating_screen.dart';
 import '../cubit/inquiry_thread_cubit.dart';
 import '../domain/services/inquiry_service.dart';
 import '../model/inquiry_summary.dart';
-import 'contact_row.dart';
 import 'rejected_owner_notice.dart';
 
 /// Phase 2 — open chat between tenant and owner, shared by both sides
@@ -75,6 +74,8 @@ class _InquiryChatViewState extends State<InquiryChatView> {
   }
 
   Future<void> _send(String text) async {
+    final state = context.read<InquiryThreadCubit>().state;
+    if (state.isCounterpartDeleted(isOwner: widget.isOwner)) return;
     if (text.trim().isEmpty) return;
     final sent = await context.read<InquiryThreadCubit>().sendMessage(text);
     if (sent && mounted && text == _messageController.text) {
@@ -518,7 +519,8 @@ class _InquiryChatViewState extends State<InquiryChatView> {
     );
   }
 
-  void _openCounterpartProfile(InquiryThreadState state) {
+  void _openCounterpartProfile(InquiryThreadState state, {bool scrollToReviews = false}) {
+    if (state.isCounterpartDeleted(isOwner: widget.isOwner)) return;
     if (widget.isOwner) {
       final tenant = state.tenant;
       final profile = state.tenantProfile;
@@ -545,6 +547,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
             profile: profile,
             phone: state.counterpartPhone,
             showInviteButton: false,
+            initialScrollToReviews: scrollToReviews,
           ),
         ),
       );
@@ -581,6 +584,9 @@ class _InquiryChatViewState extends State<InquiryChatView> {
     // Another tenant took the last vacancy (InquiryService.markBooked).
     final closed = inquiry.status == 'closed';
     final canChat = InquiryService.canChat(inquiry);
+    final isCounterpartDeleted = state.isCounterpartDeleted(
+      isOwner: widget.isOwner,
+    );
     final myId = context.read<InquiryThreadCubit>().uid;
 
     final fallbackDate =
@@ -654,7 +660,9 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       // Counterpart Initials Avatar & Name (Tappable for Owner)
                       Expanded(
                         child: InkWell(
-                          onTap: () => _openCounterpartProfile(state),
+                          onTap: isCounterpartDeleted
+                              ? null
+                              : () => _openCounterpartProfile(state),
                           borderRadius: BorderRadius.circular(10),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 2),
@@ -773,7 +781,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                 ],
                               ),
                             ),
-                          if (widget.isOwner && canChat && !state.isBusy)
+                          if (widget.isOwner && canChat && !state.isBusy && !isCounterpartDeleted)
                             const PopupMenuItem<String>(
                               value: 'mark_booked',
                               height: 38,
@@ -841,10 +849,6 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   ),
                 ),
 
-                // Shown once the other party shared their phone (accepted
-                // threads, including booked); absent otherwise.
-                ContactRow(phone: state.counterpartPhone),
-
                 // ── Chat Messages List ───────────────────────────────────
                 Expanded(
                   child: BlocSelector<InquiryThreadCubit, InquiryThreadState,
@@ -902,15 +906,42 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   ),
                 ),
 
-                // ── Bottom Controls (Booked / Closed / Quick Replies + Input)
+                // ── Stay Confirmed Banner ──────────────────────────────────
                 if (booked)
                   _BookedPanel(
                     isOwner: widget.isOwner,
                     counterpartName: widget.counterpartName,
                     hasRated: state.hasRated,
                     onRate: _openRating,
+                    onViewRating: () {
+                      if (widget.isOwner) {
+                        _openCounterpartProfile(state, scrollToReviews: true);
+                      } else if (property != null) {
+                        _openPropertyDetail(property);
+                      }
+                    },
                   ),
-                if (closed)
+
+                // ── Bottom Controls (Deleted Counterpart / Closed / Quick Replies + Input)
+                if (isCounterpartDeleted)
+                  const SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 12, 16, 20),
+                      child: Center(
+                        child: Text(
+                          'This user is not available.',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.slate500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                else if (closed)
                   _ClosedPanel(isOwner: widget.isOwner)
                 else if (state.ownerRejected)
                   RejectedOwnerNotice(isOwner: widget.isOwner)
@@ -1488,12 +1519,14 @@ class _BookedPanel extends StatelessWidget {
     required this.counterpartName,
     required this.hasRated,
     required this.onRate,
+    this.onViewRating,
   });
 
   final bool isOwner;
   final String counterpartName;
   final bool hasRated;
   final VoidCallback onRate;
+  final VoidCallback? onViewRating;
 
   @override
   Widget build(BuildContext context) {
@@ -1520,30 +1553,42 @@ class _BookedPanel extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           if (hasRated)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.warningFill.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.amberBorder200),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.star_rounded, color: AppColors.matchMedium, size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    isOwner
-                        ? 'You rated this tenant · Thank you!'
-                        : 'You rated this property · Thank you!',
-                    style: const TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.amber800,
+            InkWell(
+              onTap: onViewRating,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.warningFill.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.amberBorder200),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.star_rounded, color: AppColors.matchMedium, size: 18),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        isOwner
+                            ? 'You rated this tenant · Thank you!'
+                            : 'You rated this property · Thank you!',
+                        style: const TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.amber800,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.amber800,
+                      size: 18,
+                    ),
+                  ],
+                ),
               ),
             )
           else

@@ -44,11 +44,14 @@ class TenantDetailScreen extends StatefulWidget {
     this.phone,
     this.showInviteButton = false,
     this.propertyId,
+    this.initialScrollToReviews = false,
     super.key,
   });
 
   /// Property Find Tenants is scoped to; limits the invite to it.
   final String? propertyId;
+
+  final bool initialScrollToReviews;
 
   final CompatibleTenant tenant;
   final UserDoc? user;
@@ -82,15 +85,35 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
   double get _avgRating => _rating.average;
   int get _totalReviews => _rating.totalRatings;
 
+  late final ScrollController _scrollController;
+
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _user = widget.user;
     _profile = widget.profile;
     if (_profile == null || _user == null) {
       _loadData();
     }
     _loadReviews();
+    if (widget.initialScrollToReviews) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   // Load the next page when the screen is scrolled near its end (the reviews
@@ -375,7 +398,8 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                   child: NotificationListener<ScrollNotification>(
                     onNotification: _onScroll,
                     child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

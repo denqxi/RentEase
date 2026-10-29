@@ -31,7 +31,8 @@ class OwnerOnboardingRemoteDataSource {
       'verificationStatus': 'pending',
       'submittedAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
-      'rejectionReason': FieldValue.delete(),
+      if (snap.exists && snap.data()?['rejectionReason'] != null)
+        'rejectionReason': FieldValue.delete(),
     };
     final privateRef = ref
         .collection(FirestoreCollections.ownerPrivate)

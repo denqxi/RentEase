@@ -95,6 +95,8 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
         _repository.fetchOwnerProfile(inquiry.ownerId),
       ).wait;
       final hasRated = await _repository.hasRated(inquiryId: inquiry.inquiryId, raterId: uid);
+      final isOwner = uid == inquiry.ownerId;
+      final counterpartDeleted = isOwner ? tenant == null : owner == null;
       if (isClosed) return;
       emit(
         state.copyWith(
@@ -106,6 +108,7 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
           ownerVerified: ownerProfile?.verificationStatus == 'verified',
           ownerRejected: ownerProfile?.verificationStatus == 'rejected',
           hasRated: hasRated,
+          counterpartDeleted: counterpartDeleted,
         ),
       );
     } catch (e) {
@@ -147,6 +150,10 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
   /// keyboard submit). Separate from `isBusy`, which a stream error resets.
   Future<bool> sendMessage(String text) async {
     if (_sendInFlight) return false;
+    final i = state.inquiry;
+    if (i == null || state.isCounterpartDeleted(isOwner: uid == i.ownerId)) {
+      return false;
+    }
     _sendInFlight = true;
     try {
       return await _run(

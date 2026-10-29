@@ -75,8 +75,12 @@ class _RecommendedSectionState extends State<RecommendedSection> {
                   const SizedBox(height: 2),
                   Text(
                     isGuest
-                        ? 'Top 3 featured properties'
-                        : 'Your top 3 property matches',
+                        ? (top3.length == 1
+                            ? 'Top featured property'
+                            : 'Top ${top3.length} featured properties')
+                        : (top3.length == 1
+                            ? 'Your top property match'
+                            : 'Your top ${top3.length} property matches'),
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 16,

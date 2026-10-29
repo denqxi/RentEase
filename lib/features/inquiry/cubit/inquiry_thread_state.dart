@@ -15,6 +15,7 @@ class InquiryThreadState extends Equatable {
     this.ownerRejected = false,
     this.counterpartPhone,
     this.hasRated = false,
+    this.counterpartDeleted = false,
   });
 
   final bool isLoading;
@@ -42,6 +43,12 @@ class InquiryThreadState extends Equatable {
   /// Whether current user has rated this inquiry/stay.
   final bool hasRated;
 
+  /// Whether the other party has deleted their account (users doc is gone).
+  final bool counterpartDeleted;
+
+  /// Convenience getter for checking if counterpart account is deleted.
+  bool isCounterpartDeleted({bool? isOwner}) => counterpartDeleted;
+
   InquiryThreadState copyWith({
     bool? isLoading,
     bool? isBusy,
@@ -58,6 +65,7 @@ class InquiryThreadState extends Equatable {
     String? counterpartPhone,
     bool clearPhone = false,
     bool? hasRated,
+    bool? counterpartDeleted,
   }) {
     return InquiryThreadState(
       isLoading: isLoading ?? this.isLoading,
@@ -75,6 +83,7 @@ class InquiryThreadState extends Equatable {
           ? null
           : (counterpartPhone ?? this.counterpartPhone),
       hasRated: hasRated ?? this.hasRated,
+      counterpartDeleted: counterpartDeleted ?? this.counterpartDeleted,
     );
   }
 
@@ -95,5 +104,6 @@ class InquiryThreadState extends Equatable {
     ownerRejected,
     counterpartPhone,
     hasRated,
+    counterpartDeleted,
   ];
 }
