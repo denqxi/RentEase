@@ -7,6 +7,7 @@ import '../../../features/registration/model/user_role.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../activity/cubit/activity_cubit.dart';
 import '../../activity/data/repositories/notification_repository_impl.dart';
+import '../../app_update/widgets/update_banner.dart';
 import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../../home/cubit/home_cubit.dart';
@@ -144,7 +145,20 @@ class _ShellView extends StatelessWidget {
         ),
         child: Scaffold(
           extendBody: true,
-          body: IndexedStack(index: tab.index, children: _screens),
+          body: Stack(
+            children: [
+              IndexedStack(index: tab.index, children: _screens),
+              // Guests have no Profile tab access, so no update pop-up.
+              if (context.read<ProfileCubit>().state.userRole !=
+                  UserRole.guest)
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: UpdateBanner(),
+                ),
+            ],
+          ),
           bottomNavigationBar: FloatingNavBar(
             items: _items(unreadInquiries),
             selectedIndex: tab.index,

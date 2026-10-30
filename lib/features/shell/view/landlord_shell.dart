@@ -6,6 +6,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/utils/app_back_handler.dart';
 import '../../activity/cubit/activity_cubit.dart';
 import '../../activity/data/repositories/notification_repository_impl.dart';
+import '../../app_update/widgets/update_banner.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
 import '../../landlord_home/view/landlord_home_screen.dart';
@@ -102,9 +103,19 @@ class _LandlordShellView extends StatelessWidget {
       },
       child: Scaffold(
         extendBody: true,
-        body: IndexedStack(
-          index: tab.index,
-          children: _screens,
+        body: Stack(
+          children: [
+            IndexedStack(
+              index: tab.index,
+              children: _screens,
+            ),
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: UpdateBanner(),
+            ),
+          ],
         ),
         bottomNavigationBar: FloatingNavBar(
           items: _items(unreadInquiries),

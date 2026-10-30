@@ -8,6 +8,7 @@ import '../../../core/cubit/app_theme_cubit.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_svg_icon.dart';
 import '../../../shared/widgets/app_toggle.dart';
+import '../../app_update/widgets/update_section.dart';
 import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../../home/cubit/home_cubit.dart';
 import '../../inquiry/view/tenant_inquiries_screen.dart';
@@ -620,17 +621,7 @@ class ProfileScreen extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  const Center(
-                    child: Text(
-                      'RentEase prototype · v1.0',
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.slate400,
-                      ),
-                    ),
-                  ),
+                  const SizedBox(width: double.infinity, child: UpdateSection()),
 
                   const SizedBox(height: 100),
                 ],

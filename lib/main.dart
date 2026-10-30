@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'app.dart';
 import 'core/cubit/app_theme_cubit.dart';
+import 'features/app_update/cubit/app_update_cubit.dart';
+import 'features/app_update/widgets/update_lifecycle_watcher.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/matching/data/repositories/filtering_repository_impl.dart';
@@ -24,6 +26,8 @@ void main() async {
     MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => AppThemeCubit()),
+        // In-app update check (see update-enable.md); silent when offline.
+        BlocProvider(create: (_) => AppUpdateCubit()..checkForUpdate()),
         BlocProvider(
           create: (_) => AuthBloc(repository: AuthRepositoryImpl())
             ..add(const AuthCheckRequested()),
@@ -48,7 +52,7 @@ void main() async {
           ),
         ),
       ],
-      child: const RentEaseApp(),
+      child: const UpdateLifecycleWatcher(child: RentEaseApp()),
     ),
   );
 }

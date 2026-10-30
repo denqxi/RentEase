@@ -13,6 +13,7 @@ import '../../../core/firestore/property_ratings_aggregator.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_svg_icon.dart';
 import '../../../shared/widgets/app_toggle.dart';
+import '../../app_update/widgets/update_section.dart';
 import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
 import '../../owner/view/owner_inquiries_screen.dart';
@@ -693,17 +694,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
               const SizedBox(height: 22),
 
               // Footer
-              const Center(
-                child: Text(
-                  'RentEase prototype • v1.0',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 12,
-                    color: AppColors.slate400,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
+              const SizedBox(width: double.infinity, child: UpdateSection()),
 
               const SizedBox(height: 36),
                 ],
