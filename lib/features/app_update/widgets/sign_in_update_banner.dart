@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -6,9 +8,39 @@ import '../cubit/app_update_cubit.dart';
 
 /// "New version" pop-up for the sign-in screen (no Profile tab exists before
 /// login, so unlike [UpdateBanner] it carries its own Update button).
+/// Automatically dismisses after 30 seconds unless update is forced.
 /// Renders nothing when [AppUpdateCubit] is not in the tree (e.g. tests).
-class SignInUpdateBanner extends StatelessWidget {
+class SignInUpdateBanner extends StatefulWidget {
   const SignInUpdateBanner({super.key});
+
+  @override
+  State<SignInUpdateBanner> createState() => _SignInUpdateBannerState();
+}
+
+class _SignInUpdateBannerState extends State<SignInUpdateBanner> {
+  Timer? _autoDismissTimer;
+
+  void _syncTimer(AppUpdateState state, AppUpdateCubit cubit) {
+    _autoDismissTimer?.cancel();
+    _autoDismissTimer = null;
+
+    final forced = state.status == AppUpdateStatus.forced ||
+        (state.info != null && (state.currentBuild ?? 0) < state.info!.minSupportedBuild);
+
+    if (state.hasUpdate && !state.bannerDismissed && !forced) {
+      _autoDismissTimer = Timer(const Duration(seconds: 30), () {
+        if (mounted) {
+          cubit.dismissBanner();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _autoDismissTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,8 +50,13 @@ class SignInUpdateBanner extends StatelessWidget {
     } on Object {
       return const SizedBox.shrink();
     }
-    return BlocBuilder<AppUpdateCubit, AppUpdateState>(
+    return BlocConsumer<AppUpdateCubit, AppUpdateState>(
       bloc: cubit,
+      listenWhen: (prev, curr) =>
+          prev.bannerDismissed != curr.bannerDismissed ||
+          prev.status != curr.status ||
+          prev.hasUpdate != curr.hasUpdate,
+      listener: (context, state) => _syncTimer(state, cubit),
       builder: (context, state) {
         final info = state.info;
         if (!state.hasUpdate || info == null) return const SizedBox.shrink();
@@ -30,6 +67,10 @@ class SignInUpdateBanner extends StatelessWidget {
         final forced = state.status == AppUpdateStatus.forced ||
             (state.currentBuild ?? 0) < info.minSupportedBuild;
         final downloading = state.status == AppUpdateStatus.downloading;
+
+        if (_autoDismissTimer == null && !forced && !downloading) {
+          _syncTimer(state, cubit);
+        }
 
         return SafeArea(
           bottom: false,
@@ -91,7 +132,10 @@ class SignInUpdateBanner extends StatelessWidget {
                               ),
                               minimumSize: const Size(0, 34),
                             ),
-                            onPressed: cubit.startUpdate,
+                            onPressed: () {
+                              _autoDismissTimer?.cancel();
+                              cubit.startUpdate();
+                            },
                             child: Text(
                               state.errorMessage.isEmpty ? 'Update' : 'Retry',
                               style: const TextStyle(
@@ -108,7 +152,10 @@ class SignInUpdateBanner extends StatelessWidget {
                               color: AppColors.surface,
                               size: 20,
                             ),
-                            onPressed: cubit.dismissBanner,
+                            onPressed: () {
+                              _autoDismissTimer?.cancel();
+                              cubit.dismissBanner();
+                            },
                           )
                         else
                           const SizedBox(width: 8),

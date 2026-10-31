@@ -9,7 +9,9 @@ import '../../../core/utils/date_utils.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../activity/cubit/activity_cubit.dart';
 import '../../activity/view/activity_screen.dart';
+import '../../app_update/cubit/app_update_cubit.dart';
 import '../../profile/cubit/profile_cubit.dart';
+import '../../shell/cubit/shell_cubit.dart';
 import '../../profile/view/edit_constraints_screen.dart';
 import '../../registration/model/user_role.dart';
 import '../cubit/home_cubit.dart';
@@ -63,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {
       // In isolated tests/previews without ActivityCubit
     }
+    final hasAppUpdate = context.watch<AppUpdateCubit?>()?.state.hasUpdate ?? false;
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
@@ -102,27 +105,31 @@ class _HomeScreenState extends State<HomeScreen> {
                       : (firstName.isEmpty ? 'Tenant' : firstName),
                   photoUrl: photoUrl,
                   isGuest: isGuest,
-                  hasUnreadNotifications: !isGuest && unreadNotifications > 0,
-                  onNotificationTap: () {
+                  hasUnreadNotifications: !isGuest && (unreadNotifications > 0 || hasAppUpdate),
+                  onNotificationTap: () async {
                     if (isGuest) {
                       GuestAccessSheet.show(context);
                     } else {
-                      try {
-                        final activityCubit = context.read<ActivityCubit>();
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => BlocProvider<ActivityCubit>.value(
-                              value: activityCubit,
-                              child: const ActivityScreen(),
-                            ),
-                          ),
-                        );
-                      } catch (_) {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const ActivityScreen(),
-                          ),
-                        );
+                      final shellCubit = context.read<ShellCubit?>();
+                      final activityCubit = context.read<ActivityCubit?>();
+                      final result = await Navigator.of(context).push(
+                        MaterialPageRoute<dynamic>(
+                          builder: (_) {
+                            final screen = ActivityScreen(
+                              onOpenProfile: () => shellCubit?.selectTab(ShellTab.profile),
+                            );
+                            if (activityCubit != null) {
+                              return BlocProvider<ActivityCubit>.value(
+                                value: activityCubit,
+                                child: screen,
+                              );
+                            }
+                            return screen;
+                          },
+                        ),
+                      );
+                      if (result == 'open_profile' && context.mounted) {
+                        shellCubit?.selectTab(ShellTab.profile);
                       }
                     }
                   },

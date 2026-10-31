@@ -3,11 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../cubit/app_update_cubit.dart';
+import 'whats_new_dialog.dart';
 
 /// Replaces the static "RentEase prototype · v1.0" footer on the profile
 /// screens: shows the real installed version and, when a newer build is
-/// published, the release notes and an Update button (below Log out, so it
-/// can't be mistaken for it). Needs [AppUpdateCubit] above it in the tree.
+/// published, a "View What's New" card overlay trigger and an Update button.
 class UpdateSection extends StatelessWidget {
   const UpdateSection({super.key});
 
@@ -44,16 +44,54 @@ class UpdateSection extends StatelessWidget {
                   color: AppColors.primaryDeep,
                 ),
               ),
-              if (info.notes.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  info.notes,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 12,
-                    height: 1.4,
-                    color: AppColors.slate500,
+              if (info.hasAnyNotes) ...[
+                const SizedBox(height: 6),
+                InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => WhatsNewDialog.show(
+                    context,
+                    info: info,
+                    onUpdate: () => context.read<AppUpdateCubit>().startUpdate(),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentSoft,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.primaryDeep.withValues(alpha: 0.15),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.article_outlined,
+                          size: 14,
+                          color: AppColors.primaryDeep,
+                        ),
+                        SizedBox(width: 5),
+                        Text(
+                          "View What's New",
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryDeep,
+                          ),
+                        ),
+                        SizedBox(width: 3),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 15,
+                          color: AppColors.primaryDeep,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
