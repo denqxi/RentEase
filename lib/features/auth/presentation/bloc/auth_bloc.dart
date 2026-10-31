@@ -89,7 +89,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     final user = await _repository.currentUser();
-    if (user == null) {
+    if (user == null || user.role.isEmpty) {
+      if (user != null && user.role.isEmpty) {
+        await _repository.signOut();
+      }
       emit(const AuthUnauthenticated());
     } else if (await _rejectIfSuspended(user, emit)) {
       return;

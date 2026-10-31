@@ -298,15 +298,27 @@ class _SignInScreenState extends State<SignInScreen>
         MaterialPageRoute<void>(
           builder: (_) => RegistrationFlowScreen(
             initialGoogleResult: state.googleResult,
-            onComplete: (role) {
-              Navigator.of(context).pushNamedAndRemoveUntil(
-                role == UserRole.landlord
-                    ? AppRouter.documentUpload
-                    : AppRouter.hardConstraints,
-                (_) => false,
-              );
+            onComplete: (role) async {
+              final authState = context.read<AuthBloc>().state;
+              final authUser = authState is AuthAuthenticated ? authState.user : null;
+              if (authUser != null) {
+                final route = await AppRouter.postAuthRouteFor(authUser);
+                if (context.mounted) {
+                  Navigator.of(context).pushNamedAndRemoveUntil(route, (_) => false);
+                }
+              } else {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  role == UserRole.landlord
+                      ? AppRouter.documentUpload
+                      : AppRouter.hardConstraints,
+                  (_) => false,
+                );
+              }
             },
-            onSignIn: () => Navigator.of(context).pop(),
+            onSignIn: () {
+              context.read<AuthBloc>().add(const AuthSignOutRequested());
+              Navigator.of(context).pop();
+            },
           ),
         ),
       );

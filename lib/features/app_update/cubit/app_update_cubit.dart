@@ -10,11 +10,11 @@ part 'app_update_state.dart';
 /// Checks `version.json` for a newer build and drives the download + install.
 class AppUpdateCubit extends Cubit<AppUpdateState> {
   AppUpdateCubit({
-    AppUpdateService service = const GithubAppUpdateService(),
-    ApkInstaller installer = const DioApkInstaller(),
+    AppUpdateService? service,
+    ApkInstaller? installer,
     this.minCheckInterval = const Duration(minutes: 30),
-  })  : _service = service,
-        _installer = installer,
+  })  : _service = service ?? const GithubAppUpdateService(),
+        _installer = installer ?? const DioApkInstaller(),
         super(const AppUpdateState());
 
   final AppUpdateService _service;

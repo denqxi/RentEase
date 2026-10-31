@@ -89,6 +89,12 @@ class RentEaseApp extends StatelessWidget {
       _ => null,
     };
     if (user != null) {
+      if (user.role.isEmpty) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(builder: (_) => const _SignInEntry()),
+        );
+        return;
+      }
       final route = await AppRouter.postAuthRouteFor(user);
       if (!context.mounted) return;
       Navigator.of(context).pushNamedAndRemoveUntil(
@@ -159,15 +165,12 @@ class _SignInEntry extends StatelessWidget {
     );
   }
 
-  void _pushOnboarding(BuildContext context, UserRole role) {
+  void _pushOnboarding(BuildContext context, UserRole role) async {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        role == UserRole.landlord
-            ? AppRouter.documentUpload
-            : AppRouter.hardConstraints,
-        (_) => false,
-      );
+      final route = await AppRouter.postAuthRouteFor(authState.user);
+      if (!context.mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil(route, (_) => false);
       return;
     }
     Navigator.of(context).push(

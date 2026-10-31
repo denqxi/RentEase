@@ -11,7 +11,10 @@ import '../../features/admin/view/admin_shell.dart';
 import '../../features/admin/view/pending_verifications_screen.dart';
 import '../../features/admin/view/property_management_screen.dart';
 import '../../features/admin/view/user_management_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../features/auth/domain/entities/auth.dart';
+import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/screens/auth_screen.dart';
 import '../../features/auth/presentation/screens/email_verification_screen.dart';
 
@@ -74,6 +77,7 @@ class AppRouter {
   /// Resolves the destination route for an authenticated user based on role,
   /// verification, and onboarding completion.
   static Future<String> postAuthRouteFor(AppUser user) async {
+    if (user.role.isEmpty) return signIn;
     if (user.isAdmin) return adminHome;
     if (!user.emailVerified) {
       return user.isOwner ? documentUpload : hardConstraints;
@@ -87,13 +91,15 @@ class AppRouter {
             .get();
         if (!snap.exists) return documentUpload;
         return landlordHome;
-      } else {
+      } else if (user.isTenant) {
         final snap = await firestore
             .collection(FirestoreCollections.tenantProfiles)
             .doc(user.uid)
             .get();
         if (!snap.exists) return hardConstraints;
         return tenantHome;
+      } else {
+        return signIn;
       }
     } catch (_) {
       return homeRouteFor(isAdmin: user.isAdmin, isOwner: user.isOwner);
@@ -118,13 +124,22 @@ class AppRouter {
                   // A fresh account is unverified: go through email
                   // verification first (it then routes into onboarding),
                   // exactly like the _SignInEntry flow in app.dart.
-                  onComplete: (role) => Navigator.of(ctx).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => EmailVerificationScreen(
-                        isOwner: role == UserRole.landlord,
+                  onComplete: (role) async {
+                    final authState = ctx.read<AuthBloc>().state;
+                    if (authState is AuthAuthenticated) {
+                      final route = await AppRouter.postAuthRouteFor(authState.user);
+                      if (!ctx.mounted) return;
+                      Navigator.of(ctx).pushNamedAndRemoveUntil(route, (_) => false);
+                      return;
+                    }
+                    Navigator.of(ctx).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => EmailVerificationScreen(
+                          isOwner: role == UserRole.landlord,
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                   onSignIn: () => Navigator.of(ctx).pop(),
                 ),
               ),

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -133,7 +134,7 @@ class _LandlordAccountStepViewState extends State<LandlordAccountStepView> {
     if (data.isGoogleAuth) {
       context.read<AuthBloc>().add(
             AuthGoogleSignUpRequested(
-              uid: data.googleUid,
+              uid: data.googleUid.isNotEmpty ? data.googleUid : (FirebaseAuth.instance.currentUser?.uid ?? ''),
               email: data.email.trim(),
               firstName: firstName,
               lastName: lastName,
