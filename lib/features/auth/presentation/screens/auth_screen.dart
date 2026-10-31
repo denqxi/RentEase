@@ -11,6 +11,7 @@ import '../../../../core/utils/app_back_handler.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
+import '../../../app_update/widgets/sign_in_update_banner.dart';
 import '../../../registration/model/user_role.dart';
 import '../../../registration/view/registration_flow_screen.dart';
 import '../../domain/entities/auth.dart';
@@ -594,6 +595,14 @@ class _SignInScreenState extends State<SignInScreen>
                 ),
               ),
             ),
+          ),
+
+          // ── "New version available" pop-up (before login) ──────────
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SignInUpdateBanner(),
           ),
         ],
       ),
