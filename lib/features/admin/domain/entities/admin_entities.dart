@@ -33,15 +33,26 @@ class VerificationDocuments extends Equatable {
   const VerificationDocuments({
     this.urls = const [],
     this.publicIds = const [],
+    this.diditSessionId,
+    this.idSource = 'upload',
   });
+
+  /// 'didit': the ID was checked by Didit and [urls] are
+  /// [ownership, permit?]. 'upload': [ID front, ID back, ownership, permit?].
+  final String idSource;
+  bool get idViaDidit => idSource == 'didit';
 
   final List<String> urls;
   final List<String> publicIds;
 
+  /// Didit ID check session, if the owner ran one. The admin screen fetches
+  /// its result from Didit; it is advisory only.
+  final String? diditSessionId;
+
   bool get isEmpty => urls.isEmpty && publicIds.isEmpty;
 
   @override
-  List<Object?> get props => [urls, publicIds];
+  List<Object?> get props => [urls, publicIds, diditSessionId, idSource];
 }
 
 class AdminPropertyItem extends Equatable {

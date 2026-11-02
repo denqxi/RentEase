@@ -34,7 +34,7 @@ class SelectableChip extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadii.chip),
             border: Border.all(
-              color: selected ? AppColors.primary : AppColors.slate300,
+              color: selected ? AppColors.primary : context.appColors.hint,
             ),
           ),
           child: Text(

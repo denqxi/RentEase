@@ -192,9 +192,9 @@ class OtherListingCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.slate200, width: 0.8),
+        border: Border.all(color: context.appColors.fieldBorder, width: 0.8),
         boxShadow: [
           BoxShadow(
             color: AppColors.slate900.withValues(alpha: 0.05),
@@ -236,7 +236,7 @@ class OtherListingCard extends StatelessWidget {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: AppColors.slate200.withValues(alpha: 0.7),
+                                color: context.appColors.fieldBorder.withValues(alpha: 0.7),
                                 width: 0.8,
                               ),
                             ),
@@ -254,7 +254,7 @@ class OtherListingCard extends StatelessWidget {
                             vertical: 3.5,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: context.appColors.surface,
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
@@ -264,7 +264,7 @@ class OtherListingCard extends StatelessWidget {
                               ),
                             ],
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
@@ -279,7 +279,7 @@ class OtherListingCard extends StatelessWidget {
                                   fontFamily: 'DM Sans',
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.slate900,
+                                  color: context.appColors.textPrimary,
                                   letterSpacing: -0.1,
                                 ),
                               ),
@@ -303,7 +303,7 @@ class OtherListingCard extends StatelessWidget {
                                 height: 30,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.surface,
+                                  color: context.appColors.surface,
                                   boxShadow: [
                                     BoxShadow(
                                       color: AppColors.slate900.withValues(alpha: 0.12),
@@ -317,7 +317,7 @@ class OtherListingCard extends StatelessWidget {
                                   isSaved ? Icons.favorite : Icons.favorite_border,
                                   color: isSaved
                                       ? AppColors.destructive
-                                      : AppColors.slate600,
+                                      : context.appColors.textSecondary,
                                   size: 16,
                                 ),
                               ),
@@ -336,7 +336,7 @@ class OtherListingCard extends StatelessWidget {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: context.appColors.surface,
                               borderRadius: BorderRadius.circular(10),
                               boxShadow: [
                                 BoxShadow(
@@ -349,19 +349,19 @@ class OtherListingCard extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.photo_outlined,
                                   size: 11,
-                                  color: AppColors.slate600,
+                                  color: context.appColors.textSecondary,
                                 ),
                                 const SizedBox(width: 3.5),
                                 Text(
                                   '$photoCount',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.slate900,
+                                    color: context.appColors.textPrimary,
                                   ),
                                 ),
                               ],
@@ -385,11 +385,11 @@ class OtherListingCard extends StatelessWidget {
                         propName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.slate700,
+                          color: context.appColors.textPrimary,
                           letterSpacing: -0.1,
                           height: 1.15,
                         ),
@@ -406,11 +406,11 @@ class OtherListingCard extends StatelessWidget {
                             roomOrTitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 18.0,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.slate900,
+                              color: context.appColors.textPrimary,
                               letterSpacing: -0.3,
                               height: 1.15,
                             ),
@@ -429,22 +429,22 @@ class OtherListingCard extends StatelessWidget {
                             const SizedBox(width: 3),
                             Text(
                               hasRating ? avgRating.toStringAsFixed(1) : '0',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.slate900,
+                                color: context.appColors.textPrimary,
                               ),
                             ),
                             if (hasRating && totalRatings > 0) ...[
                               const SizedBox(width: 2),
                               Text(
                                 '($totalRatings)',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.slate500,
+                                  color: context.appColors.textSecondary,
                                 ),
                               ),
                             ],
@@ -460,10 +460,10 @@ class OtherListingCard extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.location_on_outlined,
                             size: 13,
-                            color: AppColors.slate400,
+                            color: context.appColors.hint,
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -471,11 +471,11 @@ class OtherListingCard extends StatelessWidget {
                               address,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.slate600,
+                                color: context.appColors.textSecondary,
                               ),
                             ),
                           ),
@@ -512,10 +512,10 @@ class OtherListingCard extends StatelessWidget {
 
                     if (propName == null) const SizedBox(height: 16.5),
                     const SizedBox(height: 8),
-                    const Divider(
+                    Divider(
                       height: 1,
                       thickness: 0.8,
-                      color: AppColors.fieldFill,
+                      color: context.appColors.fieldFill,
                     ),
                     const SizedBox(height: 8),
 
@@ -529,19 +529,19 @@ class OtherListingCard extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            const AppSvgIcon(
+                            AppSvgIcon(
                               svgString: AppSvgIcons.propertyType,
                               size: 15,
-                              color: AppColors.slate900,
+                              color: context.appColors.textPrimary,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               displayType,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.slate900,
+                                color: context.appColors.textPrimary,
                               ),
                             ),
                           ],
@@ -561,13 +561,13 @@ class OtherListingCard extends StatelessWidget {
                                   letterSpacing: -0.3,
                                 ),
                               ),
-                              const TextSpan(
+                              TextSpan(
                                 text: ' / month',
                                 style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w500,
-                                  color: AppColors.slate500,
+                                  color: context.appColors.textSecondary,
                                 ),
                               ),
                             ],

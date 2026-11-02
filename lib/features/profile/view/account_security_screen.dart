@@ -131,7 +131,7 @@ class AccountSecurityScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isDark
                       ? AppColors.darkField
-                      : AppColors.fieldFill,
+                      : context.appColors.fieldFill,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -160,21 +160,21 @@ class AccountSecurityScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // SECURITY SECTION
-              _buildSectionHeader('SECURITY', AppColors.slate500),
+              _buildSectionHeader('SECURITY', context.appColors.textSecondary),
               const SizedBox(height: 10),
               _buildCard(
                 cardColor: cardColor,
                 isDark: isDark,
-                child: _buildActionRow(
+                child: _buildActionRow(context,
                   icon: Icons.vpn_key_outlined,
                   iconBg: AppColors.tenantFillBlue,
                   iconColor: AppColors.primaryCyan,
                   title: 'Change password',
                   textColor: textColor,
                   subtitle: 'Update your account login password',
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.chevron_right_rounded,
-                    color: AppColors.slate400,
+                    color: context.appColors.hint,
                     size: 20,
                   ),
                   onTap: () => _showChangePasswordSheet(context),
@@ -184,22 +184,22 @@ class AccountSecurityScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               // LEGAL SECTION
-              _buildSectionHeader('LEGAL', AppColors.slate500),
+              _buildSectionHeader('LEGAL', context.appColors.textSecondary),
               const SizedBox(height: 10),
               _buildCard(
                 cardColor: cardColor,
                 isDark: isDark,
                 child: Column(
                   children: [
-                    _buildActionRow(
+                    _buildActionRow(context,
                       icon: Icons.verified_user_outlined,
                       iconBg: AppColors.tenantFillBlue,
                       iconColor: AppColors.primaryCyan,
                       title: 'Privacy Notice',
                       textColor: textColor,
-                      trailing: const Icon(
+                      trailing: Icon(
                         Icons.open_in_new_rounded,
-                        color: AppColors.slate400,
+                        color: context.appColors.hint,
                         size: 18,
                       ),
                       onTap: () => PrivacyNoticeScreen.open(context),
@@ -208,17 +208,17 @@ class AccountSecurityScreen extends StatelessWidget {
                       height: 1,
                       color: isDark
                           ? AppColors.darkField
-                          : AppColors.fieldFill,
+                          : context.appColors.fieldFill,
                     ),
-                    _buildActionRow(
+                    _buildActionRow(context,
                       icon: Icons.description_outlined,
                       iconBg: AppColors.tenantFillBlue,
                       iconColor: AppColors.primaryCyan,
                       title: 'Terms & Conditions',
                       textColor: textColor,
-                      trailing: const Icon(
+                      trailing: Icon(
                         Icons.open_in_new_rounded,
-                        color: AppColors.slate400,
+                        color: context.appColors.hint,
                         size: 18,
                       ),
                       onTap: () => Navigator.of(context).push(
@@ -250,7 +250,7 @@ class AccountSecurityScreen extends StatelessWidget {
                   ),
                   boxShadow: cardShadow,
                 ),
-                child: _buildActionRow(
+                child: _buildActionRow(context,
                   icon: Icons.delete_outline_rounded,
                   iconBg: AppColors.redFill50,
                   iconColor: AppColors.rose600,
@@ -311,7 +311,7 @@ class AccountSecurityScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionRow({
+  Widget _buildActionRow(BuildContext context, {
     required IconData icon,
     required Color iconBg,
     required Color iconColor,
@@ -361,7 +361,7 @@ class AccountSecurityScreen extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12,
-                        color: subtitleColor ?? AppColors.slate500,
+                        color: subtitleColor ?? context.appColors.textSecondary,
                       ),
                     ),
                   ],
@@ -480,8 +480,8 @@ class _ChangePasswordBottomSheetState
         24,
         MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
+      decoration: BoxDecoration(
+        color: context.appColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
@@ -494,7 +494,7 @@ class _ChangePasswordBottomSheetState
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.slate300,
+                  color: context.appColors.hint,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -510,12 +510,12 @@ class _ChangePasswordBottomSheetState
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Enter your current password and pick a new one.',
               style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
-                color: AppColors.slate500,
+                color: context.appColors.textSecondary,
               ),
             ),
             const SizedBox(height: 18),
@@ -576,7 +576,7 @@ class _ChangePasswordBottomSheetState
                   elevation: 0,
                 ),
                 child: _isUpdating
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
@@ -584,7 +584,7 @@ class _ChangePasswordBottomSheetState
                           color: AppColors.surface,
                         ),
                       )
-                    : const Text(
+                    : Text(
                         'Update password',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
@@ -612,27 +612,27 @@ class _ChangePasswordBottomSheetState
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.slate700,
+            color: context.appColors.textPrimary,
           ),
         ),
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.appColors.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.slate200),
+            border: Border.all(color: context.appColors.fieldBorder),
           ),
           child: TextField(
             controller: controller,
             obscureText: obscure,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 14,
-              color: AppColors.slate900,
+              color: context.appColors.textPrimary,
             ),
             decoration: InputDecoration(
               hintText: '••••••••',
@@ -649,7 +649,7 @@ class _ChangePasswordBottomSheetState
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
                   size: 18,
-                  color: AppColors.slate400,
+                  color: context.appColors.hint,
                 ),
               ),
             ),
@@ -717,8 +717,8 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
             24,
             MediaQuery.of(context).viewInsets.bottom + 28,
           ),
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
+          decoration: BoxDecoration(
+            color: context.appColors.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: SingleChildScrollView(
@@ -731,7 +731,7 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.slate300,
+                    color: context.appColors.hint,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -778,10 +778,10 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
                       ? 'This permanently erases your ${widget.listingsCount} listings, verified status, and tenant communications.'
                       : 'This permanently erases your saved properties, inquiries, and application history.',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,
-                    color: AppColors.slate500,
+                    color: context.appColors.textSecondary,
                     height: 1.4,
                   ),
                 ),
@@ -790,7 +790,7 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
 
                 if (!isGoogle) ...[
                   // Password input for backend re-authentication
-                  const Align(
+                  Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'Enter current password:',
@@ -798,33 +798,33 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
                         fontFamily: 'DM Sans',
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.slate700,
+                        color: context.appColors.textPrimary,
                       ),
                     ),
                   ),
                   const SizedBox(height: 6),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: context.appColors.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.slate200),
+                      border: Border.all(color: context.appColors.fieldBorder),
                     ),
                     child: TextField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       enabled: !busy,
                       onChanged: (_) => setState(() {}),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 14,
-                        color: AppColors.slate900,
+                        color: context.appColors.textPrimary,
                       ),
                       decoration: InputDecoration(
                         hintText: 'Enter your password',
-                        hintStyle: const TextStyle(
+                        hintStyle: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 13,
-                          color: AppColors.slate400,
+                          color: context.appColors.hint,
                         ),
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(
@@ -841,7 +841,7 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
                                 ? Icons.visibility_off_outlined
                                 : Icons.visibility_outlined,
                             size: 18,
-                            color: AppColors.slate400,
+                            color: context.appColors.hint,
                           ),
                         ),
                       ),
@@ -852,10 +852,10 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      color: AppColors.fieldFill,
+                      color: context.appColors.fieldFill,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(Icons.info_outline_rounded, size: 18, color: AppColors.primary),
                         SizedBox(width: 10),
@@ -865,7 +865,7 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
                             style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 12.5,
-                              color: AppColors.slate600,
+                              color: context.appColors.textSecondary,
                             ),
                           ),
                         ),
@@ -879,11 +879,11 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: RichText(
-                    text: const TextSpan(
+                    text: TextSpan(
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 13,
-                        color: AppColors.slate700,
+                        color: context.appColors.textPrimary,
                       ),
                       children: [
                         TextSpan(text: 'Type '),
@@ -905,7 +905,7 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
                 // DELETE text field
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.appColors.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: AppColors.redBorder200,
@@ -916,18 +916,18 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
                     controller: _confirmController,
                     enabled: !busy,
                     onChanged: (_) => setState(() {}),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.slate900,
+                      color: context.appColors.textPrimary,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'DELETE',
                       hintStyle: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 14,
-                        color: AppColors.slate300,
+                        color: context.appColors.hint,
                       ),
                       isDense: true,
                       contentPadding: EdgeInsets.symmetric(
@@ -964,18 +964,18 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
                           onPressed:
                               busy ? null : () => Navigator.of(context).pop(),
                           style: TextButton.styleFrom(
-                            backgroundColor: AppColors.fieldFill,
+                            backgroundColor: context.appColors.fieldFill,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Cancel',
                             style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.slate800,
+                              color: context.appColors.textPrimary,
                             ),
                           ),
                         ),
@@ -1002,7 +1002,7 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
                             ),
                           ),
                           child: busy
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
@@ -1010,7 +1010,7 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
                                     color: AppColors.surface,
                                   ),
                                 )
-                              : const Text(
+                              : Text(
                                   'Delete forever',
                                   style: TextStyle(
                                     fontFamily: 'DM Sans',

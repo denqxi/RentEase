@@ -190,7 +190,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
   void _showAttachmentOptions(PropertyDoc? property, String? phone) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.appColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -206,19 +206,19 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.indicatorInactive,
+                    color: context.appColors.indicatorInactive,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Quick Share',
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: context.appColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -251,10 +251,10 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       property.address,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: context.appColors.textSecondary,
                       ),
                     ),
                     onTap: () {
@@ -289,10 +289,10 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     ),
                     subtitle: Text(
                       '₱${property.monthlyRent}/mo · Deposit ₱${property.depositAmount}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: context.appColors.textSecondary,
                       ),
                     ),
                     onTap: () {
@@ -326,12 +326,12 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  subtitle: const Text(
+                  subtitle: Text(
                     'Ask for preferred date and time to visit',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
-                      color: AppColors.textSecondary,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                   onTap: () {
@@ -365,12 +365,12 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  subtitle: const Text(
+                  subtitle: Text(
                     'Ask the owner for a property visit',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
-                      color: AppColors.textSecondary,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                   onTap: () {
@@ -404,12 +404,12 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    subtitle: const Text(
+                    subtitle: Text(
                       'Inquire about nearest landmarks or commute',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: context.appColors.textSecondary,
                       ),
                     ),
                     onTap: () {
@@ -442,12 +442,12 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  subtitle: const Text(
+                  subtitle: Text(
                     'Inquire about required IDs or deposit guidelines',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
-                      color: AppColors.textSecondary,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                   onTap: () {
@@ -484,10 +484,10 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   ),
                   subtitle: Text(
                     phone,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
-                      color: AppColors.textSecondary,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                   onTap: () {
@@ -593,7 +593,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
         inquiry.updatedAt?.toDate() ?? inquiry.createdAt?.toDate();
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.appColors.surface,
       body: Stack(
         children: [
           // Soft Top Sky-Blue Gradient Background matching the reference UI
@@ -611,7 +611,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     colors: [
                       AppColors.accentSoft.withValues(alpha: 0.7),
                       AppColors.accentSoft.withValues(alpha: 0.45),
-                      AppColors.surface.withValues(alpha: 0.0),
+                      context.appColors.surface.withValues(alpha: 0.0),
                     ],
                     stops: const [0.0, 0.55, 1.0],
                   ),
@@ -636,7 +636,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                           width: 38,
                           height: 38,
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: context.appColors.surface,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -648,9 +648,9 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.chevron_left_rounded,
-                            color: AppColors.textPrimary,
+                            color: context.appColors.textPrimary,
                             size: 24,
                           ),
                         ),
@@ -672,17 +672,17 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                   width: 42,
                                   height: 42,
                                   alignment: Alignment.center,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.fieldFill,
+                                  decoration: BoxDecoration(
+                                    color: context.appColors.fieldFill,
                                     shape: BoxShape.circle,
                                   ),
                                   child: Text(
                                     InquirySummary.initialsOf(widget.counterpartName),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
-                                      color: AppColors.textPrimary,
+                                      color: context.appColors.textPrimary,
                                     ),
                                   ),
                                 ),
@@ -698,11 +698,11 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                             child: Text(
                                               widget.counterpartName,
                                               overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontFamily: 'DM Sans',
                                                 fontSize: 15.5,
                                                 fontWeight: FontWeight.w700,
-                                                color: AppColors.textPrimary,
+                                                color: context.appColors.textPrimary,
                                               ),
                                             ),
                                           ),
@@ -720,11 +720,11 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                       Text(
                                         widget.propertyTitle,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontFamily: 'DM Sans',
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w500,
-                                          color: AppColors.textSecondary,
+                                          color: context.appColors.textSecondary,
                                         ),
                                       ),
                                     ],
@@ -739,9 +739,9 @@ class _InquiryChatViewState extends State<InquiryChatView> {
 
                       // 3-Dot More Menu
                       PopupMenuButton<String>(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.more_vert_rounded,
-                          color: AppColors.textPrimary,
+                          color: context.appColors.textPrimary,
                           size: 21,
                         ),
                         shape: RoundedRectangleBorder(
@@ -759,7 +759,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                         },
                         itemBuilder: (ctx) => [
                           if (property != null)
-                            const PopupMenuItem<String>(
+                            PopupMenuItem<String>(
                               value: 'property_info',
                               height: 38,
                               child: Row(
@@ -767,7 +767,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                   Icon(
                                     Icons.home_work_outlined,
                                     size: 16,
-                                    color: AppColors.textPrimary,
+                                    color: context.appColors.textPrimary,
                                   ),
                                   SizedBox(width: 8),
                                   Text(
@@ -924,7 +924,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
 
                 // ── Bottom Controls (Deleted Counterpart / Closed / Quick Replies + Input)
                 if (isCounterpartDeleted)
-                  const SafeArea(
+                  SafeArea(
                     top: false,
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(16, 12, 16, 20),
@@ -935,7 +935,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                             fontFamily: 'DM Sans',
                             fontSize: 13,
                             fontWeight: FontWeight.w400,
-                            color: AppColors.slate500,
+                            color: context.appColors.textSecondary,
                           ),
                         ),
                       ),
@@ -983,7 +983,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                               height: 48,
                               padding: const EdgeInsets.fromLTRB(6, 4, 14, 4),
                               decoration: BoxDecoration(
-                                color: AppColors.fieldFill,
+                                color: context.appColors.fieldFill,
                                 borderRadius: BorderRadius.circular(26),
                               ),
                               child: Row(
@@ -998,16 +998,16 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                     child: Container(
                                       width: 36,
                                       height: 36,
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.surface,
+                                      decoration: BoxDecoration(
+                                        color: context.appColors.surface,
                                         shape: BoxShape.circle,
                                       ),
                                       child: Transform.rotate(
                                         angle: 0.5,
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.attach_file_rounded,
                                           size: 18,
-                                          color: AppColors.textSecondary,
+                                          color: context.appColors.textSecondary,
                                         ),
                                       ),
                                     ),
@@ -1028,19 +1028,19 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                           }) => null,
                                       onSubmitted: _send,
                                       textInputAction: TextInputAction.send,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
-                                        color: AppColors.textPrimary,
+                                        color: context.appColors.textPrimary,
                                       ),
-                                      decoration: const InputDecoration(
+                                      decoration: InputDecoration(
                                         hintText: 'Type a message...',
                                         hintStyle: TextStyle(
                                           fontFamily: 'DM Sans',
                                           fontSize: 14,
                                           fontWeight: FontWeight.w400,
-                                          color: AppColors.textSecondary,
+                                          color: context.appColors.textSecondary,
                                         ),
                                         border: InputBorder.none,
                                         enabledBorder: InputBorder.none,
@@ -1068,7 +1068,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                               decoration: BoxDecoration(
                                 color: canChat
                                     ? AppColors.primary
-                                    : AppColors.indicatorInactive,
+                                    : context.appColors.indicatorInactive,
                                 shape: BoxShape.circle,
                                 boxShadow: canChat
                                     ? [
@@ -1082,7 +1082,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                       ]
                                     : null,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.send_rounded,
                                 color: AppColors.surface,
                                 size: 20,
@@ -1151,7 +1151,7 @@ class ThreadPropertyBannerCard extends StatelessWidget {
             : null);
 
     return Material(
-      color: AppColors.surface,
+      color: context.appColors.surface,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: effectiveOnTap,
@@ -1161,7 +1161,7 @@ class ThreadPropertyBannerCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.fieldBorder.withValues(alpha: 0.8),
+              color: context.appColors.fieldBorder.withValues(alpha: 0.8),
             ),
             boxShadow: [
               BoxShadow(
@@ -1193,20 +1193,20 @@ class ThreadPropertyBannerCard extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: context.appColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.location_on_rounded,
                           size: 14,
-                          color: AppColors.textSecondary,
+                          color: context.appColors.textSecondary,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
@@ -1214,11 +1214,11 @@ class ThreadPropertyBannerCard extends StatelessWidget {
                             address,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 12.5,
                               fontWeight: FontWeight.w400,
-                              color: AppColors.textSecondary,
+                              color: context.appColors.textSecondary,
                             ),
                           ),
                         ),
@@ -1228,10 +1228,10 @@ class ThreadPropertyBannerCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: AppColors.textSecondary,
+                color: context.appColors.textSecondary,
               ),
             ],
           ),
@@ -1269,23 +1269,23 @@ class _DateDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Expanded(
-          child: Divider(color: AppColors.fieldBorder, thickness: 1, height: 1),
+        Expanded(
+          child: Divider(color: context.appColors.fieldBorder, thickness: 1, height: 1),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             _formatDate(date),
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
+              color: context.appColors.textSecondary,
             ),
           ),
         ),
-        const Expanded(
-          child: Divider(color: AppColors.fieldBorder, thickness: 1, height: 1),
+        Expanded(
+          child: Divider(color: context.appColors.fieldBorder, thickness: 1, height: 1),
         ),
       ],
     );
@@ -1306,10 +1306,10 @@ class _AcceptedStatusBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.fieldFill,
+        color: context.appColors.fieldFill,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.fieldBorder.withValues(alpha: 0.75),
+          color: context.appColors.fieldBorder.withValues(alpha: 0.75),
         ),
       ),
       child: Row(
@@ -1318,9 +1318,9 @@ class _AcceptedStatusBanner extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.appColors.surface,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.fieldBorder),
+              border: Border.all(color: context.appColors.fieldBorder),
             ),
             child: const Icon(
               Icons.chat_bubble_outline_rounded,
@@ -1335,21 +1335,21 @@ class _AcceptedStatusBanner extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: context.appColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: AppColors.textSecondary,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ],
@@ -1399,7 +1399,7 @@ class _MessageBubble extends StatelessWidget {
             decoration: BoxDecoration(
               color: isMine
                   ? AppColors.accentSoft
-                  : AppColors.fieldFill,
+                  : context.appColors.fieldFill,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
                 topRight: const Radius.circular(16),
@@ -1414,11 +1414,11 @@ class _MessageBubble extends StatelessWidget {
               children: [
                 Text(
                   message.content,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                    color: context.appColors.textPrimary,
                     height: 1.35,
                   ),
                 ),
@@ -1428,11 +1428,11 @@ class _MessageBubble extends StatelessWidget {
                   children: [
                     Text(
                       timeLabel,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
+                        color: context.appColors.textSecondary,
                       ),
                     ),
                     if (isMine) ...[
@@ -1505,7 +1505,7 @@ class _ClosedPanel extends StatelessWidget {
               : 'This listing is now fully booked, so the chat is closed.',
           style: AppTextStyles.body(
             context,
-          ).copyWith(color: AppColors.textSecondary),
+          ).copyWith(color: context.appColors.textSecondary),
           textAlign: TextAlign.center,
         ),
       ),

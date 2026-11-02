@@ -121,9 +121,9 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
 
         return Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.appColors.surface,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: AppColors.slate200, width: 0.8),
+            border: Border.all(color: context.appColors.fieldBorder, width: 0.8),
             boxShadow: [
               BoxShadow(
                 color: AppColors.slate900.withValues(alpha: 0.05),
@@ -166,7 +166,7 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: AppColors.slate200
+                                    color: context.appColors.fieldBorder
                                         .withValues(alpha: 0.7),
                                     width: 0.8,
                                   ),
@@ -185,7 +185,7 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                                 vertical: 4.5,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.surface,
+                                color: context.appColors.surface,
                                 borderRadius: BorderRadius.circular(14),
                                 boxShadow: [
                                   BoxShadow(
@@ -207,10 +207,10 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                                         size: 14,
                                       )
                                     else if (widget.rank == 2)
-                                      const Icon(
+                                      Icon(
                                         Icons.workspace_premium_rounded,
                                         size: 15,
-                                        color: AppColors.slate400,
+                                        color: context.appColors.hint,
                                       )
                                     else
                                       const Icon(
@@ -221,11 +221,11 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                                     const SizedBox(width: 5),
                                     Text(
                                       '#${widget.rank} Top Match',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w800,
-                                        color: AppColors.slate900,
+                                        color: context.appColors.textPrimary,
                                         letterSpacing: -0.2,
                                       ),
                                     ),
@@ -233,7 +233,7 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                                     Container(
                                       width: 1,
                                       height: 11,
-                                      color: AppColors.slate300,
+                                      color: context.appColors.hint,
                                     ),
                                     const SizedBox(width: 6),
                                   ] else if (!isGuest && listing.matchPercent > 0) ...[
@@ -247,30 +247,30 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                                   if (!isGuest && listing.matchPercent > 0)
                                     Text(
                                       '${listing.matchPercent}% Match',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w700,
-                                        color: AppColors.slate900,
+                                        color: context.appColors.textPrimary,
                                         letterSpacing: -0.1,
                                       ),
                                     )
                                   else ...[
                                     if (widget.rank == null) ...[
-                                      const Icon(
+                                      Icon(
                                         Icons.lock_outline,
                                         size: 11.5,
-                                        color: AppColors.slate500,
+                                        color: context.appColors.textSecondary,
                                       ),
                                       const SizedBox(width: 4),
                                     ],
-                                    const Text(
+                                    Text(
                                       'Match',
                                       style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w700,
-                                        color: AppColors.slate900,
+                                        color: context.appColors.textPrimary,
                                         letterSpacing: -0.1,
                                       ),
                                     ),
@@ -301,7 +301,7 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                                   vertical: 3.5,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.surface,
+                                  color: context.appColors.surface,
                                   borderRadius: BorderRadius.circular(10),
                                   boxShadow: [
                                     BoxShadow(
@@ -314,19 +314,19 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.photo_outlined,
                                       size: 12,
-                                      color: AppColors.slate600,
+                                      color: context.appColors.textSecondary,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       '$photoCount',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
-                                        color: AppColors.slate900,
+                                        color: context.appColors.textPrimary,
                                         letterSpacing: -0.1,
                                       ),
                                     ),
@@ -401,11 +401,11 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
             propName,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
-              color: AppColors.slate700,
+              color: context.appColors.textPrimary,
               letterSpacing: -0.1,
               height: 1.15,
             ),
@@ -422,11 +422,11 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                 roomOrTitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 18.0,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.slate900,
+                  color: context.appColors.textPrimary,
                   letterSpacing: -0.3,
                   height: 1.15,
                 ),
@@ -447,22 +447,22 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                   hasRating
                       ? effectiveRating!.toStringAsFixed(1)
                       : '0',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.slate900,
+                    color: context.appColors.textPrimary,
                   ),
                 ),
                 if (hasRating && effectiveReviewCount > 0) ...[
                   const SizedBox(width: 2),
                   Text(
                     '($effectiveReviewCount)',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.slate500,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                 ],
@@ -486,12 +486,12 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 1.5),
+                Padding(
+                  padding: const EdgeInsets.only(top: 1.5),
                   child: Icon(
                     Icons.location_on_outlined,
                     size: 13,
-                    color: AppColors.slate400,
+                    color: context.appColors.hint,
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -506,11 +506,11 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                       overflow: _isAddressExpanded
                           ? (isBounded ? TextOverflow.ellipsis : TextOverflow.visible)
                           : TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.slate600,
+                        color: context.appColors.textSecondary,
                       ),
                     ),
                   ),
@@ -527,10 +527,10 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
         ] else
           const SizedBox(height: 12),
 
-        const Divider(
+        Divider(
           height: 1,
           thickness: 0.8,
-          color: AppColors.fieldFill,
+          color: context.appColors.fieldFill,
         ),
         const SizedBox(height: 8),
 
@@ -544,19 +544,19 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const AppSvgIcon(
+                AppSvgIcon(
                   svgString: AppSvgIcons.propertyType,
                   size: 15,
-                  color: AppColors.slate900,
+                  color: context.appColors.textPrimary,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   displayType,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.slate900,
+                    color: context.appColors.textPrimary,
                   ),
                 ),
               ],
@@ -576,13 +576,13 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                       letterSpacing: -0.3,
                     ),
                   ),
-                  const TextSpan(
+                  TextSpan(
                     text: ' / month',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 11.5,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.slate500,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                 ],
@@ -613,7 +613,7 @@ class _HeartButton extends StatelessWidget {
           height: 34,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.surface,
+            color: context.appColors.surface,
             boxShadow: [
               BoxShadow(
                 color: AppColors.slate900.withValues(alpha: 0.12),
@@ -625,7 +625,7 @@ class _HeartButton extends StatelessWidget {
           alignment: Alignment.center,
           child: Icon(
             isSaved ? Icons.favorite : Icons.favorite_border,
-            color: isSaved ? AppColors.destructive : AppColors.slate600,
+            color: isSaved ? AppColors.destructive : context.appColors.textSecondary,
             size: 18,
           ),
         ),

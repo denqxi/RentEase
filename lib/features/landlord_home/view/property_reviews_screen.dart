@@ -183,29 +183,29 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
         : p.title;
 
     return Scaffold(
-      backgroundColor: AppColors.slate50,
+      backgroundColor: context.appColors.fieldFill,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.appColors.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          color: AppColors.slate900,
+          color: context.appColors.textPrimary,
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Property Reviews',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: AppColors.slate900,
+            color: context.appColors.textPrimary,
           ),
         ),
         centerTitle: false,
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(color: AppColors.fieldFill, height: 1),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(color: context.appColors.fieldFill, height: 1),
         ),
       ),
       body: _isLoading
@@ -236,11 +236,11 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                             children: [
                               Text(
                                 'Tenant Reviews (${_totalCount > _reviews.length ? _totalCount : _reviews.length})',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.slate900,
+                                  color: context.appColors.textPrimary,
                                 ),
                               ),
                             ],
@@ -271,9 +271,9 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.slate200),
+        border: Border.all(color: context.appColors.fieldBorder),
         boxShadow: [
           BoxShadow(
             color: AppColors.slate900.withValues(alpha: 0.04),
@@ -304,20 +304,20 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                   displayName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.slate900,
+                    color: context.appColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.location_on_outlined,
                       size: 13,
-                      color: AppColors.slate400,
+                      color: context.appColors.hint,
                     ),
                     const SizedBox(width: 3),
                     Expanded(
@@ -325,11 +325,11 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                         p.address,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.slate500,
+                          color: context.appColors.textSecondary,
                         ),
                       ),
                     ),
@@ -347,9 +347,9 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.slate200),
+        border: Border.all(color: context.appColors.fieldBorder),
         boxShadow: [
           BoxShadow(
             color: AppColors.slate900.withValues(alpha: 0.04),
@@ -368,11 +368,11 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
               children: [
                 Text(
                   _avgRating > 0 ? _avgRating.toStringAsFixed(1) : '—',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 38,
                     fontWeight: FontWeight.w900,
-                    color: AppColors.slate900,
+                    color: context.appColors.textPrimary,
                     letterSpacing: -1,
                   ),
                 ),
@@ -386,18 +386,18 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                       size: 20,
                       color: isFilled
                           ? AppColors.matchMedium
-                          : AppColors.slate300,
+                          : context.appColors.hint,
                     );
                   }),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   '$_totalCount ${_totalCount == 1 ? 'review' : 'reviews'}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.slate500,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ],
@@ -408,7 +408,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
           Container(
             height: 90,
             width: 1,
-            color: AppColors.fieldFill,
+            color: context.appColors.fieldFill,
             margin: const EdgeInsets.symmetric(horizontal: 14),
           ),
 
@@ -426,11 +426,11 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                     children: [
                       Text(
                         '$star',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.slate500,
+                          color: context.appColors.textSecondary,
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -445,7 +445,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
                             value: pct,
-                            backgroundColor: AppColors.fieldFill,
+                            backgroundColor: context.appColors.fieldFill,
                             valueColor: const AlwaysStoppedAnimation<Color>(
                               AppColors.matchMedium,
                             ),
@@ -459,11 +459,11 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                         child: Text(
                           '$count',
                           textAlign: TextAlign.end,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.slate400,
+                            color: context.appColors.hint,
                           ),
                         ),
                       ),
@@ -482,9 +482,9 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.slate200),
+        border: Border.all(color: context.appColors.fieldBorder),
         boxShadow: [
           BoxShadow(
             color: AppColors.slate900.withValues(alpha: 0.03),
@@ -525,11 +525,11 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                   children: [
                     Text(
                       review.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.slate900,
+                        color: context.appColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -537,10 +537,10 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                       children: [
                         Text(
                           review.date,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 11.5,
-                            color: AppColors.slate400,
+                            color: context.appColors.hint,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -552,16 +552,16 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                               vertical: 1.5,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.fieldFill,
+                              color: context.appColors.fieldFill,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               'Stayed in ${review.unitLabel}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.slate600,
+                                color: context.appColors.textSecondary,
                               ),
                             ),
                           ),
@@ -581,7 +581,7 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                     size: 15,
                     color: i < review.stars
                         ? AppColors.matchMedium
-                        : AppColors.slate300,
+                        : context.appColors.hint,
                   );
                 }),
               ),
@@ -591,11 +591,11 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
             const SizedBox(height: 12),
             Text(
               review.comment!.trim(),
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
                 height: 1.45,
-                color: AppColors.slate700,
+                color: context.appColors.textPrimary,
               ),
             ),
           ],
@@ -626,23 +626,23 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            const Text(
+            Text(
               'No reviews yet',
               style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: AppColors.slate900,
+                color: context.appColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Reviews for $displayName will appear here once tenants complete their bookings.',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13.5,
-                color: AppColors.slate500,
+                color: context.appColors.textSecondary,
                 height: 1.4,
               ),
             ),

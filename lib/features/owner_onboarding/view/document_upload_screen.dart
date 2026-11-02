@@ -4,17 +4,23 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show MissingPluginException;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/cloudinary_config.dart';
+import '../../../core/constants/didit_config.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/url_opener.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../../auth/presentation/current_uid.dart';
+import '../../id_verification/data/repositories/didit_id_verification_repository.dart';
+import '../../id_verification/domain/repositories/id_verification_repository.dart';
 import '../../uploads/data/repositories/cloudinary_image_upload_repository.dart';
 import '../../uploads/domain/entities/uploaded_image.dart';
 import '../../uploads/domain/repositories/image_upload_repository.dart';
@@ -38,7 +44,8 @@ class DocumentUploadScreen extends StatefulWidget {
   State<DocumentUploadScreen> createState() => _DocumentUploadScreenState();
 }
 
-class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
+class _DocumentUploadScreenState extends State<DocumentUploadScreen>
+    with WidgetsBindingObserver {
   late final ImageUploadCubit _uploads = ImageUploadCubit(
     repository: widget.repository ?? CloudinaryImageUploadRepository(),
     kind: ImageKind.verificationDocument,
@@ -51,8 +58,266 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
 
   bool _submitting = false;
 
+  /// Didit ID check: the required ID step when Didit is available. If it
+  /// can't start (keys missing from the build, no credits, network), the
+  /// screen falls back to uploading ID photos so owners are never blocked.
+  final IdVerificationRepository _idVerification =
+      DiditIdVerificationRepository();
+  bool _diditUnavailable = false;
+  bool get _useDidit => DiditConfig.isConfigured && !_diditUnavailable;
+
+  /// Submit is allowed once Didit has a result or is reviewing it; the admin
+  /// still checks the actual result with Didit before approving.
+  bool get _idCheckDone =>
+      _diditStatus == 'Approved' || _diditStatus == 'In Review';
+  String? _diditSessionId;
+  String? _diditUrl;
+  bool _startingIdCheck = false;
+
+  /// Didit's status for [_diditSessionId], refreshed when the owner comes
+  /// back from the Didit tab. Feedback for the owner only; the admin screen
+  /// fetches the result from Didit itself.
+  String? _diditStatus;
+  bool _checkingIdStatus = false;
+
+  /// Statuses where reopening the same session makes sense; any other
+  /// unfinished status (Abandoned, Expired, ...) starts a new session.
+  static const _resumableStatuses = {
+    'Not Started',
+    'In Progress',
+    'Awaiting User',
+    'Resubmitted',
+  };
+
+  /// Didit mode: the ownership document is uploaded and nothing is still
+  /// uploading or broken (the ID slots aren't used).
+  bool _diditDocsReady(ImageUploadState state) {
+    final docs = [state.slots[2], state.slots[3]];
+    return state.slots[2].status == SlotStatus.success &&
+        !docs.any(
+          (s) =>
+              s.status == SlotStatus.uploading ||
+              s.status == SlotStatus.failure,
+        );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The Didit page runs in a browser tab: the app resumes when the owner
+    // closes it or switches back.
+    if (state == AppLifecycleState.resumed) _refreshIdCheckStatus();
+  }
+
+  Future<void> _refreshIdCheckStatus() async {
+    final sessionId = _diditSessionId;
+    if (sessionId == null || _checkingIdStatus) return;
+    setState(() => _checkingIdStatus = true);
+    try {
+      final status = await _idVerification.fetchStatus(sessionId);
+      if (mounted) setState(() => _diditStatus = status);
+    } catch (_) {
+      // Keep the last known status; the owner can tap "Check again".
+    } finally {
+      if (mounted) setState(() => _checkingIdStatus = false);
+    }
+  }
+
+  Future<void> _openIdCheckUrl(String url) async {
+    final opened = await const UrlLauncherOpener().open(Uri.parse(url));
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open the ID check. Try again.'),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
+    }
+  }
+
+  /// Reopens the current session while it can still be finished; otherwise
+  /// starts a new one.
+  Future<void> _continueIdCheck() {
+    final url = _diditUrl;
+    if (url != null &&
+        (_diditStatus == null || _resumableStatuses.contains(_diditStatus))) {
+      return _openIdCheckUrl(url);
+    }
+    return _startIdCheck();
+  }
+
+  Future<void> _startIdCheck() async {
+    final uid = currentUidOrNull(context);
+    if (uid == null || _startingIdCheck) return;
+    setState(() => _startingIdCheck = true);
+    try {
+      final session = await _idVerification.createSession(uid);
+      if (!mounted) return;
+      setState(() {
+        _diditSessionId = session.sessionId;
+        _diditUrl = session.url;
+        _diditStatus = null;
+      });
+      await _openIdCheckUrl(session.url);
+    } catch (_) {
+      if (!mounted) return;
+      // Fall back to uploading ID photos.
+      setState(() {
+        _diditUnavailable = true;
+        _diditSessionId = null;
+        _diditUrl = null;
+        _diditStatus = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'The ID check isn\'t available right now. Please upload photos '
+            'of your ID instead.',
+          ),
+          backgroundColor: AppColors.matchMedium,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _startingIdCheck = false);
+    }
+  }
+
+  /// Card copy for the current ID check state: (icon, color, title, body,
+  /// button label or null to hide the button).
+  (IconData, Color, String, String, String?) get _idCheckContent {
+    if (_diditSessionId == null) {
+      return (
+        Icons.face_retouching_natural,
+        AppColors.accent,
+        'Verify your ID',
+        'Scan the front and back of your government ID and take a quick '
+            'selfie with Didit. It takes about 2 minutes.',
+        'Start ID check',
+      );
+    }
+    return switch (_diditStatus) {
+      'Approved' => (
+        Icons.verified_rounded,
+        AppColors.matchHigh,
+        'ID check passed',
+        'Our admin will see this result with your documents.',
+        null,
+      ),
+      'In Review' => (
+        Icons.hourglass_top_rounded,
+        AppColors.matchMedium,
+        'ID check under review',
+        'Didit is reviewing your ID. You can still submit your documents now.',
+        null,
+      ),
+      'Declined' => (
+        Icons.error_outline_rounded,
+        AppColors.destructive,
+        'ID check didn\'t pass',
+        'Use a clear photo of your ID in good light and keep your face '
+            'centered, then try again.',
+        'Try again',
+      ),
+      'Abandoned' || 'Expired' || 'Kyc Expired' => (
+        Icons.restart_alt_rounded,
+        AppColors.matchMedium,
+        'ID check expired',
+        'This check was not finished in time. Start a new one.',
+        'Start new ID check',
+      ),
+      _ => (
+        Icons.pending_outlined,
+        AppColors.matchMedium,
+        'ID check not finished',
+        'Finish the steps on the Didit page, then come back here.',
+        'Continue ID check',
+      ),
+    };
+  }
+
+  Widget _idCheckCard() {
+    final (icon, color, title, body, buttonLabel) = _idCheckContent;
+    final started = _diditSessionId != null;
+    final finished = _diditStatus == 'Approved' || _diditStatus == 'Declined';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: context.appColors.accentSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.appColors.fieldBorder, width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: color),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTextStyles.label(context).copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: context.appColors.textPrimary,
+                  ),
+                ),
+              ),
+              // Manual refresh while the result isn't final (the decision can
+              // lag a few seconds behind the owner finishing).
+              if (started && !finished)
+                _checkingIdStatus
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.accent,
+                        ),
+                      )
+                    : GestureDetector(
+                        onTap: _refreshIdCheckStatus,
+                        behavior: HitTestBehavior.opaque,
+                        child: const Text(
+                          'Check again',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(body, style: AppTextStyles.caption(context)),
+          if (buttonLabel != null) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: _startingIdCheck
+                    ? null
+                    : (_diditStatus == 'Declined'
+                          ? _startIdCheck
+                          : _continueIdCheck),
+                child: Text(_startingIdCheck ? 'Starting...' : buttonLabel),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _uploads.close();
     super.dispose();
   }
@@ -71,7 +336,21 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
     }
     final cubit = context.read<OwnerOnboardingCubit>();
     setState(() => _submitting = true);
-    await cubit.submitForVerification(uid, documents: _uploads.state.images);
+    final slots = _uploads.state.slots;
+    final permitSlot = slots[3];
+    final permit = permitSlot.status == SlotStatus.success
+        ? permitSlot.image
+        : null;
+    final viaDidit = _useDidit;
+    await cubit.submitForVerification(
+      uid,
+      // Didit: [ownership, permit?] (no ID photos). Upload: every slot.
+      documents: viaDidit ? [slots[2].image!, ?permit] : _uploads.state.images,
+      businessPermit: permit,
+      ownershipDocument: slots[2].image,
+      diditSessionId: viaDidit ? _diditSessionId : null,
+      idSource: viaDidit ? 'didit' : 'upload',
+    );
     if (!mounted) return;
     setState(() => _submitting = false);
 
@@ -192,11 +471,37 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
                 AppSpacing.lg,
                 0,
               ),
-              child: RegistrationAppBar(
-                onBack: () => Navigator.of(context).maybePop(),
-                stepNumber: 1,
-                stepCount: 2,
-              ),
+              // After re-login this screen is the only route, so "back" has
+              // nowhere to go: offer a way to sign in with another account
+              // instead (same as the tenant "must haves" screen).
+              child: Navigator.of(context).canPop()
+                  ? RegistrationAppBar(
+                      onBack: () => Navigator.of(context).maybePop(),
+                      stepNumber: 1,
+                      stepCount: 2,
+                    )
+                  : RegistrationAppBar(
+                      onBack: () {
+                        context.read<AuthBloc>().add(
+                          const AuthSignOutRequested(),
+                        );
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          AppRouter.signIn,
+                          (_) => false,
+                        );
+                      },
+                      icon: SvgPicture.asset(
+                        'assets/images/arrow_bar_left.svg',
+                        width: 22,
+                        height: 22,
+                        colorFilter: ColorFilter.mode(
+                          context.appColors.textPrimary,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                      stepNumber: 1,
+                      stepCount: 2,
+                    ),
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -259,55 +564,52 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
                       isRequired: true,
                     ),
                     const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: BlocBuilder<ImageUploadCubit, ImageUploadState>(
-                            bloc: _uploads,
-                            buildWhen: (p, c) => p.slots[0] != c.slots[0],
-                            builder: (context, state) => _DocumentCard(
-                              slot: state.slots[0],
-                              title: 'Front side',
-                              subtitle: 'Upload photo',
-                              iconWidget: const _IdFrontIcon(),
-                              onTap: () => _handlePick(
-                                0,
-                                PickSource.gallery,
-                              ),
-                              onCameraTap: () => _handlePick(
-                                0,
-                                PickSource.camera,
-                              ),
-                              onRemove: () => _uploads.remove(0),
-                              onRetry: () => _uploads.retry(0),
-                            ),
+                    if (_useDidit)
+                      _idCheckCard()
+                    else
+                      Row(
+                        children: [
+                          Expanded(
+                            child:
+                                BlocBuilder<ImageUploadCubit, ImageUploadState>(
+                                  bloc: _uploads,
+                                  buildWhen: (p, c) => p.slots[0] != c.slots[0],
+                                  builder: (context, state) => _DocumentCard(
+                                    slot: state.slots[0],
+                                    title: 'Front side',
+                                    subtitle: 'Upload photo',
+                                    iconWidget: const _IdFrontIcon(),
+                                    onTap: () =>
+                                        _handlePick(0, PickSource.gallery),
+                                    onCameraTap: () =>
+                                        _handlePick(0, PickSource.camera),
+                                    onRemove: () => _uploads.remove(0),
+                                    onRetry: () => _uploads.retry(0),
+                                  ),
+                                ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: BlocBuilder<ImageUploadCubit, ImageUploadState>(
-                            bloc: _uploads,
-                            buildWhen: (p, c) => p.slots[1] != c.slots[1],
-                            builder: (context, state) => _DocumentCard(
-                              slot: state.slots[1],
-                              title: 'Back side',
-                              subtitle: 'Upload photo',
-                              iconWidget: const _IdBackIcon(),
-                              onTap: () => _handlePick(
-                                1,
-                                PickSource.gallery,
-                              ),
-                              onCameraTap: () => _handlePick(
-                                1,
-                                PickSource.camera,
-                              ),
-                              onRemove: () => _uploads.remove(1),
-                              onRetry: () => _uploads.retry(1),
-                            ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child:
+                                BlocBuilder<ImageUploadCubit, ImageUploadState>(
+                                  bloc: _uploads,
+                                  buildWhen: (p, c) => p.slots[1] != c.slots[1],
+                                  builder: (context, state) => _DocumentCard(
+                                    slot: state.slots[1],
+                                    title: 'Back side',
+                                    subtitle: 'Upload photo',
+                                    iconWidget: const _IdBackIcon(),
+                                    onTap: () =>
+                                        _handlePick(1, PickSource.gallery),
+                                    onCameraTap: () =>
+                                        _handlePick(1, PickSource.camera),
+                                    onRemove: () => _uploads.remove(1),
+                                    onRetry: () => _uploads.retry(1),
+                                  ),
+                                ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                     const SizedBox(height: 20),
 
                     // Section 2: Property ownership document (Image 1)
@@ -324,14 +626,8 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
                         title: 'Upload document',
                         subtitle: 'e.g. Title, Tax Declaration, or Contract',
                         iconWidget: const _DocSheetIcon(),
-                        onTap: () => _handlePick(
-                          2,
-                          PickSource.gallery,
-                        ),
-                        onCameraTap: () => _handlePick(
-                          2,
-                          PickSource.camera,
-                        ),
+                        onTap: () => _handlePick(2, PickSource.gallery),
+                        onCameraTap: () => _handlePick(2, PickSource.camera),
                         onRemove: () => _uploads.remove(2),
                         onRetry: () => _uploads.retry(2),
                       ),
@@ -352,14 +648,8 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
                         title: 'Upload document',
                         subtitle: 'e.g. Mayor\'s Permit, DTI, or SEC',
                         iconWidget: const _DocSheetIcon(),
-                        onTap: () => _handlePick(
-                          3,
-                          PickSource.gallery,
-                        ),
-                        onCameraTap: () => _handlePick(
-                          3,
-                          PickSource.camera,
-                        ),
+                        onTap: () => _handlePick(3, PickSource.gallery),
+                        onCameraTap: () => _handlePick(3, PickSource.camera),
                         onRemove: () => _uploads.remove(3),
                         onRetry: () => _uploads.retry(3),
                       ),
@@ -369,14 +659,29 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
                     // Submit Button
                     BlocBuilder<ImageUploadCubit, ImageUploadState>(
                       bloc: _uploads,
-                      builder: (context, state) => AppPrimaryButton(
-                        label: _submitting
-                            ? 'Submitting...'
-                            : 'Submit for verification',
-                        onPressed: state.isReady && !_submitting
-                            ? _submit
-                            : null,
-                      ),
+                      builder: (context, state) {
+                        final ready = _useDidit
+                            ? _diditDocsReady(state) && _idCheckDone
+                            : state.isReady;
+                        return Column(
+                          children: [
+                            AppPrimaryButton(
+                              label: _submitting
+                                  ? 'Submitting...'
+                                  : 'Submit for verification',
+                              onPressed: ready && !_submitting ? _submit : null,
+                            ),
+                            if (_useDidit && !_idCheckDone) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                'Finish the ID check above to submit.',
+                                style: AppTextStyles.caption(context),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ],
+                        );
+                      },
                     ),
                     const SizedBox(height: 12),
                     Center(
@@ -469,15 +774,10 @@ class _DocumentCard extends StatelessWidget {
       height: 110,
       decoration: BoxDecoration(
         color: status == SlotStatus.success
-            ? AppColors.slate50
+            ? context.appColors.fieldFill
             : context.appColors.fieldFill,
         borderRadius: BorderRadius.circular(14),
-        border: !isDashed
-            ? Border.all(
-                color: borderColor,
-                width: 1.5,
-              )
-            : null,
+        border: !isDashed ? Border.all(color: borderColor, width: 1.5) : null,
       ),
       child: Stack(
         children: [
@@ -490,21 +790,17 @@ class _DocumentCard extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     if (!kIsWeb && slot.localPath != null)
-                      Image.file(
-                        File(slot.localPath!),
-                        fit: BoxFit.cover,
-                      )
+                      Image.file(File(slot.localPath!), fit: BoxFit.cover)
                     else if (slot.image?.url != null)
                       Image.network(
                         slot.image!.url,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => _uploadedPlaceholder(context),
+                        errorBuilder: (_, _, _) =>
+                            _uploadedPlaceholder(context),
                       )
                     else
                       _uploadedPlaceholder(context),
-                    Container(
-                      color: AppColors.ink.withValues(alpha: 0.15),
-                    ),
+                    Container(color: AppColors.ink.withValues(alpha: 0.15)),
                     Positioned(
                       bottom: 8,
                       left: 10,
@@ -672,33 +968,35 @@ class _DocumentCard extends StatelessWidget {
                     ),
                   )
                 : (status == SlotStatus.empty
-                    ? GestureDetector(
-                        onTap: onCameraTap,
-                        behavior: HitTestBehavior.opaque,
-                        child: Container(
-                          width: 26,
-                          height: 26,
-                          decoration: BoxDecoration(
-                            color: AppColors.onInk,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: context.appColors.fieldBorder,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.scrim.withValues(alpha: 0.04),
-                                blurRadius: 2,
+                      ? GestureDetector(
+                          onTap: onCameraTap,
+                          behavior: HitTestBehavior.opaque,
+                          child: Container(
+                            width: 26,
+                            height: 26,
+                            decoration: BoxDecoration(
+                              color: AppColors.onInk,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: context.appColors.fieldBorder,
                               ),
-                            ],
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.scrim.withValues(
+                                    alpha: 0.04,
+                                  ),
+                                  blurRadius: 2,
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.camera_alt_outlined,
+                              size: 13,
+                              color: context.appColors.textSecondary,
+                            ),
                           ),
-                          child: Icon(
-                            Icons.camera_alt_outlined,
-                            size: 13,
-                            color: context.appColors.textSecondary,
-                          ),
-                        ),
-                      )
-                    : const SizedBox.shrink()),
+                        )
+                      : const SizedBox.shrink()),
           ),
         ],
       ),
@@ -720,7 +1018,7 @@ class _DocumentCard extends StatelessWidget {
 
   Widget _uploadedPlaceholder(BuildContext context) {
     return Container(
-      color: AppColors.fieldFill,
+      color: context.appColors.fieldFill,
       alignment: Alignment.center,
       child: const Icon(
         Icons.description_outlined,
@@ -986,15 +1284,10 @@ class _VerificationFaqDialogState extends State<_VerificationFaqDialog> {
     return Dialog(
       backgroundColor: context.appColors.surface,
       elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 480,
-          maxHeight: maxHeight,
-        ),
+        constraints: BoxConstraints(maxWidth: 480, maxHeight: maxHeight),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1120,8 +1413,9 @@ class _VerificationFaqDialogState extends State<_VerificationFaqDialog> {
                       Divider(
                         height: 1,
                         thickness: 0.8,
-                        color: context.appColors.fieldBorder
-                            .withValues(alpha: 0.5),
+                        color: context.appColors.fieldBorder.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                     ],
 
@@ -1227,8 +1521,9 @@ class _VerificationFaqDialogState extends State<_VerificationFaqDialog> {
                     Divider(
                       height: 1,
                       thickness: 0.8,
-                      color: context.appColors.fieldBorder
-                          .withValues(alpha: 0.5),
+                      color: context.appColors.fieldBorder.withValues(
+                        alpha: 0.5,
+                      ),
                     ),
                   ],
                 ),

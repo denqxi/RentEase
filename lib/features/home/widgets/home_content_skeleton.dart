@@ -70,7 +70,7 @@ class _HomeContentSkeletonState extends State<HomeContentSkeleton>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -80,17 +80,17 @@ class _HomeContentSkeletonState extends State<HomeContentSkeleton>
                           fontFamily: 'DM Sans',
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.slate500,
+                          color: context.appColors.textSecondary,
                         ),
                       ),
-                      SizedBox(height: 3),
+                      const SizedBox(height: 3),
                       Text(
                         'Your top 3 property matches',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 17.5,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.slate900,
+                          color: context.appColors.textPrimary,
                           letterSpacing: -0.2,
                         ),
                       ),
@@ -103,27 +103,27 @@ class _HomeContentSkeletonState extends State<HomeContentSkeleton>
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.slate300,
+                          color: context.appColors.hint,
                         ),
                       ),
                       const SizedBox(width: 5),
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.slate300,
+                          color: context.appColors.hint,
                         ),
                       ),
                       const SizedBox(width: 5),
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.slate300,
+                          color: context.appColors.hint,
                         ),
                       ),
                     ],
@@ -156,8 +156,8 @@ class _HomeContentSkeletonState extends State<HomeContentSkeleton>
             const SizedBox(height: 24),
 
             // ── Section 2 Header: Other listings ─────────────────────
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -168,18 +168,18 @@ class _HomeContentSkeletonState extends State<HomeContentSkeleton>
                       fontFamily: 'DM Sans',
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.slate900,
+                      color: context.appColors.textPrimary,
                       letterSpacing: -0.2,
                     ),
                   ),
-                  SizedBox(height: 3),
+                  const SizedBox(height: 3),
                   Text(
                     'Properties that may not meet all your preferences.',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      color: AppColors.slate500,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                 ],
@@ -203,17 +203,17 @@ class _HomeContentSkeletonState extends State<HomeContentSkeleton>
 class _SkeletonCard extends StatelessWidget {
   const _SkeletonCard();
 
-  static const Color _placeholderColor = AppColors.slate200;
-  static const Color _iconPlaceholderColor = AppColors.slate400;
-  static const Color _borderColor = AppColors.slate200;
-
   @override
   Widget build(BuildContext context) {
+    final placeholderColor = context.appColors.fieldBorder;
+    final iconPlaceholderColor = context.appColors.hint;
+    final borderColor = context.appColors.fieldBorder;
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _borderColor, width: 1.0),
+        border: Border.all(color: borderColor, width: 1.0),
         boxShadow: [
           BoxShadow(
             color: AppColors.slate900.withValues(alpha: 0.04),
@@ -232,17 +232,17 @@ class _SkeletonCard extends StatelessWidget {
             height: 152,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: _placeholderColor,
+              color: placeholderColor,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Stack(
               children: [
                 // Mountain / landscape image silhouette icon
-                const Center(
+                Center(
                   child: Icon(
                     Icons.image_rounded,
                     size: 46,
-                    color: _iconPlaceholderColor,
+                    color: iconPlaceholderColor,
                   ),
                 ),
                 // Top-right circular heart button placeholder
@@ -253,7 +253,7 @@ class _SkeletonCard extends StatelessWidget {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: _iconPlaceholderColor.withValues(alpha: 0.55),
+                      color: iconPlaceholderColor.withValues(alpha: 0.55),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -268,7 +268,7 @@ class _SkeletonCard extends StatelessWidget {
             width: 175,
             height: 16,
             decoration: BoxDecoration(
-              color: _placeholderColor,
+              color: placeholderColor,
               borderRadius: BorderRadius.circular(8),
             ),
           ),
@@ -277,17 +277,17 @@ class _SkeletonCard extends StatelessWidget {
           // Location pin + address placeholder
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.location_on_rounded,
                 size: 15,
-                color: AppColors.slate300,
+                color: context.appColors.hint,
               ),
               const SizedBox(width: 5),
               Container(
                 width: 110,
                 height: 13,
                 decoration: BoxDecoration(
-                  color: _placeholderColor,
+                  color: placeholderColor,
                   borderRadius: BorderRadius.circular(6.5),
                 ),
               ),
@@ -296,10 +296,10 @@ class _SkeletonCard extends StatelessWidget {
           const SizedBox(height: 14),
 
           // Divider line
-          const Divider(
+          Divider(
             height: 1,
             thickness: 0.8,
-            color: _borderColor,
+            color: borderColor,
           ),
           const SizedBox(height: 12),
 
@@ -314,7 +314,7 @@ class _SkeletonCard extends StatelessWidget {
                     width: 22,
                     height: 22,
                     decoration: BoxDecoration(
-                      color: _placeholderColor,
+                      color: placeholderColor,
                       borderRadius: BorderRadius.circular(6),
                     ),
                   ),
@@ -323,7 +323,7 @@ class _SkeletonCard extends StatelessWidget {
                     width: 82,
                     height: 14,
                     decoration: BoxDecoration(
-                      color: _placeholderColor,
+                      color: placeholderColor,
                       borderRadius: BorderRadius.circular(7),
                     ),
                   ),
@@ -333,7 +333,7 @@ class _SkeletonCard extends StatelessWidget {
                 width: 82,
                 height: 18,
                 decoration: BoxDecoration(
-                  color: _placeholderColor,
+                  color: placeholderColor,
                   borderRadius: BorderRadius.circular(9),
                 ),
               ),

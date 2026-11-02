@@ -32,9 +32,9 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
   static const Color _primaryTeal = AppColors.primary;
   static const Color _midnightNavy = AppColors.ink;
   static const Color _surfaceTint = AppColors.accentSoft;
-  static const Color _borderStroke = AppColors.slate200;
-  static const Color _textPrimary = AppColors.slate900;
-  static const Color _textSecondary = AppColors.textSecondary;
+  Color get _borderStroke => context.appColors.fieldBorder;
+  Color get _textPrimary => context.appColors.textPrimary;
+  Color get _textSecondary => context.appColors.textSecondary;
 
   // Allocation State (values stored as integer percentages 0-100)
   late int _rent;
@@ -177,7 +177,7 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                             color: _borderStroke,
                           ),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.chevron_left_rounded,
                           color: _textPrimary,
                           size: 24,
@@ -201,7 +201,7 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                         ),
                       ),
                       const SizedBox(width: 14),
-                      const Text(
+                      Text(
                         '4 / 4',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
@@ -234,7 +234,7 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
+                        Text(
                           'Drag the sliders to prioritize what fits your lifestyle.',
                           style: TextStyle(
                             fontFamily: 'DM Sans',
@@ -328,7 +328,7 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                                 ],
                               ),
                               const SizedBox(height: 4),
-                              const Text(
+                              Text(
                                 'You have 100% to divide across all three. Setting one sets the limit for the rest.',
                                 style: TextStyle(
                                   fontFamily: 'DM Sans',
@@ -343,7 +343,7 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                         ),
                         if (widget.onSave != null) ...[
                           const SizedBox(height: 12),
-                          const Center(
+                          Center(
                             child: Text(
                               'Saving will update your property ranking.',
                               style: TextStyle(
@@ -372,7 +372,7 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                       backgroundColor:
                           WidgetStateProperty.resolveWith<Color>((states) {
                         if (states.contains(WidgetState.disabled)) {
-                          return AppColors.indicatorInactive;
+                          return context.appColors.indicatorInactive;
                         }
                         return _midnightNavy;
                       }),
@@ -431,17 +431,17 @@ class _CriteriaSliderCard extends StatelessWidget {
   static const Color _primaryTeal = AppColors.primary;
   static const Color _midnightNavy = AppColors.ink;
   static const Color _surfaceTint = AppColors.accentSoft;
-  static const Color _borderStroke = AppColors.slate200;
-  static const Color _textSecondary = AppColors.textSecondary;
 
   @override
   Widget build(BuildContext context) {
+    final borderStroke = context.appColors.fieldBorder;
+    final textSecondary = context.appColors.textSecondary;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
       decoration: BoxDecoration(
         color: AppColors.onInk,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _borderStroke),
+        border: Border.all(color: borderStroke),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -465,11 +465,11 @@ class _CriteriaSliderCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtext,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12,
                         fontWeight: FontWeight.w400,
-                        color: _textSecondary,
+                        color: textSecondary,
                       ),
                     ),
                   ],
@@ -500,7 +500,7 @@ class _CriteriaSliderCard extends StatelessWidget {
             data: SliderTheme.of(context).copyWith(
               trackShape: const _FullWidthSliderTrackShape(),
               activeTrackColor: _primaryTeal,
-              inactiveTrackColor: _borderStroke,
+              inactiveTrackColor: borderStroke,
               thumbColor: _primaryTeal,
               overlayColor: _primaryTeal.withValues(alpha: 0.15),
               trackHeight: 3.5,

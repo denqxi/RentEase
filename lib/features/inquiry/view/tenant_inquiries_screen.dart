@@ -60,6 +60,7 @@ class _TenantInquiriesViewState extends State<_TenantInquiriesView> {
       body: Stack(
         children: <Widget>[
           // Subtle top-left gradient (matching Home & Search)
+          if (Theme.of(context).brightness == Brightness.light)
           Positioned(
             top: 0,
             left: 0,
@@ -161,7 +162,7 @@ class _TenantInquiriesViewState extends State<_TenantInquiriesView> {
                       alignment: Alignment.center,
                       child: Text(
                         '$unreadCount',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -345,10 +346,10 @@ class _SegmentedControl extends StatelessWidget {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: AppColors.fieldFill,
+        color: context.appColors.fieldFill,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: AppColors.slate200.withValues(alpha: 0.8),
+          color: context.appColors.fieldBorder.withValues(alpha: 0.8),
           width: 0.8,
         ),
       ),
@@ -395,7 +396,7 @@ class _SegTab extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.surface : AppColors.transparent,
+            color: isSelected ? context.appColors.surface : AppColors.transparent,
             borderRadius: BorderRadius.circular(11),
             boxShadow: isSelected
                 ? <BoxShadow>[
@@ -419,8 +420,8 @@ class _SegTab extends StatelessWidget {
                   fontSize: 13.5,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: isSelected
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
+                      ? context.appColors.textPrimary
+                      : context.appColors.textSecondary,
                 ),
               ),
               if (hasDot) ...[
@@ -477,12 +478,12 @@ class _InquiryCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 11),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isUnread
               ? AppColors.primary.withValues(alpha: 0.40)
-              : AppColors.slate200.withValues(alpha: 0.8),
+              : context.appColors.fieldBorder.withValues(alpha: 0.8),
           width: isUnread ? 1.2 : 0.8,
         ),
         boxShadow: [
@@ -506,7 +507,7 @@ class _InquiryCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: isUnread
                   ? AppColors.skyFill
-                  : (isResolved ? AppColors.fieldFill : AppColors.tenantFillBlue),
+                  : (isResolved ? context.appColors.fieldFill : AppColors.tenantFillBlue),
               shape: BoxShape.circle,
             ),
             child: Text(
@@ -516,7 +517,7 @@ class _InquiryCard extends StatelessWidget {
                 fontSize: 14.5,
                 fontWeight: isUnread ? FontWeight.w800 : FontWeight.w700,
                 color: isResolved
-                    ? AppColors.slate500
+                    ? context.appColors.textSecondary
                     : (isUnread ? AppColors.blue600 : AppColors.primary),
               ),
             ),
@@ -537,12 +538,12 @@ class _InquiryCard extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 14.5,
                     fontWeight: isUnread ? FontWeight.w800 : FontWeight.w700,
-                    color: AppColors.slate900,
+                    color: context.appColors.textPrimary,
                     letterSpacing: -0.2,
                   ),
                 ),
                 const SizedBox(height: 5),
-                _buildStatusBadge(
+                _buildStatusBadge(context,
                   isResolved: isResolved,
                   resolvedStatus: resolvedStatus,
                   isInvitation: isInvitation,
@@ -565,7 +566,7 @@ class _InquiryCard extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 11.5,
                     fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
-                    color: isUnread ? AppColors.primary : AppColors.slate400,
+                    color: isUnread ? AppColors.primary : context.appColors.hint,
                   ),
                 ),
               if (isUnread) ...[
@@ -586,7 +587,7 @@ class _InquiryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge({
+  Widget _buildStatusBadge(BuildContext context, {
     required bool isResolved,
     required String? resolvedStatus,
     required bool isInvitation,
@@ -649,15 +650,15 @@ class _InquiryCard extends StatelessWidget {
     if (isResolved) {
       if (resolvedStatus == 'Declined') {
         label = 'Declined';
-        bg = AppColors.fieldFill;
-        textColor = AppColors.slate500;
-        borderColor = AppColors.slate200;
+        bg = context.appColors.fieldFill;
+        textColor = context.appColors.textSecondary;
+        borderColor = context.appColors.fieldBorder;
         icon = Icons.cancel_outlined;
       } else {
         label = 'Closed';
-        bg = AppColors.fieldFill;
-        textColor = AppColors.slate500;
-        borderColor = AppColors.slate200;
+        bg = context.appColors.fieldFill;
+        textColor = context.appColors.textSecondary;
+        borderColor = context.appColors.fieldBorder;
         icon = Icons.archive_outlined;
       }
     } else if (isInvitation) {

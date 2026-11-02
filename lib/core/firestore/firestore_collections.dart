@@ -27,6 +27,14 @@ class FirestoreCollections {
   static const String ownerPrivate = 'private';
   static const String ownerPrivateDocuments = 'documents';
 
+  /// Public subcollection of ownerProfiles:
+  /// ownerProfiles/{uid}/public/{businessPermit | ownershipDocument}.
+  /// Tenants may read these only while the owner is verified and has
+  /// "Show credentials" on. The ID never goes here.
+  static const String ownerPublic = 'public';
+  static const String ownerPublicBusinessPermit = 'businessPermit';
+  static const String ownerPublicOwnershipDocument = 'ownershipDocument';
+
   /// Subcollection of inquiries: inquiries/{inquiryId}/messages/{messageId}
   static const String messages = 'messages';
 

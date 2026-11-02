@@ -45,13 +45,13 @@ class WhatsNewDialog extends StatelessWidget {
             maxHeight: 560,
           ),
           child: Dialog(
-            backgroundColor: AppColors.surface,
+            backgroundColor: context.appColors.surface,
             elevation: 12,
             insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(
-                color: AppColors.fieldBorder,
+              side: BorderSide(
+                color: context.appColors.fieldBorder,
                 width: 0.8,
               ),
             ),
@@ -86,10 +86,10 @@ class WhatsNewDialog extends StatelessWidget {
                       ),
                       IconButton(
                         visualDensity: VisualDensity.compact,
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.close_rounded,
                           size: 20,
-                          color: AppColors.textSecondary,
+                          color: context.appColors.textSecondary,
                         ),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
@@ -98,27 +98,27 @@ class WhatsNewDialog extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   // ── Title & Subtitle ──
-                  const Text(
+                  Text(
                     "What's New in RentEase",
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                      color: context.appColors.textPrimary,
                       letterSpacing: -0.3,
                     ),
                   ),
                   const SizedBox(height: 2),
-                  const Text(
+                  Text(
                     'Release Notes & Updates',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12.5,
-                      color: AppColors.textSecondary,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 14),
-                  const Divider(height: 1, color: AppColors.fieldBorder),
+                  Divider(height: 1, color: context.appColors.fieldBorder),
                   const SizedBox(height: 14),
 
                   // ── Scrollable Body ──
@@ -131,7 +131,7 @@ class WhatsNewDialog extends StatelessWidget {
                           if (info.features.isNotEmpty) ...[
                             _buildSectionHeader('NEW FEATURES'),
                             const SizedBox(height: 8),
-                            for (final item in info.features) _buildBulletItem(item),
+                            for (final item in info.features) _buildBulletItem(context, item),
                             const SizedBox(height: 14),
                           ],
 
@@ -139,7 +139,7 @@ class WhatsNewDialog extends StatelessWidget {
                           if (info.fixes.isNotEmpty) ...[
                             _buildSectionHeader('BUG FIXES & IMPROVEMENTS'),
                             const SizedBox(height: 8),
-                            for (final item in info.fixes) _buildBulletItem(item),
+                            for (final item in info.fixes) _buildBulletItem(context, item),
                             const SizedBox(height: 14),
                           ],
 
@@ -149,11 +149,11 @@ class WhatsNewDialog extends StatelessWidget {
                             const SizedBox(height: 8),
                             Text(
                               info.notes,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 13,
                                 height: 1.4,
-                                color: AppColors.textPrimary,
+                                color: context.appColors.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 14),
@@ -164,7 +164,7 @@ class WhatsNewDialog extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 10),
-                  const Divider(height: 1, color: AppColors.fieldBorder),
+                  Divider(height: 1, color: context.appColors.fieldBorder),
                   const SizedBox(height: 14),
 
                   // ── Bottom Action Buttons ──
@@ -200,7 +200,7 @@ class WhatsNewDialog extends StatelessWidget {
                     child: TextButton(
                       style: TextButton.styleFrom(
                         visualDensity: VisualDensity.compact,
-                        foregroundColor: AppColors.textSecondary,
+                        foregroundColor: context.appColors.textSecondary,
                       ),
                       onPressed: () => Navigator.of(context).pop(),
                       child: const Text(
@@ -235,7 +235,7 @@ class WhatsNewDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildBulletItem(String text) {
+  Widget _buildBulletItem(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -253,12 +253,12 @@ class WhatsNewDialog extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
                 height: 1.35,
                 fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
+                color: context.appColors.textPrimary,
               ),
             ),
           ),

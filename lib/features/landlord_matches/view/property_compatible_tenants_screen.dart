@@ -105,24 +105,24 @@ class _PropertyCompatibleTenantsScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.appColors.surface,
         surfaceTintColor: AppColors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Notify ${tenant.name}?',
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 17,
             fontWeight: FontWeight.w800,
-            color: AppColors.slate900,
+            color: context.appColors.textPrimary,
           ),
         ),
         content: Text(
           'Notify ${tenant.name} that "$listingLabel" is available?',
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 13.5,
-            color: AppColors.slate600,
+            color: context.appColors.textSecondary,
             height: 1.4,
           ),
         ),
@@ -133,12 +133,12 @@ class _PropertyCompatibleTenantsScreenState
             children: [
               TextButton(
                 onPressed: () => Navigator.of(dialogCtx).pop(false),
-                child: const Text(
+                child: Text(
                   'Cancel',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontWeight: FontWeight.w600,
-                    color: AppColors.slate500,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ),
@@ -244,24 +244,24 @@ class _PropertyCompatibleTenantsScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.appColors.surface,
         surfaceTintColor: AppColors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
+        title: Text(
           'Notify all compatible tenants?',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 17,
             fontWeight: FontWeight.w800,
-            color: AppColors.slate900,
+            color: context.appColors.textPrimary,
           ),
         ),
         content: Text(
           'Notify all ${unnotified.length} compatible tenant${unnotified.length == 1 ? '' : 's'} that "$listingLabel" is available?',
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 13.5,
-            color: AppColors.slate600,
+            color: context.appColors.textSecondary,
             height: 1.4,
           ),
         ),
@@ -272,12 +272,12 @@ class _PropertyCompatibleTenantsScreenState
             children: [
               TextButton(
                 onPressed: () => Navigator.of(dialogCtx).pop(false),
-                child: const Text(
+                child: Text(
                   'Cancel',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontWeight: FontWeight.w600,
-                    color: AppColors.slate500,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ),
@@ -437,9 +437,9 @@ class _PropertyCompatibleTenantsScreenState
             : unitTenants.sublist(startIndex, endIndex);
 
         return Scaffold(
-          backgroundColor: AppColors.slate50,
+          backgroundColor: context.appColors.fieldFill,
           appBar: AppBar(
-            backgroundColor: AppColors.slate50,
+            backgroundColor: context.appColors.fieldFill,
             elevation: 0,
             scrolledUnderElevation: 0,
             leadingWidth: 54,
@@ -450,10 +450,10 @@ class _PropertyCompatibleTenantsScreenState
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.appColors.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.slate200.withValues(alpha: 0.6),
+                      color: context.appColors.fieldBorder.withValues(alpha: 0.6),
                       width: 1,
                     ),
                     boxShadow: [
@@ -470,9 +470,9 @@ class _PropertyCompatibleTenantsScreenState
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
                       onTap: () => Navigator.of(context).pop(),
-                      child: const Icon(
+                      child: Icon(
                         Icons.chevron_left_rounded,
-                        color: AppColors.slate900,
+                        color: context.appColors.textPrimary,
                         size: 24,
                       ),
                     ),
@@ -482,13 +482,13 @@ class _PropertyCompatibleTenantsScreenState
             ),
             titleSpacing: 10,
             centerTitle: false,
-            title: const Text(
+            title: Text(
               'Compatible Tenants',
               style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: AppColors.slate900,
+                color: context.appColors.textPrimary,
                 letterSpacing: -0.2,
               ),
             ),
@@ -627,12 +627,12 @@ class _RoomSelectorPill extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.slate900 : AppColors.surface,
+          color: isSelected ? context.appColors.textPrimary : context.appColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
-                ? AppColors.slate900
-                : AppColors.slate200,
+                ? context.appColors.textPrimary
+                : context.appColors.fieldBorder,
             width: 1,
           ),
         ),
@@ -645,7 +645,7 @@ class _RoomSelectorPill extends StatelessWidget {
                 fontFamily: 'DM Sans',
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: isSelected ? AppColors.surface : AppColors.slate700,
+                color: isSelected ? context.appColors.surface : context.appColors.textPrimary,
               ),
             ),
             const SizedBox(width: 6),
@@ -653,7 +653,7 @@ class _RoomSelectorPill extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppColors.surface.withValues(alpha: 0.18)
+                    ? context.appColors.surface.withValues(alpha: 0.18)
                     : AppColors.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -663,7 +663,7 @@ class _RoomSelectorPill extends StatelessWidget {
                   fontFamily: 'DM Sans',
                   fontSize: 10.5,
                   fontWeight: FontWeight.w700,
-                  color: isSelected ? AppColors.surface : AppColors.primary,
+                  color: isSelected ? context.appColors.surface : AppColors.primary,
                 ),
               ),
             ),
@@ -743,7 +743,7 @@ class _ReadOnlyPropertyPhotoCarouselState
     final statusDotColor = switch (status) {
       'available' => AppColors.matchHigh,
       'pending' => AppColors.matchMedium,
-      _ => AppColors.slate400,
+      _ => context.appColors.hint,
     };
 
     return Column(
@@ -758,7 +758,7 @@ class _ReadOnlyPropertyPhotoCarouselState
             width: double.infinity,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              color: AppColors.fieldFill,
+              color: context.appColors.fieldFill,
               boxShadow: [
                 BoxShadow(
                   color: AppColors.slate900.withValues(alpha: 0.06),
@@ -890,11 +890,11 @@ class _ReadOnlyPropertyPhotoCarouselState
                             fit: BoxFit.cover,
                             filterQuality: FilterQuality.medium,
                             errorBuilder: (_, _, _) => Container(
-                              color: AppColors.fieldFill,
-                              child: const Icon(
+                              color: context.appColors.fieldFill,
+                              child: Icon(
                                 Icons.broken_image,
                                 size: 18,
-                                color: AppColors.hint,
+                                color: context.appColors.hint,
                               ),
                             ),
                           ),
@@ -908,7 +908,7 @@ class _ReadOnlyPropertyPhotoCarouselState
                                 border: Border.all(
                                   color: isSelected
                                       ? AppColors.primary
-                                      : AppColors.slate200,
+                                      : context.appColors.fieldBorder,
                                   width: isSelected ? 2 : 1,
                                 ),
                               ),
@@ -1002,7 +1002,7 @@ class _ReadOnlyFullScreenGalleryState
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.surface.withValues(alpha: 0.15),
+                      color: context.appColors.surface.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -1022,7 +1022,7 @@ class _ReadOnlyFullScreenGalleryState
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: AppColors.surface.withValues(alpha: 0.18),
+                        color: context.appColors.surface.withValues(alpha: 0.18),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -1090,10 +1090,10 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
         ),
         content: Text(
           explanation,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 13,
-            color: AppColors.slate600,
+            color: context.appColors.textSecondary,
             height: 1.4,
           ),
         ),
@@ -1104,12 +1104,12 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
             children: [
               TextButton(
                 onPressed: () => Navigator.of(dialogCtx).pop(false),
-                child: const Text(
+                child: Text(
                   'Cancel',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontWeight: FontWeight.w600,
-                    color: AppColors.slate500,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ),
@@ -1196,7 +1196,7 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -1219,11 +1219,11 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
             displayName,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 20,
               fontWeight: FontWeight.w800,
-              color: AppColors.slate900,
+              color: context.appColors.textPrimary,
               letterSpacing: -0.4,
               height: 1.2,
             ),
@@ -1238,11 +1238,11 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
               buildingName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.slate700,
+                color: context.appColors.textPrimary,
                 letterSpacing: -0.1,
               ),
             ),
@@ -1267,11 +1267,11 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
                 child: Text(
                   property.address,
                   softWrap: true,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: AppColors.slate500,
+                    color: context.appColors.textSecondary,
                     height: 1.4,
                   ),
                 ),
@@ -1280,7 +1280,7 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
           ),
 
           const SizedBox(height: 14),
-          const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill),
+          Divider(height: 1, thickness: 0.8, color: context.appColors.fieldFill),
           const SizedBox(height: 14),
 
           // Property Details Row (Building Type on left, Price on right)
@@ -1297,11 +1297,11 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
                         displayType,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12.5,
                           fontWeight: FontWeight.w400,
-                          color: AppColors.slate900,
+                          color: context.appColors.textPrimary,
                         ),
                       ),
                     ),
@@ -1325,13 +1325,13 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  const Text(
+                  Text(
                     '/ month',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: AppColors.slate500,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                 ],
@@ -1340,14 +1340,14 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
           ),
 
           const SizedBox(height: 16),
-          const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill),
+          Divider(height: 1, thickness: 0.8, color: context.appColors.fieldFill),
           const SizedBox(height: 16),
 
           // Rental Status Row with Dropdown (Only editable control)
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1357,17 +1357,17 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
                         fontFamily: 'DM Sans',
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.slate900,
+                        color: context.appColors.textPrimary,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
                       'Manage availability',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 11.5,
                         fontWeight: FontWeight.w400,
-                        color: AppColors.slate500,
+                        color: context.appColors.textSecondary,
                       ),
                     ),
                   ],
@@ -1385,7 +1385,7 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
   Widget _buildStatusDropdown(BuildContext context, String currentStatus) {
     final isAvailable = currentStatus == 'available';
     final label = isAvailable ? 'Available' : 'Occupied';
-    final color = isAvailable ? AppColors.green600 : AppColors.slate600;
+    final color = isAvailable ? AppColors.green600 : context.appColors.textSecondary;
 
     return PopupMenuButton<String>(
       tooltip: 'Change Rental Status',
@@ -1393,31 +1393,33 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
       offset: const Offset(0, 32),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: const BorderSide(color: AppColors.slate200, width: 1),
+        side: BorderSide(color: context.appColors.fieldBorder, width: 1),
       ),
-      color: AppColors.surface,
+      color: context.appColors.surface,
       elevation: 4,
       itemBuilder: (context) => [
         _buildPopupMenuItem(
+          context,
           value: 'available',
           label: 'Available',
           dotColor: AppColors.green600,
           isSelected: isAvailable,
         ),
         _buildPopupMenuItem(
+          context,
           value: 'booked',
           label: 'Occupied',
-          dotColor: AppColors.slate500,
+          dotColor: context.appColors.textSecondary,
           isSelected: !isAvailable,
         ),
       ],
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.appColors.surface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: AppColors.slate300,
+            color: context.appColors.hint,
             width: 1,
           ),
         ),
@@ -1435,18 +1437,18 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
-                color: AppColors.slate900,
+                color: context.appColors.textPrimary,
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(
+            Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 15,
-              color: AppColors.slate500,
+              color: context.appColors.textSecondary,
             ),
           ],
         ),
@@ -1454,7 +1456,8 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
     );
   }
 
-  PopupMenuItem<String> _buildPopupMenuItem({
+  PopupMenuItem<String> _buildPopupMenuItem(
+    BuildContext context, {
     required String value,
     required String label,
     required Color dotColor,
@@ -1482,7 +1485,7 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
               fontFamily: 'DM Sans',
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? AppColors.primary : AppColors.slate700,
+              color: isSelected ? AppColors.primary : context.appColors.textPrimary,
             ),
           ),
         ],
@@ -1529,7 +1532,7 @@ class _CompatibleTenantsSectionCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -1557,7 +1560,7 @@ class _CompatibleTenantsSectionCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Flexible(
+                        Flexible(
                           child: Text(
                             'Compatible Tenants',
                             maxLines: 1,
@@ -1566,7 +1569,7 @@ class _CompatibleTenantsSectionCard extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.slate900,
+                              color: context.appColors.textPrimary,
                               letterSpacing: -0.2,
                             ),
                           ),
@@ -1594,13 +1597,13 @@ class _CompatibleTenantsSectionCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 2),
-                    const Text(
+                    Text(
                       'Tap a tenant to view full compatibility details',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12,
                         fontWeight: FontWeight.w400,
-                        color: AppColors.slate500,
+                        color: context.appColors.textSecondary,
                       ),
                     ),
                   ],
@@ -1643,7 +1646,7 @@ class _CompatibleTenantsSectionCard extends StatelessWidget {
                               color: AppColors.green700,
                             )
                           else
-                            _buildSendIcon(color: AppColors.surface, size: 12.5),
+                            _buildSendIcon(color: context.appColors.surface, size: 12.5),
                           const SizedBox(width: 5),
                           Text(
                             allNotified ? 'All Notified' : 'Notify All',
@@ -1666,7 +1669,7 @@ class _CompatibleTenantsSectionCard extends StatelessWidget {
           ),
 
           const SizedBox(height: 14),
-          const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill),
+          Divider(height: 1, thickness: 0.8, color: context.appColors.fieldFill),
           const SizedBox(height: 12),
 
           // ── Tenant Rows or Empty State ──────────────────────────────────
@@ -1678,21 +1681,21 @@ class _CompatibleTenantsSectionCard extends StatelessWidget {
                 vertical: 22,
               ),
               decoration: BoxDecoration(
-                color: AppColors.slate50,
+                color: context.appColors.fieldFill,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: AppColors.slate200,
+                  color: context.appColors.fieldBorder,
                   width: 1,
                 ),
               ),
-              child: const Column(
+              child: Column(
                 children: [
                   Icon(
                     Icons.people_outline_rounded,
                     size: 24,
-                    color: AppColors.slate400,
+                    color: context.appColors.hint,
                   ),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   Text(
                     'No compatible tenants for this listing yet.',
                     textAlign: TextAlign.center,
@@ -1700,7 +1703,7 @@ class _CompatibleTenantsSectionCard extends StatelessWidget {
                       fontFamily: 'DM Sans',
                       fontSize: 12.5,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.slate500,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                 ],
@@ -1725,7 +1728,7 @@ class _CompatibleTenantsSectionCard extends StatelessWidget {
           // ── Circular Theme-Blue Pagination (Only shown when > 5 items) ──
           if (totalPages > 1) ...[
             const SizedBox(height: 16),
-            const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill),
+            Divider(height: 1, thickness: 0.8, color: context.appColors.fieldFill),
             const SizedBox(height: 12),
             _CircularNumberPaginationBar(
               currentPage: currentPage,
@@ -1807,8 +1810,8 @@ class _CircularNumberPaginationBar extends StatelessWidget {
               Icons.chevron_left_rounded,
               size: 20,
               color: canPrev
-                  ? AppColors.slate700
-                  : AppColors.slate300,
+                  ? context.appColors.textPrimary
+                  : context.appColors.hint,
             ),
           ),
         ),
@@ -1817,7 +1820,7 @@ class _CircularNumberPaginationBar extends StatelessWidget {
         // Page Number Tokens
         for (final token in tokens)
           if (token == -1)
-            const SizedBox(
+            SizedBox(
               width: 28,
               height: 36,
               child: Center(
@@ -1827,7 +1830,7 @@ class _CircularNumberPaginationBar extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 13.5,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.slate500,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ),
@@ -1870,11 +1873,11 @@ class _CircularNumberPaginationBar extends StatelessWidget {
                         child: Center(
                           child: Text(
                             '$token',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 13.5,
                               fontWeight: FontWeight.w500,
-                              color: AppColors.slate700,
+                              color: context.appColors.textPrimary,
                             ),
                           ),
                         ),
@@ -1895,8 +1898,8 @@ class _CircularNumberPaginationBar extends StatelessWidget {
               Icons.chevron_right_rounded,
               size: 20,
               color: canNext
-                  ? AppColors.slate700
-                  : AppColors.slate300,
+                  ? context.appColors.textPrimary
+                  : context.appColors.hint,
             ),
           ),
         ),
@@ -2002,10 +2005,10 @@ class CompatibleTenantRow extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.slate50,
+        color: context.appColors.fieldFill,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: AppColors.slate200.withValues(alpha: 0.75),
+          color: context.appColors.fieldBorder.withValues(alpha: 0.75),
           width: 1,
         ),
       ),
@@ -2055,19 +2058,19 @@ class CompatibleTenantRow extends StatelessWidget {
                               tenant.name,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.slate900,
+                                color: context.appColors.textPrimary,
                                 height: 1.25,
                               ),
                             ),
                           ),
-                          const Icon(
+                          Icon(
                             Icons.chevron_right_rounded,
                             size: 18,
-                            color: AppColors.slate400,
+                            color: context.appColors.hint,
                           ),
                         ],
                       ),
@@ -2076,11 +2079,11 @@ class CompatibleTenantRow extends StatelessWidget {
                         _formatBudget(tenant.maxBudget.toDouble()),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
-                          color: AppColors.slate500,
+                          color: context.appColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 8),

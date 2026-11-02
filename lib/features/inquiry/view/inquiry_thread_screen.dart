@@ -211,7 +211,7 @@ class _ThreadScaffold extends StatelessWidget {
     final hasHeaderDetails = counterpartName != null && subtitle != null;
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.appColors.surface,
       body: Stack(
         children: [
           // Soft Top Sky-Blue Gradient Background
@@ -229,7 +229,7 @@ class _ThreadScaffold extends StatelessWidget {
                     colors: [
                       AppColors.accentSoft.withValues(alpha: 0.7),
                       AppColors.accentSoft.withValues(alpha: 0.45),
-                      AppColors.surface.withValues(alpha: 0.0),
+                      context.appColors.surface.withValues(alpha: 0.0),
                     ],
                     stops: const [0.0, 0.55, 1.0],
                   ),
@@ -253,7 +253,7 @@ class _ThreadScaffold extends StatelessWidget {
                           width: 38,
                           height: 38,
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: context.appColors.surface,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -265,9 +265,9 @@ class _ThreadScaffold extends StatelessWidget {
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.chevron_left_rounded,
-                            color: AppColors.textPrimary,
+                            color: context.appColors.textPrimary,
                             size: 24,
                           ),
                         ),
@@ -286,17 +286,17 @@ class _ThreadScaffold extends StatelessWidget {
                                     width: 42,
                                     height: 42,
                                     alignment: Alignment.center,
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.fieldFill,
+                                    decoration: BoxDecoration(
+                                      color: context.appColors.fieldFill,
                                       shape: BoxShape.circle,
                                     ),
                                     child: Text(
                                       InquirySummary.initialsOf(counterpartName!),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700,
-                                        color: AppColors.textPrimary,
+                                        color: context.appColors.textPrimary,
                                       ),
                                     ),
                                   ),
@@ -310,11 +310,11 @@ class _ThreadScaffold extends StatelessWidget {
                                       Text(
                                         title,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontFamily: 'DM Sans',
                                           fontSize: 15.5,
                                           fontWeight: FontWeight.w700,
-                                          color: AppColors.textPrimary,
+                                          color: context.appColors.textPrimary,
                                         ),
                                       ),
                                       if (subtitle != null) ...[
@@ -322,11 +322,11 @@ class _ThreadScaffold extends StatelessWidget {
                                         Text(
                                           subtitle!,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontFamily: 'DM Sans',
                                             fontSize: 12.5,
                                             fontWeight: FontWeight.w500,
-                                            color: AppColors.textSecondary,
+                                            color: context.appColors.textSecondary,
                                           ),
                                         ),
                                       ],
@@ -339,9 +339,9 @@ class _ThreadScaffold extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      const Icon(
+                      Icon(
                         Icons.more_vert_rounded,
-                        color: AppColors.textPrimary,
+                        color: context.appColors.textPrimary,
                         size: 21,
                       ),
                     ],

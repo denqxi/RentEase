@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/router/app_router.dart';
+import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../cubit/tenant_onboarding_cubit.dart';
 import 'soft_preferences_step_screen.dart';
 
@@ -93,27 +96,69 @@ class _HardConstraintsScreenState extends State<HardConstraintsScreen> {
               // Top Bar: Back button, Progress bar, Step text
               Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    behavior: HitTestBehavior.opaque,
-                    child: Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: context.appColors.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: context.appColors.fieldBorder,
+                  // This screen can be the only route (e.g. after a cleared
+                  // stack on re-login); popping it would leave a black screen.
+                  if (Navigator.of(context).canPop()) ...[
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).maybePop(),
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: context.appColors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: context.appColors.fieldBorder,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.chevron_left_rounded,
+                          color: context.appColors.textPrimary,
+                          size: 24,
                         ),
                       ),
-                      child: Icon(
-                        Icons.chevron_left_rounded,
-                        color: context.appColors.textPrimary,
-                        size: 24,
+                    ),
+                    const SizedBox(width: 14),
+                  ] else ...[
+                    // Nothing to go back to: offer a way out so users can
+                    // sign in with a different account.
+                    GestureDetector(
+                      onTap: () {
+                        context.read<AuthBloc>().add(
+                          const AuthSignOutRequested(),
+                        );
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          AppRouter.signIn,
+                          (_) => false,
+                        );
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: context.appColors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: context.appColors.fieldBorder,
+                          ),
+                        ),
+                        child: Center(
+                          child: SvgPicture.asset(
+                            'assets/images/arrow_bar_left.svg',
+                            width: 22,
+                            height: 22,
+                            colorFilter: ColorFilter.mode(
+                              context.appColors.textPrimary,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 14),
+                    const SizedBox(width: 14),
+                  ],
                   Expanded(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(4),
@@ -490,7 +535,7 @@ class _HardConstraintsScreenState extends State<HardConstraintsScreen> {
                     backgroundColor:
                         WidgetStateProperty.resolveWith<Color>((states) {
                       if (states.contains(WidgetState.disabled)) {
-                        return AppColors.indicatorInactive;
+                        return context.appColors.indicatorInactive;
                       }
                       return context.appColors.ink;
                     }),
@@ -551,7 +596,7 @@ class _SectionCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.fieldFill,
+                color: context.appColors.fieldFill,
                 border: Border(
                   bottom: BorderSide(
                     color: context.appColors.fieldBorder,
@@ -682,7 +727,7 @@ class _TextToggle extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 3),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          color: value ? AppColors.primary : AppColors.hint,
+          color: value ? AppColors.primary : context.appColors.hint,
         ),
         child: Stack(
           alignment: Alignment.center,

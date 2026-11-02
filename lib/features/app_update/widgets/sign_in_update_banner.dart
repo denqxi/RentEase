@@ -126,7 +126,7 @@ class _SignInUpdateBannerState extends State<SignInUpdateBanner> {
                           TextButton(
                             style: TextButton.styleFrom(
                               foregroundColor: AppColors.primaryDeep,
-                              backgroundColor: AppColors.surface,
+                              backgroundColor: context.appColors.surface,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
                               ),

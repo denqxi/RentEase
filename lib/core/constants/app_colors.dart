@@ -98,6 +98,7 @@ abstract final class AppColors {
   static const Color darkDivider = Color(0xFF404050);
   static const Color darkField = Color(0xFF2A2A36);
   static const Color darkSwitchTrack = Color(0xFF444444);
+  static const Color darkAccentSoft = Color(0xFF17343A);
   static const Color accentOverlay = Color(0x201F7D8C);
   // ── Slate / utility tokens (used by shared widgets) ──────────────────────
   static const Color transparent = Color(0x00000000);
@@ -179,6 +180,7 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
     required this.hint,
     required this.ink,
     required this.indicatorInactive,
+    required this.accentSoft,
   });
 
   final Color surface;
@@ -189,6 +191,7 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
   final Color hint;
   final Color ink;
   final Color indicatorInactive;
+  final Color accentSoft;
 
   static const light = AppAdaptiveColors(
     surface:           AppColors.surface,
@@ -199,6 +202,7 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
     hint:              AppColors.hint,
     ink:               AppColors.ink,
     indicatorInactive: AppColors.indicatorInactive,
+    accentSoft:        AppColors.accentSoft,
   );
 
   static const dark = AppAdaptiveColors(
@@ -210,6 +214,7 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
     hint:              AppColors.textSecondary,
     ink:               Color(0xFFE4E4EF),
     indicatorInactive: AppColors.darkDivider,
+    accentSoft:        AppColors.darkAccentSoft,
   );
 
   @override
@@ -222,6 +227,7 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
     Color? hint,
     Color? ink,
     Color? indicatorInactive,
+    Color? accentSoft,
   }) => AppAdaptiveColors(
     surface:           surface           ?? this.surface,
     textPrimary:       textPrimary       ?? this.textPrimary,
@@ -231,6 +237,7 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
     hint:              hint              ?? this.hint,
     ink:               ink               ?? this.ink,
     indicatorInactive: indicatorInactive ?? this.indicatorInactive,
+    accentSoft:        accentSoft        ?? this.accentSoft,
   );
 
   @override
@@ -245,6 +252,7 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
       hint:              Color.lerp(hint,              other.hint,              t)!,
       ink:               Color.lerp(ink,               other.ink,               t)!,
       indicatorInactive: Color.lerp(indicatorInactive, other.indicatorInactive, t)!,
+      accentSoft:        Color.lerp(accentSoft,        other.accentSoft,        t)!,
     );
   }
 }

@@ -72,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Stack(
         children: <Widget>[
           // Subtle top-right gradient — spread softly across the header & upper content
+          if (Theme.of(context).brightness == Brightness.light)
           Positioned(
             top: 0,
             left: 0,
@@ -146,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (context, state) {
                   return RefreshIndicator(
                     color: AppColors.primary,
-                    backgroundColor: AppColors.surface,
+                    backgroundColor: context.appColors.surface,
                     edgeOffset: 0,
                     // Re-running the matching engine on pull-to-refresh is the
                     // same trigger point as opening this screen (CLAUDE.md
@@ -253,7 +254,7 @@ class _EmptyState extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.appColors.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: <BoxShadow>[
             BoxShadow(
@@ -305,11 +306,11 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               isGuest ? 'No listings yet' : 'No matching properties yet',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 15.5,
                 fontWeight: FontWeight.w700,
-                color: AppColors.slate900,
+                color: context.appColors.textPrimary,
                 letterSpacing: -0.2,
               ),
               textAlign: TextAlign.center,
@@ -320,11 +321,11 @@ class _EmptyState extends StatelessWidget {
                   ? 'Check back soon, or sign up to see the boarding houses that match you.'
                   : "We couldn't find properties that match your preferences right now. "
                       "You can update your preferences or check out other listings below.",
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 11.5,
                 fontWeight: FontWeight.w400,
-                color: AppColors.slate500,
+                color: context.appColors.textSecondary,
                 height: 1.35,
               ),
               textAlign: TextAlign.center,
@@ -335,7 +336,7 @@ class _EmptyState extends StatelessWidget {
                 // Left Button: Explore Other Listings
                 Expanded(
                   child: Material(
-                    color: AppColors.slate50,
+                    color: context.appColors.fieldFill,
                     borderRadius: BorderRadius.circular(8),
                     child: InkWell(
                       onTap: onExploreOtherListings ??
@@ -402,7 +403,7 @@ class _EmptyState extends StatelessWidget {
                         height: 32,
                         alignment: Alignment.center,
                         padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: const Text(
+                        child: Text(
                           'Update Preferences',
                           style: TextStyle(
                             fontFamily: 'DM Sans',

@@ -431,7 +431,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.slate50,
+        backgroundColor: context.appColors.fieldFill,
         body: Stack(
           children: [
             // ── Edge-to-Edge Interactive Map with Google Maps Light Filter ──
@@ -529,10 +529,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
                                   ),
                                   constraints: const BoxConstraints(maxWidth: 240),
                                   decoration: BoxDecoration(
-                                    color: AppColors.surface,
+                                    color: context.appColors.surface,
                                     borderRadius: BorderRadius.circular(11),
                                     border: Border.all(
-                                      color: AppColors.slate200,
+                                      color: context.appColors.fieldBorder,
                                       width: 0.8,
                                     ),
                                     boxShadow: [
@@ -577,16 +577,16 @@ class _MapViewScreenState extends State<MapViewScreen> {
                                                   : 'Your Destination',
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontFamily: 'DM Sans',
                                                 fontSize: 10.5,
                                                 fontWeight: FontWeight.w700,
-                                                color: AppColors.slate900,
+                                                color: context.appColors.textPrimary,
                                                 letterSpacing: -0.1,
                                               ),
                                             ),
                                             const SizedBox(height: 1),
-                                            const Text(
+                                            Text(
                                               'Davao City',
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
@@ -594,7 +594,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                                                 fontFamily: 'DM Sans',
                                                 fontSize: 8.5,
                                                 fontWeight: FontWeight.w500,
-                                                color: AppColors.slate500,
+                                                color: context.appColors.textSecondary,
                                               ),
                                             ),
                                           ],
@@ -648,7 +648,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                                           color: AppColors.blue600,
                                           shape: BoxShape.circle,
                                           border: Border.all(
-                                            color: AppColors.surface,
+                                            color: context.appColors.surface,
                                             width: 1.8,
                                           ),
                                           boxShadow: [
@@ -768,7 +768,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                       height: 38,
                       padding: const EdgeInsets.fromLTRB(8, 3, 14, 3),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: context.appColors.surface,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -781,19 +781,19 @@ class _MapViewScreenState extends State<MapViewScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.chevron_left,
                             size: 20,
-                            color: AppColors.slate900,
+                            color: context.appColors.textPrimary,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             _isNavigating ? 'Route preview' : 'Map view',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.slate900,
+                              color: context.appColors.textPrimary,
                               letterSpacing: -0.1,
                             ),
                           ),
@@ -813,7 +813,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: context.appColors.surface,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
@@ -856,7 +856,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: context.appColors.surface,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -897,7 +897,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
             top: MediaQuery.of(context).size.height * 0.42,
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.appColors.surface,
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
@@ -916,23 +916,23 @@ class _MapViewScreenState extends State<MapViewScreen> {
                       _mapController.move(camera.center, camera.zoom + 1);
                     },
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-                    child: const SizedBox(
+                    child: SizedBox(
                       width: 34,
                       height: 34,
-                      child: Icon(Icons.add_rounded, size: 18, color: AppColors.slate900),
+                      child: Icon(Icons.add_rounded, size: 18, color: context.appColors.textPrimary),
                     ),
                   ),
-                  const Divider(height: 1, thickness: 0.8, color: AppColors.slate200),
+                  Divider(height: 1, thickness: 0.8, color: context.appColors.fieldBorder),
                   InkWell(
                     onTap: () {
                       final camera = _mapController.camera;
                       _mapController.move(camera.center, camera.zoom - 1);
                     },
                     borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
-                    child: const SizedBox(
+                    child: SizedBox(
                       width: 34,
                       height: 34,
-                      child: Icon(Icons.remove_rounded, size: 18, color: AppColors.slate900),
+                      child: Icon(Icons.remove_rounded, size: 18, color: context.appColors.textPrimary),
                     ),
                   ),
                 ],
@@ -953,7 +953,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                   height: 48,
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.appColors.surface,
                     borderRadius: BorderRadius.circular(26),
                     boxShadow: [
                       BoxShadow(
@@ -963,14 +963,14 @@ class _MapViewScreenState extends State<MapViewScreen> {
                       ),
                     ],
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      AppSvgIcon(
+                      const AppSvgIcon(
                         svgString: AppSvgIcons.mapBuildingHouse,
                         size: 21,
                         color: AppColors.sky400,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Properties near your destination',
@@ -978,13 +978,13 @@ class _MapViewScreenState extends State<MapViewScreen> {
                             fontFamily: 'DM Sans',
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.slate900,
+                            color: context.appColors.textPrimary,
                           ),
                         ),
                       ),
                       Icon(
                         Icons.chevron_right_rounded,
-                        color: AppColors.slate500,
+                        color: context.appColors.textSecondary,
                         size: 20,
                       ),
                     ],
@@ -1016,7 +1016,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
               right: 16,
               bottom: 235 + MediaQuery.of(context).padding.bottom,
               child: Material(
-                color: AppColors.surface,
+                color: context.appColors.surface,
                 borderRadius: BorderRadius.circular(12),
                 elevation: 3,
                 shadowColor: AppColors.scrim.withValues(alpha: 0.15),
@@ -1037,10 +1037,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
                     width: 38,
                     height: 38,
                     alignment: Alignment.center,
-                    child: const Icon(
+                    child: Icon(
                       Icons.crop_free_rounded,
                       size: 20,
-                      color: AppColors.slate900,
+                      color: context.appColors.textPrimary,
                     ),
                   ),
                 ),
@@ -1157,11 +1157,11 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
     final double iconSize = widget.isSelected ? 13.5 : 11.0;
 
     final bool isGray = isNonMatch || percent <= 0;
-    final Color themeColor = isGray ? AppColors.slate400 : AppColors.sky400;
+    final Color themeColor = isGray ? context.appColors.hint : AppColors.sky400;
 
-    final Color pinFillColor = widget.isSelected ? themeColor : AppColors.surface;
-    final Color pinStrokeColor = widget.isSelected ? AppColors.surface : themeColor;
-    final Color pinIconColor = widget.isSelected ? AppColors.surface : themeColor;
+    final Color pinFillColor = widget.isSelected ? themeColor : context.appColors.surface;
+    final Color pinStrokeColor = widget.isSelected ? context.appColors.surface : themeColor;
+    final Color pinIconColor = widget.isSelected ? context.appColors.surface : themeColor;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -1296,7 +1296,7 @@ class _TeardropPinPainter extends CustomPainter {
   final Color strokeColor;
   final double strokeWidth;
 
-  const _TeardropPinPainter({
+  _TeardropPinPainter({
     required this.fillColor,
     this.strokeColor = AppColors.surface,
     this.strokeWidth = 1.0,
@@ -1404,9 +1404,9 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.72,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.appColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
         16,
@@ -1425,7 +1425,7 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: AppColors.slate300,
+                color: context.appColors.hint,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1435,29 +1435,29 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Properties near your destination',
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: AppColors.slate900,
+                  color: context.appColors.textPrimary,
                   letterSpacing: -0.2,
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                 decoration: BoxDecoration(
-                  color: AppColors.fieldFill,
+                  color: context.appColors.fieldFill,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '${widget.properties.length} nearby',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.slate600,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ),
@@ -1481,11 +1481,11 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
                       : 'Your Destination',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.slate500,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ),
@@ -1545,9 +1545,9 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: context.appColors.surface,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.slate200, width: 0.8),
+                      border: Border.all(color: context.appColors.fieldBorder, width: 0.8),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -1577,11 +1577,11 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
                                 propName ?? roomOrTitle,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.slate900,
+                                  color: context.appColors.textPrimary,
                                   letterSpacing: -0.1,
                                 ),
                               ),
@@ -1590,10 +1590,10 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
                               // Line 2: Room / Location (11.5sp, muted gray)
                               Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.location_on_outlined,
                                     size: 12,
-                                    color: AppColors.slate500,
+                                    color: context.appColors.textSecondary,
                                   ),
                                   const SizedBox(width: 2),
                                   Expanded(
@@ -1603,11 +1603,11 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
                                           : ((property['address'] as String?) ?? 'Davao City'),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w500,
-                                        color: AppColors.slate500,
+                                        color: context.appColors.textSecondary,
                                       ),
                                     ),
                                   ),
@@ -1619,11 +1619,11 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
                               if (dist != null) ...[
                                 Text(
                                   '${dist.toStringAsFixed(1)} km from destination',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
-                                    color: AppColors.slate500,
+                                    color: context.appColors.textSecondary,
                                   ),
                                 ),
                                 const SizedBox(height: 3),
@@ -1642,13 +1642,13 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
                                         color: AppColors.primary,
                                       ),
                                     ),
-                                    const TextSpan(
+                                    TextSpan(
                                       text: ' / month',
                                       style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w400,
-                                        color: AppColors.slate500,
+                                        color: context.appColors.textSecondary,
                                       ),
                                     ),
                                   ],
@@ -1685,9 +1685,9 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
                               ),
                             ),
                             const SizedBox(height: 20),
-                            const Icon(
+                            Icon(
                               Icons.chevron_right_rounded,
-                              color: AppColors.slate400,
+                              color: context.appColors.hint,
                               size: 18,
                             ),
                           ],
@@ -1724,7 +1724,7 @@ class _FilterPill extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.fieldFill,
+          color: isSelected ? AppColors.primary : context.appColors.fieldFill,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Text(
@@ -1733,7 +1733,7 @@ class _FilterPill extends StatelessWidget {
             fontFamily: 'DM Sans',
             fontSize: 11.5,
             fontWeight: FontWeight.w600,
-            color: isSelected ? AppColors.surface : AppColors.slate600,
+            color: isSelected ? AppColors.surface : context.appColors.textSecondary,
           ),
         ),
       ),
@@ -1827,7 +1827,7 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
         // Main Pop-up Card Container
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.appColors.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
             boxShadow: [
               BoxShadow(
@@ -1853,7 +1853,7 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                   height: 4,
                   margin: const EdgeInsets.only(top: 2, bottom: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.slate300,
+                    color: context.appColors.hint,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1916,11 +1916,11 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                                 propName ?? roomOrTitle,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.slate900,
+                                  color: context.appColors.textPrimary,
                                   letterSpacing: -0.1,
                                 ),
                               ),
@@ -1961,12 +1961,12 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Padding(
-                                padding: EdgeInsets.only(top: 1.5),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 1.5),
                                 child: Icon(
                                   Icons.location_on_outlined,
                                   size: 12,
-                                  color: AppColors.slate500,
+                                  color: context.appColors.textSecondary,
                                 ),
                               ),
                               const SizedBox(width: 3),
@@ -1981,11 +1981,11 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                                     overflow: _isAddressExpanded
                                         ? TextOverflow.visible
                                         : TextOverflow.ellipsis,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w500,
-                                      color: AppColors.slate500,
+                                      color: context.appColors.textSecondary,
                                       height: 1.25,
                                     ),
                                   ),
@@ -2009,13 +2009,13 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                                   color: AppColors.primary,
                                 ),
                               ),
-                              const TextSpan(
+                              TextSpan(
                                 text: ' / month',
                                 style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w400,
-                                  color: AppColors.slate500,
+                                  color: context.appColors.textSecondary,
                                 ),
                               ),
                             ],
@@ -2070,7 +2070,7 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           side: const BorderSide(color: AppColors.primary, width: 0.8),
-                          backgroundColor: AppColors.surface,
+                          backgroundColor: context.appColors.surface,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -2133,10 +2133,10 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.appColors.surface,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppColors.slate200,
+                  color: context.appColors.fieldBorder,
                   width: 0.8,
                 ),
                 boxShadow: [
@@ -2158,11 +2158,11 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                   const SizedBox(width: 4),
                   Text(
                     '${dist.toStringAsFixed(1)} km from destination',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.slate900,
+                      color: context.appColors.textPrimary,
                     ),
                   ),
                 ],

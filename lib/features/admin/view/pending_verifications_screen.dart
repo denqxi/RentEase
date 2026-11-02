@@ -5,10 +5,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/app_links.dart';
+import '../../../core/constants/didit_config.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/cloudinary_url.dart';
 import '../../../core/utils/url_opener.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../id_verification/data/repositories/didit_id_verification_repository.dart';
+import '../../id_verification/domain/repositories/id_verification_repository.dart';
 import '../cubit/verifications_cubit.dart';
 import '../domain/entities/admin_entities.dart';
 import '../widgets/admin_page_header.dart';
@@ -357,6 +360,258 @@ class _VerificationCard extends StatelessWidget {
 }
 
 /// Lazily loads the private document references when the admin asks.
+/// Didit ID check, fetched from Didit itself (not from anything the owner
+/// wrote), so it can't be faked: status, ID images, selfie, details read from
+/// the ID, and face match. Advisory only: the admin still decides.
+///
+/// Image links from Didit are short-lived, so nothing here is stored; the
+/// decision is kept in memory while the app runs and Refresh fetches new
+/// links when the old ones expire.
+class _DiditIdPanel extends StatefulWidget {
+  const _DiditIdPanel({required this.sessionId, required this.ownerName});
+
+  final String sessionId;
+  final String ownerName;
+
+  @override
+  State<_DiditIdPanel> createState() => _DiditIdPanelState();
+}
+
+class _DiditIdPanelState extends State<_DiditIdPanel> {
+  final IdVerificationRepository _repo = DiditIdVerificationRepository();
+  late Future<IdVerificationDecision> _decision = _load();
+
+  Future<IdVerificationDecision> _load({bool refresh = false}) =>
+      DiditConfig.isConfigured
+      ? _repo.fetchDecision(widget.sessionId, refresh: refresh)
+      : Future.value(
+          const IdVerificationDecision(status: 'Not configured in this build'),
+        );
+
+  void _refresh() => setState(() => _decision = _load(refresh: true));
+
+  static String _norm(String s) =>
+      s.toLowerCase().replaceAll(RegExp(r'[^a-z ]'), '').replaceAll(
+        RegExp(r'\s+'),
+        ' ',
+      ).trim();
+
+  /// Loose check: every word of the account name appears in the ID name
+  /// (IDs often add middle names).
+  bool _nameMatches(String idName) {
+    final account = _norm(widget.ownerName).split(' ').where((w) => w.isNotEmpty);
+    final id = _norm(idName);
+    return account.isNotEmpty && account.every(id.contains);
+  }
+
+  void _openImage(String title, String url) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        insetPadding: const EdgeInsets.all(16),
+        clipBehavior: Clip.antiAlias,
+        backgroundColor: context.appColors.surface,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '$title - ${widget.ownerName}',
+                      style: AppTextStyles.label(context).copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: context.appColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+            Flexible(
+              child: InteractiveViewer(
+                maxScale: 4,
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      'This link has expired. Close and tap Refresh.',
+                      style: AppTextStyles.caption(context),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _thumb(String label, String? url) {
+    return Expanded(
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: url == null ? null : () => _openImage(label, url),
+            child: Container(
+              height: 70,
+              decoration: BoxDecoration(
+                color: context.appColors.fieldFill,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: context.appColors.fieldBorder),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: url == null
+                  ? Icon(
+                      Icons.image_not_supported_outlined,
+                      color: context.appColors.hint,
+                    )
+                  : Image.network(
+                      url,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      cacheWidth: 400,
+                      errorBuilder: (_, _, _) => Icon(
+                        Icons.link_off_rounded,
+                        color: context.appColors.hint,
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(label, style: AppTextStyles.caption(context)),
+        ],
+      ),
+    );
+  }
+
+  Widget _line(String label, String? value, {Color? color}) {
+    if (value == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 96,
+            child: Text(label, style: AppTextStyles.caption(context)),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: AppTextStyles.caption(context).copyWith(
+                fontWeight: FontWeight.w700,
+                color: color ?? context.appColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: FutureBuilder<IdVerificationDecision>(
+        future: _decision,
+        builder: (context, snap) {
+          final done = snap.connectionState == ConnectionState.done;
+          final d = done && !snap.hasError ? snap.data : null;
+          final status = !done
+              ? 'Checking...'
+              : (snap.hasError ? 'Could not load' : d!.status);
+          final color = switch (status) {
+            'Approved' => AppColors.matchHigh,
+            'Declined' => AppColors.destructive,
+            'In Review' || 'In Progress' || 'Not Started' =>
+              AppColors.matchMedium,
+            _ => context.appColors.textSecondary,
+          };
+          final idName = d?.fullName;
+          final score = d?.faceMatchScore;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.face_retouching_natural, size: 16, color: color),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Didit ID check: $status',
+                      style: AppTextStyles.caption(context).copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  if (done)
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      tooltip: 'Refresh',
+                      onPressed: _refresh,
+                      icon: const Icon(Icons.refresh_rounded, size: 16),
+                    ),
+                ],
+              ),
+              if (d != null && (d.hasIdImages || d.selfieImage != null)) ...[
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    _thumb('ID front', d.frontImage),
+                    const SizedBox(width: 8),
+                    _thumb('ID back', d.backImage),
+                    const SizedBox(width: 8),
+                    _thumb('Selfie', d.selfieImage),
+                  ],
+                ),
+              ],
+              if (d != null) ...[
+                const SizedBox(height: 4),
+                _line('Name on ID', idName),
+                if (idName != null)
+                  _line(
+                    'Account name',
+                    _nameMatches(idName)
+                        ? '${widget.ownerName} (matches)'
+                        : '${widget.ownerName} (different, check)',
+                    color: _nameMatches(idName)
+                        ? AppColors.matchHigh
+                        : AppColors.matchMedium,
+                  ),
+                _line('Birthdate', d.dateOfBirth),
+                _line('ID type', d.documentType),
+                _line('ID number', d.documentNumber),
+                _line('Expires', d.expirationDate),
+                if (score != null)
+                  _line(
+                    'Face match',
+                    '${score.toStringAsFixed(0)}%',
+                    color: score >= 80
+                        ? AppColors.matchHigh
+                        : AppColors.matchMedium,
+                  ),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _DocumentsSection extends StatelessWidget {
   const _DocumentsSection({
     required this.documents,
@@ -405,6 +660,8 @@ class _DocumentsSection extends StatelessWidget {
         style: AppTextStyles.caption(context),
       );
     }
+    if (docs.idViaDidit) return _buildDiditLayout(context, docs);
+
     final count = docs.publicIds.length > docs.urls.length
         ? docs.publicIds.length
         : docs.urls.length;
@@ -445,6 +702,11 @@ class _DocumentsSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
+        if (docs.diditSessionId != null)
+          _DiditIdPanel(
+            sessionId: docs.diditSessionId!,
+            ownerName: ownerName,
+          ),
         if (hasBackId) ...[
           _DocumentRow(
             label: 'Government ID (Front)',
@@ -535,6 +797,95 @@ class _DocumentsSection extends StatelessWidget {
               onApprove: onApprove,
               onReject: onReject,
             ),
+      ],
+    );
+  }
+}
+
+extension on _DocumentsSection {
+  /// Didit submissions: the ID comes from Didit (no ID photos uploaded), so
+  /// the uploaded documents are [ownership, permit?].
+  Widget _buildDiditLayout(BuildContext context, VerificationDocuments docs) {
+    String? at(List<String> l, int i) => i < l.length ? l[i] : null;
+    final propertyUrl = at(docs.urls, 0);
+    final propertyPublicId = at(docs.publicIds, 0);
+    final permitUrl = at(docs.urls, 1);
+    final permitPublicId = at(docs.publicIds, 1);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'IDENTITY (DIDIT)',
+          style: TextStyle(
+            fontFamily: 'DM Sans',
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+            color: context.appColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 6),
+        if (docs.diditSessionId != null)
+          _DiditIdPanel(sessionId: docs.diditSessionId!, ownerName: ownerName)
+        else
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              'No Didit session on file.',
+              style: AppTextStyles.caption(context),
+            ),
+          ),
+        const SizedBox(height: 4),
+        Text(
+          'SUBMITTED DOCUMENTS',
+          style: TextStyle(
+            fontFamily: 'DM Sans',
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+            color: context.appColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 6),
+        if (propertyUrl != null || propertyPublicId != null)
+          _DocumentRow(
+            label: 'Property ownership document',
+            publicId: propertyPublicId,
+            url: propertyUrl,
+            ownerName: ownerName,
+            urlOpener: urlOpener,
+            onApprove: onApprove,
+            onReject: onReject,
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              'No property ownership document submitted.',
+              style: AppTextStyles.caption(context),
+            ),
+          ),
+        if (permitUrl != null || permitPublicId != null)
+          _DocumentRow(
+            label: 'Business permit',
+            publicId: permitPublicId,
+            url: permitUrl,
+            ownerName: ownerName,
+            urlOpener: urlOpener,
+            isPermit: true,
+            onApprove: onApprove,
+            onReject: onReject,
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              'No business permit submitted (optional).',
+              style: AppTextStyles.caption(context),
+            ),
+          ),
+        BusinessPermitCheckButton(ownerName: ownerName, urlOpener: urlOpener),
       ],
     );
   }
@@ -700,10 +1051,10 @@ class _DocumentViewerDialogState extends State<DocumentViewerDialog> {
                             const SizedBox(height: AppSpacing.sm),
                             SelectableText(
                               currentReference,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
-                                color: AppColors.hint,
+                                color: context.appColors.hint,
                               ),
                             ),
                             TextButton.icon(
@@ -932,17 +1283,17 @@ class _DocumentRow extends StatelessWidget {
                               ),
                         errorBuilder: (_, _, _) => Container(
                           color: context.appColors.surface,
-                          child: const Icon(
+                          child: Icon(
                             Icons.broken_image_rounded,
-                            color: AppColors.hint,
+                            color: context.appColors.hint,
                           ),
                         ),
                       )
                     : Container(
                         color: context.appColors.surface,
-                        child: const Icon(
+                        child: Icon(
                           Icons.description_rounded,
-                          color: AppColors.hint,
+                          color: context.appColors.hint,
                         ),
                       ),
               ),
@@ -1036,10 +1387,10 @@ class BusinessPermitCheckButton extends StatelessWidget {
           Text(
             'Owner: $ownerName',
             style: onDark
-                ? const TextStyle(
+                ? TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12,
-                    color: AppColors.hint,
+                    color: context.appColors.hint,
                   )
                 : AppTextStyles.caption(context),
           ),

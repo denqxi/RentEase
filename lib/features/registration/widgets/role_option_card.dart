@@ -132,7 +132,7 @@ class _RoleOptionCardState extends State<RoleOptionCard>
           final glowBlur = 8.0 + (glowProgress * 12.0);
 
           final currentBorderColor = Color.lerp(
-            AppColors.fieldBorder.withValues(alpha: 0.35),
+            context.appColors.fieldBorder.withValues(alpha: 0.35),
             selectedBorder,
             progress,
           )!;
@@ -178,7 +178,7 @@ class _RoleOptionCardState extends State<RoleOptionCard>
                 painter: _EpicenterSpreadPainter(
                   progress: progress,
                   epicenter: _tapEpicenter,
-                  baseColor: AppColors.surface,
+                  baseColor: context.appColors.surface,
                   spreadColor: selectedBg,
                 ),
                 child: child,
@@ -187,7 +187,7 @@ class _RoleOptionCardState extends State<RoleOptionCard>
           );
         },
         child: Material(
-          color: AppColors.surface.withValues(alpha: 0),
+          color: context.appColors.surface.withValues(alpha: 0),
           child: InkWell(
             borderRadius: BorderRadius.circular(AppRadii.card),
             splashColor: selectedBg.withValues(alpha: 0.4),
@@ -326,7 +326,7 @@ class _RadioDot extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: selected ? activeColor : AppColors.fieldBorder,
+          color: selected ? activeColor : context.appColors.fieldBorder,
           width: 2,
         ),
       ),

@@ -145,7 +145,7 @@ class AppButton extends StatelessWidget {
                   ? context.appColors.ink
                   : context.appColors.indicatorInactive,
               foregroundColor: onPressed != null
-                  ? AppColors.onInk
+                  ? context.appColors.surface
                   : context.appColors.textSecondary,
               elevation: 0,
               minimumSize: Size(0, height),
@@ -161,7 +161,7 @@ class AppButton extends StatelessWidget {
               style: AppTextStyles.buttonLabel.copyWith(
                 fontSize: isSmall ? 13 : 15,
                 color: onPressed != null
-                    ? AppColors.onInk
+                    ? context.appColors.surface
                     : context.appColors.textSecondary,
               ),
             ),
@@ -281,7 +281,7 @@ class AppPrimaryButton extends StatelessWidget {
             if (states.contains(WidgetState.disabled)) {
               return context.appColors.textSecondary;
             }
-            return AppColors.onInk;
+            return color == null ? context.appColors.surface : AppColors.onInk;
           }),
           elevation: WidgetStateProperty.resolveWith<double>((states) {
             if (states.contains(WidgetState.hovered)) return 2.0;
@@ -298,7 +298,12 @@ class AppPrimaryButton extends StatelessWidget {
             ),
           ),
         ),
-        child: Text(label, style: AppTextStyles.buttonLabel),
+        child: Text(
+          label,
+          style: AppTextStyles.buttonLabel.copyWith(
+            color: color == null ? context.appColors.surface : AppColors.onInk,
+          ),
+        ),
       ),
     );
   }

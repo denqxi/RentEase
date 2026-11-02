@@ -69,7 +69,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     final displayedItems = _filterUnreadOnly ? state.unreadItems : allItems;
 
     return Scaffold(
-      backgroundColor: AppColors.fieldFill,
+      backgroundColor: context.appColors.fieldFill,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -77,7 +77,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
             // ── 1. Top Header Bar ──
             Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              color: AppColors.surface,
+              color: context.appColors.surface,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -91,29 +91,29 @@ class _ActivityScreenState extends State<ActivityScreen> {
                             height: 38,
                             margin: const EdgeInsets.only(right: 12),
                             decoration: BoxDecoration(
-                              color: AppColors.fieldFill,
+                              color: context.appColors.fieldFill,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: AppColors.fieldBorder,
+                                color: context.appColors.fieldBorder,
                                 width: 0.8,
                               ),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.arrow_back_rounded,
                               size: 19,
-                              color: AppColors.textPrimary,
+                              color: context.appColors.textPrimary,
                             ),
                           ),
                         ),
                       ],
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Notifications',
                           style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
+                            color: context.appColors.textPrimary,
                             letterSpacing: -0.4,
                           ),
                         ),
@@ -129,7 +129,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                           decoration: BoxDecoration(
                             color: unreadCount > 0
                                 ? AppColors.accentSoft
-                                : AppColors.fieldFill,
+                                : context.appColors.fieldFill,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -140,7 +140,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                               fontWeight: FontWeight.w700,
                               color: unreadCount > 0
                                   ? AppColors.primary
-                                  : AppColors.hint,
+                                  : context.appColors.hint,
                             ),
                           ),
                         ),
@@ -169,7 +169,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 ],
               ),
             ),
-            const Divider(height: 1, color: AppColors.fieldBorder),
+            Divider(height: 1, color: context.appColors.fieldBorder),
 
             // ── 3. Notification List or Empty State ──
             Expanded(
@@ -259,11 +259,11 @@ class _ActivityScreenState extends State<ActivityScreen> {
                               'New Version Available: v${info.latestVersion}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
+                                color: context.appColors.textPrimary,
                                 height: 1.3,
                               ),
                             ),
@@ -290,11 +290,11 @@ class _ActivityScreenState extends State<ActivityScreen> {
                                 : 'A new update is available. Tap here to view details.'),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12.5,
                           fontWeight: FontWeight.w400,
-                          color: AppColors.textSecondary,
+                          color: context.appColors.textSecondary,
                           height: 1.35,
                         ),
                       ),
@@ -352,7 +352,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.textPrimary : AppColors.fieldFill,
+          color: isSelected ? context.appColors.textPrimary : context.appColors.fieldFill,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -375,7 +375,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 fontFamily: 'DM Sans',
                 fontSize: 12.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: isSelected ? AppColors.surface : AppColors.textSecondary,
+                color: isSelected ? context.appColors.surface : context.appColors.textSecondary,
               ),
             ),
           ],
@@ -394,24 +394,24 @@ class _ActivityScreenState extends State<ActivityScreen> {
             Container(
               width: 68,
               height: 68,
-              decoration: const BoxDecoration(
-                color: AppColors.fieldFill,
+              decoration: BoxDecoration(
+                color: context.appColors.fieldFill,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.notifications_none_rounded,
                 size: 32,
-                color: AppColors.hint,
+                color: context.appColors.hint,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               filterUnread ? 'No unread notifications' : 'No notifications yet',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: context.appColors.textPrimary,
               ),
             ),
             const SizedBox(height: 6),
@@ -420,10 +420,10 @@ class _ActivityScreenState extends State<ActivityScreen> {
                   ? "You're all caught up! Switch to 'All' to review previous updates."
                   : 'Activity regarding your inquiries, messages, and reviews will appear here.',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
-                color: AppColors.textSecondary,
+                color: context.appColors.textSecondary,
                 height: 1.4,
               ),
             ),

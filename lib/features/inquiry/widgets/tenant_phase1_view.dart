@@ -78,7 +78,7 @@ class TenantPhase1View extends StatelessWidget {
 
         // ── Locked Input Bar (Messaging unavailable) ────────────────────
         if (isCounterpartDeleted)
-          const SafeArea(
+          SafeArea(
             top: false,
             child: Padding(
               padding: EdgeInsets.fromLTRB(16, 12, 16, 20),
@@ -89,7 +89,7 @@ class TenantPhase1View extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
-                    color: AppColors.slate500,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ),
@@ -104,7 +104,7 @@ class TenantPhase1View extends StatelessWidget {
                 height: 48,
                 padding: const EdgeInsets.fromLTRB(6, 4, 14, 4),
                 decoration: BoxDecoration(
-                  color: AppColors.fieldFill,
+                  color: context.appColors.fieldFill,
                   borderRadius: BorderRadius.circular(26),
                 ),
                 child: Row(
@@ -112,33 +112,33 @@ class TenantPhase1View extends StatelessWidget {
                     Container(
                       width: 36,
                       height: 36,
-                      decoration: const BoxDecoration(
-                        color: AppColors.surface,
+                      decoration: BoxDecoration(
+                        color: context.appColors.surface,
                         shape: BoxShape.circle,
                       ),
                       child: Transform.rotate(
                         angle: 0.5,
-                        child: const Icon(
+                        child: Icon(
                           Icons.attach_file_rounded,
                           size: 18,
-                          color: AppColors.hint,
+                          color: context.appColors.hint,
                         ),
                       ),
                     ),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Messaging unavailable',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 13,
-                          color: AppColors.hint,
+                          color: context.appColors.hint,
                         ),
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.send_rounded,
-                      color: AppColors.indicatorInactive,
+                      color: context.appColors.indicatorInactive,
                       size: 20,
                     ),
                   ],
@@ -294,23 +294,23 @@ class _PropertyInformationCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               if (p == null)
-                const Text(
+                Text(
                   'This listing is no longer available.',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,
-                    color: AppColors.textSecondary,
+                    color: context.appColors.textSecondary,
                   ),
                 )
               else ...[
-                _row(
+                _row(context,
                   'Gender policy:',
                   p.allowedGender.isNotEmpty ? p.allowedGender : 'Mixed / Any',
                 ),
-                _row('Curfew:', formatCurfew(p.curfewHours)),
-                _row('Deposit:', '₱${p.depositAmount}'),
-                _row('Advance:', advanceText),
-                _row('Monthly rent:', '₱${p.monthlyRent}', isLast: true),
+                _row(context, 'Curfew:', formatCurfew(p.curfewHours)),
+                _row(context, 'Deposit:', '₱${p.depositAmount}'),
+                _row(context, 'Advance:', advanceText),
+                _row(context, 'Monthly rent:', '₱${p.monthlyRent}', isLast: true),
               ],
             ],
           ),
@@ -319,7 +319,7 @@ class _PropertyInformationCard extends StatelessWidget {
     );
   }
 
-  Widget _row(String label, String value, {bool isLast = false}) {
+  Widget _row(BuildContext context, String label, String value, {bool isLast = false}) {
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 6),
       child: Row(
@@ -329,21 +329,21 @@ class _PropertyInformationCard extends StatelessWidget {
             width: 105,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
-                color: AppColors.textSecondary,
+                color: context.appColors.textSecondary,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
+                color: context.appColors.textPrimary,
               ),
             ),
           ),
@@ -386,20 +386,20 @@ class _InvitationNotificationCard extends StatelessWidget {
               children: [
                 Text(
                   'The owner of $propertyTitle has notified you that their property is available and matches your preferences.',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,
                     height: 1.4,
-                    color: AppColors.textPrimary,
+                    color: context.appColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Interested? Send an inquiry to connect with the owner.',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12.5,
-                    color: AppColors.textSecondary,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ],
@@ -430,14 +430,14 @@ class _PhonePrivacyNotice extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        const Expanded(
+        Expanded(
           child: Text(
             'Your phone number will be shared with the owner once your inquiry is accepted.',
             style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 12,
               height: 1.35,
-              color: AppColors.textSecondary,
+              color: context.appColors.textSecondary,
             ),
           ),
         ),
@@ -473,7 +473,7 @@ class _ActionButtons extends StatelessWidget {
               height: 48,
               alignment: Alignment.center,
               child: isBusy
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
@@ -481,7 +481,7 @@ class _ActionButtons extends StatelessWidget {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text(
+                  : Text(
                       'Send inquiry',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
@@ -495,7 +495,7 @@ class _ActionButtons extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Material(
-          color: AppColors.surface,
+          color: context.appColors.surface,
           borderRadius: BorderRadius.circular(14),
           child: InkWell(
             onTap: isBusy ? null : onDecline,
@@ -549,9 +549,9 @@ class _StatusNoticeCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.fieldFill,
+        color: context.appColors.fieldFill,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.fieldBorder),
+        border: Border.all(color: context.appColors.fieldBorder),
       ),
       child: Column(
         children: [
@@ -569,11 +569,11 @@ class _StatusNoticeCard extends StatelessWidget {
                         ? 'You declined this property notification'
                         : 'The owner declined this inquiry')
                     : 'Waiting for owner response...',
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: context.appColors.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
@@ -587,10 +587,10 @@ class _StatusNoticeCard extends StatelessWidget {
                             ? 'Reason: $declineReason'
                             : 'You can keep browsing your other matches.'
                         : 'Chat unlocks after the owner accepts your inquiry.',
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 12,
-              color: AppColors.textSecondary,
+              color: context.appColors.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),

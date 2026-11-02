@@ -495,6 +495,7 @@ class _SearchViewState extends State<_SearchView> {
       body: Stack(
         children: <Widget>[
           // Subtle top-left gradient
+          if (Theme.of(context).brightness == Brightness.light)
           Positioned(
             top: 0,
             left: 0,
@@ -602,10 +603,10 @@ class _SearchViewState extends State<_SearchView> {
                     child: Container(
                       height: 42,
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: context.appColors.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.slate200,
+                          color: context.appColors.fieldBorder,
                           width: 0.8,
                         ),
                         boxShadow: [
@@ -663,12 +664,12 @@ class _SearchViewState extends State<_SearchView> {
                     decoration: BoxDecoration(
                       color: hasActiveSession
                           ? AppColors.warningFill
-                          : AppColors.surface,
+                          : context.appColors.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: hasActiveSession
                             ? AppColors.matchMedium
-                            : AppColors.slate200,
+                            : context.appColors.fieldBorder,
                         width: hasActiveSession ? 1.2 : 0.8,
                       ),
                       boxShadow: [
@@ -725,10 +726,10 @@ class _SearchViewState extends State<_SearchView> {
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: context.appColors.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.slate200,
+                          color: context.appColors.fieldBorder,
                           width: 0.8,
                         ),
                         boxShadow: [
@@ -994,25 +995,25 @@ class _TabPill extends StatelessWidget {
         countBg = AppColors.amberBorder200;
         countText = AppColors.amber900;
       } else {
-        bgColor = AppColors.slate900;
-        borderColor = AppColors.slate900;
-        textColor = AppColors.surface;
-        countBg = AppColors.surface.withValues(alpha: 0.2);
-        countText = AppColors.surface;
+        bgColor = context.appColors.textPrimary;
+        borderColor = context.appColors.textPrimary;
+        textColor = context.appColors.surface;
+        countBg = context.appColors.surface.withValues(alpha: 0.2);
+        countText = context.appColors.surface;
       }
     } else {
       if (isAmber) {
-        bgColor = AppColors.surface;
+        bgColor = context.appColors.surface;
         borderColor = AppColors.amberBorder200;
         textColor = AppColors.amber700;
         countBg = AppColors.warningFill;
         countText = AppColors.amber800;
       } else {
-        bgColor = AppColors.surface;
-        borderColor = AppColors.slate200;
-        textColor = AppColors.slate500;
-        countBg = AppColors.fieldFill;
-        countText = AppColors.slate600;
+        bgColor = context.appColors.surface;
+        borderColor = context.appColors.fieldBorder;
+        textColor = context.appColors.textSecondary;
+        countBg = context.appColors.fieldFill;
+        countText = context.appColors.textSecondary;
       }
     }
 
@@ -1168,10 +1169,10 @@ class _PropertyCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: AppColors.slate200,
+          color: context.appColors.fieldBorder,
           width: 0.8,
         ),
         boxShadow: [
@@ -1220,7 +1221,7 @@ class _PropertyCard extends StatelessWidget {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: AppColors.slate200.withValues(alpha: 0.7),
+                                color: context.appColors.fieldBorder.withValues(alpha: 0.7),
                                 width: 0.8,
                               ),
                             ),
@@ -1238,7 +1239,7 @@ class _PropertyCard extends StatelessWidget {
                             vertical: 4.5,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: context.appColors.surface,
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
@@ -1258,13 +1259,13 @@ class _PropertyCard extends StatelessWidget {
                                   color: AppColors.amberPrimary,
                                 ),
                                 const SizedBox(width: 4),
-                                const Text(
+                                Text(
                                   "Doesn't match",
                                   style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.slate900,
+                                    color: context.appColors.textPrimary,
                                     letterSpacing: -0.1,
                                   ),
                                 ),
@@ -1275,13 +1276,13 @@ class _PropertyCard extends StatelessWidget {
                                   color: AppColors.amberPrimary,
                                 ),
                                 const SizedBox(width: 4),
-                                const Text(
+                                Text(
                                   'Filter Match',
                                   style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.slate900,
+                                    color: context.appColors.textPrimary,
                                     letterSpacing: -0.1,
                                   ),
                                 ),
@@ -1295,10 +1296,10 @@ class _PropertyCard extends StatelessWidget {
                                     color: AppColors.rankGold,
                                   )
                                 else if (rank == 2)
-                                  const Icon(
+                                  Icon(
                                     Icons.workspace_premium_rounded,
                                     size: 15,
-                                    color: AppColors.slate400,
+                                    color: context.appColors.hint,
                                   )
                                 else
                                   const Icon(
@@ -1309,11 +1310,11 @@ class _PropertyCard extends StatelessWidget {
                                 const SizedBox(width: 5),
                                 Text(
                                   '#$rank Top Match',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w800,
-                                    color: AppColors.slate900,
+                                    color: context.appColors.textPrimary,
                                     letterSpacing: -0.2,
                                   ),
                                 ),
@@ -1321,17 +1322,17 @@ class _PropertyCard extends StatelessWidget {
                                 Container(
                                   width: 1,
                                   height: 11,
-                                  color: AppColors.slate300,
+                                  color: context.appColors.hint,
                                 ),
                                 const SizedBox(width: 6),
                                 if (!isGuest && matchPercent > 0)
                                   Text(
                                     '$matchPercent% Match',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w700,
-                                      color: AppColors.slate900,
+                                      color: context.appColors.textPrimary,
                                       letterSpacing: -0.1,
                                     ),
                                   ),
@@ -1344,28 +1345,28 @@ class _PropertyCard extends StatelessWidget {
                                 const SizedBox(width: 4),
                                 Text(
                                   '$matchPercent% Match',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.slate900,
+                                    color: context.appColors.textPrimary,
                                     letterSpacing: -0.1,
                                   ),
                                 ),
                               ] else ...[
-                                const Icon(
+                                Icon(
                                   Icons.lock_outline,
                                   size: 11.5,
-                                  color: AppColors.slate500,
+                                  color: context.appColors.textSecondary,
                                 ),
                                 const SizedBox(width: 4),
-                                const Text(
+                                Text(
                                   'Match',
                                   style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.slate900,
+                                    color: context.appColors.textPrimary,
                                     letterSpacing: -0.1,
                                   ),
                                 ),
@@ -1389,7 +1390,7 @@ class _PropertyCard extends StatelessWidget {
                               height: 34,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: AppColors.surface,
+                                color: context.appColors.surface,
                                 boxShadow: [
                                   BoxShadow(
                                     color: AppColors.slate900.withValues(alpha: 0.12),
@@ -1406,7 +1407,7 @@ class _PropertyCard extends StatelessWidget {
                                   size: 17,
                                   color: isSaved
                                       ? AppColors.destructive
-                                      : AppColors.slate600,
+                                      : context.appColors.textSecondary,
                                 ),
                               ),
                             ),
@@ -1425,7 +1426,7 @@ class _PropertyCard extends StatelessWidget {
                               vertical: 3.5,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: context.appColors.surface,
                               borderRadius: BorderRadius.circular(10),
                               boxShadow: [
                                 BoxShadow(
@@ -1438,19 +1439,19 @@ class _PropertyCard extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.photo_outlined,
                                   size: 12,
-                                  color: AppColors.slate600,
+                                  color: context.appColors.textSecondary,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '$photoCount',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.slate900,
+                                    color: context.appColors.textPrimary,
                                     letterSpacing: -0.1,
                                   ),
                                 ),
@@ -1474,11 +1475,11 @@ class _PropertyCard extends StatelessWidget {
                         propName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.slate700,
+                          color: context.appColors.textPrimary,
                           letterSpacing: -0.1,
                           height: 1.15,
                         ),
@@ -1495,11 +1496,11 @@ class _PropertyCard extends StatelessWidget {
                             roomOrTitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 18.0,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.slate900,
+                              color: context.appColors.textPrimary,
                               letterSpacing: -0.3,
                               height: 1.15,
                             ),
@@ -1518,22 +1519,22 @@ class _PropertyCard extends StatelessWidget {
                             const SizedBox(width: 3),
                             Text(
                               hasRating ? avgRating.toStringAsFixed(1) : '0',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.slate900,
+                                color: context.appColors.textPrimary,
                               ),
                             ),
                             if (hasRating && totalRatings > 0) ...[
                               const SizedBox(width: 2),
                               Text(
                                 '($totalRatings)',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.slate500,
+                                  color: context.appColors.textSecondary,
                                 ),
                               ),
                             ],
@@ -1549,10 +1550,10 @@ class _PropertyCard extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.location_on_outlined,
                             size: 13,
-                            color: AppColors.slate500,
+                            color: context.appColors.textSecondary,
                           ),
                           const SizedBox(width: 3),
                           Expanded(
@@ -1563,11 +1564,11 @@ class _PropertyCard extends StatelessWidget {
                               ].join(' · '),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.slate500,
+                                color: context.appColors.textSecondary,
                               ),
                             ),
                           ),
@@ -1646,10 +1647,10 @@ class _PropertyCard extends StatelessWidget {
                     if (propName == null && (!isNonMatch || reasons.isEmpty))
                       const SizedBox(height: 16.5),
                     const SizedBox(height: 8),
-                    const Divider(
+                    Divider(
                       height: 1,
                       thickness: 0.8,
-                      color: AppColors.fieldFill,
+                      color: context.appColors.fieldFill,
                     ),
                     const SizedBox(height: 8),
 
@@ -1662,19 +1663,19 @@ class _PropertyCard extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            const AppSvgIcon(
+                            AppSvgIcon(
                               svgString: AppSvgIcons.propertyType,
                               size: 15,
-                              color: AppColors.slate900,
+                              color: context.appColors.textPrimary,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               displayType,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.slate900,
+                                color: context.appColors.textPrimary,
                               ),
                             ),
                           ],
@@ -1693,13 +1694,13 @@ class _PropertyCard extends StatelessWidget {
                                   letterSpacing: -0.3,
                                 ),
                               ),
-                              const TextSpan(
+                              TextSpan(
                                 text: ' / month',
                                 style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w500,
-                                  color: AppColors.slate500,
+                                  color: context.appColors.textSecondary,
                                 ),
                               ),
                             ],

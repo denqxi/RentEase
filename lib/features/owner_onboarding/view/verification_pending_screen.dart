@@ -431,8 +431,8 @@ class _TimelineStatusCard extends StatelessWidget {
                   )
                 : CustomPaint(
                     size: const Size(2, 30),
-                    painter: const _DashedLinePainter(
-                      color: AppColors.slate300,
+                    painter: _DashedLinePainter(
+                      color: context.appColors.hint,
                     ),
                   ),
           ),
@@ -461,7 +461,7 @@ class _TimelineStatusCard extends StatelessWidget {
                       color: AppColors.transparent,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.slate300,
+                        color: context.appColors.hint,
                         width: 2.5,
                       ),
                     ),

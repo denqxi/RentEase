@@ -520,14 +520,16 @@ class _BottomBar extends StatelessWidget {
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.appColors.ink,
-                  foregroundColor: AppColors.onInk,
+                  foregroundColor: context.appColors.surface,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadii.button),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Contact landlord',
-                  style: AppTextStyles.buttonLabel,
+                  style: AppTextStyles.buttonLabel.copyWith(
+                    color: context.appColors.surface,
+                  ),
                 ),
               ),
             ),

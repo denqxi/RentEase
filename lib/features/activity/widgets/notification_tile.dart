@@ -30,10 +30,10 @@ class NotificationTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: isUnread ? AppColors.accentSoft : AppColors.surface,
+        color: isUnread ? context.appColors.accentSoft : context.appColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isUnread ? AppColors.accentSoft : AppColors.fieldBorder,
+          color: isUnread ? context.appColors.accentSoft : context.appColors.fieldBorder,
           width: isUnread ? 1.0 : 0.8,
         ),
       ),
@@ -89,7 +89,7 @@ class NotificationTile extends StatelessWidget {
                           fontFamily: 'DM Sans',
                           fontSize: 13.5,
                           fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
-                          color: AppColors.textPrimary,
+                          color: context.appColors.textPrimary,
                           height: 1.3,
                         ),
                       ),
@@ -101,10 +101,10 @@ class NotificationTile extends StatelessWidget {
                           item.body!,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 12,
-                            color: AppColors.textSecondary,
+                            color: context.appColors.textSecondary,
                             height: 1.3,
                           ),
                         ),
@@ -118,7 +118,7 @@ class NotificationTile extends StatelessWidget {
                           fontWeight: isUnread ? FontWeight.w600 : FontWeight.w400,
                           color: isUnread
                               ? AppColors.primary
-                              : AppColors.hint,
+                              : context.appColors.hint,
                         ),
                       ),
                     ],

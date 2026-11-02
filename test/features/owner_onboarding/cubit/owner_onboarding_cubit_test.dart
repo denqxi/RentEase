@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart' show GeoPoint;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rentease/core/firestore/models/models.dart';
 import 'package:rentease/features/owner_onboarding/cubit/owner_onboarding_cubit.dart';
+import 'package:rentease/features/owner_onboarding/domain/entities/owner_credentials.dart';
 import 'package:rentease/features/owner_onboarding/domain/repositories/owner_onboarding_repository.dart';
 import 'package:rentease/features/uploads/domain/entities/uploaded_image.dart';
 
@@ -12,10 +13,27 @@ class _FakeRepo implements OwnerOnboardingRepository {
   Future<String> submitForVerification(
     String uid, {
     List<UploadedImage> documents = const [],
+    UploadedImage? businessPermit,
+    UploadedImage? ownershipDocument,
+    String? diditSessionId,
+    String idSource = 'upload',
   }) async {
     submitted = documents;
+    submittedIdSource = idSource;
     return 'pending';
   }
+
+  String? submittedIdSource;
+
+  @override
+  Future<OwnerCredentials> fetchCredentials(String ownerId) async =>
+      const OwnerCredentials();
+
+  @override
+  Future<void> setShowCredentials(String uid, bool value) async {}
+
+  @override
+  Future<void> syncSharedCredentials(String uid) async {}
 
   @override
   Stream<String> watchVerificationStatus(String uid) => const Stream.empty();
@@ -125,6 +143,56 @@ void main() {
       final repo = _FakeRepo();
       final cubit = OwnerOnboardingCubit(repository: repo);
       await cubit.submitForVerification('u1', documents: _docs(2));
+      expect(cubit.state.status, OwnerOnboardingStatus.failure);
+      expect(repo.submitted, isNull);
+    });
+
+    test('Didit: accepts the ownership document alone', () async {
+      final repo = _FakeRepo();
+      final cubit = OwnerOnboardingCubit(repository: repo);
+      await cubit.submitForVerification(
+        'u1',
+        documents: _docs(1),
+        diditSessionId: 's1',
+        idSource: 'didit',
+      );
+      expect(cubit.state.status, OwnerOnboardingStatus.saved);
+      expect(repo.submitted, hasLength(1));
+      expect(repo.submittedIdSource, 'didit');
+    });
+
+    test('Didit: accepts ownership and business permit', () async {
+      final repo = _FakeRepo();
+      final cubit = OwnerOnboardingCubit(repository: repo);
+      await cubit.submitForVerification(
+        'u1',
+        documents: _docs(2),
+        diditSessionId: 's1',
+        idSource: 'didit',
+      );
+      expect(cubit.state.status, OwnerOnboardingStatus.saved);
+    });
+
+    test('Didit: rejects a submission without a Didit session', () async {
+      final repo = _FakeRepo();
+      final cubit = OwnerOnboardingCubit(repository: repo);
+      await cubit.submitForVerification(
+        'u1',
+        documents: _docs(1),
+        idSource: 'didit',
+      );
+      expect(cubit.state.status, OwnerOnboardingStatus.failure);
+      expect(repo.submitted, isNull);
+    });
+
+    test('Didit: rejects a submission with no documents', () async {
+      final repo = _FakeRepo();
+      final cubit = OwnerOnboardingCubit(repository: repo);
+      await cubit.submitForVerification(
+        'u1',
+        diditSessionId: 's1',
+        idSource: 'didit',
+      );
       expect(cubit.state.status, OwnerOnboardingStatus.failure);
       expect(repo.submitted, isNull);
     });

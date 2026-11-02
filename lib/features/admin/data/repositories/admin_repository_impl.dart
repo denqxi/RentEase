@@ -208,6 +208,8 @@ class AdminRepositoryImpl implements AdminRepository {
           urls: parseStringList(data['documentUrls']),
           publicIds:
               parseStringList(data['documentPublicIds']),
+          diditSessionId: data['diditSessionId'] as String?,
+          idSource: data['idSource'] as String? ?? 'upload',
         );
       });
 

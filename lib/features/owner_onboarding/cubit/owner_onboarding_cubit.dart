@@ -26,15 +26,28 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
   Future<void> submitForVerification(
     String uid, {
     List<UploadedImage> documents = const [],
+    UploadedImage? businessPermit,
+    UploadedImage? ownershipDocument,
+    String? diditSessionId,
+    String idSource = 'upload',
   }) async {
-    // Three required documents (Front ID, Back ID, ownership); the business permit is optional.
-    if (documents.length < CloudinaryConfig.requiredDocumentCount ||
-        documents.length > CloudinaryConfig.documentCount) {
+    final viaDidit = idSource == 'didit';
+    // Didit: the ID is checked by Didit, so only the ownership document is
+    // required (business permit optional). Upload: ID front, ID back and
+    // ownership are required (business permit optional).
+    final valid = viaDidit
+        ? diditSessionId != null &&
+              documents.isNotEmpty &&
+              documents.length <= CloudinaryConfig.documentCount - 2
+        : documents.length >= CloudinaryConfig.requiredDocumentCount &&
+              documents.length <= CloudinaryConfig.documentCount;
+    if (!valid) {
       emit(
         state.copyWith(
           status: OwnerOnboardingStatus.failure,
-          errorMessage:
-              'Please upload your government ID (front and back) and property ownership document.',
+          errorMessage: viaDidit
+              ? 'Please finish the ID check and upload your property ownership document.'
+              : 'Please upload your government ID (front and back) and property ownership document.',
         ),
       );
       return;
@@ -44,6 +57,10 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
       final status = await _repository.submitForVerification(
         uid,
         documents: documents,
+        businessPermit: businessPermit,
+        ownershipDocument: ownershipDocument,
+        diditSessionId: diditSessionId,
+        idSource: idSource,
       );
       emit(
         state.copyWith(

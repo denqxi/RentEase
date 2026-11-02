@@ -320,10 +320,11 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
         : 'Not required';
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.appColors.surface,
       body: Stack(
         children: [
           // ── Top Decorative Sky-Blue Gradient Backdrop ────────────────────
+          if (Theme.of(context).brightness == Brightness.light)
           Positioned(
             top: 0,
             left: 0,
@@ -338,7 +339,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                     colors: [
                       AppColors.sky200.withValues(alpha: 0.70),
                       AppColors.skyFill.withValues(alpha: 0.35),
-                      AppColors.surface.withValues(alpha: 0.0),
+                      context.appColors.surface.withValues(alpha: 0.0),
                     ],
                     stops: const [0.0, 0.45, 0.88],
                   ),
@@ -361,7 +362,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: context.appColors.surface,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -371,21 +372,21 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.arrow_back_rounded,
                             size: 20,
-                            color: AppColors.slate900,
+                            color: context.appColors.textPrimary,
                           ),
                         ),
                       ),
                       const SizedBox(width: 14),
-                      const Text(
+                      Text(
                         'Tenant Profile',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.slate900,
+                          color: context.appColors.textPrimary,
                           letterSpacing: -0.3,
                         ),
                       ),
@@ -407,9 +408,9 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                         Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: context.appColors.surface,
                             borderRadius: BorderRadius.circular(22),
-                            border: Border.all(color: AppColors.surface, width: 2),
+                            border: Border.all(color: context.appColors.surface, width: 2),
                             boxShadow: [
                               BoxShadow(
                                 color: AppColors.slate900.withValues(alpha: 0.04),
@@ -439,9 +440,9 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                   ),
                                   child: Container(
                                     padding: const EdgeInsets.all(2),
-                                    decoration: const BoxDecoration(
+                                    decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: AppColors.surface,
+                                      color: context.appColors.surface,
                                     ),
                                     child: CircleAvatar(
                                       radius: 32,
@@ -470,11 +471,11 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                     children: [
                                       Text(
                                         tenant.name,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontFamily: 'DM Sans',
                                           fontSize: 18,
                                           fontWeight: FontWeight.w800,
-                                          color: AppColors.slate900,
+                                          color: context.appColors.textPrimary,
                                         ),
                                       ),
                                       const SizedBox(height: 5),
@@ -589,12 +590,12 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                         ],
                                       ),
                                       const SizedBox(height: 4),
-                                      const Text(
+                                      Text(
                                         'Passes property rules and requirements',
                                         style: TextStyle(
                                           fontFamily: 'DM Sans',
                                           fontSize: 11.5,
-                                          color: AppColors.slate500,
+                                          color: context.appColors.textSecondary,
                                         ),
                                       ),
                                     ],
@@ -718,17 +719,17 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 16, color: AppColors.slate500),
+            Icon(icon, size: 16, color: context.appColors.textSecondary),
             const SizedBox(width: 8),
           ],
           SizedBox(
             width: 120,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
-                color: AppColors.slate500,
+                color: context.appColors.textSecondary,
               ),
             ),
           ),
@@ -736,11 +737,11 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppColors.slate900,
+                color: context.appColors.textPrimary,
               ),
             ),
           ),
@@ -760,10 +761,10 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 13,
-              color: AppColors.slate500,
+              color: context.appColors.textSecondary,
             ),
           ),
           const SizedBox(height: 10),
@@ -871,23 +872,23 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      const Text(
+                      Text(
                         'No landlord reviews yet',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.slate900,
+                          color: context.appColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'This tenant has not received ratings or feedback from previous landlords yet. Once a stay is completed, feedback will appear here.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12,
-                          color: AppColors.slate500,
+                          color: context.appColors.textSecondary,
                           height: 1.35,
                         ),
                       ),
@@ -950,7 +951,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                         size: 16,
                                         color: isFilled
                                             ? AppColors.matchMedium
-                                            : AppColors.slate300,
+                                            : context.appColors.hint,
                                       ),
                                     );
                                   }),
@@ -958,11 +959,11 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                 const SizedBox(height: 3),
                                 Text(
                                   'Based on $_totalReviews landlord review${_totalReviews == 1 ? '' : 's'}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: AppColors.slate500,
+                                    color: context.appColors.textSecondary,
                                   ),
                                 ),
                               ],
@@ -972,14 +973,14 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                       ),
                     ),
                     if (_reviews.isNotEmpty) ...[
-                      const Divider(height: 1, color: AppColors.fieldFill),
+                      Divider(height: 1, color: context.appColors.fieldFill),
                       ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         padding: EdgeInsets.zero,
                         itemCount: _reviews.length,
                         separatorBuilder: (context, index) =>
-                            const Divider(height: 1, color: AppColors.fieldFill),
+                            Divider(height: 1, color: context.appColors.fieldFill),
                         itemBuilder: (ctx, i) {
                           final review = _reviews[i];
                           return Padding(
@@ -1011,22 +1012,22 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                         children: [
                                           Text(
                                             review.raterName,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontFamily: 'DM Sans',
                                               fontSize: 13.5,
                                               fontWeight: FontWeight.w700,
-                                              color: AppColors.slate900,
+                                              color: context.appColors.textPrimary,
                                             ),
                                           ),
                                           if (review.propertyTitle != null) ...[
                                             const SizedBox(height: 1),
                                             Text(
                                               'Stayed at ${review.propertyTitle!}',
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontFamily: 'DM Sans',
                                                 fontSize: 11.5,
                                                 fontWeight: FontWeight.w500,
-                                                color: AppColors.slate500,
+                                                color: context.appColors.textSecondary,
                                               ),
                                             ),
                                           ],
@@ -1035,10 +1036,10 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                     ),
                                     Text(
                                       review.date,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 11.5,
-                                        color: AppColors.slate400,
+                                        color: context.appColors.hint,
                                       ),
                                     ),
                                   ],
@@ -1056,7 +1057,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                         size: 15,
                                         color: isFilled
                                             ? AppColors.matchMedium
-                                            : AppColors.slate300,
+                                            : context.appColors.hint,
                                       ),
                                     );
                                   }),
@@ -1068,32 +1069,32 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: AppColors.slate50,
+                                      color: context.appColors.fieldFill,
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
-                                        color: AppColors.slate200,
+                                        color: context.appColors.fieldBorder,
                                         width: 0.6,
                                       ),
                                     ),
                                     child: Text(
                                       review.comment!,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 12.5,
                                         height: 1.4,
-                                        color: AppColors.slate700,
+                                        color: context.appColors.textPrimary,
                                       ),
                                     ),
                                   ),
                                 ] else ...[
                                   const SizedBox(height: 4),
-                                  const Text(
+                                  Text(
                                     'Rated without written comment',
                                     style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 11.5,
                                       fontStyle: FontStyle.italic,
-                                      color: AppColors.slate400,
+                                      color: context.appColors.hint,
                                     ),
                                   ),
                                 ],
@@ -1108,7 +1109,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
     );
   }
 
-  Widget _divider() => const Divider(height: 1, color: AppColors.fieldFill);
+  Widget _divider() => Divider(height: 1, color: context.appColors.fieldFill);
 }
 
 class _TenantAmenityChip extends StatelessWidget {
@@ -1123,7 +1124,7 @@ class _TenantAmenityChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(5, 5, 11, 5),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: AppColors.primary.withValues(alpha: 0.55),
@@ -1158,11 +1159,11 @@ class _TenantAmenityChip extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: AppColors.slate900,
+                color: context.appColors.textPrimary,
                 height: 1.1,
               ),
             ),

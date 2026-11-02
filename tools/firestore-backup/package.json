@@ -1,0 +1,13 @@
+{
+  "name": "rentease-firestore-backup",
+  "private": true,
+  "type": "commonjs",
+  "description": "Free (Spark-plan) full Firestore backup/restore via the Admin SDK",
+  "scripts": {
+    "backup": "node backup.js",
+    "restore": "node restore.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}

@@ -23,6 +23,7 @@ import '../../uploads/domain/repositories/image_upload_repository.dart';
 import '../../uploads/presentation/cubit/image_upload_cubit.dart';
 import '../../uploads/presentation/widgets/image_upload_slot.dart';
 import '../cubit/owner_onboarding_cubit.dart';
+import '../l10n/listing_strings.dart';
 import '../widgets/listing_form_widgets.dart';
 import '../widgets/listing_location_picker.dart';
 import '../widgets/new_property_sheet.dart';
@@ -103,9 +104,25 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
 
   bool get _isRoom => _rentalType == 'room';
 
+  /// English / Tagalog for this wizard only; remembered on the device.
+  bool _tagalog = false;
+  ListingStrings get _s => ListingStrings(_tagalog);
+
+  Future<void> _loadLanguage() async {
+    final tagalog = await ListingLanguageStore.isTagalog();
+    if (mounted && tagalog != _tagalog) setState(() => _tagalog = tagalog);
+  }
+
+  void _setLanguage(bool tagalog) {
+    if (tagalog == _tagalog) return;
+    setState(() => _tagalog = tagalog);
+    ListingLanguageStore.setTagalog(tagalog);
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadLanguage();
     final preset = widget.addRoomTo;
     if (preset != null) {
       _rentalType = 'room';
@@ -327,9 +344,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
     Navigator.of(
       context,
     ).pushNamedAndRemoveUntil(AppRouter.landlordHome, (_) => false);
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Your listing is now posted.')),
-    );
+    messenger.showSnackBar(SnackBar(content: Text(_s.posted)));
   }
 
   void _showError(String message) {
@@ -340,41 +355,60 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
 
   // ── Build ──────────────────────────────────────────────────────────────
 
-  (String, String) get _header {
-    switch (_step) {
-      case 0:
-        return (
-          'What are you renting out?',
-          'Choose what tenants can rent from you.',
-        );
-      case 1:
-        return _isRoom
-            ? (
-                'Tell us about your room',
-                'Choose the property where your room is located.',
-              )
-            : ('Tell us about your place', 'Add the details tenants will see.');
-      case 2:
-        return (
-          'Set your house rules',
-          'Let tenants know what is allowed.',
-        );
-      case 3:
-        return (
-          'Set the rent and capacity',
-          'How much is the rent, and how many people can stay?',
-        );
-      case 4:
-        return (
-          'What does your place have?',
-          'Select everything tenants can use.',
-        );
-      default:
-        return (
-          'Check your listing',
-          'Make sure everything is correct before posting.',
-        );
+  (String, String) get _header => switch (_step) {
+    0 => _s.headerRentalType,
+    1 => _isRoom ? _s.headerRoomDetails : _s.headerPlaceDetails,
+    2 => _s.headerHouseRules,
+    3 => _s.headerRent,
+    4 => _s.headerAmenities,
+    _ => _s.headerReview,
+  };
+
+  /// Compact English / Tagalog switch above the step header.
+  Widget _languageToggle() {
+    Widget option(String label, bool tagalog) {
+      final selected = _tagalog == tagalog;
+      return GestureDetector(
+        onTap: () => _setLanguage(tagalog),
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.accent : context.appColors.surface,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            label,
+            style: AppTextStyles.caption(context).copyWith(
+              fontWeight: FontWeight.w700,
+              color: selected
+                  ? AppColors.onInk
+                  : context.appColors.textSecondary,
+            ),
+          ),
+        ),
+      );
     }
+
+    return Semantics(
+      label: 'Language',
+      child: Container(
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: context.appColors.surface,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: context.appColors.fieldBorder),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            option(_s.languageEnglish, false),
+            option(_s.languageTagalog, true),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -412,6 +446,11 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: _languageToggle(),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
                       StepHeader(title: title, subtitle: subtitle),
                       const SizedBox(height: AppSpacing.lg),
                       Expanded(
@@ -432,8 +471,8 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
                         bloc: _uploads,
                         builder: (context, _) => AppPrimaryButton(
                           label: isLast
-                              ? (_posting ? 'Posting...' : 'Post Listing')
-                              : 'Continue',
+                              ? (_posting ? _s.posting : _s.postListing)
+                              : _s.continueLabel,
                           onPressed: isLast
                               ? (_posting ? null : _post)
                               : (_canContinue ? _next : null),
@@ -450,21 +489,41 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
     );
   }
 
+  /// Step hint shown above the fields: what to fill in and how it is used.
+  /// Step 0 has its own callout below the rental type cards.
+  (String, String, IconData)? get _hint => switch (_step) {
+    1 => (
+      _s.tipHowTo,
+      _isRoom ? _s.tipRoomBody : _s.tipPlaceBody,
+      Icons.info_outline_rounded,
+    ),
+    2 => (_s.tipRulesTitle, _s.tipRulesBody, Icons.rule_rounded),
+    3 => (_s.tipRentTitle, _s.tipRentBody, Icons.payments_outlined),
+    4 => (_s.tipAmenitiesTitle, _s.tipAmenitiesBody, Icons.checklist_rounded),
+    5 => (_s.tipReviewTitle, _s.tipReviewBody, Icons.task_alt_rounded),
+    _ => null,
+  };
+
   Widget _buildStep() {
-    switch (_step) {
-      case 0:
-        return _rentalTypeStep();
-      case 1:
-        return _isRoom ? _roomDetailsStep() : _placeDetailsStep();
-      case 2:
-        return _houseRulesStep();
-      case 3:
-        return _rentOccupantsStep();
-      case 4:
-        return _amenitiesStep();
-      default:
-        return _reviewStep();
-    }
+    final hint = _hint;
+    final step = switch (_step) {
+      0 => _rentalTypeStep(),
+      1 => _isRoom ? _roomDetailsStep() : _placeDetailsStep(),
+      2 => _houseRulesStep(),
+      3 => _rentOccupantsStep(),
+      4 => _amenitiesStep(),
+      _ => _reviewStep(),
+    };
+    if (hint == null) return step;
+    final (title, subtitle, icon) = hint;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListingCalloutBox(title: title, subtitle: subtitle, icon: icon),
+        const SizedBox(height: AppSpacing.lg),
+        step,
+      ],
+    );
   }
 
   static const String _entirePlaceSvg = '''
@@ -494,16 +553,16 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
       children: [
         RentalTypeCard(
           svgString: _entirePlaceSvg,
-          title: 'Entire Place',
-          description: 'A whole house, apartment, or condo.',
+          title: _s.entirePlace,
+          description: _s.entirePlaceDesc,
           selected: _rentalType == 'entire_place',
           onTap: () => setState(() => _rentalType = 'entire_place'),
         ),
         const SizedBox(height: AppSpacing.md),
         RentalTypeCard(
           icon: Icons.bed_outlined,
-          title: 'A Room',
-          description: 'A room in a boarding house, dorm, or shared home.',
+          title: _s.aRoom,
+          description: _s.aRoomDesc,
           selected: _rentalType == 'room',
           onTap: () => setState(() => _rentalType = 'room'),
         ),
@@ -531,10 +590,9 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
-        const ListingCalloutBox(
-          title: 'You can add more later',
-          subtitle:
-              'You can create another listing if you have more rooms or properties.',
+        ListingCalloutBox(
+          title: _s.addMoreLaterTitle,
+          subtitle: _s.addMoreLaterBody,
           icon: Icons.lightbulb_rounded,
         ),
       ],
@@ -576,7 +634,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Add 1 to ${CloudinaryConfig.maxPropertyPhotos} photos. The first is the cover.',
+          _s.photosCaption(CloudinaryConfig.maxPropertyPhotos),
           style: AppTextStyles.caption(context),
         ),
         const SizedBox(height: AppSpacing.lg),
@@ -589,10 +647,10 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         LabelledField(
-          label: 'Property name',
+          label: _s.propertyName,
           child: AppTextField(
             controller: _placeNameController,
-            hintText: 'e.g. Sunshine Apartment',
+            hintText: _s.propertyNameHint,
             // Matches the 120-char cap in firestore.rules.
             inputFormatters: [LengthLimitingTextInputFormatter(120)],
             onChanged: (_) => setState(() {}),
@@ -600,10 +658,10 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         ),
         const SizedBox(height: AppSpacing.md),
         LabelledField(
-          label: 'Property type',
+          label: _s.propertyType,
           child: PropertyTypeDropdown(
             value: _placeType,
-            hint: 'Select property type',
+            hint: _s.propertyTypeHint,
             options: kPropertyTypes,
             onChanged: (v) => setState(() => _placeType = v),
           ),
@@ -616,7 +674,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
           onChanged: (resolving) => setState(() => _resolvingAddress = resolving),
         ),
         const SizedBox(height: AppSpacing.md),
-        _photosSection(label: 'Add photos'),
+        _photosSection(label: _s.addPhotos),
       ],
     );
   }
@@ -630,16 +688,16 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         LabelledField(
-          label: 'Property name',
+          label: _s.propertyName,
           child: ListingDropdown<String>(
             value: building?.id,
-            hint: _loadingBuildings ? 'Loading your properties...' : 'Select a property',
+            hint: _loadingBuildings ? _s.loadingProperties : _s.selectProperty,
             items: [
               for (final b in buildings)
                 DropdownMenuItem(value: b.id, child: Text(b.name)),
-              const DropdownMenuItem(
+              DropdownMenuItem(
                 value: _addNewValue,
-                child: Text('+ Add New Property'),
+                child: Text(_s.addNewProperty),
               ),
             ],
             onChanged: (v) {
@@ -659,10 +717,10 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         ],
         const SizedBox(height: AppSpacing.md),
         LabelledField(
-          label: 'Room name or number',
+          label: _s.roomName,
           child: AppTextField(
             controller: _roomNameController,
-            hintText: 'e.g. Room 101',
+            hintText: _s.roomNameHint,
             inputFormatters: [LengthLimitingTextInputFormatter(60)],
             onChanged: (_) => setState(() {}),
           ),
@@ -670,7 +728,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         if (taken) ...[
           const SizedBox(height: 6),
           Text(
-            'This room name is already used in ${building!.name}.',
+            _s.roomNameTaken(building!.name),
             style: AppTextStyles.caption(
               context,
             ).copyWith(color: AppColors.destructive),
@@ -678,7 +736,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         ],
         const SizedBox(height: AppSpacing.md),
         LabelledField(
-          label: 'Listing name',
+          label: _s.listingName,
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(
@@ -692,7 +750,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
             ),
             child: Text(
               _listingName.isEmpty
-                  ? 'Created from the property and room name'
+                  ? _s.listingNameAuto
                   : _listingName,
               style: AppTextStyles.body(context).copyWith(
                 color: _listingName.isEmpty
@@ -703,7 +761,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        _photosSection(label: 'Add room photos'),
+        _photosSection(label: _s.addRoomPhotos),
       ],
     );
   }
@@ -715,7 +773,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         LabelledField(
-          label: 'Security deposit (₱)',
+          label: _s.deposit,
           child: AppTextField(
             controller: _depositController,
             hintText: '3500',
@@ -724,9 +782,14 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
         ),
+        const SizedBox(height: 4),
+        Text(
+          _s.depositCaption,
+          style: AppTextStyles.caption(context),
+        ),
         const SizedBox(height: AppSpacing.md),
         LabelledField(
-          label: 'Advance rent (months)',
+          label: _s.advance,
           child: AppTextField(
             controller: _advanceController,
             hintText: '1',
@@ -734,18 +797,24 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
         ),
+        const SizedBox(height: 4),
+        Text(
+          _s.advanceCaption,
+          style: AppTextStyles.caption(context),
+        ),
         const SizedBox(height: AppSpacing.md),
         LabelledField(
-          label: 'Who can rent?',
+          label: _s.whoCanRent,
           child: ListingDropdown<String>(
             value: _allowedGender,
-            hint: 'Select...',
-            items: const [
-              DropdownMenuItem(value: 'Mixed / Any', child: Text('Anyone')),
-              DropdownMenuItem(value: 'Male only', child: Text('Male only')),
+            hint: _s.selectHint,
+            // Values stay English (stored + used by matching); labels translate.
+            items: [
+              DropdownMenuItem(value: 'Mixed / Any', child: Text(_s.anyone)),
+              DropdownMenuItem(value: 'Male only', child: Text(_s.maleOnly)),
               DropdownMenuItem(
                 value: 'Female only',
-                child: Text('Female only'),
+                child: Text(_s.femaleOnly),
               ),
             ],
             onChanged: (v) => setState(() => _allowedGender = v ?? _allowedGender),
@@ -753,19 +822,19 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         ),
         const SizedBox(height: AppSpacing.md),
         ListingToggleRow(
-          label: 'Smoking allowed',
+          label: _s.smokingAllowed,
           value: _smokingAllowed,
           onChanged: (v) => setState(() => _smokingAllowed = v),
         ),
         const SizedBox(height: AppSpacing.sm),
         ListingToggleRow(
-          label: 'Pets allowed',
+          label: _s.petsAllowed,
           value: _petsAllowed,
           onChanged: (v) => setState(() => _petsAllowed = v),
         ),
         const SizedBox(height: AppSpacing.md),
         LabelledField(
-          label: 'Curfew',
+          label: _s.curfew,
           child: DropdownButtonFormField<int?>(
             initialValue: _curfewHours,
             isExpanded: true,
@@ -774,7 +843,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
               for (final h in _curfewOptions)
                 DropdownMenuItem<int?>(
                   value: h,
-                  child: Text(h == null ? 'No curfew' : formatCurfew(h)),
+                  child: Text(h == null ? _s.noCurfew : formatCurfew(h)),
                 ),
             ],
             onChanged: (v) => setState(() => _curfewHours = v),
@@ -811,7 +880,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         LabelledField(
-          label: 'Monthly rent (₱)',
+          label: _s.monthlyRent,
           child: AppTextField(
             controller: _rentController,
             hintText: '3500',
@@ -824,7 +893,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         const SizedBox(height: AppSpacing.md),
         // Layer 1 OccupancyMatch: a tenant's group size must not exceed this.
         LabelledField(
-          label: 'Maximum number of occupants',
+          label: _s.maxOccupants,
           child: AppTextField(
             controller: _occupantsController,
             hintText: '1',
@@ -835,8 +904,8 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         ),
         const SizedBox(height: AppSpacing.lg),
         ListingToggleRow(
-          label: 'Available for rent',
-          helper: 'Turn off if tenants cannot move in yet.',
+          label: _s.availableForRent,
+          helper: _s.availableHelper,
           value: _isAvailable,
           onChanged: (v) => setState(() => _isAvailable = v),
         ),
@@ -853,14 +922,17 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         Align(
           alignment: Alignment.centerRight,
           child: Text(
-            '${_amenities.length} of ${AppOptions.amenities.length} selected',
+            _s.amenitiesSelected(
+              _amenities.length,
+              AppOptions.amenities.length,
+            ),
             style: AppTextStyles.caption(context),
           ),
         ),
         for (final (group, items) in kAmenityGroups) ...[
           const SizedBox(height: AppSpacing.sm),
           Text(
-            group,
+            _s.amenityGroup(group),
             style: AppTextStyles.label(context).copyWith(
               color: context.appColors.textSecondary,
               fontWeight: FontWeight.w700,
@@ -874,6 +946,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
               for (final a in items)
                 AmenityChip(
                   label: a,
+                  displayLabel: _s.amenity(a),
                   selected: _amenities.contains(a),
                   onTap: () => setState(() {
                     if (!_amenities.remove(a)) _amenities.add(a);
@@ -893,7 +966,9 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
       '₱${v.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
 
   String get _genderLabel => switch (_allowedGender) {
-    'Mixed / Any' => 'Anyone',
+    'Mixed / Any' => _s.anyone,
+    'Male only' => _s.maleOnly,
+    'Female only' => _s.femaleOnly,
     final g => g,
   };
 
@@ -907,28 +982,26 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
     return Column(
       children: [
         ReviewSectionCard(
-          title: 'Listing',
+          title: _s.reviewListing,
           onEdit: () => _goTo(1),
           child: Column(
             children: [
-              ReviewLine('Listing name', _listingName.isEmpty ? '—' : _listingName),
-              ReviewLine('Rental type', _isRoom ? 'A Room' : 'Entire Place'),
+              ReviewLine(_s.listingName, _listingName.isEmpty ? '—' : _listingName),
+              ReviewLine(_s.reviewRentalType, _isRoom ? _s.aRoom : _s.entirePlace),
               if (_isRoom)
-                ReviewLine('Property', _building?.name ?? '—')
+                ReviewLine(_s.reviewProperty, _building?.name ?? '—')
               else
-                ReviewLine('Property type', _placeType ?? '—'),
-              ReviewLine('Address', address.isEmpty ? '—' : address),
+                ReviewLine(_s.propertyType, _placeType ?? '—'),
+              ReviewLine(_s.reviewAddress, address.isEmpty ? '—' : address),
             ],
           ),
         ),
         const SizedBox(height: AppSpacing.md),
         ReviewSectionCard(
-          title: 'Rental type',
+          title: _s.reviewRentalType,
           onEdit: () => _goTo(0),
           child: Text(
-            _isRoom
-                ? 'A Room — a room in a boarding house, dorm, or shared home.'
-                : 'Entire Place — a whole house, apartment, or condo.',
+            _isRoom ? _s.reviewRoomType : _s.reviewPlaceType,
             style: AppTextStyles.body(
               context,
             ).copyWith(color: context.appColors.textPrimary),
@@ -936,10 +1009,10 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         ),
         const SizedBox(height: AppSpacing.md),
         ReviewSectionCard(
-          title: 'Photos',
+          title: _s.reviewPhotos,
           onEdit: () => _goTo(1),
           child: photos.isEmpty
-              ? Text('No photos yet', style: AppTextStyles.caption(context))
+              ? Text(_s.noPhotos, style: AppTextStyles.caption(context))
               : SizedBox(
                   height: 72,
                   child: ListView.separated(
@@ -969,46 +1042,52 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         ),
         const SizedBox(height: AppSpacing.md),
         ReviewSectionCard(
-          title: 'House rules',
+          title: _s.reviewHouseRules,
           onEdit: () => _goTo(2),
           child: Column(
             children: [
-              ReviewLine('Security deposit', _peso(_int(_depositController, 0))),
+              ReviewLine(_s.reviewDeposit, _peso(_int(_depositController, 0))),
               ReviewLine(
-                'Advance rent',
-                '${_int(_advanceController, 1)} month(s)',
+                _s.reviewAdvance,
+                _s.months(_int(_advanceController, 1)),
               ),
-              ReviewLine('Who can rent', _genderLabel),
-              ReviewLine('Smoking', _smokingAllowed ? 'Allowed' : 'Not allowed'),
-              ReviewLine('Pets', _petsAllowed ? 'Allowed' : 'Not allowed'),
-              ReviewLine('Curfew', formatCurfew(_curfewHours)),
+              ReviewLine(_s.reviewWhoCanRent, _genderLabel),
+              ReviewLine(
+                _s.reviewSmoking,
+                _smokingAllowed ? _s.allowed : _s.notAllowed,
+              ),
+              ReviewLine(_s.reviewPets, _petsAllowed ? _s.allowed : _s.notAllowed),
+              ReviewLine(
+                _s.curfew,
+                _curfewHours == null ? _s.noCurfew : formatCurfew(_curfewHours),
+              ),
             ],
           ),
         ),
         const SizedBox(height: AppSpacing.md),
         ReviewSectionCard(
-          title: 'Rent & occupants',
+          title: _s.reviewRent,
           onEdit: () => _goTo(3),
           child: Column(
             children: [
-              ReviewLine('Monthly rent', _peso(_int(_rentController, 0))),
+              ReviewLine(_s.reviewMonthlyRent, _peso(_int(_rentController, 0))),
               ReviewLine(
-                'Max occupants',
+                _s.reviewMaxOccupants,
                 '${_int(_occupantsController, 1)}',
               ),
               ReviewLine(
-                'Availability',
-                _isAvailable ? 'Available for rent' : 'Not available',
+                _s.reviewAvailability,
+                _isAvailable ? _s.availableForRent : _s.notAvailable,
               ),
             ],
           ),
         ),
         const SizedBox(height: AppSpacing.md),
         ReviewSectionCard(
-          title: 'Amenities',
+          title: _s.reviewAmenities,
           onEdit: () => _goTo(4),
           child: amenityList.isEmpty
-              ? Text('None selected', style: AppTextStyles.caption(context))
+              ? Text(_s.noneSelected, style: AppTextStyles.caption(context))
               : Wrap(
                   spacing: 6,
                   runSpacing: 6,
@@ -1016,6 +1095,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
                     for (final a in amenityList)
                       AmenityChip(
                         label: a,
+                        displayLabel: _s.amenity(a),
                         selected: true,
                         showCloseIcon: false,
                         onTap: () {},

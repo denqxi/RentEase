@@ -106,9 +106,9 @@ class _InviteView extends StatelessWidget {
                     option.propertyTitle,
                     style: AppTextStyles.body(sheetContext),
                   ),
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.chevron_right_rounded,
-                    color: AppColors.hint,
+                    color: context.appColors.hint,
                   ),
                   onTap: () => Navigator.of(sheetContext).pop(option),
                 ),

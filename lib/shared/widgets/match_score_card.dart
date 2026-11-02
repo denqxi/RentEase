@@ -28,7 +28,7 @@ class MatchScoreCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.accentSoft,
+        color: context.appColors.accentSoft,
         borderRadius: BorderRadius.circular(AppRadii.card),
       ),
       child: Column(

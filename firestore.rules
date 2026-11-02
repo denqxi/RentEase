@@ -401,7 +401,8 @@ service cloud.firestore {
                   && request.resource.data.verificationStatus == 'pending'))
           && !request.resource.data.diff(resource.data).affectedKeys()
                 .hasAny(['verifiedAt', 'rejectedAt', 'avgRating', 'ratingSum',
-                         'lastRatingId', 'totalRatings', 'totalListings']))
+                         'lastRatingId', 'totalRatings', 'totalListings'])
+          && request.resource.data.get('showCredentials', false) is bool)
         || isAdmin(); // admin approves/rejects
       // Self-service account deletion (a rejected / pending owner included).
       allow delete: if (isSelf(userId) && notSuspended()) || isAdmin();
@@ -420,14 +421,56 @@ service cloud.firestore {
             && docId == 'documents'
             && ownerCanSubmit()
             && request.resource.data.keys().hasOnly(
-                 ['documentUrls', 'documentPublicIds', 'submittedAt'])
+                 ['documentUrls', 'documentPublicIds', 'diditSessionId',
+                  'idSource', 'submittedAt'])
+            && optStr(request.resource.data, 'diditSessionId', 100)
+            && request.resource.data.get('idSource', 'upload') in ['upload', 'didit']
             && request.resource.data.documentUrls is list
-            // Two required documents (ID, ownership); business permit optional.
-            && request.resource.data.documentUrls.size() >= 2
+            // Uploaded ID: ID + ownership (2+). Didit ID check: the ID is not
+            // uploaded, so only ownership (1+) is required, and a Didit
+            // session must be attached (the admin checks it with Didit).
+            && (request.resource.data.documentUrls.size() >= 2
+                || (request.resource.data.get('idSource', 'upload') == 'didit'
+                    && request.resource.data.get('diditSessionId', '') is string
+                    && request.resource.data.get('diditSessionId', '').size() > 0
+                    && request.resource.data.documentUrls.size() >= 1))
             && cldList10(request.resource.data.documentUrls)
             && (!('documentPublicIds' in request.resource.data)
                 || (request.resource.data.documentPublicIds is list
                     && request.resource.data.documentPublicIds.size() <= 10)))
+          || isAdmin();
+        allow delete: if (isSelf(userId) && notSuspended()) || isAdmin();
+      }
+
+      // Credentials shown on the owner's profile: the business permit and
+      // the property ownership document (never the ID). Tenants may read them
+      // only once an admin has verified the owner and only while the owner
+      // has turned on showCredentials; owner + admin can always read them.
+      // Written in the same batch as private/documents, under the same
+      // "not yet verified" gate.
+      match /public/{docId} {
+        function sharedByVerifiedOwner() {
+          let p = get(/databases/$(database)/documents/ownerProfiles/$(userId)).data;
+          return p.get('verificationStatus', 'none') == 'verified'
+            && p.get('showCredentials', false) == true;
+        }
+        allow read: if isSelf(userId) || isAdmin()
+          || (signedIn() && docId in ['businessPermit', 'ownershipDocument']
+              && sharedByVerifiedOwner());
+        allow create, update: if (isSelf(userId) && notSuspended()
+            && docId in ['businessPermit', 'ownershipDocument']
+            && ((!exists(/databases/$(database)/documents/ownerProfiles/$(userId))
+                 || get(/databases/$(database)/documents/ownerProfiles/$(userId))
+                      .data.verificationStatus in ['none', 'pending', 'rejected'])
+                // A verified owner may only share a document the admin already
+                // reviewed: the link must be in their private documents
+                // (e.g. owners verified before sharing existed).
+                || request.resource.data.url in
+                     get(/databases/$(database)/documents/ownerProfiles/$(userId)/private/documents)
+                       .data.get('documentUrls', []))
+            && request.resource.data.keys().hasOnly(['url', 'publicId', 'submittedAt'])
+            && cldAt([request.resource.data.url], 0)
+            && optStr(request.resource.data, 'publicId', 300))
           || isAdmin();
         allow delete: if (isSelf(userId) && notSuspended()) || isAdmin();
       }

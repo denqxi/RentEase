@@ -132,7 +132,7 @@ class _CheckEmailViewState extends State<CheckEmailView> {
             'Click the link in the email to verify your account\nbefore continuing.',
             textAlign: TextAlign.center,
             style: AppTextStyles.body(context).copyWith(
-              color: AppColors.textSecondary,
+              color: context.appColors.textSecondary,
               fontSize: 13,
             ),
           ),

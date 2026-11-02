@@ -146,7 +146,7 @@ class _ListingDropdownState<T> extends State<ListingDropdown<T>>
                                     : FontWeight.w400,
                                 color: isSelected
                                     ? AppColors.primary
-                                    : AppColors.slate900,
+                                    : context.appColors.textPrimary,
                               ),
                               child: item.child,
                             ),
@@ -213,7 +213,7 @@ class _ListingDropdownState<T> extends State<ListingDropdown<T>>
             border: Border.all(
               color: _isOpen
                   ? AppColors.accent
-                  : AppColors.indicatorInactive,
+                  : context.appColors.indicatorInactive,
               width: _isOpen ? 1.4 : 1.0,
             ),
           ),
@@ -232,11 +232,11 @@ class _ListingDropdownState<T> extends State<ListingDropdown<T>>
                       )
                     : Text(
                         widget.hint,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
-                          color: AppColors.textSecondary,
+                          color: context.appColors.textSecondary,
                         ),
                       ),
               ),
@@ -244,10 +244,10 @@ class _ListingDropdownState<T> extends State<ListingDropdown<T>>
               AnimatedRotation(
                 turns: _isOpen ? 0.5 : 0.0,
                 duration: const Duration(milliseconds: 160),
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_drop_down_rounded,
                   size: 20,
-                  color: AppColors.textSecondary,
+                  color: context.appColors.textSecondary,
                 ),
               ),
             ],
@@ -420,7 +420,7 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
                                         : FontWeight.w400,
                                     color: _isOptionSelected(option)
                                         ? AppColors.primary
-                                        : AppColors.slate900,
+                                        : context.appColors.textPrimary,
                                   ),
                                 ),
                               ),
@@ -504,7 +504,7 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
           border: Border.all(
             color: isFocusedOrOpen
                 ? AppColors.accent
-                : AppColors.indicatorInactive,
+                : context.appColors.indicatorInactive,
             width: isFocusedOrOpen ? 1.4 : 1.0,
           ),
         ),
@@ -523,11 +523,11 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
                       ),
                       decoration: InputDecoration(
                         hintText: widget.customPlaceholder,
-                        hintStyle: const TextStyle(
+                        hintStyle: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 13.5,
                           fontWeight: FontWeight.w400,
-                          color: AppColors.slate400,
+                          color: context.appColors.hint,
                         ),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
@@ -558,7 +558,7 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
                           color:
                               (widget.value != null && widget.value!.isNotEmpty)
                                   ? context.appColors.textPrimary
-                                  : AppColors.textSecondary,
+                                  : context.appColors.textSecondary,
                         ),
                       ),
                     ),
@@ -572,10 +572,10 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
                 child: AnimatedRotation(
                   turns: _isOpen ? 0.5 : 0.0,
                   duration: const Duration(milliseconds: 160),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_drop_down_rounded,
                     size: 20,
-                    color: AppColors.textSecondary,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ),
@@ -668,7 +668,7 @@ class RentalTypeCard extends StatelessWidget {
             color: selected ? AppColors.accentSoft : AppColors.onInk,
             borderRadius: BorderRadius.circular(AppRadii.field),
             border: Border.all(
-              color: selected ? AppColors.accent : AppColors.slate200,
+              color: selected ? AppColors.accent : context.appColors.fieldBorder,
               width: selected ? 1.5 : 1,
             ),
             boxShadow: [
@@ -688,10 +688,10 @@ class RentalTypeCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: selected ? AppColors.accent : AppColors.fieldFill,
+                  color: selected ? AppColors.accent : context.appColors.fieldFill,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: selected ? AppColors.accent : AppColors.slate200,
+                    color: selected ? AppColors.accent : context.appColors.fieldBorder,
                   ),
                 ),
                 alignment: Alignment.center,
@@ -768,13 +768,13 @@ class ListingCalloutBox extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: AppColors.slate200.withValues(alpha: 0.7),
+              color: context.appColors.fieldBorder.withValues(alpha: 0.7),
               shape: BoxShape.circle,
             ),
             child: Icon(
               icon,
               size: 20,
-              color: AppColors.slate700,
+              color: context.appColors.textPrimary,
             ),
           ),
           const SizedBox(width: AppSpacing.md),
@@ -785,22 +785,22 @@ class ListingCalloutBox extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 14.5,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.slate900,
+                    color: context.appColors.textPrimary,
                     letterSpacing: -0.2,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12.5,
                     fontWeight: FontWeight.w400,
-                    color: AppColors.textSecondary,
+                    color: context.appColors.textSecondary,
                     height: 1.35,
                   ),
                 ),
@@ -887,10 +887,15 @@ class AmenityChip extends StatelessWidget {
     required this.onTap,
     this.showCloseIcon = true,
     this.activeColor,
+    this.displayLabel,
     super.key,
   });
 
+  /// Stored amenity value; also picks the icon.
   final String label;
+
+  /// Shown instead of [label] (e.g. a translation); defaults to [label].
+  final String? displayLabel;
   final bool selected;
   final VoidCallback onTap;
   final bool showCloseIcon;
@@ -904,7 +909,7 @@ class AmenityChip extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: label,
+      label: displayLabel ?? label,
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
@@ -918,12 +923,12 @@ class AmenityChip extends StatelessWidget {
             5,
           ),
           decoration: BoxDecoration(
-            color: selected ? effectiveActiveColor : AppColors.fieldFill,
+            color: selected ? effectiveActiveColor : context.appColors.fieldFill,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: selected
                   ? effectiveActiveColor
-                  : AppColors.slate200.withValues(alpha: 0.8),
+                  : context.appColors.fieldBorder.withValues(alpha: 0.8),
               width: 1,
             ),
           ),
@@ -949,12 +954,12 @@ class AmenityChip extends StatelessWidget {
               const SizedBox(width: 7),
               Flexible(
                 child: Text(
-                  label,
+                  displayLabel ?? label,
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                    color: selected ? AppColors.onInk : AppColors.slate900,
+                    color: selected ? AppColors.onInk : context.appColors.textPrimary,
                     height: 1.1,
                   ),
                 ),

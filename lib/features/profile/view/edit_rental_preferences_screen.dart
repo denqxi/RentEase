@@ -436,7 +436,7 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
                   Icon(
                     icon,
                     size: 13,
-                    color: isSelected ? AppColors.surface : AppColors.slate500,
+                    color: isSelected ? AppColors.surface : context.appColors.textSecondary,
                   ),
                   const SizedBox(width: 5),
                   Text(
@@ -445,7 +445,7 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
                       fontFamily: 'DM Sans',
                       fontSize: 12,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected ? AppColors.surface : AppColors.slate500,
+                      color: isSelected ? AppColors.surface : context.appColors.textSecondary,
                     ),
                   ),
                 ],
@@ -743,27 +743,27 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
           ),
         ),
         const SizedBox(height: 3),
-        const Text(
+        Text(
           'Set your school, office, or frequent spot to see places within easy reach.',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 12,
             fontWeight: FontWeight.w400,
-            color: AppColors.slate500,
+            color: context.appColors.textSecondary,
             height: 1.3,
           ),
         ),
         const SizedBox(height: 12),
 
         // Purpose Category
-        const Text(
+        Text(
           'I AM COMMUTING TO',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 10,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.7,
-            color: AppColors.slate500,
+            color: context.appColors.textSecondary,
           ),
         ),
         const SizedBox(height: 6),
@@ -792,7 +792,7 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
                           fontFamily: 'DM Sans',
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
-                          color: _poiType == type ? AppColors.surface : AppColors.slate800,
+                          color: _poiType == type ? AppColors.surface : context.appColors.textPrimary,
                         ),
                       ),
                     ),
@@ -807,10 +807,10 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
         TextField(
           controller: _searchController,
           onChanged: _onSearchChanged,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 12.5,
-            color: AppColors.slate800,
+            color: context.appColors.textPrimary,
           ),
           decoration: InputDecoration(
             hintText: 'Search Davao landmark, school, or building...',
@@ -848,9 +848,9 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
           const SizedBox(height: 4),
           Container(
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.appColors.surface,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.slate200),
+              border: Border.all(color: context.appColors.fieldBorder),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.scrim.withValues(alpha: 0.05),
@@ -868,11 +868,11 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
                     leading: const Icon(Icons.place_outlined, color: AppColors.primaryCyan, size: 17),
                     title: Text(
                       place['name'] as String,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.slate800,
+                        color: context.appColors.textPrimary,
                       ),
                     ),
                     onTap: () => _selectPlace(place),
@@ -888,7 +888,7 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
           height: 160,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.slate200),
+            border: Border.all(color: context.appColors.fieldBorder),
           ),
           clipBehavior: Clip.antiAlias,
           child: Stack(
@@ -941,9 +941,9 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
                 right: 6,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.appColors.surface,
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppColors.slate200),
+                    border: Border.all(color: context.appColors.fieldBorder),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.scrim.withValues(alpha: 0.08),
@@ -981,17 +981,17 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.surface.withValues(alpha: 0.92),
+                    color: context.appColors.surface.withValues(alpha: 0.92),
                     borderRadius: BorderRadius.circular(5),
-                    border: Border.all(color: AppColors.slate200),
+                    border: Border.all(color: context.appColors.fieldBorder),
                   ),
-                  child: const Text(
+                  child: Text(
                     '💡 Tap map or drag pin to adjust your destination',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 9.5,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.slate800,
+                      color: context.appColors.textPrimary,
                     ),
                   ),
                 ),
@@ -1007,14 +1007,14 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
           decoration: BoxDecoration(
             color: AppColors.accentSoft,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.slate300),
+            border: Border.all(color: context.appColors.hint),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: context.appColors.surface,
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.primaryCyan.withValues(alpha: 0.3)),
                 ),
@@ -1053,11 +1053,11 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
                           overflow: _isAddressExpanded
                               ? TextOverflow.visible
                               : TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 11.5,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.slate800,
+                            color: context.appColors.textPrimary,
                           ),
                         ),
                       ),
@@ -1114,14 +1114,14 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'MAXIMUM TRAVEL DISTANCE',
               style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.7,
-                color: AppColors.slate500,
+                color: context.appColors.textSecondary,
               ),
             ),
             Text(
@@ -1138,7 +1138,7 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             activeTrackColor: AppColors.primaryCyan,
-            inactiveTrackColor: AppColors.slate200,
+            inactiveTrackColor: context.appColors.fieldBorder,
             thumbColor: AppColors.primaryCyan,
             overlayColor: AppColors.primaryCyan.withValues(alpha: 0.15),
             trackHeight: 3.0,
@@ -1158,15 +1158,15 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
           decoration: BoxDecoration(
             color: AppColors.accentSoft,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: AppColors.slate300),
+            border: Border.all(color: context.appColors.hint),
           ),
           child: Text(
             'Rentals within ${_maxKm.toStringAsFixed(1)} km of your destination will be prioritized.',
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 10.5,
               fontWeight: FontWeight.w500,
-              color: AppColors.slate500,
+              color: context.appColors.textSecondary,
             ),
           ),
         ),
@@ -1343,13 +1343,13 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
           ),
         ),
         const SizedBox(height: 3),
-        const Text(
+        Text(
           'Drag the sliders to prioritize what fits your lifestyle.',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 12,
             fontWeight: FontWeight.w400,
-            color: AppColors.slate500,
+            color: context.appColors.textSecondary,
             height: 1.3,
           ),
         ),
@@ -1423,13 +1423,13 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
                 ],
               ),
               const SizedBox(height: 3),
-              const Text(
+              Text(
                 'You have 100% to divide across all three. Setting one sets the limit for the rest.',
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.slate500,
+                  color: context.appColors.textSecondary,
                   height: 1.3,
                 ),
               ),
@@ -1489,18 +1489,18 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
           const SizedBox(height: 1),
           Text(
             subtext,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 10.5,
               fontWeight: FontWeight.w400,
-              color: AppColors.slate500,
+              color: context.appColors.textSecondary,
             ),
           ),
           const SizedBox(height: 4),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: AppColors.primaryCyan,
-              inactiveTrackColor: AppColors.slate300,
+              inactiveTrackColor: context.appColors.hint,
               thumbColor: AppColors.primaryCyan,
               overlayColor: AppColors.primaryCyan.withValues(alpha: 0.15),
               trackHeight: 3,
@@ -1587,8 +1587,8 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
         child: Container(
           width: 17,
           height: 17,
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
+          decoration: BoxDecoration(
+            color: context.appColors.surface,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
@@ -1644,7 +1644,7 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
         width: 26,
         height: 26,
         decoration: BoxDecoration(
-          color: enabled ? AppColors.surface : AppColors.transparent,
+          color: enabled ? context.appColors.surface : AppColors.transparent,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: enabled ? context.appColors.fieldBorder : AppColors.transparent,
@@ -1689,7 +1689,7 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
             ),
           ),
           child: isSaving
-              ? const SizedBox(
+              ? SizedBox(
                   width: 18,
                   height: 18,
                   child: CircularProgressIndicator(

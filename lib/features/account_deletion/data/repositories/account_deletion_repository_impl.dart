@@ -193,6 +193,7 @@ class AccountDeletionRepositoryImpl implements AccountDeletionRepository {
   Future<void> deleteOwnerProfile(String uid) => _guard(() async {
     final ref = _db.collection(FirestoreCollections.ownerProfiles).doc(uid);
     await _deleteCollection(ref.collection(FirestoreCollections.ownerPrivate));
+    await _deleteCollection(ref.collection(FirestoreCollections.ownerPublic));
     await ref.delete();
   });
 

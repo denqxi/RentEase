@@ -40,10 +40,10 @@ class OwnerPhase1View extends StatelessWidget {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.fieldFill,
+                  color: context.appColors.fieldFill,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.fieldBorder.withValues(alpha: 0.75),
+                    color: context.appColors.fieldBorder.withValues(alpha: 0.75),
                   ),
                 ),
                 child: Row(
@@ -52,9 +52,9 @@ class OwnerPhase1View extends StatelessWidget {
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: context.appColors.surface,
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.fieldBorder),
+                        border: Border.all(color: context.appColors.fieldBorder),
                       ),
                       child: const Icon(
                         Icons.mark_chat_unread_outlined,
@@ -73,11 +73,11 @@ class OwnerPhase1View extends StatelessWidget {
                                 : (inquiry.status == 'closed'
                                       ? 'Inquiry closed.'
                                       : 'You declined this inquiry.'),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              color: context.appColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -85,11 +85,11 @@ class OwnerPhase1View extends StatelessWidget {
                             pending
                                 ? 'Accepting this inquiry unlocks open chat.'
                                 : 'Chat remains locked for this thread.',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 12,
                               fontWeight: FontWeight.w400,
-                              color: AppColors.textSecondary,
+                              color: context.appColors.textSecondary,
                             ),
                           ),
                         ],
@@ -209,7 +209,7 @@ class OwnerPhase1View extends StatelessWidget {
           ),
         ),
         if (state.isCounterpartDeleted(isOwner: true))
-          const SafeArea(
+          SafeArea(
             top: false,
             child: Padding(
               padding: EdgeInsets.fromLTRB(16, 12, 16, 20),
@@ -220,7 +220,7 @@ class OwnerPhase1View extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
-                    color: AppColors.slate500,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ),
@@ -295,13 +295,13 @@ class _SummaryRow extends StatelessWidget {
             '$label: ',
             style: AppTextStyles.caption(
               context,
-            ).copyWith(color: AppColors.textSecondary),
+            ).copyWith(color: context.appColors.textSecondary),
           ),
           Expanded(
             child: Text(
               value,
               style: AppTextStyles.caption(context).copyWith(
-                color: AppColors.textPrimary,
+                color: context.appColors.textPrimary,
                 fontWeight: FontWeight.w700,
               ),
             ),

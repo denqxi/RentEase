@@ -94,7 +94,7 @@ class _RatingScreenState extends State<RatingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.appColors.surface,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -111,17 +111,17 @@ class _RatingScreenState extends State<RatingScreen> {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: AppColors.fieldFill,
+                      color: context.appColors.fieldFill,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.slate200,
+                        color: context.appColors.fieldBorder,
                         width: 0.8,
                       ),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.arrow_back_rounded,
                       size: 19,
-                      color: AppColors.slate900,
+                      color: context.appColors.textPrimary,
                     ),
                   ),
                 ),
@@ -146,26 +146,26 @@ class _RatingScreenState extends State<RatingScreen> {
               const SizedBox(height: 20),
               Text(
                 widget._heading,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: context.appColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 widget.subjectName,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
-                  color: AppColors.textSecondary,
+                  color: context.appColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 widget.moveInLabel,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textSecondary,
+                  color: context.appColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 28),
@@ -176,19 +176,19 @@ class _RatingScreenState extends State<RatingScreen> {
                   children: [
                     Text(
                       widget._prompt,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: context.appColors.textPrimary,
                       ),
                     ),
                     if (!widget.isOwnerView) ...[
                       const SizedBox(height: 3),
-                      const Text(
+                      Text(
                         'Your property rating also reflects on the host\'s overall rating.',
                         style: TextStyle(
                           fontSize: 12.5,
-                          color: AppColors.textSecondary,
+                          color: context.appColors.textSecondary,
                         ),
                       ),
                     ],
@@ -210,7 +210,7 @@ class _RatingScreenState extends State<RatingScreen> {
                             : Icons.star_border_rounded,
                         color: i < _starRating
                             ? AppColors.amberPrimary
-                            : AppColors.fieldBorder,
+                            : context.appColors.fieldBorder,
                         size: 40,
                       ),
                     ),
@@ -224,24 +224,24 @@ class _RatingScreenState extends State<RatingScreen> {
                 maxLines: 5,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: AppColors.fieldFill,
+                  fillColor: context.appColors.fieldFill,
                   hintText: widget._reviewHint,
-                  hintStyle: const TextStyle(
-                    color: AppColors.hint,
+                  hintStyle: TextStyle(
+                    color: context.appColors.hint,
                     fontSize: 13,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.fieldBorder),
+                    borderSide: BorderSide(color: context.appColors.fieldBorder),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.fieldBorder),
+                    borderSide: BorderSide(color: context.appColors.fieldBorder),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                        color: AppColors.ink),
+                    borderSide: BorderSide(
+                        color: context.appColors.ink),
                   ),
                   contentPadding: const EdgeInsets.all(14),
                 ),

@@ -259,10 +259,10 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
                                 const SizedBox(height: 8),
                                 Text(
                                   'Total across your properties ($_totalCount ${_totalCount == 1 ? 'review' : 'reviews'})',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 13,
-                                    color: AppColors.slate500,
+                                    color: context.appColors.textSecondary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -313,10 +313,10 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
               ),
               Text(
                 review.date,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 12,
-                  color: AppColors.slate400,
+                  color: context.appColors.hint,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -337,7 +337,7 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
                     size: 18,
                     color: isFilled
                         ? AppColors.matchMedium
-                        : AppColors.slate300,
+                        : context.appColors.hint,
                   ),
                 );
               }),
@@ -385,13 +385,13 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
               ),
             )
           else
-            const Text(
+            Text(
               'No written review',
               style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
                 fontStyle: FontStyle.italic,
-                color: AppColors.slate500,
+                color: context.appColors.textSecondary,
               ),
             ),
         ],
@@ -430,13 +430,13 @@ class _OwnerReviewsScreenState extends State<OwnerReviewsScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Reviews from tenants will appear here after they book and rate their stay.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 14,
-                color: AppColors.slate500,
+                color: context.appColors.textSecondary,
                 height: 1.4,
               ),
             ),

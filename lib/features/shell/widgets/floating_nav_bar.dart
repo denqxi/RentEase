@@ -174,7 +174,7 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: <Widget>[
-                        _buildIcon(color: AppColors.textSecondary, active: false),
+                        _buildIcon(color: context.appColors.textSecondary, active: false),
                         if (widget.data.badgeCount > 0)
                           Positioned(
                             right: -2,

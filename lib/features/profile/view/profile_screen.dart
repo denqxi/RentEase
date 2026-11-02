@@ -68,24 +68,24 @@ class ProfileScreen extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.appColors.surface,
         surfaceTintColor: AppColors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
+        title: Text(
           'Log out?',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 17,
             fontWeight: FontWeight.w800,
-            color: AppColors.slate900,
+            color: context.appColors.textPrimary,
           ),
         ),
-        content: const Text(
+        content: Text(
           'Are you sure you want to log out of your account?',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 13.5,
-            color: AppColors.slate600,
+            color: context.appColors.textSecondary,
             height: 1.4,
           ),
         ),
@@ -96,12 +96,12 @@ class ProfileScreen extends StatelessWidget {
             children: [
               TextButton(
                 onPressed: () => Navigator.of(dialogCtx).pop(false),
-                child: const Text(
+                child: Text(
                   'Cancel',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontWeight: FontWeight.w600,
-                    color: AppColors.slate500,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ),
@@ -217,13 +217,13 @@ class ProfileScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            const Text(
+                            Text(
                               'Manage your account and preferences',
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.slate500,
+                                color: context.appColors.textSecondary,
                               ),
                             ),
                           ],
@@ -242,8 +242,8 @@ class ProfileScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(
                         color: isDark
-                            ? AppColors.surface.withValues(alpha: 0.08)
-                            : AppColors.surface,
+                            ? context.appColors.surface.withValues(alpha: 0.08)
+                            : context.appColors.surface,
                         width: 2,
                       ),
                       boxShadow: cardShadow,
@@ -340,7 +340,7 @@ class ProfileScreen extends StatelessWidget {
                                             width: 26,
                                             height: 26,
                                             decoration: BoxDecoration(
-                                              color: AppColors.surface,
+                                              color: context.appColors.surface,
                                               shape: BoxShape.circle,
                                               boxShadow: [
                                                 BoxShadow(
@@ -389,19 +389,19 @@ class ProfileScreen extends StatelessWidget {
                                       const SizedBox(height: 5),
                                       Row(
                                         children: [
-                                          const Icon(
+                                          Icon(
                                             Icons.mail_outline_rounded,
                                             size: 14,
-                                            color: AppColors.slate500,
+                                            color: context.appColors.textSecondary,
                                           ),
                                           const SizedBox(width: 6),
                                           Flexible(
                                             child: Text(
                                               email,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontFamily: 'DM Sans',
                                                 fontSize: 12.5,
-                                                color: AppColors.slate500,
+                                                color: context.appColors.textSecondary,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                               overflow: TextOverflow.ellipsis,
@@ -460,8 +460,8 @@ class ProfileScreen extends StatelessWidget {
                             width: 1,
                             height: 40,
                             color: isDark
-                                ? AppColors.surface.withValues(alpha: 0.08)
-                                : AppColors.slate200,
+                                ? context.appColors.surface.withValues(alpha: 0.08)
+                                : context.appColors.fieldBorder,
                           ),
                         ),
                         Expanded(
@@ -491,8 +491,8 @@ class ProfileScreen extends StatelessWidget {
                             width: 1,
                             height: 40,
                             color: isDark
-                                ? AppColors.surface.withValues(alpha: 0.08)
-                                : AppColors.slate200,
+                                ? context.appColors.surface.withValues(alpha: 0.08)
+                                : context.appColors.fieldBorder,
                           ),
                         ),
                         Expanded(
@@ -528,7 +528,7 @@ class ProfileScreen extends StatelessWidget {
                       children: [
                         // Edit personal info (real tenants only)
                         if (!isGuest) ...[
-                          _buildMenuItem(
+                          _buildMenuItem(context,
                             svgString: AppSvgIcons.personOutline,
                             title: 'Edit personal info',
                             textColor: textColor,
@@ -537,11 +537,11 @@ class ProfileScreen extends StatelessWidget {
                               isOwner: false,
                             ),
                           ),
-                          _buildDivider(),
+                          _buildDivider(context),
                         ],
 
                         // Rental preferences
-                        _buildMenuItem(
+                        _buildMenuItem(context,
                           svgString: AppSvgIcons.preferencesSliders,
                           title: 'Rental preferences',
                           textColor: textColor,
@@ -550,15 +550,15 @@ class ProfileScreen extends StatelessWidget {
                             const EditRentalPreferencesScreen(),
                           ),
                         ),
-                        _buildDivider(),
+                        _buildDivider(context),
 
                         // Dark appearance
                         _buildDarkAppearanceItem(context, textColor),
 
                         // Account & security (real tenants only)
                         if (!isGuest) ...[
-                          _buildDivider(),
-                          _buildMenuItem(
+                          _buildDivider(context),
+                          _buildMenuItem(context,
                             svgString: AppSvgIcons.lockOutline,
                             title: 'Account & security',
                             textColor: textColor,
@@ -584,7 +584,7 @@ class ProfileScreen extends StatelessWidget {
                     child: InkWell(
                       onTap: () => _confirmLogOut(context),
                       borderRadius: BorderRadius.circular(20),
-                      child: const Padding(
+                      child: Padding(
                         padding: EdgeInsets.symmetric(
                           horizontal: 18,
                           vertical: 15,
@@ -610,7 +610,7 @@ class ProfileScreen extends StatelessWidget {
                             ),
                             AppSvgIcon(
                               svgString: AppSvgIcons.chevronRight,
-                              color: AppColors.slate400,
+                              color: context.appColors.hint,
                               size: 16,
                             ),
                           ],
@@ -693,11 +693,11 @@ class ProfileScreen extends StatelessWidget {
                     const SizedBox(height: 1),
                     Text(
                       label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.slate500,
+                        color: context.appColors.textSecondary,
                       ),
                     ),
                   ],
@@ -710,7 +710,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuItem({
+  Widget _buildMenuItem(BuildContext context, {
     IconData? icon,
     String? svgString,
     required String title,
@@ -759,9 +759,9 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(width: 4),
             ],
-            const AppSvgIcon(
+            AppSvgIcon(
               svgString: AppSvgIcons.chevronRight,
-              color: AppColors.slate400,
+              color: context.appColors.hint,
               size: 16,
             ),
           ],
@@ -803,12 +803,12 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDivider() {
-    return const Divider(
+  Widget _buildDivider(BuildContext context) {
+    return Divider(
       height: 1,
       indent: 54,
       endIndent: 16,
-      color: AppColors.fieldFill,
+      color: context.appColors.fieldFill,
     );
   }
 }
@@ -821,7 +821,7 @@ class _TopHeroWavePainter extends CustomPainter {
 
     // 1. Base soft vertical-diagonal gradient fading smoothly into white
     final basePaint = Paint()
-      ..shader = const LinearGradient(
+      ..shader = LinearGradient(
         begin: Alignment(0.5, -1.0),
         end: Alignment(-0.2, 1.0),
         colors: [
@@ -894,7 +894,7 @@ class _ProfileCardWavePainter extends CustomPainter {
 
     // 1. Subtle horizontal base gradient (pure white on left, soft ice-blue on right)
     final bgPaint = Paint()
-      ..shader = const LinearGradient(
+      ..shader = LinearGradient(
         begin: Alignment.centerLeft,
         end: Alignment.topRight,
         colors: [

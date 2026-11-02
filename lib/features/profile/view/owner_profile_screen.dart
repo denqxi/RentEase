@@ -9,6 +9,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/cubit/app_theme_cubit.dart';
 import '../../../core/firestore/firestore_collections.dart';
+import '../../../core/firestore/models/models.dart';
 import '../../../core/firestore/property_ratings_aggregator.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_svg_icon.dart';
@@ -17,6 +18,8 @@ import '../../app_update/widgets/update_section.dart';
 import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
 import '../../owner/view/owner_inquiries_screen.dart';
+import '../../owner_onboarding/data/repositories/owner_onboarding_repository_impl.dart';
+import '../../owner_onboarding/domain/repositories/owner_onboarding_repository.dart';
 import '../../owner_onboarding/view/verification_pending_screen.dart';
 import '../../shell/cubit/shell_cubit.dart';
 import 'account_security_screen.dart';
@@ -128,24 +131,24 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.appColors.surface,
         surfaceTintColor: AppColors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
+        title: Text(
           'Log out?',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 17,
             fontWeight: FontWeight.w800,
-            color: AppColors.slate900,
+            color: context.appColors.textPrimary,
           ),
         ),
-        content: const Text(
+        content: Text(
           'Are you sure you want to log out of your account?',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 13.5,
-            color: AppColors.slate600,
+            color: context.appColors.textSecondary,
             height: 1.4,
           ),
         ),
@@ -156,12 +159,12 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
             children: [
               TextButton(
                 onPressed: () => Navigator.of(dialogCtx).pop(false),
-                child: const Text(
+                child: Text(
                   'Cancel',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontWeight: FontWeight.w600,
-                    color: AppColors.slate500,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ),
@@ -285,13 +288,13 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            const Text(
+                            Text(
                               'Manage your account and preferences',
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.slate500,
+                                color: context.appColors.textSecondary,
                               ),
                             ),
                           ],
@@ -310,8 +313,8 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(
                         color: isDark
-                            ? AppColors.surface.withValues(alpha: 0.08)
-                            : AppColors.surface,
+                            ? context.appColors.surface.withValues(alpha: 0.08)
+                            : context.appColors.surface,
                         width: 2,
                       ),
                       boxShadow: cardShadow,
@@ -408,7 +411,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                           width: 26,
                                           height: 26,
                                           decoration: BoxDecoration(
-                                            color: AppColors.surface,
+                                            color: context.appColors.surface,
                                             shape: BoxShape.circle,
                                             boxShadow: [
                                               BoxShadow(
@@ -468,19 +471,19 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                       const SizedBox(height: 5),
                                       Row(
                                         children: [
-                                          const Icon(
+                                          Icon(
                                             Icons.mail_outline_rounded,
                                             size: 14,
-                                            color: AppColors.slate500,
+                                            color: context.appColors.textSecondary,
                                           ),
                                           const SizedBox(width: 6),
                                           Flexible(
                                             child: Text(
                                               email,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontFamily: 'DM Sans',
                                                 fontSize: 12.5,
-                                                color: AppColors.slate500,
+                                                color: context.appColors.textSecondary,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                               overflow: TextOverflow.ellipsis,
@@ -536,8 +539,8 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                         width: 1,
                         height: 40,
                         color: isDark
-                            ? AppColors.surface.withValues(alpha: 0.08)
-                            : AppColors.slate200,
+                            ? context.appColors.surface.withValues(alpha: 0.08)
+                            : context.appColors.fieldBorder,
                       ),
                     ),
                     Expanded(
@@ -562,8 +565,8 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                         width: 1,
                         height: 40,
                         color: isDark
-                            ? AppColors.surface.withValues(alpha: 0.08)
-                            : AppColors.slate200,
+                            ? context.appColors.surface.withValues(alpha: 0.08)
+                            : context.appColors.fieldBorder,
                       ),
                     ),
                     Expanded(
@@ -624,9 +627,13 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                       trailingText: totalReviews > 0
                           ? '${avgRating.toStringAsFixed(1)} ★'
                           : 'No reviews yet',
-                      trailingTextColor: AppColors.slate900,
+                      trailingTextColor: context.appColors.textPrimary,
                       onTap: () => OwnerReviewsScreen.open(context),
                     ),
+                    _buildDivider(),
+
+                    // Show credentials (business permit) to tenants
+                    _ShowCredentialsItem(textColor: textColor),
                     _buildDivider(),
 
                     // Dark appearance
@@ -656,7 +663,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                 child: InkWell(
                   onTap: () => _confirmLogOut(context),
                   borderRadius: BorderRadius.circular(20),
-                    child: const Padding(
+                    child: Padding(
                       padding: EdgeInsets.symmetric(
                         horizontal: 18,
                         vertical: 15,
@@ -682,7 +689,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                           ),
                           AppSvgIcon(
                             svgString: AppSvgIcons.chevronRight,
-                            color: AppColors.slate400,
+                            color: context.appColors.hint,
                             size: 16,
                           ),
                         ],
@@ -769,10 +776,10 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                             const TextSpan(text: ' '),
                             TextSpan(
                               text: subCount,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.slate500,
+                                color: context.appColors.textSecondary,
                               ),
                             ),
                           ],
@@ -782,11 +789,11 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                     const SizedBox(height: 1),
                     Text(
                       label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.slate500,
+                        color: context.appColors.textSecondary,
                       ),
                     ),
                   ],
@@ -885,10 +892,10 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                   Text(
                     subtitle,
                     softWrap: true,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 11.5,
-                      color: AppColors.slate500,
+                      color: context.appColors.textSecondary,
                       height: 1.3,
                     ),
                   ),
@@ -914,9 +921,9 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
             ),
             if (!isVerified) ...[
               const SizedBox(width: 4),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppColors.slate400,
+                color: context.appColors.hint,
                 size: 18,
               ),
             ],
@@ -976,9 +983,9 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
               ),
               const SizedBox(width: 4),
             ],
-            const AppSvgIcon(
+            AppSvgIcon(
               svgString: AppSvgIcons.chevronRight,
-              color: AppColors.slate400,
+              color: context.appColors.hint,
               size: 16,
             ),
           ],
@@ -1021,11 +1028,117 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
   }
 
   Widget _buildDivider() {
-    return const Divider(
+    return Divider(
       height: 1,
       indent: 54,
       endIndent: 16,
-      color: AppColors.fieldFill,
+      color: context.appColors.fieldFill,
+    );
+  }
+}
+
+/// Owner's opt-in to let tenants see their business permit. Mirrors the
+/// live `ownerProfiles/{uid}.showCredentials` value.
+class _ShowCredentialsItem extends StatefulWidget {
+  const _ShowCredentialsItem({required this.textColor});
+
+  final Color textColor;
+
+  @override
+  State<_ShowCredentialsItem> createState() => _ShowCredentialsItemState();
+}
+
+class _ShowCredentialsItemState extends State<_ShowCredentialsItem> {
+  final OwnerOnboardingRepository _repo = OwnerOnboardingRepositoryImpl();
+  late final String? _uid = FirebaseAuth.instance.currentUser?.uid;
+  late final Stream<OwnerProfileDoc?>? _profile =
+      _uid == null ? null : _repo.watchOwnerProfile(_uid);
+  bool _saving = false;
+  bool _synced = false;
+
+  /// Owners who turned sharing on before the shared copies existed (or who
+  /// were verified before sharing was added): copy the documents once per
+  /// visit so tenants can see them.
+  void _syncOnce(OwnerProfileDoc profile) {
+    final uid = _uid;
+    if (_synced || uid == null || !profile.showCredentials) return;
+    if (profile.verificationStatus != 'verified') return;
+    _synced = true;
+    _repo.syncSharedCredentials(uid).catchError((_) {});
+  }
+
+  Future<void> _set(bool value) async {
+    final uid = _uid;
+    if (uid == null || _saving) return;
+    setState(() => _saving = true);
+    try {
+      await _repo.setShowCredentials(uid, value);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not update this setting. Try again.'),
+            backgroundColor: AppColors.destructive,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<OwnerProfileDoc?>(
+      stream: _profile,
+      builder: (context, snap) {
+        final profile = snap.data;
+        if (profile != null) _syncOnce(profile);
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.workspace_premium_outlined,
+                color: AppColors.primaryCyan,
+                size: 21,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Show credentials on profile',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: widget.textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Let tenants see your business permit and ownership '
+                      'document once you are verified. Your ID stays private.',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 12,
+                        color: context.appColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              AppToggle(
+                value: profile?.showCredentials ?? false,
+                // No profile doc yet (documents not submitted): nothing to show.
+                onChanged: profile == null || _saving ? (_) {} : _set,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -1038,7 +1151,7 @@ class _TopHeroWavePainter extends CustomPainter {
 
     // 1. Base soft vertical-diagonal gradient fading smoothly into white
     final basePaint = Paint()
-      ..shader = const LinearGradient(
+      ..shader = LinearGradient(
         begin: Alignment(0.5, -1.0),
         end: Alignment(-0.2, 1.0),
         colors: [
@@ -1111,7 +1224,7 @@ class _ProfileCardWavePainter extends CustomPainter {
 
     // 1. Subtle horizontal base gradient (pure white on left, soft ice-blue on right)
     final bgPaint = Paint()
-      ..shader = const LinearGradient(
+      ..shader = LinearGradient(
         begin: Alignment.centerLeft,
         end: Alignment.topRight,
         colors: [

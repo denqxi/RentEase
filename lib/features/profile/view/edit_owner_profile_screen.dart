@@ -463,10 +463,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             widget.isOwner
                                 ? 'Shared with a tenant only after you accept their inquiry.'
                                 : 'Used for communication with landlords and property managers.',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 12,
-                              color: AppColors.slate500,
+                              color: context.appColors.textSecondary,
                             ),
                           ),
                         ),
@@ -483,20 +483,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       hint: 'email@rentease.ph',
                       readOnly: true,
                       cardColor: isDark ? AppColors.darkField : AppColors.fieldFill,
-                      textColor: AppColors.slate500,
-                      suffixIcon: const Icon(
+                      textColor: context.appColors.textSecondary,
+                      suffixIcon: Icon(
                         Icons.lock_outline_rounded,
                         size: 18,
-                        color: AppColors.slate400,
+                        color: context.appColors.hint,
                       ),
                     ),
                     const SizedBox(height: 6),
-                    const Text(
+                    Text(
                       'Managed via authentication provider.',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12,
-                        color: AppColors.slate400,
+                        color: context.appColors.hint,
                       ),
                     ),
 
@@ -518,7 +518,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                         ),
                         child: _isSaving
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 22,
                                 height: 22,
                                 child: CircularProgressIndicator(
@@ -526,7 +526,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   color: AppColors.surface,
                                 ),
                               )
-                            : const Row(
+                            : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
@@ -608,10 +608,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(
+          hintStyle: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 14,
-            color: AppColors.slate400,
+            color: context.appColors.hint,
           ),
           suffixIcon: suffixIcon,
           contentPadding:

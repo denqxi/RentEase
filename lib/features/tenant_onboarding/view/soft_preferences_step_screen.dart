@@ -290,7 +290,7 @@ class _RoomTypePill extends StatelessWidget {
           color: isSelected ? AppColors.primary : context.appColors.fieldFill,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.slate300,
+            color: isSelected ? AppColors.primary : context.appColors.hint,
           ),
         ),
         child: Text(

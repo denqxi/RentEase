@@ -11,11 +11,16 @@ class RegistrationAppBar extends StatefulWidget {
     required this.onBack,
     this.stepNumber,
     this.stepCount,
+    this.icon,
     super.key,
   });
 
   /// Tapped when the back button is pressed.
   final VoidCallback onBack;
+
+  /// Replaces the default chevron, e.g. a sign-out icon when the screen is
+  /// the only route and there is nothing to go back to.
+  final Widget? icon;
 
   /// 1-based step number, or null to hide the progress bar.
   final int? stepNumber;
@@ -76,7 +81,7 @@ class _RegistrationAppBarState extends State<RegistrationAppBar>
             scale: _scaleAnimation,
             child: FadeTransition(
               opacity: _fadeAnimation,
-              child: _BackButton(onTap: widget.onBack),
+              child: _BackButton(onTap: widget.onBack, icon: widget.icon),
             ),
           ),
         ),
@@ -89,7 +94,7 @@ class _RegistrationAppBarState extends State<RegistrationAppBar>
           Text(
             '${widget.stepNumber} / ${widget.stepCount}',
             style: AppTextStyles.label(context).copyWith(
-              color: AppColors.textSecondary,
+              color: context.appColors.textSecondary,
             ),
           ),
         ],
@@ -99,18 +104,19 @@ class _RegistrationAppBarState extends State<RegistrationAppBar>
 }
 
 class _BackButton extends StatelessWidget {
-  const _BackButton({required this.onTap});
+  const _BackButton({required this.onTap, this.icon});
 
   final VoidCallback onTap;
+  final Widget? icon;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.field),
         border: Border.all(
-          color: AppColors.fieldBorder.withValues(alpha: 0.4),
+          color: context.appColors.fieldBorder.withValues(alpha: 0.4),
           width: 1,
         ),
         boxShadow: [
@@ -122,17 +128,20 @@ class _BackButton extends StatelessWidget {
         ],
       ),
       child: Material(
-        color: AppColors.surface.withValues(alpha: 0),
+        color: context.appColors.surface.withValues(alpha: 0),
         borderRadius: BorderRadius.circular(AppRadii.field),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadii.field),
           onTap: onTap,
-          child: const SizedBox(
+          child: SizedBox(
             width: 44,
             height: 44,
-            child: Icon(
-              Icons.chevron_left,
-              color: AppColors.textPrimary,
+            child: Center(
+              child: icon ??
+                  Icon(
+                    Icons.chevron_left,
+                    color: context.appColors.textPrimary,
+                  ),
             ),
           ),
         ),
@@ -196,7 +205,7 @@ class _ProgressBarState extends State<_ProgressBar>
         child: LinearProgressIndicator(
           value: _animation.value,
           minHeight: 6,
-          backgroundColor: AppColors.fieldFill,
+          backgroundColor: context.appColors.fieldFill,
           valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
         ),
       ),

@@ -51,10 +51,10 @@ class HomeHeader extends StatelessWidget {
         height: 60,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.appColors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppColors.fieldFill,
+            color: context.appColors.fieldFill,
             width: 1.2,
           ),
           boxShadow: <BoxShadow>[
@@ -101,9 +101,9 @@ class HomeHeader extends StatelessWidget {
                   ),
                   child: Container(
                     padding: const EdgeInsets.all(1.5),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.surface,
+                      color: context.appColors.surface,
                     ),
                     child: ClipOval(
                       child: photoUrl != null && photoUrl!.trim().isNotEmpty
@@ -111,9 +111,9 @@ class HomeHeader extends StatelessWidget {
                               photoUrl!,
                               cacheWidth: 160,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => _defaultAvatar(),
+                              errorBuilder: (_, _, _) => _defaultAvatar(context),
                             )
-                          : _defaultAvatar(),
+                          : _defaultAvatar(context),
                     ),
                   ),
                 ),
@@ -127,7 +127,7 @@ class HomeHeader extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.emerald500,
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.surface, width: 2),
+                      border: Border.all(color: context.appColors.surface, width: 2),
                     ),
                   ),
                 ),
@@ -143,11 +143,11 @@ class HomeHeader extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     '$greeting,',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12.0,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.slate400,
+                      color: context.appColors.hint,
                       height: 1.15,
                     ),
                     maxLines: 1,
@@ -160,11 +160,11 @@ class HomeHeader extends StatelessWidget {
                       Flexible(
                         child: Text(
                           displayName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 16.0,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.slate900,
+                            color: context.appColors.textPrimary,
                             letterSpacing: -0.2,
                             height: 1.15,
                           ),
@@ -211,9 +211,9 @@ class HomeHeader extends StatelessWidget {
                   height: 38,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.slate50,
+                    color: context.appColors.fieldFill,
                     border: Border.all(
-                      color: AppColors.fieldFill,
+                      color: context.appColors.fieldFill,
                       width: 1,
                     ),
                   ),
@@ -222,10 +222,10 @@ class HomeHeader extends StatelessWidget {
                     clipBehavior: Clip.none,
                     alignment: Alignment.center,
                     children: <Widget>[
-                      const AppSvgIcon(
+                      AppSvgIcon(
                         svgString: AppSvgIcons.notification,
                         size: 20,
-                        color: AppColors.slate700,
+                        color: context.appColors.textPrimary,
                       ),
                       if (hasUnreadNotifications)
                         Positioned(
@@ -251,16 +251,16 @@ class HomeHeader extends StatelessWidget {
     );
   }
 
-  Widget _defaultAvatar() {
+  Widget _defaultAvatar(BuildContext context) {
     final assetPath =
         isGuest ? 'assets/images/guest.png' : 'assets/images/tenant.png';
     return Image.asset(
       assetPath,
       fit: BoxFit.cover,
-      errorBuilder: (_, _, _) => const Icon(
+      errorBuilder: (_, _, _) => Icon(
         Icons.person_rounded,
         size: 22,
-        color: AppColors.slate400,
+        color: context.appColors.hint,
       ),
     );
   }

@@ -43,7 +43,7 @@ class LocationPermissionHelper {
         if (permission == LocationPermission.denied) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              SnackBar(
                 content: Text(
                   'Location permission was denied. Tap on the map to choose a position manually.',
                 ),
@@ -115,7 +115,7 @@ class LocationPermissionHelper {
       } else if (errorStr.contains('timeout')) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text(
                 'Location request timed out. Please check your GPS signal or tap on the map.',
               ),
@@ -127,7 +127,7 @@ class LocationPermissionHelper {
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text(
                 'Could not retrieve your location. Please ensure GPS is active or tap on the map.',
               ),
@@ -152,7 +152,7 @@ class LocationPermissionHelper {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.location_off_rounded, color: AppColors.amber700, size: 24),
             SizedBox(width: 10),
@@ -163,7 +163,7 @@ class LocationPermissionHelper {
                   fontFamily: 'DM Sans',
                   fontWeight: FontWeight.w700,
                   fontSize: 18,
-                  color: AppColors.slate900,
+                  color: context.appColors.textPrimary,
                 ),
               ),
             ),
@@ -172,22 +172,22 @@ class LocationPermissionHelper {
         content: Text(
           message ??
               'Your device location (GPS) is turned off. Please turn it on in settings to pinpoint your location on the map.',
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 14,
-            color: AppColors.slate600,
+            color: context.appColors.textSecondary,
             height: 1.4,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text(
+            child: Text(
               'Cancel',
               style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontWeight: FontWeight.w600,
-                color: AppColors.slate500,
+                color: context.appColors.textSecondary,
               ),
             ),
           ),
@@ -204,7 +204,7 @@ class LocationPermissionHelper {
                 await Geolocator.openLocationSettings();
               } catch (_) {}
             },
-            child: const Text(
+            child: Text(
               'Open Settings',
               style: TextStyle(
                 fontFamily: 'DM Sans',
@@ -229,7 +229,7 @@ class LocationPermissionHelper {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.lock_person_rounded, color: AppColors.primaryDeep, size: 24),
             SizedBox(width: 10),
@@ -240,7 +240,7 @@ class LocationPermissionHelper {
                   fontFamily: 'DM Sans',
                   fontWeight: FontWeight.w700,
                   fontSize: 18,
-                  color: AppColors.slate900,
+                  color: context.appColors.textPrimary,
                 ),
               ),
             ),
@@ -249,22 +249,22 @@ class LocationPermissionHelper {
         content: Text(
           message ??
               'Location permission is disabled for RentEase. Please allow location access in your device settings to locate your position.',
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 14,
-            color: AppColors.slate600,
+            color: context.appColors.textSecondary,
             height: 1.4,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text(
+            child: Text(
               'Cancel',
               style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontWeight: FontWeight.w600,
-                color: AppColors.slate500,
+                color: context.appColors.textSecondary,
               ),
             ),
           ),
@@ -281,7 +281,7 @@ class LocationPermissionHelper {
                 await Geolocator.openAppSettings();
               } catch (_) {}
             },
-            child: const Text(
+            child: Text(
               'Open Settings',
               style: TextStyle(
                 fontFamily: 'DM Sans',

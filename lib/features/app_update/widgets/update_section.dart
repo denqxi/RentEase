@@ -26,11 +26,11 @@ class UpdateSection extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: AppColors.slate400,
+                color: context.appColors.hint,
               ),
             ),
             const SizedBox(height: 10),
@@ -109,10 +109,10 @@ class UpdateSection extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   'Downloading… ${(state.progress * 100).round()}%',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12,
-                    color: AppColors.slate500,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ] else
@@ -156,12 +156,12 @@ class UpdateSection extends StatelessWidget {
                 ),
               ],
             ] else if (state.status == AppUpdateStatus.upToDate)
-              const Text(
+              Text(
                 "You're on the latest version",
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 12,
-                  color: AppColors.slate400,
+                  color: context.appColors.hint,
                 ),
               ),
           ],

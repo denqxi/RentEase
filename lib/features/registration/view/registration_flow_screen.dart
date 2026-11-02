@@ -209,7 +209,7 @@ void _showAlreadyRegisteredDialog(
           onPressed: () => Navigator.of(ctx).pop(),
           child: Text(
             state.verified ? 'Cancel' : 'Use another email',
-            style: const TextStyle(color: AppColors.textSecondary, fontWeight: bold),
+            style: TextStyle(color: context.appColors.textSecondary, fontWeight: bold),
           ),
         ),
         if (!state.verified)

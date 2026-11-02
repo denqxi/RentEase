@@ -23,7 +23,12 @@ class OwnerProfileDoc {
     this.ratingSum,
     this.propertyCount,
     this.updatedAt,
+    this.showCredentials = false,
   });
+
+  /// Owner's choice to let tenants see their business permit on the profile.
+  /// Opt-in; firestore.rules deny tenants the permit read while false.
+  final bool showCredentials;
 
   /// Document ID, references users.
   final String userId;
@@ -64,6 +69,7 @@ class OwnerProfileDoc {
         ratingSum: parseNumOrNull(map['ratingSum']),
         propertyCount: parseNumOrNull(map['propertyCount']),
         updatedAt: parseTimestamp(map['updatedAt']),
+        showCredentials: map['showCredentials'] as bool? ?? false,
       );
 
   factory OwnerProfileDoc.fromSnapshot(
@@ -79,6 +85,7 @@ class OwnerProfileDoc {
     // No rating fields: the owner's rating is the roll-up of their
     // properties' counters (OwnerRatingSummary); nobody writes them here.
     if (propertyCount != null) 'propertyCount': propertyCount,
+    'showCredentials': showCredentials,
     'updatedAt': FieldValue.serverTimestamp(),
   };
 }

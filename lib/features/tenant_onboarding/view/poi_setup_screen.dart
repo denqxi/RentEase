@@ -47,10 +47,10 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
   static const Color _primaryTeal = AppColors.primary;
   static const Color _midnightNavy = AppColors.ink;
   static const Color _surfaceTint = AppColors.accentSoft;
-  static const Color _borderStroke = AppColors.slate200;
-  static const Color _borderStrokeDark = AppColors.indicatorInactive;
-  static const Color _textPrimary = AppColors.slate900;
-  static const Color _textSecondary = AppColors.textSecondary;
+  Color get _borderStroke => context.appColors.fieldBorder;
+  Color get _borderStrokeDark => context.appColors.indicatorInactive;
+  Color get _textPrimary => context.appColors.textPrimary;
+  Color get _textSecondary => context.appColors.textSecondary;
 
   // Form State
   String _poiType = 'School'; // 'School', 'Workplace', 'Other'
@@ -277,7 +277,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                           color: _borderStroke,
                         ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.chevron_left_rounded,
                         color: _textPrimary,
                         size: 24,
@@ -286,7 +286,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                   ),
                   const SizedBox(width: 14),
                   if (widget.isPicker) ...[
-                    const Text(
+                    Text(
                       'Select Destination',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
@@ -312,7 +312,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                       ),
                     ),
                     const SizedBox(width: 14),
-                    const Text(
+                    Text(
                       '3 / 4',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
@@ -344,7 +344,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'Set your school or workplace so we can show rentals within your travel range.',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
@@ -357,7 +357,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                       const SizedBox(height: 14),
 
                       // B. Purpose / Category Selection (smaller, compact height)
-                      const Text(
+                      Text(
                         'I AM COMMUTING TO',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
@@ -404,7 +404,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                       // C. Search Bar & Destination Input (compact height & smaller secondary label)
                       Text(
                         _searchLabel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -416,7 +416,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                       TextField(
                         controller: _searchController,
                         onChanged: _onSearchChanged,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 13,
                           color: _textPrimary,
@@ -424,12 +424,12 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                         decoration: InputDecoration(
                           isDense: true,
                           hintText: _searchPlaceholder,
-                          hintStyle: const TextStyle(
+                          hintStyle: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 12.5,
                             color: _textSecondary,
                           ),
-                          prefixIcon: const Icon(
+                          prefixIcon: Icon(
                             Icons.search_rounded,
                             color: _textSecondary,
                             size: 18,
@@ -444,7 +444,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                                     _searchController.clear();
                                     _onSearchChanged('');
                                   },
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.close_rounded,
                                     size: 16,
                                     color: _textSecondary,
@@ -456,14 +456,14 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                             minHeight: 32,
                           ),
                           filled: true,
-                          fillColor: AppColors.fieldFill,
+                          fillColor: context.appColors.fieldFill,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 8,
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
+                            borderSide: BorderSide(
                               color: _borderStroke,
                             ),
                           ),
@@ -505,7 +505,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                                   ),
                                   title: Text(
                                     place['name'] as String,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w500,
@@ -684,7 +684,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                                       borderRadius: BorderRadius.circular(6),
                                       border: Border.all(color: _borderStroke),
                                     ),
-                                    child: const Text(
+                                    child: Text(
                                       '💡 Tap map or drag pin to your exact building or gate',
                                       style: TextStyle(
                                         fontFamily: 'DM Sans',
@@ -749,7 +749,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                                   Text(
                                     _resolvedAddress ??
                                         'Tap the map or search to choose destination',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700,
@@ -768,7 +768,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             'MAXIMUM TRAVEL DISTANCE',
                             style: TextStyle(
                               fontFamily: 'DM Sans',
@@ -829,7 +829,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                         ),
                         child: Text(
                           'Rentals within ${_maxKm.toStringAsFixed(1)} km of your destination will be prioritized.',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 11.5,
                             fontWeight: FontWeight.w500,
@@ -853,7 +853,7 @@ class _PoiSetupScreenState extends State<PoiSetupScreen> {
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.resolveWith<Color>(
                       (states) => states.contains(WidgetState.disabled)
-                          ? AppColors.indicatorInactive
+                          ? context.appColors.indicatorInactive
                           : _midnightNavy,
                     ),
                     foregroundColor: WidgetStateProperty.all(AppColors.onInk),
@@ -900,11 +900,11 @@ class _CategoryCard extends StatelessWidget {
 
   static const Color _primaryTeal = AppColors.primary;
   static const Color _surfaceTint = AppColors.accentSoft;
-  static const Color _borderStroke = AppColors.slate200;
-  static const Color _textSecondary = AppColors.textSecondary;
 
   @override
   Widget build(BuildContext context) {
+    final borderStroke = context.appColors.fieldBorder;
+    final textSecondary = context.appColors.textSecondary;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -915,7 +915,7 @@ class _CategoryCard extends StatelessWidget {
           color: isActive ? _surfaceTint : AppColors.onInk,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isActive ? _primaryTeal : _borderStroke,
+            color: isActive ? _primaryTeal : borderStroke,
             width: isActive ? 1.5 : 1.0,
           ),
         ),
@@ -926,10 +926,10 @@ class _CategoryCard extends StatelessWidget {
               iconPath,
               width: 24,
               height: 24,
-              errorBuilder: (_, _, _) => const Icon(
+              errorBuilder: (_, _, _) => Icon(
                 Icons.location_city_rounded,
                 size: 22,
-                color: _textSecondary,
+                color: textSecondary,
               ),
             ),
             const SizedBox(height: 5),
@@ -939,7 +939,7 @@ class _CategoryCard extends StatelessWidget {
                 fontFamily: 'DM Sans',
                 fontSize: 11.5,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-                color: isActive ? _primaryTeal : _textSecondary,
+                color: isActive ? _primaryTeal : textSecondary,
               ),
             ),
           ],

@@ -32,6 +32,7 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+auth-backup.json
 
 # Symbolication related
 app.*.symbols
@@ -67,3 +68,5 @@ firebase-debug.log
 # Local screenshots, not tracked
 /screenshots/
 /test/
+# Widget Preview related
+.widget_preview/

@@ -233,6 +233,7 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
       body: Stack(
         children: <Widget>[
           // Subtle top-right gradient — spread softly across the header & upper content
+          if (Theme.of(context).brightness == Brightness.light)
           Positioned(
             top: 0,
             left: 0,
@@ -340,7 +341,7 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
                                   )
                                 : RefreshIndicator(
                                     color: AppColors.primary,
-                                    backgroundColor: AppColors.surface,
+                                    backgroundColor: context.appColors.surface,
                                     edgeOffset: 0,
                                     onRefresh: () async {
                                       await cubit.refresh();
@@ -513,9 +514,9 @@ class _StatsRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.appColors.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.fieldFill, width: 1.2),
+          border: Border.all(color: context.appColors.fieldFill, width: 1.2),
           boxShadow: <BoxShadow>[
             BoxShadow(
               color: AppColors.slate900.withValues(alpha: 0.05),
@@ -537,7 +538,7 @@ class _StatsRow extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
@@ -546,7 +547,7 @@ class _StatsRow extends StatelessWidget {
                         fontFamily: 'DM Sans',
                         fontSize: 16.5,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.slate900,
+                        color: context.appColors.textPrimary,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -557,7 +558,7 @@ class _StatsRow extends StatelessWidget {
                         fontFamily: 'DM Sans',
                         fontSize: 12.5,
                         fontWeight: FontWeight.w400,
-                        color: AppColors.slate400,
+                        color: context.appColors.hint,
                       ),
                     ),
                   ],
@@ -656,10 +657,10 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
       decoration: BoxDecoration(
-        color: AppColors.slate50.withValues(alpha: 0.55),
+        color: context.appColors.fieldFill.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.slate200.withValues(alpha: 0.65),
+          color: context.appColors.fieldBorder.withValues(alpha: 0.65),
           width: 0.65,
         ),
       ),
@@ -696,11 +697,11 @@ class _StatCard extends StatelessWidget {
                   fit: BoxFit.scaleDown,
                   child: Text(
                     value,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.slate900,
+                      color: context.appColors.textPrimary,
                       height: 1.0,
                     ),
                   ),
@@ -714,11 +715,11 @@ class _StatCard extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 12.0,
               fontWeight: FontWeight.w700,
-              color: AppColors.slate900,
+              color: context.appColors.textPrimary,
               height: 1.15,
             ),
           ),
@@ -728,11 +729,11 @@ class _StatCard extends StatelessWidget {
             subtitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 10.5,
               fontWeight: FontWeight.w400,
-              color: AppColors.slate400,
+              color: context.appColors.hint,
               height: 1.15,
             ),
           ),
@@ -767,13 +768,13 @@ class _ActivePropertiesHeader extends StatelessWidget {
           // Title row: "Active Properties (count)" + Add Button
           Row(
             children: <Widget>[
-              const Text(
+              Text(
                 'Active Properties',
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.slate900,
+                  color: context.appColors.textPrimary,
                   letterSpacing: -0.2,
                 ),
               ),
@@ -784,17 +785,17 @@ class _ActivePropertiesHeader extends StatelessWidget {
                   vertical: 2.5,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.fieldFill,
+                  color: context.appColors.fieldFill,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.slate200, width: 1),
+                  border: Border.all(color: context.appColors.fieldBorder, width: 1),
                 ),
                 child: Text(
                   '$count',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.slate500,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ),
@@ -807,10 +808,10 @@ class _ActivePropertiesHeader extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.appColors.surface,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AppColors.slate200,
+                      color: context.appColors.fieldBorder,
                       width: 1,
                     ),
                     boxShadow: <BoxShadow>[
@@ -821,9 +822,9 @@ class _ActivePropertiesHeader extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.add_rounded,
-                    color: AppColors.slate900,
+                    color: context.appColors.textPrimary,
                     size: 18,
                   ),
                 ),
@@ -831,13 +832,13 @@ class _ActivePropertiesHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 3),
-          const Text(
+          Text(
             'Tap any card directly to manage units & tenants.',
             style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 12,
               fontWeight: FontWeight.w400,
-              color: AppColors.slate400,
+              color: context.appColors.hint,
             ),
           ),
           const SizedBox(height: 14),
@@ -846,9 +847,9 @@ class _ActivePropertiesHeader extends StatelessWidget {
           Container(
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.appColors.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.slate200),
+              border: Border.all(color: context.appColors.fieldBorder),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.slate900.withValues(alpha: 0.03),
@@ -859,33 +860,33 @@ class _ActivePropertiesHeader extends StatelessWidget {
             ),
             child: TextField(
               controller: searchController,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
-                color: AppColors.slate900,
+                color: context.appColors.textPrimary,
               ),
               decoration: InputDecoration(
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.search_rounded,
-                  color: AppColors.slate400,
+                  color: context.appColors.hint,
                   size: 18,
                 ),
                 suffixIcon: searchController.text.isNotEmpty
                     ? GestureDetector(
                         onTap: searchController.clear,
-                        child: const Icon(
+                        child: Icon(
                           Icons.close_rounded,
-                          color: AppColors.slate400,
+                          color: context.appColors.hint,
                           size: 16,
                         ),
                       )
                     : null,
                 hintText: 'Search properties, rooms, or address...',
-                hintStyle: const TextStyle(
+                hintStyle: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 12.5,
-                  color: AppColors.slate400,
+                  color: context.appColors.hint,
                 ),
                 border: InputBorder.none,
               ),
@@ -943,12 +944,12 @@ class _FilterChipButton extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.slate900 : AppColors.surface,
+          color: isSelected ? context.appColors.textPrimary : context.appColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
-                ? AppColors.slate900
-                : AppColors.slate200,
+                ? context.appColors.textPrimary
+                : context.appColors.fieldBorder,
             width: 1,
           ),
         ),
@@ -958,7 +959,7 @@ class _FilterChipButton extends StatelessWidget {
             fontFamily: 'DM Sans',
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? AppColors.surface : AppColors.slate500,
+            color: isSelected ? context.appColors.surface : context.appColors.textSecondary,
           ),
         ),
       ),
@@ -979,10 +980,10 @@ class _EmptyPropertiesView extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.appColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppColors.slate200.withValues(alpha: 0.6),
+            color: context.appColors.fieldBorder.withValues(alpha: 0.6),
             width: 0.75,
           ),
           boxShadow: <BoxShadow>[
@@ -1000,13 +1001,13 @@ class _EmptyPropertiesView extends StatelessWidget {
         ),
         child: Column(
           children: <Widget>[
-            const Text(
+            Text(
               'You have no listings yet. Add a property\nto start managing and matching with tenants.',
               style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13.5,
                 fontWeight: FontWeight.w400,
-                color: AppColors.slate500,
+                color: context.appColors.textSecondary,
                 height: 1.4,
               ),
               textAlign: TextAlign.center,
@@ -1026,7 +1027,7 @@ class _EmptyPropertiesView extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Add your first property',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
@@ -1114,7 +1115,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
       statusLabel = effectiveStatus == 'available' ? 'Available' : 'Occupied';
       statusDotColor = effectiveStatus == 'available'
           ? AppColors.matchHigh
-          : AppColors.slate400;
+          : context.appColors.hint;
     } else {
       statusLabel = availableCount > 0
           ? '$availableCount Available'
@@ -1122,15 +1123,15 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
 
       statusDotColor = availableCount > 0
           ? AppColors.matchHigh
-          : AppColors.slate400;
+          : context.appColors.hint;
     }
     final int photoCount = property.photos.length;
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.slate200, width: 0.8),
+        border: Border.all(color: context.appColors.fieldBorder, width: 0.8),
         boxShadow: [
           BoxShadow(
             color: AppColors.slate900.withValues(alpha: 0.05),
@@ -1182,7 +1183,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: AppColors.slate200.withValues(alpha: 0.7),
+                                color: context.appColors.fieldBorder.withValues(alpha: 0.7),
                                 width: 0.8,
                               ),
                             ),
@@ -1200,7 +1201,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: context.appColors.surface,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
@@ -1262,7 +1263,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                 const SizedBox(width: 6),
                                 Text(
                                   statusLabel,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
@@ -1292,14 +1293,14 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                     color: AppColors.scrim.withValues(alpha: 0.28),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                      color: AppColors.surface.withValues(alpha: 0.35),
+                                      color: context.appColors.surface.withValues(alpha: 0.35),
                                       width: 0.6,
                                     ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         Icons.photo_outlined,
                                         size: 11,
                                         color: AppColors.surface,
@@ -1307,7 +1308,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                       const SizedBox(width: 4),
                                       Text(
                                         '$photoCount',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontFamily: 'DM Sans',
                                           fontSize: 10,
                                           fontWeight: FontWeight.w700,
@@ -1343,21 +1344,21 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                 displayName,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 17,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.slate900,
+                                  color: context.appColors.textPrimary,
                                   letterSpacing: -0.3,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.location_on_outlined,
                                     size: 13,
-                                    color: AppColors.slate400,
+                                    color: context.appColors.hint,
                                   ),
                                   const SizedBox(width: 4),
                                   Expanded(
@@ -1365,11 +1366,11 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                       property.address,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 11,
                                         fontWeight: FontWeight.w500,
-                                        color: AppColors.slate600,
+                                        color: context.appColors.textSecondary,
                                       ),
                                     ),
                                   ),
@@ -1383,10 +1384,10 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                       ],
                     ),
                     const SizedBox(height: 11),
-                    const Divider(
+                    Divider(
                       height: 1,
                       thickness: 0.8,
-                      color: AppColors.fieldFill,
+                      color: context.appColors.fieldFill,
                     ),
                     const SizedBox(height: 11),
                     Row(
@@ -1445,13 +1446,13 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                   letterSpacing: -0.3,
                                 ),
                               ),
-                              const TextSpan(
+                              TextSpan(
                                 text: ' / month',
                                 style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w500,
-                                  color: AppColors.slate500,
+                                  color: context.appColors.textSecondary,
                                 ),
                               ),
                             ],
@@ -1505,31 +1506,31 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
         if (hasRating) ...[
           Text(
             effectiveAvg.toStringAsFixed(1),
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 12,
               fontWeight: FontWeight.w800,
-              color: AppColors.slate900,
+              color: context.appColors.textPrimary,
             ),
           ),
           const SizedBox(width: 2.5),
           Text(
             '($effectiveCount)',
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: AppColors.slate500,
+              color: context.appColors.textSecondary,
             ),
           ),
         ] else ...[
-          const Text(
+          Text(
             '0',
             style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: AppColors.slate500,
+              color: context.appColors.textSecondary,
             ),
           ),
         ],

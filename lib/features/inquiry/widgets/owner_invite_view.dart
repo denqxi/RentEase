@@ -69,7 +69,7 @@ class OwnerInviteView extends StatelessWidget {
                 '$tenantName has been notified',
                 style: AppTextStyles.label(
                   context,
-                ).copyWith(color: AppColors.textPrimary),
+                ).copyWith(color: context.appColors.textPrimary),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
@@ -78,7 +78,7 @@ class OwnerInviteView extends StatelessWidget {
                     : '${property.title} · ₱${property.monthlyRent}/mo',
                 style: AppTextStyles.body(
                   context,
-                ).copyWith(color: AppColors.textSecondary),
+                ).copyWith(color: context.appColors.textSecondary),
               ),
             ],
           ),
@@ -87,9 +87,9 @@ class OwnerInviteView extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.fieldFill,
+            color: context.appColors.fieldFill,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.fieldBorder),
+            border: Border.all(color: context.appColors.fieldBorder),
           ),
           child: Column(
             children: [
@@ -110,8 +110,8 @@ class OwnerInviteView extends StatelessWidget {
           ),
         ),
         if (state.isCounterpartDeleted(isOwner: true))
-          const Padding(
-            padding: EdgeInsets.only(top: 16),
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
             child: Center(
               child: Text(
                 'This user is not available.',
@@ -119,7 +119,7 @@ class OwnerInviteView extends StatelessWidget {
                   fontFamily: 'DM Sans',
                   fontSize: 13,
                   fontWeight: FontWeight.w400,
-                  color: AppColors.slate500,
+                  color: context.appColors.textSecondary,
                 ),
               ),
             ),

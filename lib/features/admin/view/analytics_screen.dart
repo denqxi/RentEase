@@ -357,13 +357,13 @@ class _PendingReviewCard extends StatelessWidget {
                   color: context.appColors.ink,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
+                child: Text(
                   'Review',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.onInk,
+                    color: context.appColors.surface,
                   ),
                 ),
               ),

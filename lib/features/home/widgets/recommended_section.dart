@@ -109,7 +109,7 @@ class _RecommendedSectionState extends State<RecommendedSection> {
                         shape: BoxShape.circle,
                         color: isActive
                             ? AppColors.primary
-                            : AppColors.slate200,
+                            : context.appColors.fieldBorder,
                       ),
                     );
                   }),

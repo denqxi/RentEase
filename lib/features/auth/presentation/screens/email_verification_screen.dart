@@ -63,10 +63,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text(
+            child: Text(
               'No',
               style: TextStyle(
-                color: AppColors.textSecondary,
+                color: context.appColors.textSecondary,
                 fontWeight: FontWeight.bold,
               ),
             ),

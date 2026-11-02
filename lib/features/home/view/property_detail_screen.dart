@@ -569,6 +569,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       body: Stack(
         children: [
           // Subtle top-right gradient on the background (matching HomeScreen & SearchScreen)
+          if (Theme.of(context).brightness == Brightness.light)
           Positioned(
             top: 0,
             left: 0,
@@ -604,10 +605,10 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: context.appColors.surface,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppColors.slate200.withValues(alpha: 0.6),
+                            color: context.appColors.fieldBorder.withValues(alpha: 0.6),
                             width: 1,
                           ),
                           boxShadow: [
@@ -650,10 +651,10 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: context.appColors.surface,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppColors.slate200.withValues(alpha: 0.6),
+                            color: context.appColors.fieldBorder.withValues(alpha: 0.6),
                             width: 1,
                           ),
                           boxShadow: [
@@ -670,9 +671,9 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                           child: InkWell(
                             borderRadius: BorderRadius.circular(12),
                             onTap: _shareProperty,
-                            child: const Icon(
+                            child: Icon(
                               Icons.share_outlined,
-                              color: AppColors.slate700,
+                              color: context.appColors.textPrimary,
                               size: 19,
                             ),
                           ),
@@ -692,10 +693,10 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                             width: 38,
                             height: 38,
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: context.appColors.surface,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: AppColors.slate200.withValues(alpha: 0.6),
+                                color: context.appColors.fieldBorder.withValues(alpha: 0.6),
                                 width: 1,
                               ),
                               boxShadow: [
@@ -717,7 +718,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                                 ),
                                 child: Icon(
                                   isSaved ? Icons.favorite : Icons.favorite_border,
-                                  color: isSaved ? AppColors.destructive : AppColors.slate700,
+                                  color: isSaved ? AppColors.destructive : context.appColors.textPrimary,
                                   size: 19,
                                 ),
                               ),
@@ -986,7 +987,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: context.appColors.surface,
                             borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
@@ -999,7 +1000,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Row(
+                              Row(
                                 children: [
                                   Icon(
                                     Icons.info_outline_rounded,
@@ -1013,7 +1014,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                                       fontFamily: 'DM Sans',
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800,
-                                      color: AppColors.slate900,
+                                      color: context.appColors.textPrimary,
                                     ),
                                   ),
                                 ],
@@ -1034,10 +1035,10 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                                       Expanded(
                                         child: Text(
                                           r.detailLabel,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontFamily: 'DM Sans',
                                             fontSize: 13,
-                                            color: AppColors.slate600,
+                                            color: context.appColors.textSecondary,
                                           ),
                                         ),
                                       ),
@@ -1055,10 +1056,10 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                         width: double.infinity,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: context.appColors.surface,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppColors.slate200,
+                            color: context.appColors.fieldBorder,
                             width: 1,
                           ),
                           boxShadow: [
@@ -1074,14 +1075,14 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                           child: InkWell(
                             borderRadius: BorderRadius.circular(12),
                             onTap: () => _editPreferences(context),
-                            child: const Center(
+                            child: Center(
                               child: Text(
                                 'Update my preferences',
                                 style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.slate900,
+                                  color: context.appColors.textPrimary,
                                 ),
                               ),
                             ),
@@ -1119,18 +1120,18 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                             () => _editPreferences(context),
                           ),
                           icon: const Icon(Icons.edit_note_rounded, size: 18),
-                          label: const Text(
+                          label: Text(
                             'Update Preferences to Inquire',
                             style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.surface,
+                              color: context.appColors.surface,
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: context.appColors.ink,
-                            foregroundColor: AppColors.surface,
+                            foregroundColor: context.appColors.surface,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1155,7 +1156,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: context.appColors.ink,
-                            foregroundColor: AppColors.surface,
+                            foregroundColor: context.appColors.surface,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1163,11 +1164,11 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                           ),
                           child: Text(
                             widget.isGuest ? 'Sign in to inquire' : 'Send Inquiry',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.surface,
+                              color: context.appColors.surface,
                             ),
                           ),
                         ),
@@ -1190,19 +1191,19 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: context.appColors.ink,
-                              foregroundColor: AppColors.surface,
+                              foregroundColor: context.appColors.surface,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Send Inquiry Anyway',
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.surface,
+                                color: context.appColors.surface,
                               ),
                             ),
                           ),
@@ -1431,7 +1432,7 @@ class _FullScreenSwipeableImageViewerState
                           color: AppColors.scrim.withValues(alpha: 0.4),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.close_rounded,
                           color: AppColors.surface,
                           size: 22,
@@ -1451,7 +1452,7 @@ class _FullScreenSwipeableImageViewerState
                         ),
                         child: Text(
                           '${_currentIndex + 1} / ${widget.photos.length}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -1571,7 +1572,7 @@ class _PropertyPhotoGallerySectionState
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? AppColors.primaryCyan : AppColors.slate200,
+            color: isSelected ? AppColors.primaryCyan : context.appColors.fieldBorder,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -1586,11 +1587,11 @@ class _PropertyPhotoGallerySectionState
                 fit: BoxFit.cover,
                 filterQuality: FilterQuality.medium,
                 errorBuilder: (_, _, _) => Container(
-                  color: AppColors.fieldFill,
-                  child: const Icon(
+                  color: context.appColors.fieldFill,
+                  child: Icon(
                     Icons.broken_image,
                     size: 18,
-                    color: AppColors.hint,
+                    color: context.appColors.hint,
                   ),
                 ),
               ),
@@ -1600,7 +1601,7 @@ class _PropertyPhotoGallerySectionState
                   alignment: Alignment.center,
                   child: Text(
                     '+$overlayCount',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
@@ -1627,7 +1628,7 @@ class _PropertyPhotoGallerySectionState
       height: 192,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: AppColors.fieldFill,
+        color: context.appColors.fieldFill,
         boxShadow: [
           BoxShadow(
             color: AppColors.slate900.withValues(alpha: 0.05),
@@ -1680,7 +1681,7 @@ class _PropertyPhotoGallerySectionState
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.slate200.withValues(alpha: 0.8),
+                    color: context.appColors.fieldBorder.withValues(alpha: 0.8),
                     width: 1,
                   ),
                 ),
@@ -1698,7 +1699,7 @@ class _PropertyPhotoGallerySectionState
                 vertical: 4.5,
               ),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.appColors.surface,
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
@@ -1783,19 +1784,19 @@ class _PropertyPhotoGallerySectionState
                       ),
                     ),
                   ] else ...[
-                    const Icon(
+                    Icon(
                       Icons.lock_outline,
                       size: 12,
-                      color: AppColors.slate600,
+                      color: context.appColors.textSecondary,
                     ),
                     const SizedBox(width: 4),
-                    const Text(
+                    Text(
                       'Match',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.slate900,
+                        color: context.appColors.textPrimary,
                         letterSpacing: -0.1,
                       ),
                     ),
@@ -1823,14 +1824,14 @@ class _PropertyPhotoGallerySectionState
                       color: AppColors.scrim.withValues(alpha: 0.45),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: AppColors.surface.withValues(alpha: 0.35),
+                        color: context.appColors.surface.withValues(alpha: 0.35),
                         width: 0.6,
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.photo_outlined,
                           size: 12.5,
                           color: AppColors.surface,
@@ -1840,7 +1841,7 @@ class _PropertyPhotoGallerySectionState
                           photoCount > 1
                               ? '${safeIndex + 1} / $photoCount'
                               : '$photoCount',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 11.5,
                             fontWeight: FontWeight.w700,
@@ -2025,7 +2026,7 @@ class _PropertyMainOverviewCardState
                                 hasReviews ? FontWeight.w700 : FontWeight.w500,
                             color: hasReviews
                                 ? context.appColors.textPrimary
-                                : AppColors.slate500,
+                                : context.appColors.textSecondary,
                           ),
                         ),
                       ],
@@ -2053,13 +2054,13 @@ class _PropertyMainOverviewCardState
                       ),
                     ),
                     const SizedBox(width: 3),
-                    const Text(
+                    Text(
                       '/ mo',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.slate500,
+                        color: context.appColors.textSecondary,
                       ),
                     ),
                   ],
@@ -2089,11 +2090,11 @@ class _PropertyMainOverviewCardState
           // Property type
           Text(
             displayType,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: AppColors.slate600,
+              color: context.appColors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -2102,10 +2103,10 @@ class _PropertyMainOverviewCardState
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.location_on_outlined,
                 size: 15,
-                color: AppColors.slate400,
+                color: context.appColors.hint,
               ),
               const SizedBox(width: 6),
               Expanded(
@@ -2126,11 +2127,11 @@ class _PropertyMainOverviewCardState
                       overflow: _isAddressExpanded
                           ? TextOverflow.visible
                           : TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
-                        color: AppColors.slate600,
+                        color: context.appColors.textSecondary,
                         height: 1.3,
                       ),
                     ),
@@ -2149,10 +2150,10 @@ class _PropertyMainOverviewCardState
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: context.appColors.surface,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: AppColors.slate200.withValues(alpha: 0.8),
+                          color: context.appColors.fieldBorder.withValues(alpha: 0.8),
                           width: 1,
                         ),
                       ),
@@ -2172,10 +2173,10 @@ class _PropertyMainOverviewCardState
           const SizedBox(height: 14),
 
           // Separation line below address
-          const Divider(
+          Divider(
             height: 1,
             thickness: 0.8,
-            color: AppColors.fieldFill,
+            color: context.appColors.fieldFill,
           ),
         ],
       ),
@@ -2222,7 +2223,7 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
       .toString()
       .replaceAllMapped(_kThousandsRe, (m) => '${m[1]},');
 
-  static Widget _row(String label, String value) {
+  static Widget _row(BuildContext context, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -2230,22 +2231,22 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: AppColors.slate500,
+              color: context.appColors.textSecondary,
             ),
           ),
           Flexible(
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: AppColors.slate900,
+                color: context.appColors.textPrimary,
               ),
             ),
           ),
@@ -2254,8 +2255,8 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
     );
   }
 
-  static Widget _div() =>
-      const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill);
+  static Widget _div(BuildContext context) =>
+      Divider(height: 1, thickness: 0.8, color: context.appColors.fieldFill);
 
   Widget _buildItem({
     required IconData icon,
@@ -2297,11 +2298,11 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.slate900,
+                          color: context.appColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -2309,11 +2310,11 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12.5,
                           fontWeight: FontWeight.w400,
-                          color: AppColors.slate500,
+                          color: context.appColors.textSecondary,
                         ),
                       ),
                     ],
@@ -2328,14 +2329,14 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: AppColors.slate50,
+                      color: context.appColors.fieldFill,
                       borderRadius: BorderRadius.circular(9),
                     ),
                     alignment: Alignment.center,
-                    child: const Icon(
+                    child: Icon(
                       Icons.keyboard_arrow_down_rounded,
                       size: 20,
-                      color: AppColors.slate600,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                 ),
@@ -2366,10 +2367,10 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: AppColors.slate200.withValues(alpha: 0.6),
+          color: context.appColors.fieldBorder.withValues(alpha: 0.6),
           width: 0.8,
         ),
         boxShadow: [
@@ -2385,13 +2386,13 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header Label (no chevron)
-          const Text(
+          Text(
             'Rental Information',
             style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 16,
               fontWeight: FontWeight.w800,
-              color: AppColors.slate900,
+              color: context.appColors.textPrimary,
               letterSpacing: -0.2,
             ),
           ),
@@ -2406,33 +2407,33 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
               onToggle: () =>
                   setState(() => _expandedIndex = _expandedIndex == 0 ? null : 0),
               children: [
-                _row('Monthly rent', '₱${_fmt(widget.monthlyRent)}'),
-                _div(),
-                _row(
+                _row(context, 'Monthly rent', '₱${_fmt(widget.monthlyRent)}'),
+                _div(context),
+                _row(context,
                   'Security deposit',
                   widget.depositAmount > 0
                       ? '₱${_fmt(widget.depositAmount)}'
                       : 'None',
                 ),
-                _div(),
-                _row(
+                _div(context),
+                _row(context,
                   'Advance payment',
                   widget.advanceMonths > 0
                       ? '${widget.advanceMonths} ${widget.advanceMonths == 1 ? 'month' : 'months'}'
                       : 'None',
                 ),
-                _div(),
-                _row(
+                _div(context),
+                _row(context,
                   'Maximum occupants',
                   '${widget.maxOccupants} ${widget.maxOccupants == 1 ? 'occupant' : 'occupants'}',
                 ),
               ],
             ),
 
-            const Divider(
+            Divider(
               height: 16,
               thickness: 0.8,
-              color: AppColors.fieldFill,
+              color: context.appColors.fieldFill,
             ),
 
             // Item 2: House Rules
@@ -2445,26 +2446,26 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
               onToggle: () =>
                   setState(() => _expandedIndex = _expandedIndex == 1 ? null : 1),
               children: [
-                _row('Curfew hours', formatCurfew(widget.curfewHours)),
-                _div(),
-                _row('Gender policy', widget.allowedGender),
-                _div(),
-                _row(
+                _row(context, 'Curfew hours', formatCurfew(widget.curfewHours)),
+                _div(context),
+                _row(context, 'Gender policy', widget.allowedGender),
+                _div(context),
+                _row(context,
                   'Smoking policy',
                   widget.smokingAllowed ? 'Allowed' : 'Not allowed',
                 ),
-                _div(),
-                _row(
+                _div(context),
+                _row(context,
                   'Pet policy',
                   widget.petsAllowed ? 'Allowed' : 'Not allowed',
                 ),
               ],
             ),
 
-            const Divider(
+            Divider(
               height: 16,
               thickness: 0.8,
-              color: AppColors.fieldFill,
+              color: context.appColors.fieldFill,
             ),
 
             // Item 3: Amenities
@@ -2491,14 +2492,14 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
                     ),
                   )
                 else
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(vertical: 8),
                     child: Text(
                       'No specific amenities listed.',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 13,
-                        color: AppColors.slate500,
+                        color: context.appColors.textSecondary,
                       ),
                     ),
                   ),
@@ -2526,7 +2527,7 @@ class _TenantAmenityChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(5, 5, 11, 5),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: AppColors.primary.withValues(alpha: 0.55),
@@ -2560,11 +2561,11 @@ class _TenantAmenityChip extends StatelessWidget {
           const SizedBox(width: 7),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: AppColors.slate900,
+              color: context.appColors.textPrimary,
               height: 1.1,
             ),
           ),
@@ -2603,7 +2604,7 @@ class _HostInformationCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -2638,7 +2639,7 @@ class _HostInformationCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
@@ -2647,7 +2648,7 @@ class _HostInformationCard extends StatelessWidget {
                         fontFamily: 'DM Sans',
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.slate500,
+                        color: context.appColors.textSecondary,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -2708,11 +2709,11 @@ class _HostInformationCard extends StatelessWidget {
                                   ownerName,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 15,
                                     fontWeight: FontWeight.w800,
-                                    color: AppColors.slate900,
+                                    color: context.appColors.textPrimary,
                                   ),
                                 ),
                               ),
@@ -2755,11 +2756,11 @@ class _HostInformationCard extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             'Member since $memberSince · $propertyCount ${propertyCount == 1 ? 'property' : 'properties'}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: AppColors.slate500,
+                              color: context.appColors.textSecondary,
                             ),
                           ),
                         ],
@@ -3011,9 +3012,9 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.fieldFill, width: 1.2),
+        border: Border.all(color: context.appColors.fieldFill, width: 1.2),
         boxShadow: [
           BoxShadow(
             color: AppColors.slate900.withValues(alpha: 0.05),
@@ -3028,13 +3029,13 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Property reviews',
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.slate900,
+                  color: context.appColors.textPrimary,
                 ),
               ),
               if (!_isLoading && effectiveCount > 0)
@@ -3056,11 +3057,11 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                       const SizedBox(width: 3.5),
                       Text(
                         '${effectiveAvg.toStringAsFixed(1)} ($effectiveCount)',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.slate900,
+                          color: context.appColors.textPrimary,
                         ),
                       ),
                     ],
@@ -3069,7 +3070,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(height: 1, thickness: 0.8, color: AppColors.fieldFill),
+          Divider(height: 1, thickness: 0.8, color: context.appColors.fieldFill),
           const SizedBox(height: 12),
 
           SizedBox(
@@ -3096,22 +3097,22 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                               color: AppColors.slate400.withValues(alpha: 0.7),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
+                            Text(
                               'No reviews yet for this property',
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.slate500,
+                                color: context.appColors.textSecondary,
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
+                            Text(
                               'Reviews from verified tenants will appear here.',
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
-                                color: AppColors.slate400,
+                                color: context.appColors.hint,
                               ),
                             ),
                           ],
@@ -3125,12 +3126,12 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                           primary: false,
                           padding: const EdgeInsets.only(right: 6),
                           itemCount: _reviews.length,
-                          separatorBuilder: (_, _) => const Padding(
+                          separatorBuilder: (_, _) => Padding(
                             padding: EdgeInsets.symmetric(vertical: 8),
                             child: Divider(
                               height: 1,
                               thickness: 0.6,
-                              color: AppColors.fieldFill,
+                              color: context.appColors.fieldFill,
                             ),
                           ),
                           itemBuilder: (context, index) {
@@ -3147,21 +3148,21 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                                         rev.raterName,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontFamily: 'DM Sans',
                                           fontSize: 13,
                                           fontWeight: FontWeight.w700,
-                                          color: AppColors.slate900,
+                                          color: context.appColors.textPrimary,
                                         ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
                                       rev.dateStr,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 11,
-                                        color: AppColors.slate400,
+                                        color: context.appColors.hint,
                                       ),
                                     ),
                                   ],
@@ -3174,7 +3175,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                                       size: 14,
                                       color: i < rev.stars
                                           ? AppColors.matchMedium
-                                          : AppColors.slate200,
+                                          : context.appColors.fieldBorder,
                                     );
                                   }),
                                 ),
@@ -3183,11 +3184,11 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                                   const SizedBox(height: 4),
                                   Text(
                                     rev.comment!.trim(),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 12.5,
                                       height: 1.35,
-                                      color: AppColors.slate600,
+                                      color: context.appColors.textSecondary,
                                     ),
                                   ),
                                 ],

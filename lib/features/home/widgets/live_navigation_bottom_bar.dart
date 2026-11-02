@@ -78,7 +78,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: [
           BoxShadow(
@@ -100,7 +100,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
               height: 3.5,
               margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                color: AppColors.slate300,
+                color: context.appColors.hint,
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
@@ -110,9 +110,9 @@ class LiveNavigationBottomBar extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8.5),
             decoration: BoxDecoration(
-              color: AppColors.slate50,
+              color: context.appColors.fieldFill,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.slate200, width: 0.75),
+              border: Border.all(color: context.appColors.fieldBorder, width: 0.75),
             ),
             child: Row(
               children: [
@@ -146,11 +146,11 @@ class LiveNavigationBottomBar extends StatelessWidget {
                               resolvedOriginTitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.slate900,
+                                color: context.appColors.textPrimary,
                                 letterSpacing: -0.1,
                               ),
                             ),
@@ -159,11 +159,11 @@ class LiveNavigationBottomBar extends StatelessWidget {
                               resolvedOriginSubtitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w400,
-                                color: AppColors.slate500,
+                                color: context.appColors.textSecondary,
                               ),
                             ),
                           ],
@@ -174,12 +174,12 @@ class LiveNavigationBottomBar extends StatelessWidget {
                 ),
 
                 // Middle separator chevron
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 5),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
                   child: Icon(
                     Icons.chevron_right_rounded,
                     size: 16,
-                    color: AppColors.slate400,
+                    color: context.appColors.hint,
                   ),
                 ),
 
@@ -191,14 +191,14 @@ class LiveNavigationBottomBar extends StatelessWidget {
                       Container(
                         width: 28,
                         height: 28,
-                        decoration: const BoxDecoration(
-                          color: AppColors.fieldFill,
+                        decoration: BoxDecoration(
+                          color: context.appColors.fieldFill,
                           shape: BoxShape.circle,
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Icon(
                             Icons.home_work_outlined,
-                            color: AppColors.slate700,
+                            color: context.appColors.textPrimary,
                             size: 15,
                           ),
                         ),
@@ -213,11 +213,11 @@ class LiveNavigationBottomBar extends StatelessWidget {
                               resolvedDestTitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.slate900,
+                                color: context.appColors.textPrimary,
                                 letterSpacing: -0.1,
                               ),
                             ),
@@ -226,11 +226,11 @@ class LiveNavigationBottomBar extends StatelessWidget {
                               resolvedDestSubtitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w400,
-                                color: AppColors.slate500,
+                                color: context.appColors.textSecondary,
                               ),
                             ),
                           ],
@@ -247,12 +247,12 @@ class LiveNavigationBottomBar extends StatelessWidget {
 
           // ── 2. Metrics & Mode Switcher Row ─────────────────────────────────
           if (isLoadingRoute)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
@@ -260,14 +260,14 @@ class LiveNavigationBottomBar extends StatelessWidget {
                       color: AppColors.primary,
                     ),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
                     'Calculating route...',
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.slate600,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                 ],
@@ -301,11 +301,11 @@ class LiveNavigationBottomBar extends StatelessWidget {
                           const SizedBox(width: 6),
                           Text(
                             '(${plan.formattedTotalDistance})',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.slate600,
+                              color: context.appColors.textSecondary,
                             ),
                           ),
                         ],
@@ -315,11 +315,11 @@ class LiveNavigationBottomBar extends StatelessWidget {
                         subtitleText,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.slate500,
+                          color: context.appColors.textSecondary,
                         ),
                       ),
                     ],
@@ -331,16 +331,16 @@ class LiveNavigationBottomBar extends StatelessWidget {
                 // Mode Selector Toggle [ Drive | Walk ]
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.slate50,
+                    color: context.appColors.fieldFill,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.slate200, width: 0.75),
+                    border: Border.all(color: context.appColors.fieldBorder, width: 0.75),
                   ),
                   padding: const EdgeInsets.all(2.5),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildModePill(RouteProfile.driving),
-                      _buildModePill(RouteProfile.walking),
+                      _buildModePill(context, RouteProfile.driving),
+                      _buildModePill(context, RouteProfile.walking),
                     ],
                   ),
                 ),
@@ -385,7 +385,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
@@ -396,17 +396,17 @@ class LiveNavigationBottomBar extends StatelessWidget {
                               fontFamily: 'DM Sans',
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.slate900,
+                              color: context.appColors.textPrimary,
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             'This is a preview. For turn-by-turn guidance and voice navigation, continue in Google Maps.',
                             style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 11.5,
                               fontWeight: FontWeight.w400,
-                              color: AppColors.slate500,
+                              color: context.appColors.textSecondary,
                               height: 1.3,
                             ),
                           ),
@@ -414,9 +414,9 @@ class LiveNavigationBottomBar extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right_rounded,
-                      color: AppColors.slate400,
+                      color: context.appColors.hint,
                       size: 17,
                     ),
                   ],
@@ -445,16 +445,16 @@ class LiveNavigationBottomBar extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         AppSvgIcon(
                           svgString: AppSvgIcons.googleMaps,
                           size: 18,
-                          color: AppColors.surface,
+                          color: context.appColors.surface,
                         ),
-                        SizedBox(width: 7),
-                        Text(
+                        const SizedBox(width: 7),
+                        const Text(
                           'Open in Google Maps',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -477,7 +477,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                 height: 40,
                 width: 40,
                 child: Material(
-                  color: AppColors.slate50,
+                  color: context.appColors.fieldFill,
                   borderRadius: BorderRadius.circular(10),
                   child: InkWell(
                     onTap: onExit,
@@ -486,15 +486,15 @@ class LiveNavigationBottomBar extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: AppColors.slate200,
+                          color: context.appColors.fieldBorder,
                           width: 0.9,
                         ),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Icon(
                           Icons.close_rounded,
                           size: 18,
-                          color: AppColors.slate600,
+                          color: context.appColors.textSecondary,
                         ),
                       ),
                     ),
@@ -508,7 +508,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
     );
   }
 
-  Widget _buildModePill(RouteProfile profile) {
+  Widget _buildModePill(BuildContext context, RouteProfile profile) {
     final isSelected = currentProfile == profile;
     return GestureDetector(
       onTap: () => onProfileChanged(profile),
@@ -531,7 +531,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
             Icon(
               profile.icon,
               size: 14.5,
-              color: isSelected ? AppColors.primary : AppColors.slate500,
+              color: isSelected ? AppColors.primary : context.appColors.textSecondary,
             ),
             const SizedBox(width: 4.5),
             Text(
@@ -540,7 +540,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                 fontFamily: 'DM Sans',
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: isSelected ? AppColors.slate900 : AppColors.slate500,
+                color: isSelected ? context.appColors.textPrimary : context.appColors.textSecondary,
               ),
             ),
           ],

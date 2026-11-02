@@ -51,6 +51,7 @@ class _SavedScreenState extends State<SavedScreen> {
       body: Stack(
         children: <Widget>[
           // Subtle top-right gradient
+          if (Theme.of(context).brightness == Brightness.light)
           Positioned(
             top: 0,
             left: 0,

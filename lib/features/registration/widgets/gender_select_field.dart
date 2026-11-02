@@ -83,7 +83,7 @@ class _GenderPillButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final borderColor = selected
         ? AppColors.primary
-        : (hasError ? AppColors.destructive : AppColors.slate300);
+        : (hasError ? AppColors.destructive : context.appColors.hint);
 
     final backgroundColor = selected
         ? AppColors.primary

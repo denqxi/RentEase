@@ -40,9 +40,9 @@ class _CollapsibleDetailCardState extends State<CollapsibleDetailCard> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.slate200, width: 0.8),
+        border: Border.all(color: context.appColors.fieldBorder, width: 0.8),
         boxShadow: [
           BoxShadow(
             color: AppColors.slate900.withValues(alpha: 0.025),
@@ -68,11 +68,11 @@ class _CollapsibleDetailCardState extends State<CollapsibleDetailCard> {
                     Expanded(
                       child: Text(
                         widget.title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.slate900,
+                          color: context.appColors.textPrimary,
                         ),
                       ),
                     ),
@@ -83,10 +83,10 @@ class _CollapsibleDetailCardState extends State<CollapsibleDetailCard> {
                     AnimatedRotation(
                       turns: _isExpanded ? 0.5 : 0.0,
                       duration: const Duration(milliseconds: 200),
-                      child: const Icon(
+                      child: Icon(
                         Icons.keyboard_arrow_down_rounded,
                         size: 20,
-                        color: AppColors.slate500,
+                        color: context.appColors.textSecondary,
                       ),
                     ),
                   ],
@@ -98,7 +98,7 @@ class _CollapsibleDetailCardState extends State<CollapsibleDetailCard> {
             firstChild: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Divider(height: 1, color: AppColors.fieldFill),
+                Divider(height: 1, color: context.appColors.fieldFill),
                 widget.child,
               ],
             ),

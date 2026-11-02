@@ -80,7 +80,7 @@ class _AgeInput extends StatelessWidget {
               horizontal: AppSpacing.md,
               vertical: AppSpacing.md,
             ),
-            enabledBorder: _border(AppColors.slate300),
+            enabledBorder: _border(context.appColors.hint),
             focusedBorder: _border(AppColors.primary, width: 1.5),
           ),
         ),

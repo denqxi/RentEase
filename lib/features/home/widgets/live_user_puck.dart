@@ -48,7 +48,7 @@ class LiveUserPuck extends StatelessWidget {
             decoration: BoxDecoration(
               color: brandBlue,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.surface, width: 2.5),
+              border: Border.all(color: context.appColors.surface, width: 2.5),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.scrim.withValues(alpha: 0.25),
@@ -119,7 +119,7 @@ class RecenterFloatingButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
@@ -139,7 +139,7 @@ class RecenterFloatingButton extends StatelessWidget {
             child: Icon(
               isTracking ? Icons.navigation_rounded : Icons.my_location_rounded,
               size: 22,
-              color: isTracking ? AppColors.blue600 : AppColors.slate900,
+              color: isTracking ? AppColors.blue600 : context.appColors.textPrimary,
             ),
           ),
         ),

@@ -387,9 +387,9 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.appColors.surface,
         appBar: AppBar(
-          backgroundColor: AppColors.surface,
+          backgroundColor: context.appColors.surface,
           elevation: 0,
           scrolledUnderElevation: 0,
           leading: IconButton(
@@ -417,7 +417,7 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Divider(color: AppColors.fieldFill, height: 1),
+              Divider(color: context.appColors.fieldFill, height: 1),
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(
@@ -433,7 +433,7 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
                         _buildEntirePropertyDetailsSection(),
 
                       const SizedBox(height: 18),
-                      const Divider(color: AppColors.fieldFill, height: 1),
+                      Divider(color: context.appColors.fieldFill, height: 1),
                       const SizedBox(height: 16),
 
                       _buildPhotosSection(isRoom: isRoom),
@@ -447,9 +447,9 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: const BoxDecoration(
-                  color: AppColors.surface,
-                  border: Border(top: BorderSide(color: AppColors.fieldFill)),
+                decoration: BoxDecoration(
+                  color: context.appColors.surface,
+                  border: Border(top: BorderSide(color: context.appColors.fieldFill)),
                 ),
                 child: BlocBuilder<ImageUploadCubit, ImageUploadState>(
                   bloc: _uploads,
@@ -496,13 +496,13 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Property Information',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 16,
             fontWeight: FontWeight.w800,
-            color: AppColors.slate900,
+            color: context.appColors.textPrimary,
           ),
         ),
         const SizedBox(height: 12),
@@ -544,13 +544,13 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Room Information',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 16,
             fontWeight: FontWeight.w800,
-            color: AppColors.slate900,
+            color: context.appColors.textPrimary,
           ),
         ),
         const SizedBox(height: 12),
@@ -568,9 +568,9 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.slate50,
+            color: context.appColors.fieldFill,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.slate200),
+            border: Border.all(color: context.appColors.fieldBorder),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -588,11 +588,11 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
                       _nameController.text.isNotEmpty
                           ? _nameController.text
                           : 'Parent Property',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.slate900,
+                        color: context.appColors.textPrimary,
                       ),
                     ),
                   ),
@@ -633,10 +633,10 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
                   Expanded(
                     child: Text(
                       _addressController.text,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12,
-                        color: AppColors.slate500,
+                        color: context.appColors.textSecondary,
                         height: 1.4,
                       ),
                     ),
@@ -644,12 +644,12 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Building name, type, and address are managed from the main Property page.',
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 11.5,
-                  color: AppColors.slate400,
+                  color: context.appColors.hint,
                 ),
               ),
             ],
@@ -682,11 +682,11 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
               children: [
                 Text(
                   isRoom ? 'Room Photos' : 'Property Photos',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.slate900,
+                    color: context.appColors.textPrimary,
                   ),
                 ),
                 const Spacer(),
@@ -696,28 +696,28 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.fieldFill,
+                    color: context.appColors.fieldFill,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '${slotsWithImages.length} / ${CloudinaryConfig.maxPropertyPhotos}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 11.5,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.slate600,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 3),
-            const Text(
+            Text(
               'Add 1 to ${CloudinaryConfig.maxPropertyPhotos} photos. The first photo is the cover.',
               style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 12,
-                color: AppColors.slate500,
+                color: context.appColors.textSecondary,
               ),
             ),
             const SizedBox(height: 12),
@@ -784,9 +784,9 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: AppColors.fieldFill,
+                        color: context.appColors.fieldFill,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.slate200),
+                        border: Border.all(color: context.appColors.fieldBorder),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: imageUrl != null && imageUrl.isNotEmpty
@@ -794,10 +794,10 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
                               imageUrl,
                               cacheWidth: 600,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => const Center(
+                              errorBuilder: (_, _, _) => Center(
                                 child: Icon(
                                   Icons.broken_image_outlined,
-                                  color: AppColors.hint,
+                                  color: context.appColors.hint,
                                   size: 20,
                                 ),
                               ),
@@ -825,7 +825,7 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
                             color: AppColors.scrim.withValues(alpha: 0.68),
                             borderRadius: BorderRadius.circular(5),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Cover',
                             style: TextStyle(
                               fontFamily: 'DM Sans',
@@ -845,7 +845,7 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
                           width: 22,
                           height: 22,
                           decoration: BoxDecoration(
-                            color: AppColors.surface.withValues(alpha: 0.92),
+                            color: context.appColors.surface.withValues(alpha: 0.92),
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
@@ -854,10 +854,10 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.close_rounded,
                             size: 13,
-                            color: AppColors.slate900,
+                            color: context.appColors.textPrimary,
                           ),
                         ),
                       ),

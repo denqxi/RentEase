@@ -248,10 +248,11 @@ class _LandlordMatchesScreenState extends State<LandlordMatchesScreen> {
     final visibleGroups = _applyFilters(allGroups);
 
     return Scaffold(
-      backgroundColor: AppColors.slate50,
+      backgroundColor: context.appColors.fieldFill,
       body: Stack(
         children: [
           // Soft Top Gradient Background matching the reference design
+          if (Theme.of(context).brightness == Brightness.light)
           Positioned(
             top: 0,
             left: 0,
@@ -279,7 +280,7 @@ class _LandlordMatchesScreenState extends State<LandlordMatchesScreen> {
             bottom: false,
             child: RefreshIndicator(
               color: AppColors.primary,
-              backgroundColor: AppColors.surface,
+              backgroundColor: context.appColors.surface,
               onRefresh: cubit.reloadTenants,
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(
@@ -298,25 +299,25 @@ class _LandlordMatchesScreenState extends State<LandlordMatchesScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Matches',
                             style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 27,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.slate900,
+                              color: context.appColors.textPrimary,
                               letterSpacing: -0.5,
                               height: 1.15,
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
+                          Text(
                             'Compatible tenants for your properties',
                             style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 13.5,
                               fontWeight: FontWeight.w400,
-                              color: AppColors.slate500,
+                              color: context.appColors.textSecondary,
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -325,10 +326,10 @@ class _LandlordMatchesScreenState extends State<LandlordMatchesScreen> {
                           Container(
                             height: 44,
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: context.appColors.surface,
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: AppColors.slate200,
+                                color: context.appColors.fieldBorder,
                                 width: 1,
                               ),
                               boxShadow: [
@@ -342,37 +343,37 @@ class _LandlordMatchesScreenState extends State<LandlordMatchesScreen> {
                             ),
                             child: TextField(
                               controller: _searchController,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 13,
-                                color: AppColors.slate900,
+                                color: context.appColors.textPrimary,
                               ),
                               decoration: InputDecoration(
                                 isDense: true,
                                 contentPadding: const EdgeInsets.symmetric(
                                   vertical: 11,
                                 ),
-                                prefixIcon: const Icon(
+                                prefixIcon: Icon(
                                   Icons.search_rounded,
-                                  color: AppColors.slate400,
+                                  color: context.appColors.hint,
                                   size: 18,
                                 ),
                                 suffixIcon: _searchController.text.isNotEmpty
                                     ? GestureDetector(
                                         onTap: _searchController.clear,
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.close_rounded,
-                                          color: AppColors.slate400,
+                                          color: context.appColors.hint,
                                           size: 16,
                                         ),
                                       )
                                     : null,
                                 hintText: 'Search property or room...',
-                                hintStyle: const TextStyle(
+                                hintStyle: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w400,
-                                  color: AppColors.slate400,
+                                  color: context.appColors.hint,
                                 ),
                                 border: InputBorder.none,
                                 enabledBorder: InputBorder.none,
@@ -598,7 +599,7 @@ class _PropertyMatchesCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
@@ -646,11 +647,11 @@ class _PropertyMatchesCard extends StatelessWidget {
                         group.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.slate900,
+                          color: context.appColors.textPrimary,
                           letterSpacing: -0.3,
                           height: 1.2,
                         ),
@@ -669,11 +670,11 @@ class _PropertyMatchesCard extends StatelessWidget {
                               group.address,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
                                 fontWeight: FontWeight.w400,
-                                color: AppColors.slate500,
+                                color: context.appColors.textSecondary,
                               ),
                             ),
                           ),
@@ -693,7 +694,7 @@ class _PropertyMatchesCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: matchCount > 0
                         ? AppColors.primary.withValues(alpha: 0.12)
-                        : AppColors.fieldFill,
+                        : context.appColors.fieldFill,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -704,7 +705,7 @@ class _PropertyMatchesCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       color: matchCount > 0
                           ? AppColors.primary
-                          : AppColors.slate500,
+                          : context.appColors.textSecondary,
                     ),
                   ),
                 ),
@@ -713,7 +714,7 @@ class _PropertyMatchesCard extends StatelessWidget {
           ),
 
           const SizedBox(height: 14),
-          const Divider(height: 1, thickness: 1, color: AppColors.fieldFill),
+          Divider(height: 1, thickness: 1, color: context.appColors.fieldFill),
           const SizedBox(height: 12),
 
           // ── Unit Summary Rows (No Individual Tenant Names) ──────────
@@ -764,7 +765,7 @@ class _UnitSummaryRow extends StatelessWidget {
     final statusDotColor = switch (statusLabel) {
       'Available' => AppColors.green600,
       'Pending' => AppColors.amber600,
-      _ => AppColors.slate500,
+      _ => context.appColors.textSecondary,
     };
 
     final matchesText = matchCount == 0
@@ -772,7 +773,7 @@ class _UnitSummaryRow extends StatelessWidget {
         : '$matchCount Compatible ${matchCount == 1 ? 'Match' : 'Matches'}';
 
     return Material(
-      color: AppColors.slate50,
+      color: context.appColors.fieldFill,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
@@ -782,7 +783,7 @@ class _UnitSummaryRow extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: AppColors.slate200.withValues(alpha: 0.8),
+              color: context.appColors.fieldBorder.withValues(alpha: 0.8),
               width: 1,
             ),
           ),
@@ -815,11 +816,11 @@ class _UnitSummaryRow extends StatelessWidget {
                       unitData.unitLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.slate900,
+                        color: context.appColors.textPrimary,
                         letterSpacing: -0.2,
                       ),
                     ),
@@ -828,11 +829,11 @@ class _UnitSummaryRow extends StatelessWidget {
                       children: [
                         Text(
                           '₱${_fmt(unit.monthlyRent)} / month',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: AppColors.slate500,
+                            color: context.appColors.textSecondary,
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -869,7 +870,7 @@ class _UnitSummaryRow extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: matchCount > 0
                                 ? AppColors.primary.withValues(alpha: 0.12)
-                                : AppColors.fieldFill,
+                                : context.appColors.fieldFill,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -880,7 +881,7 @@ class _UnitSummaryRow extends StatelessWidget {
                                 size: 13.5,
                                 color: matchCount > 0
                                     ? AppColors.primary
-                                    : AppColors.slate500,
+                                    : context.appColors.textSecondary,
                               ),
                               const SizedBox(width: 5),
                               Text(
@@ -891,7 +892,7 @@ class _UnitSummaryRow extends StatelessWidget {
                                   fontWeight: FontWeight.w700,
                                   color: matchCount > 0
                                       ? AppColors.primary
-                                      : AppColors.slate500,
+                                      : context.appColors.textSecondary,
                                 ),
                               ),
                             ],
@@ -904,10 +905,10 @@ class _UnitSummaryRow extends StatelessWidget {
               ),
               const SizedBox(width: 6),
 
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: AppColors.slate400,
+                color: context.appColors.hint,
               ),
             ],
           ),
@@ -940,12 +941,12 @@ class _FilterChipPill extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6.5),
         decoration: BoxDecoration(
-          color: selected ? AppColors.slate900 : AppColors.surface,
+          color: selected ? context.appColors.textPrimary : context.appColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: selected
-                ? AppColors.slate900
-                : AppColors.slate200,
+                ? context.appColors.textPrimary
+                : context.appColors.fieldBorder,
             width: 1,
           ),
         ),
@@ -955,7 +956,7 @@ class _FilterChipPill extends StatelessWidget {
             fontFamily: 'DM Sans',
             fontSize: 12,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            color: selected ? AppColors.surface : AppColors.slate500,
+            color: selected ? context.appColors.surface : context.appColors.textSecondary,
           ),
         ),
       ),
@@ -984,7 +985,7 @@ class _EmptyOrErrorCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColors.surface,
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
@@ -999,32 +1000,32 @@ class _EmptyOrErrorCard extends StatelessWidget {
           Container(
             width: 52,
             height: 52,
-            decoration: const BoxDecoration(
-              color: AppColors.fieldFill,
+            decoration: BoxDecoration(
+              color: context.appColors.fieldFill,
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: Icon(icon, size: 26, color: AppColors.slate500),
+            child: Icon(icon, size: 26, color: context.appColors.textSecondary),
           ),
           const SizedBox(height: 14),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 15.5,
               fontWeight: FontWeight.w800,
-              color: AppColors.slate900,
+              color: context.appColors.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 12.5,
-              color: AppColors.slate500,
+              color: context.appColors.textSecondary,
               height: 1.4,
             ),
           ),

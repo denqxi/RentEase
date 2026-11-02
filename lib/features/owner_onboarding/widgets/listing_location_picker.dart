@@ -241,7 +241,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                         ),
                       ],
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
@@ -256,7 +256,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                             fontFamily: 'DM Sans',
                             fontSize: 11.5,
                             fontWeight: FontWeight.normal,
-                            color: AppColors.slate700,
+                            color: context.appColors.textPrimary,
                           ),
                         ),
                       ],
@@ -268,7 +268,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
         ),
         if (_isResolvingAddress) ...[
           const SizedBox(height: 6),
-          const Row(
+          Row(
             children: [
               SizedBox(
                 width: 12,
@@ -285,7 +285,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                   fontFamily: 'DM Sans',
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
+                  color: context.appColors.textSecondary,
                 ),
               ),
             ],
@@ -306,11 +306,11 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                   'Pinned: ${widget.addressController.text.isNotEmpty ? widget.addressController.text : '${_pinnedLocation!.latitude.toStringAsFixed(4)}, ${_pinnedLocation!.longitude.toStringAsFixed(4)}'}',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.slate900,
+                    color: context.appColors.textPrimary,
                   ),
                 ),
               ),

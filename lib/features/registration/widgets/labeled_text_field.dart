@@ -171,7 +171,7 @@ class LabeledTextField extends StatelessWidget {
               ),
               errorText: errorText,
               errorStyle: const TextStyle(color: AppColors.destructive, fontSize: 12),
-              enabledBorder: _border(AppColors.slate300),
+              enabledBorder: _border(context.appColors.hint),
               focusedBorder: _border(AppColors.primary, width: 1.5),
               errorBorder: _border(AppColors.destructive),
               focusedErrorBorder: _border(AppColors.destructive, width: 1.5),

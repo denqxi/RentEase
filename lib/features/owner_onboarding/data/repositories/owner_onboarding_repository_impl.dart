@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/firestore/models/models.dart';
 import '../../../uploads/domain/entities/uploaded_image.dart';
+import '../../domain/entities/owner_credentials.dart';
 import '../../domain/repositories/owner_onboarding_repository.dart';
 import '../datasources/owner_onboarding_remote_datasource.dart';
 
@@ -15,9 +16,32 @@ class OwnerOnboardingRepositoryImpl implements OwnerOnboardingRepository {
   Future<String> submitForVerification(
     String uid, {
     List<UploadedImage> documents = const [],
+    UploadedImage? businessPermit,
+    UploadedImage? ownershipDocument,
+    String? diditSessionId,
+    String idSource = 'upload',
   }) => _guard(
-    () => _remote.submitForVerification(uid, documents: documents),
+    () => _remote.submitForVerification(
+      uid,
+      documents: documents,
+      businessPermit: businessPermit,
+      ownershipDocument: ownershipDocument,
+      diditSessionId: diditSessionId,
+      idSource: idSource,
+    ),
   );
+
+  @override
+  Future<OwnerCredentials> fetchCredentials(String ownerId) =>
+      _guard(() => _remote.fetchCredentials(ownerId));
+
+  @override
+  Future<void> setShowCredentials(String uid, bool value) =>
+      _guard(() => _remote.setShowCredentials(uid, value));
+
+  @override
+  Future<void> syncSharedCredentials(String uid) =>
+      _guard(() => _remote.syncSharedCredentials(uid));
 
   @override
   Stream<String> watchVerificationStatus(String uid) =>
