@@ -66,6 +66,12 @@ class ImageUploadCubit extends Cubit<ImageUploadState> {
     await _upload(i, slot.localPath!);
   }
 
+  /// Sets an already uploaded image into slot [i].
+  void setSlotImage(int i, UploadedImage image) {
+    if (isClosed || i < 0 || i >= state.slots.length) return;
+    _setSlot(i, UploadSlot(status: SlotStatus.success, image: image));
+  }
+
   void remove(int i) {
     if (state.slots[i].status == SlotStatus.uploading) return;
     _setSlot(i, const UploadSlot());

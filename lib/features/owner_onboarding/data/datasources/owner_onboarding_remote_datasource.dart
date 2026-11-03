@@ -4,6 +4,7 @@ import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/models.dart';
 import '../../../uploads/domain/entities/uploaded_image.dart';
 import '../../domain/entities/owner_credentials.dart';
+import '../../domain/entities/submitted_documents.dart';
 
 class OwnerOnboardingRemoteDataSource {
   OwnerOnboardingRemoteDataSource({FirebaseFirestore? firestore})
@@ -25,7 +26,7 @@ class OwnerOnboardingRemoteDataSource {
     final ref = _ownerProfile(uid);
     final snap = await ref.get();
     final current = snap.data()?['verificationStatus'] as String?;
-    if (current == 'verified' || current == 'pending') return current!;
+    if (current == 'verified') return current!;
 
     // Documents are uploaded to Cloudinary (Firebase Storage needs Blaze);
     // only their URLs/public_ids are stored. The status transition is what
@@ -107,6 +108,104 @@ class OwnerOnboardingRemoteDataSource {
       businessPermitUrl: results[0],
       ownershipDocumentUrl: results[1],
     );
+  }
+
+  /// Fetches previously submitted documents and Didit session (if any) so the
+  /// owner does not have to re-verify or re-upload when returning to the upload screen.
+  Future<SubmittedDocuments> fetchSubmittedDocuments(String uid) async {
+    try {
+      final ref = _ownerProfile(uid);
+      final privateSnap = await ref
+          .collection(FirestoreCollections.ownerPrivate)
+          .doc(FirestoreCollections.ownerPrivateDocuments)
+          .get();
+      if (!privateSnap.exists || privateSnap.data() == null) {
+        return const SubmittedDocuments();
+      }
+      final data = privateSnap.data()!;
+      final docUrls =
+          (data['documentUrls'] as List<dynamic>?)?.cast<String>() ?? [];
+      final docPublicIds =
+          (data['documentPublicIds'] as List<dynamic>?)?.cast<String>() ?? [];
+      final diditSessionId = data['diditSessionId'] as String?;
+      final idSource = data['idSource'] as String? ?? 'upload';
+
+      final permitSnap = await ref
+          .collection(FirestoreCollections.ownerPublic)
+          .doc(FirestoreCollections.ownerPublicBusinessPermit)
+          .get();
+      final ownershipSnap = await ref
+          .collection(FirestoreCollections.ownerPublic)
+          .doc(FirestoreCollections.ownerPublicOwnershipDocument)
+          .get();
+
+      UploadedImage? permitImage;
+      if (permitSnap.exists && permitSnap.data()?['url'] != null) {
+        permitImage = UploadedImage(
+          url: permitSnap.data()!['url'] as String,
+          publicId: (permitSnap.data()?['publicId'] as String? ?? ''),
+        );
+      }
+
+      UploadedImage? ownershipImage;
+      if (ownershipSnap.exists && ownershipSnap.data()?['url'] != null) {
+        ownershipImage = UploadedImage(
+          url: ownershipSnap.data()!['url'] as String,
+          publicId: (ownershipSnap.data()?['publicId'] as String? ?? ''),
+        );
+      }
+
+      UploadedImage? idFront;
+      UploadedImage? idBack;
+      if (idSource == 'upload' && docUrls.length >= 2) {
+        idFront = UploadedImage(
+          url: docUrls[0],
+          publicId: (docPublicIds.isNotEmpty ? docPublicIds[0] : ''),
+        );
+        idBack = UploadedImage(
+          url: docUrls[1],
+          publicId: (docPublicIds.length > 1 ? docPublicIds[1] : ''),
+        );
+        if (ownershipImage == null && docUrls.length >= 3) {
+          ownershipImage = UploadedImage(
+            url: docUrls[2],
+            publicId: (docPublicIds.length > 2 ? docPublicIds[2] : ''),
+          );
+        }
+        if (permitImage == null && docUrls.length >= 4) {
+          permitImage = UploadedImage(
+            url: docUrls[3],
+            publicId: (docPublicIds.length > 3 ? docPublicIds[3] : ''),
+          );
+        }
+      } else if (idSource == 'didit') {
+        if (ownershipImage == null && docUrls.isNotEmpty) {
+          ownershipImage = UploadedImage(
+            url: docUrls[0],
+            publicId: (docPublicIds.isNotEmpty ? docPublicIds[0] : ''),
+          );
+        }
+        if (permitImage == null && docUrls.length >= 2) {
+          permitImage = UploadedImage(
+            url: docUrls[1],
+            publicId: (docPublicIds.length > 1 ? docPublicIds[1] : ''),
+          );
+        }
+      }
+
+      return SubmittedDocuments(
+        diditSessionId: diditSessionId,
+        idSource: idSource,
+        documentUrls: docUrls,
+        documentPublicIds: docPublicIds,
+        ownershipDocument: ownershipImage,
+        businessPermit: permitImage,
+        idFront: idFront,
+        idBack: idBack,
+      );
+    } catch (_) {
+      return const SubmittedDocuments();
+    }
   }
 
   Future<void> setShowCredentials(String uid, bool value) async {
@@ -197,4 +296,5 @@ class OwnerOnboardingRemoteDataSource {
     return [for (final d in snap.docs) PropertyDoc.fromSnapshot(d)];
   }
 }
+
 

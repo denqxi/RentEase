@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../core/constants/cloudinary_config.dart';
 import '../../uploads/domain/entities/uploaded_image.dart';
+import '../domain/entities/submitted_documents.dart';
 import '../domain/repositories/owner_onboarding_repository.dart';
 
 part 'owner_onboarding_state.dart';
@@ -37,7 +38,7 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
     // ownership are required (business permit optional).
     final valid = viaDidit
         ? diditSessionId != null &&
-              documents.isNotEmpty &&
+              
               documents.length <= CloudinaryConfig.documentCount - 2
         : documents.length >= CloudinaryConfig.requiredDocumentCount &&
               documents.length <= CloudinaryConfig.documentCount;
@@ -46,8 +47,8 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
         state.copyWith(
           status: OwnerOnboardingStatus.failure,
           errorMessage: viaDidit
-              ? 'Please finish the ID check and upload your property ownership document.'
-              : 'Please upload your government ID (front and back) and property ownership document.',
+              ? 'Please finish the ID check to submit for verification.'
+              : 'Please upload your government ID (front and back).',
         ),
       );
       return;
@@ -83,6 +84,9 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
 
   Stream<OwnerProfileDoc?> watchOwnerProfile(String uid) =>
       _repository.watchOwnerProfile(uid);
+
+  Future<SubmittedDocuments> fetchSubmittedDocuments(String uid) =>
+      _repository.fetchSubmittedDocuments(uid);
 
   // ── Create-listing wizard ────────────────────────────────────────────────
 

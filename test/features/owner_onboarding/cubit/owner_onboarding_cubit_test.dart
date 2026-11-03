@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:rentease/core/firestore/models/models.dart';
 import 'package:rentease/features/owner_onboarding/cubit/owner_onboarding_cubit.dart';
 import 'package:rentease/features/owner_onboarding/domain/entities/owner_credentials.dart';
+import 'package:rentease/features/owner_onboarding/domain/entities/submitted_documents.dart';
 import 'package:rentease/features/owner_onboarding/domain/repositories/owner_onboarding_repository.dart';
 import 'package:rentease/features/uploads/domain/entities/uploaded_image.dart';
 
@@ -28,6 +29,10 @@ class _FakeRepo implements OwnerOnboardingRepository {
   @override
   Future<OwnerCredentials> fetchCredentials(String ownerId) async =>
       const OwnerCredentials();
+
+  @override
+  Future<SubmittedDocuments> fetchSubmittedDocuments(String uid) async =>
+      const SubmittedDocuments();
 
   @override
   Future<void> setShowCredentials(String uid, bool value) async {}
@@ -139,10 +144,10 @@ void main() {
       expect(repo.submitted, hasLength(4));
     });
 
-    test('rejects fewer than three documents without touching the repo', () async {
+    test('rejects fewer than two documents without touching the repo', () async {
       final repo = _FakeRepo();
       final cubit = OwnerOnboardingCubit(repository: repo);
-      await cubit.submitForVerification('u1', documents: _docs(2));
+      await cubit.submitForVerification('u1', documents: _docs(1));
       expect(cubit.state.status, OwnerOnboardingStatus.failure);
       expect(repo.submitted, isNull);
     });
@@ -185,7 +190,7 @@ void main() {
       expect(repo.submitted, isNull);
     });
 
-    test('Didit: rejects a submission with no documents', () async {
+    test('Didit: accepts submission with no uploaded documents', () async {
       final repo = _FakeRepo();
       final cubit = OwnerOnboardingCubit(repository: repo);
       await cubit.submitForVerification(
@@ -193,8 +198,8 @@ void main() {
         diditSessionId: 's1',
         idSource: 'didit',
       );
-      expect(cubit.state.status, OwnerOnboardingStatus.failure);
-      expect(repo.submitted, isNull);
+      expect(cubit.state.status, OwnerOnboardingStatus.saved);
+      expect(repo.submitted, isEmpty);
     });
   });
 

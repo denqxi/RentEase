@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/firestore/models/models.dart';
 import '../../../uploads/domain/entities/uploaded_image.dart';
 import '../../domain/entities/owner_credentials.dart';
+import '../../domain/entities/submitted_documents.dart';
 import '../../domain/repositories/owner_onboarding_repository.dart';
 import '../datasources/owner_onboarding_remote_datasource.dart';
 
@@ -29,11 +30,16 @@ class OwnerOnboardingRepositoryImpl implements OwnerOnboardingRepository {
       diditSessionId: diditSessionId,
       idSource: idSource,
     ),
+    action: 'submit verification documents',
   );
 
   @override
   Future<OwnerCredentials> fetchCredentials(String ownerId) =>
       _guard(() => _remote.fetchCredentials(ownerId));
+
+  @override
+  Future<SubmittedDocuments> fetchSubmittedDocuments(String uid) =>
+      _guard(() => _remote.fetchSubmittedDocuments(uid));
 
   @override
   Future<void> setShowCredentials(String uid, bool value) =>
@@ -60,19 +66,18 @@ class OwnerOnboardingRepositoryImpl implements OwnerOnboardingRepository {
       _guard(() => _remote.fetchOwnerProperties(ownerId));
 
 
-  Future<T> _guard<T>(Future<T> Function() call) async {
+  Future<T> _guard<T>(Future<T> Function() call, {String action = 'save this listing'}) async {
     try {
       return await call();
     } on FirebaseException catch (e) {
-      throw Exception(_messageFor(e));
+      throw Exception(_messageFor(e, action: action));
     }
   }
 
-  String _messageFor(FirebaseException e) {
+  String _messageFor(FirebaseException e, {String action = 'save this listing'}) {
     switch (e.code) {
       case 'permission-denied':
-        return "You don't have permission to save this listing. Your account "
-            'may have been rejected — please contact support.';
+        return "You don't have permission to $action. Please make sure your account is active and try again.";
       case 'unavailable':
         return 'Network error. Check your connection and try again.';
       default:

@@ -47,7 +47,19 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
     context,
   ).pushNamedAndRemoveUntil(AppRouter.landlordHome, (_) => false);
 
+  void _handleBack() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacementNamed(AppRouter.documentUpload);
+    }
+  }
+
   void _resubmitDocuments() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => const DocumentUploadScreen(),
@@ -83,7 +95,13 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
           ),
         };
 
-        return Scaffold(
+        return PopScope(
+          canPop: Navigator.of(context).canPop(),
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            Navigator.of(context).pushReplacementNamed(AppRouter.documentUpload);
+          },
+          child: Scaffold(
           backgroundColor: context.appColors.surface,
           appBar: AppBar(
             backgroundColor: context.appColors.surface,
@@ -93,7 +111,7 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
               padding: const EdgeInsets.only(left: 16),
               child: Center(
                 child: InkWell(
-                  onTap: () => Navigator.of(context).maybePop(),
+                  onTap: _handleBack,
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
                     width: 36,
@@ -304,6 +322,7 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
                 ),
               ],
             ),
+          ),
           ),
         );
       },

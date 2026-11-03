@@ -38,9 +38,9 @@ class CloudinaryConfig {
   static const int maxPropertyPhotos = 5;
   static const int documentCount = 4;
 
-  /// Government ID (front and back) and ownership document are required;
-  /// the business permit (fourth slot) is optional.
-  static const int requiredDocumentCount = 3;
+  /// Government ID (front and back) are required; ownership document and
+  /// business permit are optional.
+  static const int requiredDocumentCount = 2;
 
   static const Duration uploadTimeout = Duration(seconds: 60);
 

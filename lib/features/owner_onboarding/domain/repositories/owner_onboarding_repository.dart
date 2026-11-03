@@ -1,6 +1,7 @@
 import '../../../../core/firestore/models/models.dart';
 import '../../../uploads/domain/entities/uploaded_image.dart';
 import '../entities/owner_credentials.dart';
+import '../entities/submitted_documents.dart';
 
 /// Persists the owner onboarding flow: verification request
 /// (`ownerProfiles/{uid}`) and the first listing (`properties`). Owner-side
@@ -28,6 +29,9 @@ abstract class OwnerOnboardingRepository {
   /// Documents the owner shares with tenants; empty when the owner isn't
   /// verified or has "Show credentials" off.
   Future<OwnerCredentials> fetchCredentials(String ownerId);
+
+  /// Documents and Didit session previously submitted by [uid].
+  Future<SubmittedDocuments> fetchSubmittedDocuments(String uid);
 
   /// Owner's opt-in to show their business permit and ownership document to
   /// tenants. Turning it on also syncs the shared copies.

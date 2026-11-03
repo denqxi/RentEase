@@ -11,8 +11,15 @@
 class DiditConfig {
   const DiditConfig._();
 
-  static const String apiKey = String.fromEnvironment('DIDIT_API_KEY');
-  static const String workflowId = String.fromEnvironment('DIDIT_WORKFLOW_ID');
+  static const String apiKey = String.fromEnvironment(
+    'DIDIT_API_KEY',
+    defaultValue: 'sk_live_n15Ka0Tq5pebhocIifARlwguZkzTSMw_W-AUnzLrIO0',
+  );
+  static const String workflowId = String.fromEnvironment(
+    'DIDIT_WORKFLOW_ID',
+    defaultValue: 'e636b9ec-f675-4146-ae3f-02cdbf668441',
+  );
+
 
   static const String baseUrl = 'https://verification.didit.me/v3';
 

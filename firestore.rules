@@ -427,13 +427,12 @@ service cloud.firestore {
             && request.resource.data.get('idSource', 'upload') in ['upload', 'didit']
             && request.resource.data.documentUrls is list
             // Uploaded ID: ID + ownership (2+). Didit ID check: the ID is not
-            // uploaded, so only ownership (1+) is required, and a Didit
-            // session must be attached (the admin checks it with Didit).
+            // uploaded; ownership and business permit are optional (0+), and a
+            // Didit session must be attached (the admin checks it with Didit).
             && (request.resource.data.documentUrls.size() >= 2
                 || (request.resource.data.get('idSource', 'upload') == 'didit'
                     && request.resource.data.get('diditSessionId', '') is string
-                    && request.resource.data.get('diditSessionId', '').size() > 0
-                    && request.resource.data.documentUrls.size() >= 1))
+                    && request.resource.data.get('diditSessionId', '').size() > 0))
             && cldList10(request.resource.data.documentUrls)
             && (!('documentPublicIds' in request.resource.data)
                 || (request.resource.data.documentPublicIds is list

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart' show MissingPluginException;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -53,7 +54,7 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
     minRequired: CloudinaryConfig.requiredDocumentCount, // 3 required
     // Slots 0 (Front), 1 (Back), and 2 (Property Ownership) are required.
     // Slot 3 (Business Permit) is optional.
-    requiredSlots: const {0, 1, 2},
+    requiredSlots: const {0, 1},
   );
 
   bool _submitting = false;
@@ -93,18 +94,95 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
   /// uploading or broken (the ID slots aren't used).
   bool _diditDocsReady(ImageUploadState state) {
     final docs = [state.slots[2], state.slots[3]];
-    return state.slots[2].status == SlotStatus.success &&
-        !docs.any(
+
+    return !docs.any(
           (s) =>
               s.status == SlotStatus.uploading ||
               s.status == SlotStatus.failure,
         );
   }
 
+  static String _diditSessionKey(String uid) => 'didit_session_id_$uid';
+  static String _diditUrlKey(String uid) => 'didit_url_$uid';
+  static String _diditStatusKey(String uid) => 'didit_status_$uid';
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadExistingSubmission();
+    });
+  }
+
+  Future<void> _loadExistingSubmission() async {
+    final uid = currentUidOrNull(context);
+    if (uid == null) return;
+
+    // 1. Instantly restore cached Didit verification state from local storage.
+    // This ensures that when the owner restarts or returns to the app after being
+    // verified, their verified status is shown immediately without re-verifying.
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedSessionId = prefs.getString(_diditSessionKey(uid));
+      final savedUrl = prefs.getString(_diditUrlKey(uid));
+      final savedStatus = prefs.getString(_diditStatusKey(uid));
+
+      if (mounted && savedSessionId != null && _diditSessionId == null) {
+        setState(() {
+          _diditSessionId = savedSessionId;
+          _diditUrl = savedUrl;
+          _diditStatus = savedStatus;
+        });
+      }
+    } catch (_) {}
+
+    try {
+      if (!mounted) return;
+      final cubit = context.read<OwnerOnboardingCubit>();
+      final submitted = await cubit.fetchSubmittedDocuments(uid);
+      if (!mounted) return;
+
+      // Restore Didit state from Firestore if not already cached
+      if (_diditSessionId == null && submitted.diditSessionId != null) {
+        final sessionId = submitted.diditSessionId!;
+        setState(() {
+          _diditSessionId = sessionId;
+        });
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_diditSessionKey(uid), sessionId);
+        } catch (_) {}
+      }
+
+      // Check for latest status updates from Didit if not already approved
+      if (_diditSessionId != null && _diditStatus != 'Approved') {
+        _refreshIdCheckStatus();
+      }
+
+      if (submitted.isEmpty) return;
+
+      // Populate slots if they are currently empty
+      final currentSlots = _uploads.state.slots;
+      if (submitted.idFront != null &&
+          currentSlots[0].status == SlotStatus.empty) {
+        _uploads.setSlotImage(0, submitted.idFront!);
+      }
+      if (submitted.idBack != null &&
+          currentSlots[1].status == SlotStatus.empty) {
+        _uploads.setSlotImage(1, submitted.idBack!);
+      }
+      if (submitted.ownershipDocument != null &&
+          currentSlots[2].status == SlotStatus.empty) {
+        _uploads.setSlotImage(2, submitted.ownershipDocument!);
+      }
+      if (submitted.businessPermit != null &&
+          currentSlots[3].status == SlotStatus.empty) {
+        _uploads.setSlotImage(3, submitted.businessPermit!);
+      }
+    } catch (_) {
+      // Ignored - fallback to fresh input
+    }
   }
 
   @override
@@ -117,10 +195,17 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
   Future<void> _refreshIdCheckStatus() async {
     final sessionId = _diditSessionId;
     if (sessionId == null || _checkingIdStatus) return;
+    final uid = currentUidOrNull(context);
     setState(() => _checkingIdStatus = true);
     try {
       final status = await _idVerification.fetchStatus(sessionId);
       if (mounted) setState(() => _diditStatus = status);
+      if (uid != null) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_diditStatusKey(uid), status);
+        } catch (_) {}
+      }
     } catch (_) {
       // Keep the last known status; the owner can tap "Check again".
     } finally {
@@ -163,6 +248,12 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
         _diditUrl = session.url;
         _diditStatus = null;
       });
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_diditSessionKey(uid), session.sessionId);
+        await prefs.setString(_diditUrlKey(uid), session.url);
+        await prefs.remove(_diditStatusKey(uid));
+      } catch (_) {}
       await _openIdCheckUrl(session.url);
     } catch (_) {
       if (!mounted) return;
@@ -173,10 +264,17 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
         _diditUrl = null;
         _diditStatus = null;
       });
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove(_diditSessionKey(uid));
+        await prefs.remove(_diditUrlKey(uid));
+        await prefs.remove(_diditStatusKey(uid));
+      } catch (_) {}
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'The ID check isn\'t available right now. Please upload photos '
+            "The ID check isn't available right now. Please upload photos "
             'of your ID instead.',
           ),
           backgroundColor: AppColors.matchMedium,
@@ -337,6 +435,10 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
     final cubit = context.read<OwnerOnboardingCubit>();
     setState(() => _submitting = true);
     final slots = _uploads.state.slots;
+    final ownershipSlot = slots[2];
+    final ownership = ownershipSlot.status == SlotStatus.success
+        ? ownershipSlot.image
+        : null;
     final permitSlot = slots[3];
     final permit = permitSlot.status == SlotStatus.success
         ? permitSlot.image
@@ -345,9 +447,9 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
     await cubit.submitForVerification(
       uid,
       // Didit: [ownership, permit?] (no ID photos). Upload: every slot.
-      documents: viaDidit ? [slots[2].image!, ?permit] : _uploads.state.images,
+      documents: viaDidit ? [?ownership, ?permit] : _uploads.state.images,
       businessPermit: permit,
-      ownershipDocument: slots[2].image,
+      ownershipDocument: ownership,
       diditSessionId: viaDidit ? _diditSessionId : null,
       idSource: viaDidit ? 'didit' : 'upload',
     );
@@ -366,7 +468,7 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
     }
     Navigator.of(
       context,
-    ).pushNamedAndRemoveUntil(AppRouter.verificationPending, (_) => false);
+    ).pushNamed(AppRouter.verificationPending);
   }
 
   void _showFaqDialog(BuildContext context) {
@@ -531,7 +633,7 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
                       children: [
                         Expanded(
                           child: Text(
-                            'Upload your ID and ownership document to get verified as a property owner. A business permit is optional.',
+                            'Upload your ID to get verified as a property owner. Property ownership documents and business permits are optional.',
                             style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 13.5,
@@ -614,8 +716,8 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
 
                     // Section 2: Property ownership document (Image 1)
                     _SectionHeader(
-                      title: 'Property ownership document',
-                      isRequired: true,
+                      title: 'Property ownership document (Optional)',
+                      isRequired: false,
                     ),
                     const SizedBox(height: 10),
                     BlocBuilder<ImageUploadCubit, ImageUploadState>(
@@ -636,7 +738,7 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
 
                     // Section 3: Business permit (if applicable) (Image 1)
                     _SectionHeader(
-                      title: 'Business permit (if applicable)',
+                      title: 'Business permit (Optional)',
                       isRequired: false,
                     ),
                     const SizedBox(height: 10),

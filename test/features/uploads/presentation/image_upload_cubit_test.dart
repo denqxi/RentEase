@@ -134,4 +134,12 @@ void main() {
     c.moveEarlier(0); // no-op
     expect(c.state.images.first.publicId, 'p2');
   });
+
+  test('setSlotImage populates slot as success', () {
+    final c = _cubit(_FakeRepo(), slots: 4, min: 2);
+    const img = UploadedImage(url: 'https://test/url', publicId: 'pid');
+    c.setSlotImage(2, img);
+    expect(c.state.slots[2].status, SlotStatus.success);
+    expect(c.state.slots[2].image, img);
+  });
 }
