@@ -259,5 +259,8 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
 
 extension AppAdaptiveColorsX on BuildContext {
   AppAdaptiveColors get appColors =>
-      Theme.of(this).extension<AppAdaptiveColors>()!;
+      Theme.of(this).extension<AppAdaptiveColors>() ??
+      (Theme.of(this).brightness == Brightness.dark
+          ? AppAdaptiveColors.dark
+          : AppAdaptiveColors.light);
 }

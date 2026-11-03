@@ -44,14 +44,21 @@ class _ListingDropdownState<T> extends State<ListingDropdown<T>>
   OverlayEntry? _overlayEntry;
   bool _isOpen = false;
 
-  late final AnimationController _animController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 160),
-  );
-  late final Animation<double> _fadeAnim = CurvedAnimation(
-    parent: _animController,
-    curve: Curves.easeOutCubic,
-  );
+  late final AnimationController _animController;
+  late final Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 160),
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
+  }
 
   @override
   void dispose() {
@@ -292,14 +299,8 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
   bool _isOpen = false;
   bool _isCustomMode = false;
 
-  late final AnimationController _animController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 160),
-  );
-  late final Animation<double> _fadeAnim = CurvedAnimation(
-    parent: _animController,
-    curve: Curves.easeOutCubic,
-  );
+  late final AnimationController _animController;
+  late final Animation<double> _fadeAnim;
 
   List<String> get _presetOnly =>
       widget.options.where((o) => o != 'Others').toList();
@@ -307,6 +308,14 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 160),
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
     _syncFromValue(widget.value);
     _customFocusNode.addListener(() {
       if (mounted) setState(() {});

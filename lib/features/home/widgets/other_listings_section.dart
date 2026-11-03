@@ -189,6 +189,7 @@ class OtherListingCard extends StatelessWidget {
         (property['reviewCount'] as num?)?.toInt() ??
         0;
     final bool hasRating = avgRating != null && totalRatings > 0;
+    final tenantCi = property['tenantCi'] as num?;
 
     return Container(
       decoration: BoxDecoration(
@@ -325,47 +326,82 @@ class OtherListingCard extends StatelessWidget {
                           ),
                         ),
 
-                      // Bottom-right: Photo count badge (clean white pill)
-                      if (photoCount > 0)
+                      // Bottom-right: Ci badge (if present) & Photo count badge (clean white pill)
+                      if (photoCount > 0 || tenantCi != null)
                         Positioned(
                           bottom: 8,
                           right: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: context.appColors.surface,
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.slate900.withValues(alpha: 0.12),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.photo_outlined,
-                                  size: 11,
-                                  color: context.appColors.textSecondary,
-                                ),
-                                const SizedBox(width: 3.5),
-                                Text(
-                                  '$photoCount',
-                                  style: TextStyle(
-                                    fontFamily: 'DM Sans',
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: context.appColors.textPrimary,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (tenantCi != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: context.appColors.surface,
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.slate900.withValues(alpha: 0.12),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    'Ci = ${tenantCi.toDouble().toStringAsFixed(4)}',
+                                    style: TextStyle(
+                                      fontFamily: 'DM Sans',
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: context.appColors.textPrimary,
+                                    ),
                                   ),
                                 ),
+                                if (photoCount > 0) const SizedBox(width: 5),
                               ],
-                            ),
+                              if (photoCount > 0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: context.appColors.surface,
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.slate900.withValues(alpha: 0.12),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.photo_outlined,
+                                        size: 11,
+                                        color: context.appColors.textSecondary,
+                                      ),
+                                      const SizedBox(width: 3.5),
+                                      Text(
+                                        '$photoCount',
+                                        style: TextStyle(
+                                          fontFamily: 'DM Sans',
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          color: context.appColors.textPrimary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ],

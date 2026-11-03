@@ -80,9 +80,90 @@ class MapViewScreen extends StatefulWidget {
   State<MapViewScreen> createState() => _MapViewScreenState();
 }
 
+class _MapCluster {
+  _MapCluster({
+    required this.key,
+    required this.point,
+    required this.properties,
+  });
+
+  final String key;
+  final LatLng point;
+  final List<Map<String, dynamic>> properties;
+
+  bool get isMultiRoom => properties.length > 1;
+  Map<String, dynamic> get topProperty => properties.first;
+}
+
+int _compareListings(Map<String, dynamic> a, Map<String, dynamic> b) {
+  final bool aNonMatch = (a['isNonMatch'] == true) || (a['bScore'] == 0);
+  final bool bNonMatch = (b['isNonMatch'] == true) || (b['bScore'] == 0);
+  if (aNonMatch != bNonMatch) {
+    return aNonMatch ? 1 : -1;
+  }
+  final double aCi =
+      aNonMatch ? 0.0 : ((a['tenantCi'] as num?)?.toDouble() ?? 0.0);
+  final double bCi =
+      bNonMatch ? 0.0 : ((b['tenantCi'] as num?)?.toDouble() ?? 0.0);
+  final int ciCmp = bCi.compareTo(aCi);
+  if (ciCmp != 0) return ciCmp;
+
+  final int aRent = (a['monthlyRent'] as num?)?.toInt() ?? 0;
+  final int bRent = (b['monthlyRent'] as num?)?.toInt() ?? 0;
+  final int rentCmp = aRent.compareTo(bRent);
+  if (rentCmp != 0) return rentCmp;
+
+  final String aTitle = (a['title'] as String?) ?? '';
+  final String bTitle = (b['title'] as String?) ?? '';
+  return aTitle.compareTo(bTitle);
+}
+
+List<_MapCluster> _buildClusters(List<Map<String, dynamic>> properties) {
+  final Map<String, List<Map<String, dynamic>>> groups = {};
+
+  for (final p in properties) {
+    final lat = (p['latitude'] as num?)?.toDouble();
+    final lng = (p['longitude'] as num?)?.toDouble();
+    if (lat == null || lng == null || (lat == 0.0 && lng == 0.0)) {
+      continue;
+    }
+
+    final parentId = (p['parentPropertyId'] as String?)?.trim();
+    final coordKey = '${lat.toStringAsFixed(5)},${lng.toStringAsFixed(5)}';
+    final groupKey = (parentId != null && parentId.isNotEmpty)
+        ? 'parent_$parentId'
+        : 'coord_$coordKey';
+
+    groups.putIfAbsent(groupKey, () => []).add(p);
+  }
+
+  final List<_MapCluster> clusters = [];
+  for (final entry in groups.entries) {
+    final list = entry.value;
+    list.sort(_compareListings);
+    final top = list.first;
+    final lat = (top['latitude'] as num).toDouble();
+    final lng = (top['longitude'] as num).toDouble();
+    clusters.add(
+      _MapCluster(
+        key: entry.key,
+        point: LatLng(lat, lng),
+        properties: list,
+      ),
+    );
+  }
+
+  // Draw lower-match pins first and higher-match pins on top
+  clusters.sort((a, b) => _compareListings(b.topProperty, a.topProperty));
+
+  return clusters;
+}
+
 class _MapViewScreenState extends State<MapViewScreen> {
   final _mapController = MapController();
-  int? _selectedIndex;
+  List<_MapCluster> _clusters = [];
+  int? _selectedClusterIndex;
+  int _selectedRoomIndex = 0;
   Map<String, dynamic>? _lastSelectedProperty;
 
   // ── Live Navigation State ──────────────────────────────────────────────────
@@ -101,21 +182,38 @@ class _MapViewScreenState extends State<MapViewScreen> {
   // In-memory route plan cache keyed by "originLat,originLng_destLat,destLng_profile"
   final Map<String, RoutePlan> _routePlanCache = {};
 
-
-
   @override
   void initState() {
     super.initState();
-    if (widget.isSinglePropertyMode && widget.properties.isNotEmpty) {
-      _selectedIndex = 0;
-      _lastSelectedProperty = widget.properties.first;
+    _clusters = _buildClusters(widget.properties);
+    if (widget.isSinglePropertyMode && _clusters.isNotEmpty) {
+      _selectedClusterIndex = 0;
+      _selectedRoomIndex = 0;
+      _lastSelectedProperty = _clusters.first.properties.first;
     } else if (widget.initialPropertyId != null) {
-      final idx = widget.properties.indexWhere(
-        (p) => p['propertyId'] == widget.initialPropertyId,
-      );
-      if (idx != -1) {
-        _selectedIndex = idx;
-        _lastSelectedProperty = widget.properties[idx];
+      for (int ci = 0; ci < _clusters.length; ci++) {
+        final ri = _clusters[ci].properties.indexWhere(
+          (p) => p['propertyId'] == widget.initialPropertyId,
+        );
+        if (ri != -1) {
+          _selectedClusterIndex = ci;
+          _selectedRoomIndex = ri;
+          _lastSelectedProperty = _clusters[ci].properties[ri];
+          break;
+        }
+      }
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant MapViewScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.properties != oldWidget.properties) {
+      _clusters = _buildClusters(widget.properties);
+      if (_selectedClusterIndex != null &&
+          _selectedClusterIndex! >= _clusters.length) {
+        _selectedClusterIndex = null;
+        _selectedRoomIndex = 0;
       }
     }
   }
@@ -326,14 +424,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
   }
 
   LatLng _resolveInitialCenter() {
-    if (_selectedIndex != null && _selectedIndex! < widget.properties.length) {
-      final p = widget.properties[_selectedIndex!];
-      final lat = (p['latitude'] as num?)?.toDouble() ?? 0.0;
-      final lng = (p['longitude'] as num?)?.toDouble() ?? 0.0;
-      if (lat != 0.0 && lng != 0.0) {
-        // Offset southward slightly so the pin stays centered above the bottom card.
-        return LatLng(lat - 0.0035, lng);
-      }
+    if (_selectedClusterIndex != null &&
+        _selectedClusterIndex! < _clusters.length) {
+      final cluster = _clusters[_selectedClusterIndex!];
+      return LatLng(cluster.point.latitude - 0.0035, cluster.point.longitude);
     }
     return widget.poi ??
         const LatLng(
@@ -342,16 +436,19 @@ class _MapViewScreenState extends State<MapViewScreen> {
         );
   }
 
-  void _onPinTapped(int index) {
-    if (index >= 0 && index < widget.properties.length) {
-      final p = widget.properties[index];
+  void _onClusterTapped(int index, {int roomIndex = 0}) {
+    if (index >= 0 && index < _clusters.length) {
+      final cluster = _clusters[index];
+      final safeRoomIndex = roomIndex.clamp(0, cluster.properties.length - 1);
+      final p = cluster.properties[safeRoomIndex];
       setState(() {
-        _selectedIndex = index;
+        _selectedClusterIndex = index;
+        _selectedRoomIndex = safeRoomIndex;
         _lastSelectedProperty = p;
       });
 
-      final lat = (p['latitude'] as num?)?.toDouble() ?? 0.0;
-      final lng = (p['longitude'] as num?)?.toDouble() ?? 0.0;
+      final lat = cluster.point.latitude;
+      final lng = cluster.point.longitude;
       if (lat != 0.0 && lng != 0.0) {
         // Offset southward slightly so the pin stays visible above the bottom preview card.
         _mapController.move(LatLng(lat - 0.0035, lng), 15.5);
@@ -361,9 +458,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
 
   void _dismissSelection() {
     if (widget.isSinglePropertyMode) return;
-    if (_selectedIndex != null) {
+    if (_selectedClusterIndex != null) {
       setState(() {
-        _selectedIndex = null;
+        _selectedClusterIndex = null;
+        _selectedRoomIndex = 0;
       });
     }
   }
@@ -380,9 +478,14 @@ class _MapViewScreenState extends State<MapViewScreen> {
         isGuest: widget.isGuest,
         onSelectProperty: (property) {
           Navigator.of(sheetContext).pop();
-          final idx = widget.properties.indexOf(property);
-          if (idx != -1) {
-            _onPinTapped(idx);
+          for (int ci = 0; ci < _clusters.length; ci++) {
+            final ri = _clusters[ci].properties.indexWhere(
+              (p) => p['propertyId'] == property['propertyId'],
+            );
+            if (ri != -1) {
+              _onClusterTapped(ci, roomIndex: ri);
+              break;
+            }
           }
         },
       ),
@@ -419,8 +522,15 @@ class _MapViewScreenState extends State<MapViewScreen> {
   @override
   Widget build(BuildContext context) {
     final properties = widget.properties;
-    final activeProperty = _selectedIndex != null && _selectedIndex! < properties.length
-        ? properties[_selectedIndex!]
+    final selectedCluster = _selectedClusterIndex != null &&
+            _selectedClusterIndex! < _clusters.length
+        ? _clusters[_selectedClusterIndex!]
+        : null;
+    final activeProperty = selectedCluster != null
+        ? selectedCluster.properties[_selectedRoomIndex.clamp(
+            0,
+            selectedCluster.properties.length - 1,
+          )]
         : _lastSelectedProperty;
 
     return PopScope(
@@ -440,7 +550,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 mapController: _mapController,
                 options: MapOptions(
                   initialCenter: _resolveInitialCenter(),
-                  initialZoom: _selectedIndex != null ? 15.5 : 13.5,
+                  initialZoom: _selectedClusterIndex != null ? 15.5 : 13.5,
                   // Tapping empty map space dismisses selected property card.
                   onTap: (_, _) => _dismissSelection(),
                   onPositionChanged: (camera, hasGesture) {
@@ -676,52 +786,50 @@ class _MapViewScreenState extends State<MapViewScreen> {
                         ),
 
                       // Unselected property markers — bottom tip planted exactly on coordinates
-                      for (int i = 0; i < properties.length; i++)
-                        if (i != _selectedIndex &&
-                            (properties[i]['latitude'] as num?)?.toDouble() != null &&
-                            (properties[i]['longitude'] as num?)?.toDouble() != null &&
-                            !((properties[i]['latitude'] as num?)?.toDouble() == 0.0 &&
-                              (properties[i]['longitude'] as num?)?.toDouble() == 0.0))
+                      for (int i = 0; i < _clusters.length; i++)
+                        if (i != _selectedClusterIndex)
                           Marker(
-                            point: LatLng(
-                              (properties[i]['latitude'] as num).toDouble(),
-                              (properties[i]['longitude'] as num).toDouble(),
-                            ),
-                            width: 52,
-                            height: 52,
+                            point: _clusters[i].point,
+                            width: 60,
+                            height: 60,
                             alignment: Alignment.topCenter,
                             rotate: true,
                             child: Align(
                               alignment: Alignment.bottomCenter,
                               child: _PropertyPinMarker(
-                                property: properties[i],
+                                property: _clusters[i].topProperty,
+                                roomCount: _clusters[i].properties.length,
                                 isSelected: false,
-                                onTap: () => _onPinTapped(i),
+                                onTap: () => _onClusterTapped(i),
                               ),
                             ),
                           ),
 
                       // Selected property marker rendered LAST so it sits on top with halo
-                      if (_selectedIndex != null && _selectedIndex! < properties.length &&
-                          (properties[_selectedIndex!]['latitude'] as num?)?.toDouble() != null &&
-                          (properties[_selectedIndex!]['longitude'] as num?)?.toDouble() != null &&
-                          !((properties[_selectedIndex!]['latitude'] as num?)?.toDouble() == 0.0 &&
-                            (properties[_selectedIndex!]['longitude'] as num?)?.toDouble() == 0.0))
+                      if (_selectedClusterIndex != null &&
+                          _selectedClusterIndex! < _clusters.length)
                         Marker(
-                          point: LatLng(
-                            (properties[_selectedIndex!]['latitude'] as num).toDouble(),
-                            (properties[_selectedIndex!]['longitude'] as num).toDouble(),
-                          ),
-                          width: 62,
-                          height: 62,
+                          point: _clusters[_selectedClusterIndex!].point,
+                          width: 68,
+                          height: 68,
                           alignment: Alignment.topCenter,
                           rotate: true,
                           child: Align(
                             alignment: Alignment.bottomCenter,
                             child: _PropertyPinMarker(
-                              property: properties[_selectedIndex!],
+                              property: _clusters[_selectedClusterIndex!].properties[
+                                  _selectedRoomIndex.clamp(
+                                      0,
+                                      _clusters[_selectedClusterIndex!]
+                                              .properties
+                                              .length -
+                                          1)],
+                              roomCount: _clusters[_selectedClusterIndex!]
+                                  .properties
+                                  .length,
                               isSelected: true,
-                              onTap: () => _onPinTapped(_selectedIndex!),
+                              onTap: () =>
+                                  _onClusterTapped(_selectedClusterIndex!),
                             ),
                           ),
                         ),
@@ -941,7 +1049,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
           ),
 
           // ── Screen 1: Clean, Compact Bottom Button ───────────────────────
-          if (!_isNavigating && !widget.isSinglePropertyMode && _selectedIndex == null)
+          if (!_isNavigating && !widget.isSinglePropertyMode && _selectedClusterIndex == null)
             Positioned(
               left: 20,
               right: 20,
@@ -994,13 +1102,23 @@ class _MapViewScreenState extends State<MapViewScreen> {
             ),
 
           // ── Screen 3: Selected Property Preview Bottom Card ───────────────
-          if (!_isNavigating && _selectedIndex != null && activeProperty != null)
+          if (!_isNavigating && selectedCluster != null && activeProperty != null)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
               child: _PropertyPreviewBottomCard(
                 property: activeProperty,
+                clusterProperties: selectedCluster.isMultiRoom
+                    ? selectedCluster.properties
+                    : null,
+                selectedRoomIndex: _selectedRoomIndex,
+                onRoomSelected: (idx) {
+                  setState(() {
+                    _selectedRoomIndex = idx;
+                    _lastSelectedProperty = selectedCluster.properties[idx];
+                  });
+                },
                 isGuest: widget.isGuest,
                 homeCubit: widget.homeCubit,
                 initialPropertyId: widget.initialPropertyId,
@@ -1060,9 +1178,12 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 onProfileChanged: _onProfileChanged,
                 onExit: _exitNavigation,
                 onLaunchGoogleMaps: _launchGoogleMaps,
-                destinationName: (activeProperty?['propertyName'] as String?) ??
-                    (activeProperty?['title'] as String?) ??
-                    'Destination',
+                destinationName: (activeProperty?['propertyName'] as String?) != null &&
+                        (activeProperty?['roomName'] as String?)?.trim().isNotEmpty == true
+                    ? '${activeProperty!['propertyName']} — ${activeProperty['roomName']}'
+                    : (activeProperty?['propertyName'] as String?) ??
+                        (activeProperty?['title'] as String?) ??
+                        'Destination',
                 destinationAddress: (activeProperty?['address'] as String?) ?? 'Davao City',
                 originName: widget.poiLabel ?? 'Your POI',
                 originAddress: 'Davao City',
@@ -1082,11 +1203,13 @@ class _PropertyPinMarker extends StatefulWidget {
     required this.property,
     required this.isSelected,
     required this.onTap,
+    this.roomCount = 1,
   });
 
   final Map<String, dynamic> property;
   final bool isSelected;
   final VoidCallback onTap;
+  final int roomCount;
 
   @override
   State<_PropertyPinMarker> createState() => _PropertyPinMarkerState();
@@ -1238,14 +1361,42 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
                     ),
                   ],
                 ),
-                child: Text(
-                  '$percent%',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: widget.isSelected ? 10.5 : 10,
-                    fontWeight: FontWeight.w700,
-                    color: tier.textColor,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isGray ? 'Match' : '$percent%',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: widget.isSelected ? 10.5 : 10,
+                        fontWeight: FontWeight.w700,
+                        color: tier.textColor,
+                      ),
+                    ),
+                    if (widget.roomCount > 1) ...[
+                      const SizedBox(width: 3),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 0.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Text(
+                          '${widget.roomCount}',
+                          style: const TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               const SizedBox(height: 1.0),
@@ -1751,6 +1902,9 @@ class _PropertyPreviewBottomCard extends StatefulWidget {
     required this.fmt,
     this.poi,
     this.onDirectionsTap,
+    this.clusterProperties,
+    this.selectedRoomIndex = 0,
+    this.onRoomSelected,
   });
 
   final Map<String, dynamic> property;
@@ -1760,6 +1914,9 @@ class _PropertyPreviewBottomCard extends StatefulWidget {
   final String Function(num) fmt;
   final LatLng? poi;
   final VoidCallback? onDirectionsTap;
+  final List<Map<String, dynamic>>? clusterProperties;
+  final int selectedRoomIndex;
+  final ValueChanged<int>? onRoomSelected;
 
   @override
   State<_PropertyPreviewBottomCard> createState() => _PropertyPreviewBottomCardState();
@@ -2026,6 +2183,146 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                   ),
                 ],
               ),
+              // Available Rooms Selector (When multiple rooms exist at this location)
+              if (widget.clusterProperties != null &&
+                  widget.clusterProperties!.length > 1) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.meeting_room_outlined,
+                      size: 13,
+                      color: context.appColors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Available Rooms (${widget.clusterProperties!.length})',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: context.appColors.textPrimary,
+                        letterSpacing: -0.1,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Tap to switch room',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: context.appColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                SizedBox(
+                  height: 38,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.clusterProperties!.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 6),
+                    itemBuilder: (context, i) {
+                      final room = widget.clusterProperties![i];
+                      final isSelected = i == widget.selectedRoomIndex;
+                      final (rProp, rRoom) = ListingCardLarge.resolveTitles(
+                        rawTitle: (room['title'] as String?) ?? 'Room',
+                        explicitPropertyName: room['propertyName'] as String?,
+                        explicitRoomName: room['roomName'] as String?,
+                      );
+                      final bool rIsNonMatch =
+                          (room['isNonMatch'] == true) || (room['bScore'] == 0);
+                      final double rCi = rIsNonMatch
+                          ? 0.0
+                          : ((room['tenantCi'] as num?)?.toDouble() ?? 0.0);
+                      final int rPercent = (rCi * 100).round();
+                      final rTier = _SubtleTierColor.forPercent(
+                        rPercent,
+                        isNonMatch: rIsNonMatch,
+                      );
+                      final rRent =
+                          (room['monthlyRent'] as num?)?.round() ?? 0;
+
+                      return Material(
+                        color: isSelected
+                            ? AppColors.primary.withValues(alpha: 0.08)
+                            : context.appColors.fieldFill,
+                        borderRadius: BorderRadius.circular(9),
+                        child: InkWell(
+                          onTap: () => widget.onRoomSelected?.call(i),
+                          borderRadius: BorderRadius.circular(9),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(9),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : context.appColors.fieldBorder,
+                                width: isSelected ? 1.4 : 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  rRoom,
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 11.5,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : context.appColors.textPrimary,
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4.5,
+                                    vertical: 1.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: rTier.bg,
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: Text(
+                                    rIsNonMatch ? 'No match' : '$rPercent%',
+                                    style: TextStyle(
+                                      fontFamily: 'DM Sans',
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: rTier.textColor,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  '₱${fmt(rRent)}',
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: context.appColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
               const SizedBox(height: 14),
 
               // Action Buttons: Directions on the left, View Details on the right
@@ -2058,9 +2355,12 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                           color: AppColors.primary,
                           strokeWidth: 2.0,
                         ),
-                        label: const Text(
-                          'Directions',
-                          style: TextStyle(
+                        label: Text(
+                          widget.clusterProperties != null &&
+                                  widget.clusterProperties!.length > 1
+                              ? 'Directions ($roomOrTitle)'
+                              : 'Directions',
+                          style: const TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,
@@ -2108,9 +2408,12 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Text(
-                          'View details',
-                          style: TextStyle(
+                        child: Text(
+                          widget.clusterProperties != null &&
+                                  widget.clusterProperties!.length > 1
+                              ? 'View $roomOrTitle'
+                              : 'View details',
+                          style: const TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,

@@ -139,16 +139,48 @@ class ListingStrings {
   );
 
   // ── Step 1: rental type ────────────────────────────────────────────────
-  String get entirePlace => _t('Entire Place', 'Buong Lugar');
+  String get entirePlace => _t(
+    'Entire Place (Single Unit)',
+    'Buong Lugar (Isang Unit)',
+  );
   String get entirePlaceDesc => _t(
-    'A whole house, apartment, or condo.',
-    'Buong bahay, apartment, o condo.',
+    'Rent the whole property under one single price.',
+    'Ipaupa ang buong property sa iisang presyo.',
   );
-  String get aRoom => _t('A Room', 'Isang Kuwarto');
+  String get entirePlaceBadgePrice => _t('1 Fixed Price', '1 Presyo');
+  String get entirePlaceBadgeTenant =>
+      _t('1 Group / Tenant', '1 Grupo / Umuupa');
+
+  String get aRoom => _t(
+    'By Room',
+    'Bawat Kuwarto',
+  );
   String get aRoomDesc => _t(
-    'A room in a boarding house, dorm, or shared home.',
-    'Kuwarto sa boarding house, dorm, o shared na bahay.',
+    'Rooms with separate prices and amenities.',
+    'Mga kuwartong may sariling presyo at amenities.',
   );
+  String get aRoomBadgeRates => _t('Different Room Rates', 'Iba-ibang Presyo');
+  String get aRoomBadgeAmenities =>
+      _t('Separate Amenities', 'Sariling Amenities');
+
+  // Tutorial strings
+  String get tutorialEntirePlaceTitle => _t('Entire Place', 'Buong Lugar');
+  String get tutorialEntirePlaceBody => _t(
+    '• Use this for single-unit properties rented out as a whole with one fixed price.\n\n• A multi-room property can also be listed here as long as all rooms share the exact same price, rules, and amenities.',
+    '• Gamitin ito para sa mga property na pinapaupahan nang buo sa iisang presyo.\n\n• Puwede rin ito sa property na may maraming kuwarto basta pare-pareho ang presyo, patakaran, at amenities ng lahat ng kuwarto.',
+  );
+
+  String get tutorialRoomTitle => _t('A Room', 'Isang Kuwarto');
+  String get tutorialRoomBody => _t(
+    '• Use this for properties with multiple rooms that have different prices, rules, capacities, or amenities (e.g. boarding houses or dorms).\n\n• You can add and manage each room individually under this building.',
+    '• Gamitin ito para sa mga property na may maraming kuwarto na magkakaiba ang presyo, patakaran, kapasidad, o amenities (hal. boarding house o dorm).\n\n• Puwede mong idagdag at pamahalaan ang bawat kuwarto nang paisa-isa sa ilalim ng building na ito.',
+  );
+
+  String get tutorialNext => _t('Next (1/2) →', 'Susunod (1/2) →');
+  String tutorialNextStep(int current, int total) =>
+      _t('Next ($current/$total) →', 'Susunod ($current/$total) →');
+  String get tutorialGotIt => _t('Got it!', 'Nakuha ko!');
+  String get tutorialSkip => _t('Skip', 'Laktawan');
   String get addMoreLaterTitle =>
       _t('You can add more later', 'Puwede kang magdagdag mamaya');
   String get addMoreLaterBody => _t(
@@ -177,16 +209,28 @@ class ListingStrings {
   );
   String get selectProperty =>
       _t('Select a property', 'Pumili ng property');
+  String get propertyNameRoomCaption => _t(
+    'The name of your building, boarding house, or dorm.',
+    'Ang pangalan ng iyong building, boarding house, o dorm.',
+  );
   String get addNewProperty =>
       _t('+ Add New Property', '+ Magdagdag ng Bagong Property');
   String get roomName =>
       _t('Room name or number', 'Pangalan o numero ng kuwarto');
+  String get roomNameCaption => _t(
+    'The specific room label your tenants will see (e.g. Room 101 or Room A).',
+    'Ang partikular na numero o pangalan ng kuwarto (hal. Room 101 o Room A).',
+  );
   String get roomNameHint => _t('e.g. Room 101', 'halimbawa: Room 101');
   String roomNameTaken(String building) => _t(
     'This room name is already used in $building.',
     'Ginagamit na ang pangalang ito ng kuwarto sa $building.',
   );
   String get listingName => _t('Listing name', 'Pangalan ng listing');
+  String get listingNameCaption => _t(
+    'Automatically combines your building and room name so tenants easily recognize it.',
+    'Awtomatikong pinagsasama ang building at kuwarto para madaling makita ng mga umuupa.',
+  );
   String get listingNameAuto => _t(
     'Created from the property and room name',
     'Gagawin mula sa pangalan ng property at kuwarto',
@@ -322,5 +366,44 @@ abstract final class ListingLanguageStore {
     } catch (_) {
       // Non-critical: the wizard just opens in English next time.
     }
+  }
+}
+
+/// Remembers whether the create-listing wizard onboarding tutorials have already
+/// been seen on this device so they are shown only once like a true tutorial.
+abstract final class ListingTutorialStore {
+  static const _rentalTypeTutorialKey = 'listing_wizard_rental_type_tutorial_seen';
+  static const _roomTutorialKey = 'listing_wizard_room_tutorial_seen';
+
+  static Future<bool> hasSeenRentalTypeTutorial() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_rentalTypeTutorialKey) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<void> markRentalTypeTutorialSeen() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_rentalTypeTutorialKey, true);
+    } catch (_) {}
+  }
+
+  static Future<bool> hasSeenRoomTutorial() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_roomTutorialKey) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<void> markRoomTutorialSeen() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_roomTutorialKey, true);
+    } catch (_) {}
   }
 }

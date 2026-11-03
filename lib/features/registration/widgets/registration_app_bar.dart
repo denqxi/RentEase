@@ -12,6 +12,7 @@ class RegistrationAppBar extends StatefulWidget {
     this.stepNumber,
     this.stepCount,
     this.icon,
+    this.trailing,
     super.key,
   });
 
@@ -27,6 +28,9 @@ class RegistrationAppBar extends StatefulWidget {
 
   /// Total number of steps; required when [stepNumber] is provided.
   final int? stepCount;
+
+  /// Optional trailing widget, e.g. a language toggle or action button.
+  final Widget? trailing;
 
   @override
   State<RegistrationAppBar> createState() => _RegistrationAppBarState();
@@ -97,6 +101,10 @@ class _RegistrationAppBarState extends State<RegistrationAppBar>
               color: context.appColors.textSecondary,
             ),
           ),
+        ],
+        if (widget.trailing != null) ...<Widget>[
+          const SizedBox(width: AppSpacing.md),
+          widget.trailing!,
         ],
       ],
     );

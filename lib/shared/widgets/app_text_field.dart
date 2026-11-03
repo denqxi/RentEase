@@ -121,11 +121,17 @@ class AppTextField extends StatelessWidget {
   }
 }
 
-/// Labelled wrapper that renders [AppTextField] with a section label above it.
+/// Labelled wrapper that renders [AppTextField] with a section label and optional caption above it.
 class LabelledField extends StatelessWidget {
-  const LabelledField({required this.label, required this.child, super.key});
+  const LabelledField({
+    required this.label,
+    this.caption,
+    required this.child,
+    super.key,
+  });
 
   final String label;
+  final String? caption;
   final Widget child;
 
   @override
@@ -139,6 +145,15 @@ class LabelledField extends StatelessWidget {
             context,
           ).copyWith(fontSize: 13, color: context.appColors.textSecondary),
         ),
+        if (caption != null && caption!.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            caption!,
+            style: AppTextStyles.caption(
+              context,
+            ).copyWith(color: context.appColors.textSecondary),
+          ),
+        ],
         const SizedBox(height: 6),
         child,
       ],

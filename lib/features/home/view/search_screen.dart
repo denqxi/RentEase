@@ -1325,7 +1325,7 @@ class _PropertyCard extends StatelessWidget {
                                   color: context.appColors.hint,
                                 ),
                                 const SizedBox(width: 6),
-                                if (!isGuest && matchPercent > 0)
+                                if (!isGuest)
                                   Text(
                                     '$matchPercent% Match',
                                     style: TextStyle(
@@ -1336,7 +1336,7 @@ class _PropertyCard extends StatelessWidget {
                                       letterSpacing: -0.1,
                                     ),
                                   ),
-                              ] else if (!isGuest && matchPercent > 0) ...[
+                              ] else if (!isGuest) ...[
                                 Icon(
                                   Icons.auto_awesome,
                                   size: 12,
@@ -1415,48 +1415,84 @@ class _PropertyCard extends StatelessWidget {
                         ),
                       ),
 
-                      // Bottom-right: Photo count badge (clean white pill)
-                      if (photoCount > 0)
+                      // Bottom-right: Ci score badge (for testing) & Photo count badge (clean white pills)
+                      if (!isGuest || photoCount > 0)
                         Positioned(
                           bottom: 8,
                           right: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7.5,
-                              vertical: 3.5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: context.appColors.surface,
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.slate900.withValues(alpha: 0.12),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.photo_outlined,
-                                  size: 12,
-                                  color: context.appColors.textSecondary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '$photoCount',
-                                  style: TextStyle(
-                                    fontFamily: 'DM Sans',
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: context.appColors.textPrimary,
-                                    letterSpacing: -0.1,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (!isGuest) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7.5,
+                                    vertical: 3.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: context.appColors.surface,
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.slate900.withValues(alpha: 0.12),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    'Ci = ${(tenantCi?.toDouble() ?? (matchPercent / 100.0)).toStringAsFixed(4)}',
+                                    style: TextStyle(
+                                      fontFamily: 'DM Sans',
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: context.appColors.textPrimary,
+                                      letterSpacing: -0.1,
+                                    ),
                                   ),
                                 ),
+                                if (photoCount > 0) const SizedBox(width: 5),
                               ],
-                            ),
+                              if (photoCount > 0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7.5,
+                                    vertical: 3.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: context.appColors.surface,
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.slate900.withValues(alpha: 0.12),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.photo_outlined,
+                                        size: 12,
+                                        color: context.appColors.textSecondary,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '$photoCount',
+                                        style: TextStyle(
+                                          fontFamily: 'DM Sans',
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: context.appColors.textPrimary,
+                                          letterSpacing: -0.1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                     ],
