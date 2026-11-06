@@ -615,13 +615,13 @@ class _MapViewScreenState extends State<MapViewScreen> {
                               (widget.poi!.longitude - (properties.first['longitude'] as num).toDouble()).abs() < 0.0001))
                         Marker(
                           point: widget.poi!,
-                          width: 260,
-                          height: 84,
+                          width: 280,
+                          height: 94,
                           alignment: Marker.computePixelAlignment(
-                            width: 260,
-                            height: 84,
-                            left: 130,
-                            top: 65,
+                            width: 280,
+                            height: 94,
+                            left: 140,
+                            top: 72,
                           ),
                           rotate: true,
                           child: Align(
@@ -632,24 +632,30 @@ class _MapViewScreenState extends State<MapViewScreen> {
                               children: [
                                 // Destination Label Card with Icon and Subtitle
                                 Container(
-                                  margin: const EdgeInsets.only(bottom: 2),
+                                  margin: const EdgeInsets.only(bottom: 3),
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                                    horizontal: 10,
+                                    vertical: 5,
                                   ),
-                                  constraints: const BoxConstraints(maxWidth: 240),
+                                  constraints: const BoxConstraints(maxWidth: 250),
                                   decoration: BoxDecoration(
                                     color: context.appColors.surface,
-                                    borderRadius: BorderRadius.circular(11),
+                                    borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: context.appColors.fieldBorder,
-                                      width: 0.8,
+                                      color: AppColors.blue600.withValues(alpha: 0.4),
+                                      width: 1.2,
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.scrim.withValues(alpha: 0.08),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
+                                        color: AppColors.blue600.withValues(alpha: 0.16),
+                                        blurRadius: 12,
+                                        spreadRadius: 1,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                      BoxShadow(
+                                        color: AppColors.scrim.withValues(alpha: 0.10),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 1.5),
                                       ),
                                     ],
                                   ),
@@ -657,10 +663,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
                                     mainAxisSize: MainAxisSize.min,
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
-                                      // Light soft blue circular container with destination icon
+                                      // Soft blue circular container with original destination icon
                                       Container(
-                                        width: 22,
-                                        height: 22,
+                                        width: 26,
+                                        height: 26,
                                         decoration: const BoxDecoration(
                                           color: AppColors.skyFill,
                                           shape: BoxShape.circle,
@@ -668,12 +674,12 @@ class _MapViewScreenState extends State<MapViewScreen> {
                                         child: Center(
                                           child: Icon(
                                             _resolvePoiIcon(),
-                                            size: 12,
+                                            size: 14,
                                             color: AppColors.blue600,
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 6),
+                                      const SizedBox(width: 8),
 
                                       // Title & Location Subtitle
                                       Flexible(
@@ -689,7 +695,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
                                                 fontFamily: 'DM Sans',
-                                                fontSize: 10.5,
+                                                fontSize: 11.5,
                                                 fontWeight: FontWeight.w700,
                                                 color: context.appColors.textPrimary,
                                                 letterSpacing: -0.1,
@@ -702,8 +708,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
                                                 fontFamily: 'DM Sans',
-                                                fontSize: 8.5,
-                                                fontWeight: FontWeight.w500,
+                                                fontSize: 9.5,
+                                                fontWeight: FontWeight.w600,
                                                 color: context.appColors.textSecondary,
                                               ),
                                             ),
@@ -714,66 +720,76 @@ class _MapViewScreenState extends State<MapViewScreen> {
                                   ),
                                 ),
 
-                                // Connecting tiny dot directly below card
+                                // Connecting dot directly below card
                                 Container(
-                                  width: 4.5,
-                                  height: 4.5,
+                                  width: 5.5,
+                                  height: 5.5,
                                   margin: const EdgeInsets.only(bottom: 2),
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     color: AppColors.blue600,
                                     shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 1.0,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.scrim.withValues(alpha: 0.2),
+                                        blurRadius: 2,
+                                      ),
+                                    ],
                                   ),
                                 ),
 
                                 // Concentric rings with circular badge anchored to coordinates
                                 SizedBox(
-                                  width: 38,
-                                  height: 38,
+                                  width: 44,
+                                  height: 44,
                                   child: Stack(
                                     alignment: Alignment.center,
                                     children: [
                                       // Outer subtle ring
                                       Container(
-                                        width: 38,
-                                        height: 38,
+                                        width: 44,
+                                        height: 44,
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: AppColors.blue600.withValues(alpha: 0.12),
+                                          color: AppColors.blue600.withValues(alpha: 0.16),
                                         ),
                                       ),
                                       // Middle subtle ring
                                       Container(
-                                        width: 30,
-                                        height: 30,
+                                        width: 34,
+                                        height: 34,
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: AppColors.blue600.withValues(alpha: 0.22),
+                                          color: AppColors.blue600.withValues(alpha: 0.28),
                                         ),
                                       ),
                                       // Core solid blue circular badge with white outline
                                       Container(
-                                        width: 22,
-                                        height: 22,
+                                        width: 26,
+                                        height: 26,
                                         decoration: BoxDecoration(
                                           color: AppColors.blue600,
                                           shape: BoxShape.circle,
                                           border: Border.all(
-                                            color: context.appColors.surface,
-                                            width: 1.8,
+                                            color: Colors.white,
+                                            width: 2.2,
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: AppColors.blue600.withValues(alpha: 0.4),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 1.5),
+                                              color: AppColors.blue600.withValues(alpha: 0.45),
+                                              blurRadius: 6,
+                                              offset: const Offset(0, 2),
                                             ),
                                           ],
                                         ),
                                         child: Center(
                                           child: Icon(
                                             _resolvePoiIcon(),
-                                            color: AppColors.surface,
-                                            size: 11,
+                                            color: Colors.white,
+                                            size: 14,
                                           ),
                                         ),
                                       ),
@@ -790,8 +806,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
                         if (i != _selectedClusterIndex)
                           Marker(
                             point: _clusters[i].point,
-                            width: 60,
-                            height: 60,
+                            width: 96,
+                            height: 76,
                             alignment: Alignment.topCenter,
                             rotate: true,
                             child: Align(
@@ -810,8 +826,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
                           _selectedClusterIndex! < _clusters.length)
                         Marker(
                           point: _clusters[_selectedClusterIndex!].point,
-                          width: 68,
-                          height: 68,
+                          width: 104,
+                          height: 86,
                           alignment: Alignment.topCenter,
                           rotate: true,
                           child: Align(
@@ -1275,9 +1291,9 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
     final int percent = (ci * 100).round();
     final tier = _SubtleTierColor.forPercent(percent, isNonMatch: isNonMatch);
 
-    final double pinW = widget.isSelected ? 22 : 18.5;
-    final double pinH = widget.isSelected ? 31 : 26;
-    final double iconSize = widget.isSelected ? 13.5 : 11.0;
+    final double pinW = widget.isSelected ? 32.0 : 26.0;
+    final double pinH = widget.isSelected ? 44.0 : 36.0;
+    final double iconSize = widget.isSelected ? 19.0 : 15.5;
 
     final bool isGray = isNonMatch || percent <= 0;
     final Color themeColor = isGray ? context.appColors.hint : AppColors.sky400;
@@ -1285,6 +1301,7 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
     final Color pinFillColor = widget.isSelected ? themeColor : context.appColors.surface;
     final Color pinStrokeColor = widget.isSelected ? context.appColors.surface : themeColor;
     final Color pinIconColor = widget.isSelected ? context.appColors.surface : themeColor;
+    final double pinStrokeWidth = widget.isSelected ? 1.5 : 1.2;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -1296,7 +1313,7 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
           // Animated Pulse Effect when selected (centered on needle tip)
           if (widget.isSelected)
             Positioned(
-              bottom: -14,
+              bottom: -16,
               child: RepaintBoundary(
                 child: AnimatedBuilder(
                   animation: _pulseController,
@@ -1304,8 +1321,8 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
                     return Transform.scale(
                       scale: _pulseScaleAnimation.value,
                       child: Container(
-                        width: 28,
-                        height: 28,
+                        width: 34,
+                        height: 34,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: themeColor.withValues(
@@ -1313,9 +1330,9 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
                           ),
                           border: Border.all(
                             color: themeColor.withValues(
-                              alpha: _pulseOpacityAnimation.value * 0.8,
+                              alpha: _pulseOpacityAnimation.value * 0.9,
                             ),
-                            width: 1.1,
+                            width: 1.4,
                           ),
                         ),
                       ),
@@ -1328,13 +1345,13 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
           // Secondary subtle inner glow ring (centered on needle tip)
           if (widget.isSelected)
             Positioned(
-              bottom: -11,
+              bottom: -13,
               child: Container(
-                width: 22,
-                height: 22,
+                width: 26,
+                height: 26,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: themeColor.withValues(alpha: 0.15),
+                  color: themeColor.withValues(alpha: 0.25),
                 ),
               ),
             ),
@@ -1343,9 +1360,9 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Compact Percentage Capsule (subtle tier bg, unchanged color on selection)
+              // Percentage / Status Capsule with glow & shadow
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.0),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.8),
                 decoration: BoxDecoration(
                   color: tier.bg,
                   borderRadius: BorderRadius.circular(10),
@@ -1354,10 +1371,17 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
                     width: 0.9,
                   ),
                   boxShadow: [
+                    // Glow halo matching tier
                     BoxShadow(
-                      color: AppColors.scrim.withValues(alpha: 0.06),
+                      color: tier.borderColor.withValues(alpha: 0.30),
+                      blurRadius: 5,
+                      spreadRadius: 0.5,
+                    ),
+                    // Grounding shadow
+                    BoxShadow(
+                      color: AppColors.scrim.withValues(alpha: 0.12),
                       blurRadius: 3,
-                      offset: const Offset(0, 1),
+                      offset: const Offset(0, 1.5),
                     ),
                   ],
                 ),
@@ -1365,7 +1389,7 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      isGray ? 'Match' : '$percent%',
+                      isGray ? '0% Not Match' : '$percent%',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: widget.isSelected ? 10.5 : 10,
@@ -1399,9 +1423,9 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
                   ],
                 ),
               ),
-              const SizedBox(height: 1.0),
+              const SizedBox(height: 1.5),
 
-              // Teardrop Pin (slimmer & smaller, dynamic active colors, unchanged % badge)
+              // Teardrop Pin with original colors + glowing halo & shadow
               SizedBox(
                 width: pinW,
                 height: pinH,
@@ -1412,12 +1436,13 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
                         painter: _TeardropPinPainter(
                           fillColor: pinFillColor,
                           strokeColor: pinStrokeColor,
-                          strokeWidth: widget.isSelected ? 1.2 : 1.0,
+                          strokeWidth: pinStrokeWidth,
+                          glowColor: themeColor,
                         ),
                       ),
                     ),
                     Positioned(
-                      top: 0.5,
+                      top: 1.0,
                       left: 0,
                       right: 0,
                       height: pinW,
@@ -1446,11 +1471,13 @@ class _TeardropPinPainter extends CustomPainter {
   final Color fillColor;
   final Color strokeColor;
   final double strokeWidth;
+  final Color glowColor;
 
   _TeardropPinPainter({
     required this.fillColor,
-    this.strokeColor = AppColors.surface,
-    this.strokeWidth = 1.0,
+    required this.strokeColor,
+    this.strokeWidth = 1.2,
+    required this.glowColor,
   });
 
   @override
@@ -1466,22 +1493,28 @@ class _TeardropPinPainter extends CustomPainter {
       ..cubicTo(w, r * 1.25, w - (r * 0.28), h * 0.74, r, h)
       ..close();
 
-    // Soft blurred ambient drop shadow
+    // 1. Soft atmospheric glow halo around the pin in the original theme color
+    final glowPaint = Paint()
+      ..color = glowColor.withValues(alpha: 0.35)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5.0);
+    canvas.drawPath(path, glowPaint);
+
+    // 2. High-contrast ambient drop shadow to separate white pin from light map tiles
     final shadowPaint = Paint()
-      ..color = AppColors.scrim.withValues(alpha: 0.18)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
-    canvas.drawPath(path.shift(const Offset(0, 1.4)), shadowPaint);
+      ..color = AppColors.scrim.withValues(alpha: 0.25)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.2);
+    canvas.drawPath(path.shift(const Offset(0, 2.2)), shadowPaint);
 
-    // Elevated shadow
-    canvas.drawShadow(path, AppColors.scrim.withValues(alpha: 0.16), 2.2, false);
+    // 3. Elevated ground shadow
+    canvas.drawShadow(path, AppColors.scrim.withValues(alpha: 0.20), 3.0, false);
 
-    // Fill
+    // 4. Fill
     final fillPaint = Paint()
       ..color = fillColor
       ..style = PaintingStyle.fill;
     canvas.drawPath(path, fillPaint);
 
-    // Stroke Outline
+    // 5. Stroke Outline
     final strokePaint = Paint()
       ..color = strokeColor
       ..style = PaintingStyle.stroke
@@ -1493,7 +1526,8 @@ class _TeardropPinPainter extends CustomPainter {
   bool shouldRepaint(covariant _TeardropPinPainter oldDelegate) =>
       fillColor != oldDelegate.fillColor ||
       strokeColor != oldDelegate.strokeColor ||
-      strokeWidth != oldDelegate.strokeWidth;
+      strokeWidth != oldDelegate.strokeWidth ||
+      glowColor != oldDelegate.glowColor;
 }
 
 /// Screen 2: Clean Nearby Properties Bottom Sheet (with zero horizontal overflow)
@@ -1823,10 +1857,10 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
                               decoration: BoxDecoration(
                                 color: tier.bg,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: tier.borderColor, width: 0.8),
+                                border: Border.all(color: tier.borderColor, width: 1.0),
                               ),
                               child: Text(
-                                '$percent%',
+                                (isNonMatch || percent <= 0) ? '0% Not Match' : '$percent%',
                                 style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 11,
@@ -2091,10 +2125,10 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                               decoration: BoxDecoration(
                                 color: tier.bg,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: tier.borderColor, width: 0.8),
+                                border: Border.all(color: tier.borderColor, width: 1.0),
                               ),
                               child: Text(
-                                '$percent%',
+                                (isNonMatch || percent <= 0) ? '0% Not Match' : '$percent%',
                                 style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 11,
@@ -2287,15 +2321,21 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                                 const SizedBox(width: 5),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 4.5,
+                                    horizontal: 5,
                                     vertical: 1.5,
                                   ),
                                   decoration: BoxDecoration(
                                     color: rTier.bg,
                                     borderRadius: BorderRadius.circular(5),
+                                    border: Border.all(
+                                      color: rTier.borderColor,
+                                      width: 0.8,
+                                    ),
                                   ),
                                   child: Text(
-                                    rIsNonMatch ? 'No match' : '$rPercent%',
+                                    (rIsNonMatch || rPercent <= 0)
+                                        ? '0% Not Match'
+                                        : '$rPercent%',
                                     style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 9.5,
