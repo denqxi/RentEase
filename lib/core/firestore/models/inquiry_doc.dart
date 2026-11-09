@@ -40,7 +40,9 @@ class InquiryDoc {
   /// 'tenant' | 'owner'.
   final String initiatedBy;
 
-  /// e.g. 'pending' | 'active' | 'booked' | 'declined' | 'closed'.
+  /// e.g. 'pending' | 'active' | 'booked' | 'ended' | 'declined' | 'closed'.
+  /// 'ended' = the tenant moved out after a booking; only then can either
+  /// side rate.
   final String status;
 
   /// 'pending' | 'accepted' | 'declined'.

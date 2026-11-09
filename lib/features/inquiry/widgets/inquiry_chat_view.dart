@@ -150,7 +150,92 @@ class _InquiryChatViewState extends State<InquiryChatView> {
       ),
     );
     if (confirmed != true) return;
-    if (await cubit.markBooked(fillsLastVacancy: fillsLastVacancy) && mounted) {
+    // Rating waits until the stay ends (_confirmEndStay), not booking.
+    await cubit.markBooked(fillsLastVacancy: fillsLastVacancy);
+  }
+
+  /// Either side marks the tenant as moved out; rating opens afterwards.
+  Future<void> _confirmEndStay(PropertyDoc? property) async {
+    final cubit = context.read<InquiryThreadCubit>();
+    // Offered only when the owner's listing is off the market and still
+    // under their control (an admin unlisting can't be undone here).
+    final canReopen = widget.isOwner &&
+        property != null &&
+        !property.isAvailable &&
+        !property.adminUnlisted;
+    var reopensVacancy = canReopen;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          widget.isOwner ? 'Mark as moved out?' : 'Have you moved out?',
+          style: const TextStyle(
+            fontFamily: 'DM Sans',
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: StatefulBuilder(
+          builder: (ctx, setDialogState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.isOwner
+                    ? 'Confirms that ${widget.counterpartName} has left ${widget.propertyTitle}. '
+                          'The chat closes and you can both rate the stay.'
+                    : 'Confirms that you have left ${widget.propertyTitle}. '
+                          'The chat closes and you can both rate the stay.',
+                style: const TextStyle(fontFamily: 'DM Sans', fontSize: 14),
+              ),
+              if (canReopen) ...[
+                const SizedBox(height: AppSpacing.md),
+                CheckboxListTile(
+                  value: reopensVacancy,
+                  onChanged: (v) =>
+                      setDialogState(() => reopensVacancy = v ?? false),
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  activeColor: AppColors.primary,
+                  title: const Text(
+                    'Put the listing back on the market',
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Marks ${widget.propertyTitle} as available for new tenants.',
+                    style: AppTextStyles.caption(ctx),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: ctx.appColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text(
+              'Confirm',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (await cubit.endStay(reopensVacancy: reopensVacancy) && mounted) {
       _openRating();
     }
   }
@@ -581,6 +666,8 @@ class _InquiryChatViewState extends State<InquiryChatView> {
     final inquiry = state.inquiry!;
     final property = state.property;
     final booked = inquiry.status == 'booked';
+    // The tenant moved out: chat is read-only and rating is open.
+    final ended = inquiry.status == 'ended';
     // Another tenant took the last vacancy (InquiryService.markBooked).
     final closed = inquiry.status == 'closed';
     final canChat = InquiryService.canChat(inquiry);
@@ -750,6 +837,8 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                         onSelected: (value) {
                           if (value == 'mark_booked') {
                             _confirmMarkBooked();
+                          } else if (value == 'end_stay') {
+                            _confirmEndStay(property);
                           } else if (value == 'rate') {
                             _openRating();
                           } else if (value == 'property_info' &&
@@ -781,7 +870,11 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                 ],
                               ),
                             ),
-                          if (widget.isOwner && canChat && !state.isBusy && !isCounterpartDeleted)
+                          if (widget.isOwner &&
+                              canChat &&
+                              inquiry.status == 'active' &&
+                              !state.isBusy &&
+                              !isCounterpartDeleted)
                             const PopupMenuItem<String>(
                               value: 'mark_booked',
                               height: 38,
@@ -805,7 +898,33 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                 ],
                               ),
                             ),
-                          if (booked && !state.hasRated)
+                          if (booked && !state.isBusy && !isCounterpartDeleted)
+                            PopupMenuItem<String>(
+                              value: 'end_stay',
+                              height: 38,
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.logout_rounded,
+                                    size: 16,
+                                    color: AppColors.primary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    widget.isOwner
+                                        ? 'Mark as moved out'
+                                        : "I've moved out",
+                                    style: const TextStyle(
+                                      fontFamily: 'DM Sans',
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (ended && !state.hasRated)
                             PopupMenuItem<String>(
                               value: 'rate',
                               height: 38,
@@ -906,12 +1025,16 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   ),
                 ),
 
-                // ── Stay Confirmed Banner ──────────────────────────────────
-                if (booked)
+                // ── Stay Confirmed / Stay Ended Banner ─────────────────────
+                if (booked || ended)
                   _BookedPanel(
                     isOwner: widget.isOwner,
                     counterpartName: widget.counterpartName,
+                    ended: ended,
                     hasRated: state.hasRated,
+                    onEndStay: state.isBusy || isCounterpartDeleted
+                        ? null
+                        : () => _confirmEndStay(property),
                     onRate: _openRating,
                     onViewRating: () {
                       if (widget.isOwner) {
@@ -943,6 +1066,9 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   )
                 else if (closed)
                   _ClosedPanel(isOwner: widget.isOwner)
+                // Read-only after move-out; the banner above explains it.
+                else if (ended)
+                  const SafeArea(top: false, child: SizedBox(height: 12))
                 else if (state.ownerRejected)
                   RejectedOwnerNotice(isOwner: widget.isOwner)
                 else ...[
@@ -1517,15 +1643,22 @@ class _BookedPanel extends StatelessWidget {
   const _BookedPanel({
     required this.isOwner,
     required this.counterpartName,
+    required this.ended,
     required this.hasRated,
     required this.onRate,
+    this.onEndStay,
     this.onViewRating,
   });
 
   final bool isOwner;
   final String counterpartName;
+
+  /// False while the tenant is staying (booked); true after move-out, when
+  /// rating opens.
+  final bool ended;
   final bool hasRated;
   final VoidCallback onRate;
+  final VoidCallback? onEndStay;
   final VoidCallback? onViewRating;
 
   @override
@@ -1537,22 +1670,40 @@ class _BookedPanel extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.check_circle_rounded,
-                color: AppColors.matchHigh,
+              Icon(
+                ended ? Icons.home_outlined : Icons.check_circle_rounded,
+                color: ended
+                    ? context.appColors.textSecondary
+                    : AppColors.matchHigh,
                 size: 18,
               ),
               const SizedBox(width: 6),
               Text(
-                'Stay confirmed',
+                ended ? 'Stay ended' : 'Stay confirmed',
                 style: AppTextStyles.body(
                   context,
                 ).copyWith(fontWeight: FontWeight.w700),
               ),
             ],
           ),
+          const SizedBox(height: 4),
+          Text(
+            ended
+                ? 'This chat is now read-only.'
+                : isOwner
+                ? 'You can rate $counterpartName once they move out.'
+                : 'You can rate this property once you move out.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.caption(context),
+          ),
           const SizedBox(height: 8),
-          if (hasRated)
+          if (!ended)
+            AppButton(
+              label: isOwner ? 'Mark as moved out' : "I've moved out",
+              variant: AppButtonVariant.outline,
+              onPressed: onEndStay,
+            )
+          else if (hasRated)
             InkWell(
               onTap: onViewRating,
               borderRadius: BorderRadius.circular(12),

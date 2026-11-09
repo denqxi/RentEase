@@ -1,0 +1,521 @@
+# CLAUDE.md — RentEase
+
+## Project Overview
+
+**RentEase** is a two-way boarding house rental matching platform built with Flutter and Firebase, targeting boarding house tenants and owners in Davao City, Philippines. It is a capstone research project by Dumadapat, Item, and Samson at the University of Mindanao.
+
+The system's core contribution is a **dual-sided constraint-based filtering engine** combined with **TOPSIS multi-criteria ranking**, implemented as two separate single-sided instances — one ranking properties for tenants, one ranking tenants for owners. Communication between parties is only enabled after bilateral compatibility is confirmed.
+
+---
+
+## Architecture
+
+### Stack
+- **Frontend:** Flutter (Dart) — cross-platform mobile (Android/iOS)
+- **State management:** BLoC (business logic) + Cubit (simpler states)
+- **Backend:** Firebase
+  - Firebase Authentication — login, signup, email verification, role-based access
+  - Cloud Firestore — NoSQL document database (real-time)
+  - ~~Cloud Functions~~ — **NOT USED.** Paid Firebase feature (requires Blaze plan); the project stays on the free Spark plan
+  - ~~Firebase Cloud Messaging (FCM)~~ — **NOT USED.** Not part of this project's scope; no push notifications
+  - **Note:** The project does not use Cloud Functions or FCM. Do not add them, suggest them, or write code that depends on them. Any other section of this file that refers to Cloud Functions (bilateral filter, TOPSIS, distance) or push notifications is superseded by this note; the matching/ranking logic must run without Cloud Functions (e.g., in the Flutter data/domain layer or via Firestore-only approaches), and notifications are in-app only (Firestore-backed Activity tab).
+  - Firebase Storage — property photos, verification documents
+- **Location:** Google Maps SDK for Flutter — map display and pin placement only
+- **Distance:** `latlong2` package — computed from stored geographic coordinates, NOT via Maps Distance Matrix API
+
+### Pattern
+Clean Architecture with feature-first folder structure. Each feature has its own data, domain, and presentation layers. Shared widgets live in `lib/shared/widgets/`.
+
+### Folder Structure
+```
+lib/
+├── main.dart
+├── app.dart
+├── core/
+│   ├── constants/
+│   │   ├── app_colors.dart       ← single source of truth for all colors
+│   │   ├── app_strings.dart
+│   │   ├── app_dimensions.dart
+│   │   └── mock_data.dart        ← all static test data
+│   ├── theme/
+│   │   ├── app_text_styles.dart
+│   │   └── app_theme.dart
+│   ├── router/
+│   │   └── app_router.dart
+│   ├── utils/
+│   │   ├── validators.dart
+│   │   ├── currency_utils.dart
+│   │   ├── date_utils.dart
+│   │   └── distance_utils.dart   ← latlong2-based distance calculation lives here
+│   ├── di/
+│   │   └── injection_container.dart
+│   ├── errors/
+│   │   ├── exceptions.dart
+│   │   └── failures.dart
+│   └── network/
+│       ├── api_client.dart
+│       └── network_info.dart
+├── features/
+│   ├── auth/
+│   ├── registration/             ← tenant + owner onboarding flows
+│   ├── home/                     ← tenant home and search
+│   ├── landlord_home/            ← owner home and find tenants
+│   ├── matches/
+│   ├── activity/
+│   ├── profile/
+│   ├── shell/                    ← bottom nav shells for each role
+│   └── [other features]/
+└── shared/
+    └── widgets/                  ← reusable UI components
+```
+
+---
+
+## Color System — CRITICAL
+
+**Never hardcode any hex color value anywhere in the codebase.** Every color must reference `AppColors`. This is enforced strictly.
+
+```dart
+// ❌ WRONG — never do this
+color: Color(0xFF1F7D8C)
+color: Colors.teal
+
+// ✅ CORRECT — always do this
+color: AppColors.accent
+```
+
+### Full Color Token Reference
+
+| Token | Hex | Usage |
+|---|---|---|
+| `AppColors.primary` | `#1ABCCE` | Brand teal, logo accent, teal links |
+| `AppColors.ink` | `#1A1A2E` | Primary buttons, headings, dark nav |
+| `AppColors.surface` | `#FFFFFF` | All screen and card backgrounds |
+| `AppColors.textPrimary` | `#1A1A2E` | All primary body and heading text |
+| `AppColors.textSecondary` | `#7A7A8C` | Subtitles, muted text, labels |
+| `AppColors.accent` | `#1F7D8C` | Active chips, toggles, sliders, progress bars |
+| `AppColors.accentSoft` | `#EAF1F2` | Chip fills, card tints, badge backgrounds, photo placeholders |
+| `AppColors.fieldFill` | `#F2F3F5` | All input field backgrounds |
+| `AppColors.fieldBorder` | `#E3E5E9` | All input field and card borders |
+| `AppColors.hint` | `#A0A3AD` | All placeholder and hint text |
+| `AppColors.indicatorInactive` | `#D9D9E0` | Inactive step dots, disabled states |
+| `AppColors.onInk` | `#FFFFFF` | Text on dark ink backgrounds |
+| `AppColors.matchHigh` | `#22C55E` | Compatible badge, qualified badge, available status |
+| `AppColors.matchMedium` | `#F59E0B` | Session override chips, pending status, amber warnings |
+| `AppColors.destructive` | `#EF4444` | Decline buttons, log out, danger actions |
+| `AppColors.unread` | `#3B82F6` | Notification badges, unread dots |
+
+---
+
+## Design Language
+
+### Card-Over-Hero Pattern
+All auth screens and onboarding screens use this pattern:
+- Full-bleed hero image or `AppColors.accentSoft` Container at top ~35% of screen
+- White card slides up over hero with `borderRadius` topLeft and topRight `28px`
+- Card has no bottom radius
+- All form content inside card with `24px` horizontal padding
+
+### Typography Scale
+- Screen titles: bold 24–28px `AppColors.textPrimary` left-aligned
+- Subtitles: 14px `AppColors.textSecondary` 4px below title
+- Section labels: 13px `AppColors.textSecondary` bold 8px above fields
+- Body text: 14px `AppColors.textPrimary`
+- Secondary body: 13px `AppColors.textSecondary`
+- Captions and badges: 10–12px
+
+### Buttons
+- **Primary (ink):** `AppColors.ink` background `AppColors.onInk` text full-width 52px height 14px radius bold 15px
+- **Outline:** `AppColors.surface` background `AppColors.fieldBorder` border `AppColors.textPrimary` text same size
+- **Destructive:** `AppColors.destructive` border `AppColors.destructive` text
+- **Disabled:** `AppColors.indicatorInactive` background `AppColors.hint` text
+- **Text button links:** `AppColors.primary` color no underline 14px
+
+### Input Fields
+- Background: `AppColors.fieldFill`
+- Border: `AppColors.fieldBorder` 1px, radius 12px
+- Height: 52px, padding horizontal 16px
+- Focused border: `AppColors.accent` 1.5px
+- Placeholder: `AppColors.hint`
+- Labels: 13px `AppColors.textSecondary` 8px above field
+
+### Cards in Lists
+- Background: `AppColors.surface`
+- Border: `AppColors.fieldBorder` 0.5px
+- Radius: 16px
+- Padding: 14px
+- No shadows — elevation 0
+
+### Bottom Navigation
+- Background: `AppColors.surface`
+- Top border: `AppColors.fieldBorder` 0.5px
+- Active tab: `AppColors.ink` icon and label
+- Inactive tab: `AppColors.textSecondary` icon and label
+- Badge color: `AppColors.unread`
+
+---
+
+## Core System Concepts
+
+### Three User Roles
+```
+Tenant    → searches for compatible properties
+Owner     → searches for compatible tenants + lists properties
+Admin     → verifies owners, manages platform (separate login, no self-registration)
+```
+Role is permanent after selection during signup. It determines Firestore paths, security rules, and all UI routing.
+
+### Dual-Sided Bilateral Filtering
+A match is only valid when BOTH layers return 1.
+
+**Layer 1 — Property-side constraints (owner rules vs tenant profile):**
+```
+P_score = GenderMatch × SmokingMatch × PetMatch × OccupancyMatch
+```
+
+**Layer 2 — Tenant-side constraints (tenant requirements vs property):**
+```
+T_score = BudgetMatch × GenderPolicyMatch × WiFiMatch × LocationMatch
+```
+
+**Bilateral score:**
+```
+B_score = P_score × T_score
+  B_score = 1 → eligible for TOPSIS ranking
+  B_score = 0 → removed from matching pool
+```
+
+### Distance Calculation
+Distance is computed using the **`latlong2` package** from stored coordinates — NOT via Google Maps API. Google Maps API (Google Maps SDK for Flutter) is used only for:
+1. Pin placement during tenant POI setup (Step 2 onboarding)
+2. Pin placement during owner property registration
+3. Map view display on search results screen
+
+The `latlong2` distance calculation lives in `lib/core/utils/distance_utils.dart` and is called on the tenant's device by `FilteringService` (domain layer) when matching runs — never from widget code.
+
+### Two TOPSIS Instances
+The system runs two separate single-sided TOPSIS instances:
+
+**Instance 1 — Tenant-side (ranks properties for tenant):**
+| Criterion | Type | Default Weight | Source |
+|---|---|---|---|
+| Monthly Rent | Cost | 0.35 | Tenant Q3 ratings (direct rating method) |
+| Distance from POI | Cost | 0.35 | Tenant Q3 ratings (direct rating method) |
+| Amenities Score (0–14) | Benefit | 0.30 | Tenant Q3 ratings (direct rating method) |
+
+**Instance 2 — Owner-side (ranks tenants for owner):**
+| Criterion | Type | Default Weight | Source |
+|---|---|---|---|
+| Intended Stay Duration | Benefit | Survey-derived | Landlord survey |
+| Tenant Credibility Score | Benefit | Survey-derived | Landlord survey |
+| Profile Completeness | Benefit | Survey-derived | Landlord survey |
+
+Weights sum to 1.0. Tenants and owners can adjust weights through the app but the constraint w1 + w2 + w3 = 1.0 must always be enforced.
+
+> **TODO (team decision needed):** the paper claims two TOPSIS instances, but the code implements only Instance 1 (tenant-side, ranks properties). Owner-side discovery is filtering-only: owners see every B_score = 1 tenant, unranked, and no owner TOPSIS weights exist. Either implement Instance 2 or update the paper (manuscript, Conceptual Framework, defense) to match. Until decided, leave this section's wording as is.
+
+### Amenities Score
+Count of amenities selected from a fixed 14-item checklist during property registration:
+```
+WiFi, Air conditioning, Electric fan, Private bathroom,
+Laundry facility, Kitchen or cooking area, CCTV or security camera,
+Parking space, Study area or desk, Refrigerator access,
+24-hour access, Water included in rent,
+Electricity included in rent, Furnished room
+```
+Range: 0–14. System-computed from owner checklist. Not a tenant rating.
+
+### Structured Two-Phase Inquiry
+```
+Phase 1 — Auto information exchange (no free chat)
+  System auto-sends:
+    To owner: full tenant summary + "Passes all your rules" badge
+    To tenant: house rules, deposit, advance terms, verified badge
+  Chat input disabled — locked state shown
+  Owner must Accept or Decline
+
+Phase 2 — Open chat (unlocks after owner accepts)
+  Standard in-app messaging
+  Quick reply templates available
+  Owner can "Mark as booked" → triggers rating screen
+```
+Communication is ONLY enabled between parties where B_score = 1. This is enforced at both the UI level (Send Inquiry button absent) and the security rule level.
+
+### Verified Badge System
+Owner verification is admin-controlled only. Three states:
+```
+verified  → isVerified = true, admin approved
+pending   → documents submitted, awaiting admin
+none      → no documents submitted
+```
+The badge appears in exactly 5 places:
+1. Search result cards (small variant)
+2. Property detail screen (beside owner name)
+3. Phase 1 auto-info bubble (tenant view)
+4. Phase 2 chat header (icon only)
+5. Owner profile screen (full badge below name)
+
+---
+
+## Absolute Rules — Never Violate
+
+### 1. No Hardcoded Colors
+```dart
+// ❌ NEVER
+Container(color: Color(0xFF1ABCCE))
+// ✅ ALWAYS
+Container(color: AppColors.primary)
+```
+
+### 2. Send Inquiry and Invite Buttons Must Be Absent When B_score = 0
+```dart
+// ❌ WRONG — disabled is not acceptable
+AppButton(label: 'Send inquiry', isEnabled: false)
+
+// ✅ CORRECT — completely absent
+if (property['bScore'] == 1)
+  AppButton(label: 'Send inquiry', onPressed: _sendInquiry)
+else
+  const SizedBox.shrink()
+```
+
+### 3. Session Filter State Never Writes to Firestore
+Session filter overrides are local `StatefulWidget` state only. They reset on screen dispose. They never persist. They never write to `tenantProfiles` or any Firestore collection.
+
+### 4. Role is Permanent
+A user's role (tenant/owner) cannot be changed after signup. Do not add any UI that allows role switching.
+
+### 5. Owner Cannot Post Listings Before Admin Approval
+Firebase security rules must enforce `isVerified = true` before any property write is permitted. Do not rely on UI-only enforcement.
+
+### 6. TOPSIS Runs on the Tenant's Device
+There are no Cloud Functions. The tenant's device computes TOPSIS Ci in memory in the domain layer (`TopsisService`), never in widget code, from the tenant's eligible matches and the live property docs Home already loads. `tenantCi` / `tenantRank` are written back to the match docs only when the tenant's set of eligible matches changes. A ranking-only match update skips the eligibility re-check in `firestore.rules`, since Ci grants no access.
+
+### 7. Full Matching Runs at Profile-Save Time; App Open Runs Only a Delta Check
+- **Full scan** (all available listings) runs only when the tenant completes onboarding or saves their profile or preferences. It writes only changed outcomes: create newly eligible matches, set `bScore = 0` on matches no longer eligible, and never delete match docs that don't exist. It then stores `lastMatchedAt` (the newest listing `updatedAt` seen, i.e. server time) in `tenantProfiles/{uid}/private/prefs`.
+- **App open** runs a delta check: `properties where updatedAt > lastMatchedAt − 2 minutes, orderBy updatedAt, limit 100`, paged. It scores only those listings, writes only changed outcomes, then advances `lastMatchedAt`. With no `lastMatchedAt` yet, it runs one full scan.
+- **Unavailable listings** get no match write. They are filtered out at read time (Home, TOPSIS, owner screens) and reappear when available again. A match whose listing was deleted is deleted when Home finds it.
+- **Every property write must stamp `updatedAt` with server time** (enforced in `firestore.rules`), otherwise existing tenants never see the change.
+- Pull-to-refresh and the Search tab never trigger a full scan.
+- **Limitation:** matches update only on the tenant's own device, so a tenant who doesn't open the app isn't matched to new listings until they do.
+
+### 8. Admin Has No Self-Registration
+Admin accounts are created manually in Firebase console. There is no sign-up flow for admin. The admin login screen has no "Create account" link.
+
+---
+
+## Tenant Onboarding Flow (4 Steps — Cannot Be Skipped)
+
+```
+Step 1 — Hard constraints
+  Max budget (PHP), Gender policy, WiFi required,
+  Private bathroom, Curfew needed
+  → Stored in tenantProfiles collection
+
+Step 2 — POI setup
+  Google Maps pin placement
+  POI type: School / Workplace / Other
+  Search bar for location lookup
+  → Stores poiLatitude, poiLongitude, poiAddress
+
+Step 3 — Distance preference
+  Slider 0–10 km
+  Live preview: "Properties within X km of [POI] will appear"
+  → Stores locationRadiusKm
+  Note: Step 2 MUST come before Step 3 because
+  Step 3 references the POI address from Step 2
+
+Step 4 — TOPSIS weights
+  Three sliders: Monthly rent, Distance from POI, Amenities
+  Defaults: 35% / 35% / 30%
+  Live total counter — green checkmark at exactly 100%
+  Find My Matches button disabled until total = 100%
+  → Stores weightRent, weightDistance, weightAmenities
+```
+
+---
+
+## Owner Onboarding Flow (After Admin Approval Only)
+
+```
+Document upload → Verification pending → Admin approves → 
+Add property → Property rules → Pricing and amenities → 
+Owner TOPSIS weights → Owner main app
+```
+
+Owner cannot access property listing, Find Tenants, or Inquiries features until `isVerified = true` in Firestore.
+
+---
+
+## Mock Data Location
+
+All static test data lives in `lib/core/constants/mock_data.dart`. This is the single source of truth for all hardcoded development data. Use realistic Filipino context:
+- Names: Maria Santos, Juan dela Cruz, Ana Reyes
+- Locations: Matina, Ecoland, Buhangin, Toril — all Davao City
+- Schools: USEP, ADDU, UM, USeP-Tagum
+- Amounts: ₱3,000 to ₱6,000 monthly rent range
+
+---
+
+## Known UI Decisions and Rationale
+
+### Why Send Inquiry is absent not disabled
+A disabled button invites the user to wonder why. An absent button communicates that the option does not exist for this property. Properties with B_score = 0 are fundamentally incompatible — there is nothing to inquire about.
+
+### Why session filters never write to Firestore
+Session filters are a temporary exploration tool. Writing them to Firestore would alter the user's bilateral filter profile and change their match results permanently. The distinction between hard constraints (permanent, in Firestore) and session overrides (temporary, local state only) is architecturally critical.
+
+### Why the Home screen shows "Compatible properties" not "Nearby homes"
+RentEase does not sort by proximity — it sorts by TOPSIS Ci score. Using "Nearby homes" implies geographic sorting which is incorrect. "Compatible properties" or "Best matches" correctly communicates the system's value proposition.
+
+### Why match display should be consistent
+The Ci score (0.00–1.00) is the precise TOPSIS output. On the home screen carousel a percentage format (86% match) is more user-friendly. On the search screen the raw Ci score (Ci 0.86) provides technical precision for comparison. Whatever format is chosen, it must be consistent within each screen context.
+
+### Why distance is computed via latlong2 not Maps API
+The Google Maps Distance Matrix API charges per request. With potentially hundreds of property-tenant distance computations running at profile-save time, this would be cost-prohibitive. The `latlong2` package produces a straight-line distance from stored coordinates — free, fast, and sufficient for the filtering and ranking purposes of this system.
+
+---
+
+## File Naming Conventions
+
+```
+Screens:        snake_case_screen.dart
+Widgets:        snake_case_widget.dart or descriptive_name.dart
+Cubits:         feature_cubit.dart / feature_state.dart
+BLoC:           feature_bloc.dart / feature_event.dart / feature_state.dart
+Models:         feature_model.dart
+Entities:       feature.dart (in domain/entities/)
+Repositories:   feature_repository.dart (interface in domain)
+                feature_repository_impl.dart (implementation in data)
+Use cases:      get_feature_usecase.dart / create_feature_usecase.dart
+```
+
+---
+
+## Things Claude Should Always Do
+
+1. **Read existing files before writing new ones.** Check if a widget, screen, or utility already exists before creating a duplicate.
+
+2. **Follow the existing BLoC/Cubit pattern.** If a feature uses Cubit, add Cubit. If it uses BLoC, add BLoC. Do not mix patterns within a feature.
+
+3. **Check the router before adding routes.** Read `app_router.dart` fully before adding any new route to avoid conflicts.
+
+4. **Use `MockData` class for all test data.** Never hardcode strings like "Maria Santos" or "Sunshine Boarding House" directly in widget files.
+
+5. **Run `flutter analyze` after changes.** Fix all warnings and errors in new files. Do not touch existing files unless they are directly causing errors in new code.
+
+6. **Keep B_score and TOPSIS logic in the domain layer.** `FilteringService` and `TopsisService` run on the device (there are no Cloud Functions). Never compute bilateral filter scores or TOPSIS Ci scores inside Flutter widget code.
+
+7. **Separate concerns properly.** UI state goes in Cubit/BLoC. Business logic goes in use cases. Data access goes in repositories. Network calls go in data sources.
+
+---
+
+## Things Claude Should Never Do
+
+1. **Never hardcode hex values.** Use `AppColors` tokens exclusively.
+
+2. **Never disable Send Inquiry or Invite when B_score = 0.** Use `SizedBox.shrink()` — the button must be completely absent.
+
+3. **Never write session filter state to Firestore.** Session overrides are local state only.
+
+4. **Never allow role switching after signup.** Role is permanent.
+
+5. **Never compute TOPSIS or distance (latlong2) in widget code.** They run on the device in the domain layer (`TopsisService`, `FilteringService`, `distance_utils.dart`), at profile-save time and in the app-open delta check (Absolute Rule 7).
+
+6. **Never use `Colors.teal`, `Colors.blue`, or any `Colors.*` directly.** Always use `AppColors.*`.
+
+7. **Never create a sign-up flow for admin.** Admin accounts are Firebase console only.
+
+8. **Never show a disabled Send Inquiry button.** Either it renders (B_score = 1) or it does not exist (B_score = 0).
+
+9. **Never sort search results by distance alone.** Results are always sorted by TOPSIS Ci score.
+
+10. **Never label a section "Nearby homes."** Use "Compatible properties," "Your matches," or "Best matches for you."
+
+---
+
+## Research Paper Alignment
+
+This project is a capstone study. The implementation must remain consistent with the paper's claims:
+
+| Paper Claim | Implementation Requirement |
+|---|---|
+| Dual-sided constraint-based filtering | Both Layer 1 and Layer 2 must be evaluated before B_score is set |
+| Two separate TOPSIS instances | Two distinct ranking computations, run client-side in the domain layer (no Cloud Functions). See the TODO under "Two TOPSIS Instances": only the tenant-side one exists in code |
+| Communication only after compatibility | Phase 1 chat input must be disabled until owner accepts |
+| Owner actively discovers tenants | Find Tenants screen must exist and show B_score = 1 profiles only |
+| Amenities score from 14-item checklist | Checklist must have exactly 14 items matching the paper |
+| Weights derived from survey data | Default weights must match computed averages from tenant/landlord survey Q3 |
+| latlong2 for distance computation | Distance calculation must use the `latlong2` package, not Maps API |
+| TOPSIS default weights match paper | Default weights must be Monthly Rent 0.35, Distance 0.35, Amenities 0.30 |
+| Verification by admin only | `isVerified` field writable by admin role only via security rules |
+
+---
+
+## Contact and Context
+
+- **Project:** RentEase capstone — University of Mindanao, College of Computing Education
+- **Researchers:** Ivan Josh C. Dumadapat, Rica S. Item, Dency Samson
+- **Adviser:** Charrise P. Barbosa, MSIS
+- **Location context:** Davao City, Philippines
+- **Target users:** College students and boarding house owners in Davao City
+- **Development period:** 7 months
+- **Deployment target:** Android (APK) and Google Play Store
+
+---
+
+## Performance Testing
+
+### Where tests run
+- Load and performance tests run **only** against the Firebase Emulator Suite or a Firebase staging project (none exists yet). **Never against production** (`renteasedb-4abb9`).
+- The emulator runs reuse the name `renteasedb-4abb9` only as a local namespace so the app sees the seeded data; nothing leaves the PC. `perf-tests/seed.js` refuses to run without the emulator host variables, and the harness refuses to run without `USE_EMULATOR=true`.
+
+### Credentials
+- Never commit service account keys or any other credentials.
+- Perf scripts read credentials from environment variables only (`PERF_PASSWORD` for the seeded emulator accounts; no service account is needed for the emulator).
+
+### File locations
+- Perf test scripts go in `/perf-tests`; the on-device harness is `integration_test/perf_baseline_test.dart`.
+- Results go in `/perf-tests/results` (`baseline-reads.csv`).
+- The counter is `lib/core/debug/perf_counter.dart` and the emulator switch is `lib/core/debug/emulator_config.dart`. Both are debug-only no-ops in release builds.
+
+### Before running
+- Before any test that writes data, state the estimated number of Firestore reads and writes it will perform, and wait for confirmation.
+
+### Commands (run from the repo root)
+1. Start the emulators (needs Java 11+):
+   ```
+   firebase emulators:start --only firestore,auth --project renteasedb-4abb9
+   ```
+2. Seed (writes ~531 docs + 4 Auth accounts, emulator only; wipes emulator data first):
+   ```
+   set FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
+   set FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
+   node perf-tests/seed.js
+   ```
+3. Baseline / before-after measurement on the connected phone (appends to `perf-tests/results/baseline-reads.csv`):
+   ```
+   node perf-tests/collect.js --label baseline --host <PC LAN IP>
+   ```
+   Trial run: add `--matches 400 --runs 1 --scenarios cold_open`.
+4. Run the app against the emulator by hand (debug builds only):
+   ```
+   flutter run --dart-define=USE_EMULATOR=true --dart-define=EMULATOR_HOST=<PC LAN IP>
+   ```
+5. Firestore rules tests:
+   ```
+   cd firestore-tests && firebase emulators:exec --only firestore,auth "npm test"
+   ```
+
+### Local setup changes to undo
+- `firebase.json` emulator hosts set to `0.0.0.0` so the phone can reach the emulators. This change is kept uncommitted. Undo: `git restore firebase.json`.
+- Debug-only cleartext HTTP to the emulators (Android blocks plain HTTP by default; the emulators don't use HTTPS). Release builds are unaffected: their merged manifest has no `networkSecurityConfig` and keeps `usesCleartextTraffic="false"` (verified with `gradlew :app:processReleaseMainManifest`).
+  - `android/app/src/debug/res/xml/network_security_config.xml` (new): allows cleartext only to `192.168.1.219`, `10.0.2.2` and `localhost`. Update the IP if the PC's LAN address changes.
+  - `android/app/src/debug/AndroidManifest.xml`: adds `<application android:networkSecurityConfig="@xml/network_security_config"/>`.
+  - Undo: delete the XML file (and the empty `res/xml` folders) and remove that `<application …/>` line.
+- Running the harness installs a **debug** build, which replaces (uninstalls) a release-signed RentEase on the phone, including its local data. Reinstall `Renteaseph.apk` from the GitHub release afterwards.
+- Optional Windows Firewall rule for ports 8080/9099 (only needed if the phone can't reach the emulators). Add from an administrator PowerShell, using the profile your Wi-Fi uses (`Get-NetConnectionProfile`):
+  ```
+  New-NetFirewallRule -DisplayName "Firebase emulators (perf tests)" -Direction Inbound -Protocol TCP -LocalPort 8080,9099 -Profile Private -Action Allow
+  ```
+  Undo: `Remove-NetFirewallRule -DisplayName "Firebase emulators (perf tests)"`.

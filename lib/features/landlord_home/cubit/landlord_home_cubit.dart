@@ -247,6 +247,19 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
   /// Updates the live search query.
   void updateSearch(String query) => emit(state.copyWith(searchQuery: query));
 
+  /// Listings with a write in flight. A repeat tap on the same listing is
+  /// dropped instead of writing (or deleting) twice.
+  final _writing = <String>{};
+
+  Future<void> _writeOnce(String propertyId, Future<void> Function() write) async {
+    if (!_writing.add(propertyId)) return;
+    try {
+      await write();
+    } finally {
+      _writing.remove(propertyId);
+    }
+  }
+
   /// 'available' | 'pending' | 'booked'. Only 'available' is shown to
   /// tenants (`isAvailable` mirrors it for the matching engine's query).
   Future<void> setVacancy(String propertyId, String status) async {
@@ -260,10 +273,13 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
       return;
     }
     try {
-      await repo.updateProperty(propertyId, {
-        'vacancyStatus': status,
-        'isAvailable': status == 'available',
-      });
+      await _writeOnce(
+        propertyId,
+        () => repo.updateProperty(propertyId, {
+          'vacancyStatus': status,
+          'isAvailable': status == 'available',
+        }),
+      );
     } catch (e) {
       _onError(e);
     }
@@ -276,14 +292,14 @@ class LandlordHomeCubit extends Cubit<LandlordHomeState> {
   ) async {
     final repo = _properties;
     if (repo == null) return;
-    await repo.updateProperty(propertyId, fields);
+    await _writeOnce(propertyId, () => repo.updateProperty(propertyId, fields));
   }
 
   /// Removes a listing; rethrows so the caller can surface any failure.
   Future<void> deleteProperty(String propertyId) async {
     final repo = _properties;
     if (repo == null) return;
-    await repo.deleteProperty(propertyId);
+    await _writeOnce(propertyId, () => repo.deleteProperty(propertyId));
   }
 
   void clearError() => emit(state.copyWith(clearError: true));

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../debug/perf_counter.dart';
 import '../firestore/firestore_collections.dart';
 import '../firestore/models/property_doc.dart';
 import '../../features/admin/view/admin_login_screen.dart';
@@ -88,14 +89,14 @@ class AppRouter {
         final snap = await firestore
             .collection(FirestoreCollections.ownerProfiles)
             .doc(user.uid)
-            .get();
+            .countedGet('router.ownerProfile');
         if (!snap.exists) return documentUpload;
         return landlordHome;
       } else if (user.isTenant) {
         final snap = await firestore
             .collection(FirestoreCollections.tenantProfiles)
             .doc(user.uid)
-            .get();
+            .countedGet('router.tenantProfile');
         if (!snap.exists) return hardConstraints;
         return tenantHome;
       } else {

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../../core/debug/perf_counter.dart';
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/models.dart';
 import '../../../../core/firestore/property_ratings_aggregator.dart';
@@ -21,7 +22,9 @@ class SavedListingsRepositoryImpl implements SavedListingsRepository {
 
   @override
   Stream<Set<String>> watchSavedIds(String uid) =>
-      _saved(uid).snapshots().map((s) => {for (final d in s.docs) d.id});
+      _saved(uid)
+          .countedSnapshots('saved.ids')
+          .map((s) => {for (final d in s.docs) d.id});
 
   @override
   Future<void> save(String uid, String propertyId) => _saved(uid)
@@ -45,7 +48,7 @@ class SavedListingsRepositoryImpl implements SavedListingsRepository {
       final snap = await _firestore
           .collection(FirestoreCollections.properties)
           .where(FieldPath.documentId, whereIn: chunk)
-          .get();
+          .countedGet('saved.properties');
       for (final d in snap.docs) {
         final p = PropertyDoc.fromSnapshot(d);
         if (p.isAvailable) byId[p.propertyId] = p;

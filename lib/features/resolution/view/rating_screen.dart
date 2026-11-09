@@ -36,7 +36,7 @@ class RatingScreen extends StatefulWidget {
   final String moveInLabel;
   final bool isOwnerView;
 
-  String get _heading => 'Stay confirmed!';
+  String get _heading => 'Stay complete!';
 
   String get _prompt =>
       isOwnerView ? 'Rate this tenant' : 'Rate this property';

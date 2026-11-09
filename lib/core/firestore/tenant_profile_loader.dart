@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../debug/perf_counter.dart';
 import 'firestore_collections.dart';
 import 'models/models.dart';
 
@@ -26,11 +27,14 @@ Future<TenantProfileDoc?> loadOwnTenantProfile(
   final profileSnap = await firestore
       .collection(FirestoreCollections.tenantProfiles)
       .doc(uid)
-      .get();
+      .countedGet('tenant.profile');
   if (!profileSnap.exists) return null;
   final profile = TenantProfileDoc.fromSnapshot(profileSnap);
   try {
-    final prefsSnap = await tenantPrefsRef(firestore, uid).get();
+    final prefsSnap = await tenantPrefsRef(
+      firestore,
+      uid,
+    ).countedGet('tenant.prefs');
     if (!prefsSnap.exists) return profile;
     return profile.withPrefs(TenantPrivatePrefsDoc.fromSnapshot(prefsSnap));
   } on FirebaseException {

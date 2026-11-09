@@ -8,6 +8,10 @@ import '../domain/services/inquiry_service.dart';
 import '../widgets/contact_consent_notice.dart';
 import 'inquiry_thread_screen.dart';
 
+/// Properties with an inquiry flow open (dialog or write in flight), so a
+/// double tap can't stack two dialogs or send the inquiry twice.
+final _inFlight = <String>{};
+
 /// "Send Inquiry" from any listing screen: opens (or reuses) the tenant's
 /// inquiry for this property via [InquiryService], then shows the live
 /// thread. [matchId] defaults to the `{tenantId}_{propertyId}` convention
@@ -18,7 +22,6 @@ Future<void> startInquiry(
   String? matchId,
 }) async {
   final messenger = ScaffoldMessenger.of(context);
-  final navigator = Navigator.of(context);
   final uid = currentUidOrNull(context);
   if (uid == null) {
     messenger.showSnackBar(
@@ -26,6 +29,27 @@ Future<void> startInquiry(
     );
     return;
   }
+  if (!_inFlight.add(propertyId)) return;
+  try {
+    await _startInquiry(
+      context,
+      uid: uid,
+      propertyId: propertyId,
+      matchId: matchId,
+    );
+  } finally {
+    _inFlight.remove(propertyId);
+  }
+}
+
+Future<void> _startInquiry(
+  BuildContext context, {
+  required String uid,
+  required String propertyId,
+  String? matchId,
+}) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final navigator = Navigator.of(context);
 
   // Consent notice: the phone number is only shared once the owner accepts.
   final confirmed = await showDialog<bool>(

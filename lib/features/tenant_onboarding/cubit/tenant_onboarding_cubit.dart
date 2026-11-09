@@ -98,6 +98,8 @@ class TenantOnboardingCubit extends Cubit<TenantOnboardingState> {
     required double wDistance,
     required double wAmenities,
   }) async {
+    // Double-tap guard: the profile save + matching run happens once.
+    if (state.status == TenantOnboardingStatus.saving) return;
     final draft = state.copyWith(
       wRent: wRent,
       wDistance: wDistance,

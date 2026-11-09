@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../../../core/debug/perf_counter.dart';
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/models.dart';
 
@@ -150,6 +151,29 @@ class InquiryRemoteDataSource {
     return batch.commit();
   }
 
+  Future<void> commitEndStay({
+    required String inquiryId,
+    required String propertyId,
+    required String endedBy,
+    required bool reopensVacancy,
+  }) {
+    final batch = _firestore.batch();
+    final now = FieldValue.serverTimestamp();
+    batch.update(_inquiries.doc(inquiryId), {
+      'status': 'ended',
+      'endedBy': endedBy,
+      'endedAt': now,
+      'updatedAt': now,
+    });
+    if (reopensVacancy) {
+      batch.update(
+        _firestore.collection(FirestoreCollections.properties).doc(propertyId),
+        {'vacancyStatus': 'available', 'isAvailable': true, 'updatedAt': now},
+      );
+    }
+    return batch.commit();
+  }
+
   Stream<InquiryDoc?> watchInquiry(String inquiryId) => _inquiries
       .doc(inquiryId)
       .snapshots()
@@ -159,16 +183,16 @@ class InquiryRemoteDataSource {
   // callers sort by updatedAt client-side.
   Stream<List<InquiryDoc>> watchTenantInquiries(String tenantId) => _inquiries
       .where('tenantId', isEqualTo: tenantId)
-      .snapshots()
+      .countedSnapshots('inquiry.tenantInquiries')
       .map((s) => s.docs.map(InquiryDoc.fromSnapshot).toList());
 
   Stream<List<InquiryDoc>> watchOwnerInquiries(String ownerId) => _inquiries
       .where('ownerId', isEqualTo: ownerId)
-      .snapshots()
+      .countedSnapshots('inquiry.ownerInquiries')
       .map((s) => s.docs.map(InquiryDoc.fromSnapshot).toList());
 
   Stream<List<MessageDoc>> watchMessages(String inquiryId) =>
-      _messages(inquiryId).snapshots().map(
+      _messages(inquiryId).countedSnapshots('inquiry.messages').map(
         (s) => s.docs.map(MessageDoc.fromSnapshot).toList(),
       );
 
@@ -258,7 +282,7 @@ class InquiryRemoteDataSource {
     final snap = await _firestore
         .collection(FirestoreCollections.properties)
         .doc(propertyId)
-        .get();
+        .countedGet('inquiry.property');
     return snap.exists ? PropertyDoc.fromSnapshot(snap) : null;
   }
 

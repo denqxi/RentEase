@@ -69,6 +69,7 @@ class _FakeRepository implements InquiryRepository {
   List<InquiryDoc> openForProperty = [];
   bool alreadyRated = false;
   Map<String, Object>? booking;
+  Map<String, Object>? endStay;
 
   final created = <InquiryDoc>[];
   final updates = <Map<String, dynamic>>[];
@@ -104,6 +105,19 @@ class _FakeRepository implements InquiryRepository {
     'propertyId': propertyId,
     'fillsLastVacancy': fillsLastVacancy,
     'otherInquiryIds': otherInquiryIds,
+  };
+
+  @override
+  Future<void> commitEndStay({
+    required String inquiryId,
+    required String propertyId,
+    required String endedBy,
+    required bool reopensVacancy,
+  }) async => endStay = {
+    'inquiryId': inquiryId,
+    'propertyId': propertyId,
+    'endedBy': endedBy,
+    'reopensVacancy': reopensVacancy,
   };
 
   @override
@@ -327,7 +341,7 @@ void main() {
   });
 
   group('markBooked + submitRating', () {
-    final booked = _inquiry(stage: 2, ownerDecision: 'accepted', status: 'booked');
+    final ended = _inquiry(stage: 2, ownerDecision: 'accepted', status: 'ended');
 
     final active = _inquiry(stage: 2, ownerDecision: 'accepted', status: 'active');
 
@@ -368,9 +382,9 @@ void main() {
     });
 
     test('tenant rates the owner; owner rates the tenant', () async {
-      await service.submitRating(inquiry: booked, raterId: _tenant, stars: 5);
+      await service.submitRating(inquiry: ended, raterId: _tenant, stars: 5);
       await service.submitRating(
-        inquiry: booked,
+        inquiry: ended,
         raterId: _owner,
         stars: 4,
         review: ' Great tenant ',
@@ -382,27 +396,79 @@ void main() {
       expect(repo.ratings[1].review, 'Great tenant');
     });
 
-    test('rating requires a confirmed booking', () {
-      expect(
-        service.submitRating(
-          inquiry: _inquiry(stage: 2, ownerDecision: 'accepted', status: 'active'),
-          raterId: _tenant,
-          stars: 5,
-        ),
-        throwsA(isA<InquiryException>()),
-      );
+    test('rating is not open during the stay, only after move-out', () {
+      for (final status in ['active', 'booked']) {
+        expect(
+          service.submitRating(
+            inquiry: _inquiry(stage: 2, ownerDecision: 'accepted', status: status),
+            raterId: _tenant,
+            stars: 5,
+          ),
+          throwsA(isA<InquiryException>()),
+        );
+      }
     });
 
     test('rejects out-of-range stars and duplicate ratings', () async {
       expect(
-        service.submitRating(inquiry: booked, raterId: _tenant, stars: 0),
+        service.submitRating(inquiry: ended, raterId: _tenant, stars: 0),
         throwsA(isA<InquiryException>()),
       );
       repo.alreadyRated = true;
       expect(
-        service.submitRating(inquiry: booked, raterId: _tenant, stars: 5),
+        service.submitRating(inquiry: ended, raterId: _tenant, stars: 5),
         throwsA(isA<InquiryException>()),
       );
+    });
+  });
+
+  group('endStay', () {
+    final booked = _inquiry(stage: 2, ownerDecision: 'accepted', status: 'booked');
+
+    test('the tenant can end the stay; it never reopens the listing', () async {
+      await service.endStay(
+        inquiry: booked,
+        userId: _tenant,
+        reopensVacancy: true,
+      );
+      expect(repo.endStay, {
+        'inquiryId': _matchId,
+        'propertyId': _property,
+        'endedBy': _tenant,
+        'reopensVacancy': false,
+      });
+    });
+
+    test('the owner can end the stay and put the listing back up', () async {
+      await service.endStay(
+        inquiry: booked,
+        userId: _owner,
+        reopensVacancy: true,
+      );
+      expect(repo.endStay!['endedBy'], _owner);
+      expect(repo.endStay!['reopensVacancy'], isTrue);
+    });
+
+    test('only a booked stay can end, and only by a participant', () {
+      expect(
+        service.endStay(
+          inquiry: _inquiry(stage: 2, ownerDecision: 'accepted', status: 'active'),
+          userId: _owner,
+        ),
+        throwsA(isA<InquiryException>()),
+      );
+      expect(
+        service.endStay(inquiry: booked, userId: 'stranger'),
+        throwsA(isA<InquiryException>()),
+      );
+    });
+
+    test('ending a stay closes the chat but keeps the thread resolved', () {
+      final ended = _inquiry(stage: 2, ownerDecision: 'accepted', status: 'ended');
+      expect(InquiryService.canChat(ended), isFalse);
+      expect(InquiryService.isResolved(ended), isTrue);
+      expect(InquiryService.canRate(ended), isTrue);
+      expect(InquiryService.canRate(booked), isFalse);
     });
   });
 
@@ -425,13 +491,16 @@ void main() {
       await svc.sendMessage(inquiry: active, senderId: _owner, content: 'Hello');
 
       final booked = _inquiry(stage: 2, ownerDecision: 'accepted', status: 'booked');
-      await svc.submitRating(inquiry: booked, raterId: _tenant, stars: 5);
-      await svc.submitRating(inquiry: booked, raterId: _owner, stars: 4);
+      await svc.endStay(inquiry: booked, userId: _tenant);
+      final ended = _inquiry(stage: 2, ownerDecision: 'accepted', status: 'ended');
+      await svc.submitRating(inquiry: ended, raterId: _tenant, stars: 5);
+      await svc.submitRating(inquiry: ended, raterId: _owner, stars: 4);
 
       expect(notes.created.map((n) => (n.type, n.recipientId)).toList(), [
         ('inquiry', _owner),
         ('inquiry_accepted', _tenant),
         ('inquiry_declined', _tenant),
+        ('stay_ended', _owner),
         ('rating', _owner),
         ('rating', _tenant),
       ]);

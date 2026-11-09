@@ -65,6 +65,9 @@ class EditPreferencesCubit extends Cubit<EditPreferencesState> {
     }
   }
 
+  /// Double-tap guard: a save already in flight swallows repeat taps.
+  bool get _isSaving => state.status == EditPreferencesStatus.saving;
+
   /// Hard constraints change who is eligible at all, so both filtering and
   /// TOPSIS re-run.
   Future<void> saveConstraints({
@@ -73,6 +76,7 @@ class EditPreferencesCubit extends Cubit<EditPreferencesState> {
     required bool needsWifi,
     required double maxDistanceKm,
   }) async {
+    if (_isSaving) return;
     if (maxBudget <= 0) {
       _fail(Exception('Enter a monthly budget above ₱0.'));
       return;
@@ -94,6 +98,7 @@ class EditPreferencesCubit extends Cubit<EditPreferencesState> {
     required String roomType,
     required List<String> preferredAmenities,
   }) async {
+    if (_isSaving) return;
     final profile = state.profile;
     emit(
       EditPreferencesState(
@@ -137,6 +142,7 @@ class EditPreferencesCubit extends Cubit<EditPreferencesState> {
     required double wDistance,
     required double wAmenities,
   }) async {
+    if (_isSaving) return;
     if (maxBudget <= 0) {
       _fail(Exception('Enter a monthly budget above ₱0.'));
       return;
@@ -192,6 +198,7 @@ class EditPreferencesCubit extends Cubit<EditPreferencesState> {
     required double wDistance,
     required double wAmenities,
   }) async {
+    if (_isSaving) return;
     if ((wRent + wDistance + wAmenities - 1).abs() > 1e-6) {
       _fail(Exception('Your priorities must add up to exactly 100%.'));
       return;

@@ -407,7 +407,8 @@ class AdminRepositoryImpl implements AdminRepository {
         ).where('verificationStatus', isEqualTo: 'pending'),
       ),
       _count(inquiries),
-      _count(inquiries.where('status', isEqualTo: 'booked')),
+      // A stay that has ended (tenant moved out) still counts as a booking.
+      _count(inquiries.where('status', whereIn: ['booked', 'ended'])),
       for (final d in days)
         _count(
           users

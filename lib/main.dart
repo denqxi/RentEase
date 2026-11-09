@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'app.dart';
 import 'core/cubit/app_theme_cubit.dart';
+import 'core/debug/emulator_config.dart';
 import 'features/app_update/cubit/app_update_cubit.dart';
 import 'features/app_update/widgets/update_lifecycle_watcher.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
@@ -21,38 +22,40 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Debug-only; a no-op in release builds (see emulator_config.dart).
+  await connectToEmulatorsIfRequested();
 
-  runApp(
-    MultiBlocProvider(
-      providers: [
-        BlocProvider(create: (_) => AppThemeCubit()),
-        // In-app update check (see update-enable.md); silent when offline.
-        BlocProvider(create: (_) => AppUpdateCubit()..checkForUpdate()),
-        BlocProvider(
-          create: (_) => AuthBloc(repository: AuthRepositoryImpl())
-            ..add(const AuthCheckRequested()),
-        ),
-        // Tenant onboarding spans five pushed routes, so its draft lives
-        // above the Navigator rather than in any one screen.
-        BlocProvider(
-          create: (_) => TenantOnboardingCubit(
-            repository: TenantProfileRepositoryImpl(),
-            filteringService: FilteringService(
-              repository: FilteringRepositoryImpl(),
-            ),
-            topsisService: TopsisService(
-              repository: TopsisRepositoryImpl(),
-            ),
-          ),
-        ),
-        // Same reasoning for the owner's verification + "Add property" flow.
-        BlocProvider(
-          create: (_) => OwnerOnboardingCubit(
-            repository: OwnerOnboardingRepositoryImpl(),
-          ),
-        ),
-      ],
-      child: const UpdateLifecycleWatcher(child: RentEaseApp()),
-    ),
-  );
+  runApp(buildRentEaseRoot());
 }
+
+/// The app's root widget tree. Also pumped by the on-device perf harness
+/// (integration_test/perf_baseline_test.dart) so it measures the real app.
+Widget buildRentEaseRoot() => MultiBlocProvider(
+  providers: [
+    BlocProvider(create: (_) => AppThemeCubit()),
+    // In-app update check (see update-enable.md); silent when offline.
+    BlocProvider(create: (_) => AppUpdateCubit()..checkForUpdate()),
+    BlocProvider(
+      create: (_) =>
+          AuthBloc(repository: AuthRepositoryImpl())
+            ..add(const AuthCheckRequested()),
+    ),
+    // Tenant onboarding spans five pushed routes, so its draft lives
+    // above the Navigator rather than in any one screen.
+    BlocProvider(
+      create: (_) => TenantOnboardingCubit(
+        repository: TenantProfileRepositoryImpl(),
+        filteringService: FilteringService(
+          repository: FilteringRepositoryImpl(),
+        ),
+        topsisService: TopsisService(repository: TopsisRepositoryImpl()),
+      ),
+    ),
+    // Same reasoning for the owner's verification + "Add property" flow.
+    BlocProvider(
+      create: (_) =>
+          OwnerOnboardingCubit(repository: OwnerOnboardingRepositoryImpl()),
+    ),
+  ],
+  child: const UpdateLifecycleWatcher(child: RentEaseApp()),
+);

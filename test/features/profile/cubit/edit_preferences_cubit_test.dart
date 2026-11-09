@@ -195,5 +195,28 @@ void main() {
     });
     expect(cubit.state.status, EditPreferencesStatus.saved);
   });
-}
 
+  test('a double tap on save writes and re-runs matching only once', () async {
+    final cubit = await _loadedCubit(_FakeProfileRepo());
+
+    Future<void> save() => cubit.saveConstraints(
+      maxBudget: 5000,
+      requiredGender: 'Mixed / Any',
+      needsWifi: false,
+      maxDistanceKm: 4.5,
+    );
+    await Future.wait([save(), save()]);
+
+    expect(_calls, ['update', 'filter', 'topsis']);
+  });
+
+  test('a double tap on save weights writes only once', () async {
+    final cubit = await _loadedCubit(_FakeProfileRepo());
+
+    Future<void> save() =>
+        cubit.saveWeights(wRent: 0.5, wDistance: 0.3, wAmenities: 0.2);
+    await Future.wait([save(), save()]);
+
+    expect(_calls, ['updatePrefs', 'topsis']);
+  });
+}

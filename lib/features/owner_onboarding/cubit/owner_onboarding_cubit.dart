@@ -32,6 +32,8 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
     String? diditSessionId,
     String idSource = 'upload',
   }) async {
+    // Double-tap guard: one submission at a time.
+    if (state.status == OwnerOnboardingStatus.saving) return;
     final viaDidit = idSource == 'didit';
     // Didit: the ID is checked by Didit, so only the ownership document is
     // required (business permit optional). Upload: ID front, ID back and
@@ -159,6 +161,8 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
   /// kept so the owner can retry.
   Future<void> submitProperty({required String uid}) async {
     final draft = state;
+    // Double-tap guard: never publish the same draft twice.
+    if (draft.status == OwnerOnboardingStatus.saving) return;
 
     if (!draft.isComplete) {
       emit(

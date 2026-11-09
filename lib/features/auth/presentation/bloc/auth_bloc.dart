@@ -16,16 +16,35 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc({required this._repository})
       : super(const AuthInitial()) {
     on<AuthCheckRequested>(_onCheckRequested);
-    on<AuthSignInRequested>(_onSignInRequested);
-    on<AuthSignUpRequested>(_onSignUpRequested);
+    on<AuthSignInRequested>(_oneAtATime(_onSignInRequested));
+    on<AuthSignUpRequested>(_oneAtATime(_onSignUpRequested));
     on<AuthSignOutRequested>(_onSignOutRequested);
     on<AuthEmailVerificationResendRequested>(_onResendRequested);
     on<AuthEmailVerificationCheckRequested>(_onVerificationCheckRequested);
     on<AuthPasswordResetRequested>(_onPasswordResetRequested);
     on<AuthSuspensionDetected>(_onSuspensionDetected);
-    on<AuthGoogleSignInRequested>(_onGoogleSignInRequested);
-    on<AuthGoogleSignUpRequested>(_onGoogleSignUpRequested);
+    on<AuthGoogleSignInRequested>(_oneAtATime(_onGoogleSignInRequested));
+    on<AuthGoogleSignUpRequested>(_oneAtATime(_onGoogleSignUpRequested));
   }
+
+  /// True while a sign-in / sign-up is running. Bloc runs handlers
+  /// concurrently, so a fast double tap (before the button rebuilds
+  /// disabled) would otherwise create the account or sign in twice. A flag
+  /// rather than `state is AuthLoading`, which the startup check also uses.
+  bool _submitting = false;
+
+  /// Drops a credential event that arrives while another is in flight.
+  EventHandler<E, AuthState> _oneAtATime<E extends AuthEvent>(
+    EventHandler<E, AuthState> handler,
+  ) => (event, emit) async {
+    if (_submitting) return;
+    _submitting = true;
+    try {
+      await handler(event, emit);
+    } finally {
+      _submitting = false;
+    }
+  };
 
   /// Shown on the sign-in screen after an admin suspends the account.
   static const suspendedMessage =

@@ -138,7 +138,14 @@ class InquiryService {
       i.stage == 2 && i.ownerDecision == 'accepted' && (i.status == 'active' || i.status == 'booked');
 
   static bool isResolved(InquiryDoc i) =>
-      i.status == 'booked' || i.status == 'declined' || i.status == 'closed';
+      i.status == 'booked' ||
+      i.status == 'ended' ||
+      i.status == 'declined' ||
+      i.status == 'closed';
+
+  /// Ratings open only once the stay is over (the tenant moved out), not
+  /// at booking.
+  static bool canRate(InquiryDoc i) => i.status == 'ended';
 
   /// The party the rater is rating: tenants rate the owner, owners rate the
   /// tenant.
@@ -559,6 +566,41 @@ class InquiryService {
     fillsLastVacancy: fillsLastVacancy,
   );
 
+  /// Ends a confirmed stay once the tenant has moved out, which unlocks
+  /// rating for both sides. Either participant may do it, so an owner
+  /// cannot hold back a tenant's review by never ending the stay. Only the
+  /// owner may [reopensVacancy] (put the listing back on the market).
+  Future<void> endStay({
+    required InquiryDoc inquiry,
+    required String userId,
+    bool reopensVacancy = false,
+  }) async {
+    final isOwner = userId == inquiry.ownerId;
+    if (!isOwner && userId != inquiry.tenantId) {
+      throw const InquiryException('You are not part of this inquiry.');
+    }
+    if (inquiry.status != 'booked') {
+      throw const InquiryException(
+        'Only a confirmed stay can be marked as ended.',
+      );
+    }
+    await _repository.commitEndStay(
+      inquiryId: inquiry.inquiryId,
+      propertyId: inquiry.propertyId,
+      endedBy: userId,
+      reopensVacancy: isOwner && reopensVacancy,
+    );
+    await _notify(
+      recipientId: isOwner ? inquiry.tenantId : inquiry.ownerId,
+      type: 'stay_ended',
+      title: 'The stay has ended',
+      body: isOwner
+          ? 'Your landlord marked your stay as ended. Rate your stay.'
+          : 'Your tenant marked their stay as ended. Rate your tenant.',
+      inquiryId: inquiry.inquiryId,
+    );
+  }
+
   // ── Rating ──────────────────────────────────────────────────────────────
 
   Future<void> submitRating({
@@ -568,7 +610,7 @@ class InquiryService {
     String? review,
   }) async {
     var currentInquiry = inquiry;
-    if (currentInquiry.status != 'booked') {
+    if (!canRate(currentInquiry)) {
       try {
         final fresh = await _repository
             .watchInquiry(inquiry.inquiryId)
@@ -579,8 +621,10 @@ class InquiryService {
         }
       } catch (_) {}
     }
-    if (currentInquiry.status != 'booked') {
-      throw const InquiryException('You can rate once the stay is confirmed.');
+    if (!canRate(currentInquiry)) {
+      throw const InquiryException(
+        'You can rate once the stay has ended (the tenant moved out).',
+      );
     }
     if (stars < 1 || stars > 5) {
       throw const InquiryException('Pick between 1 and 5 stars.');

@@ -79,6 +79,21 @@ class InquiryRepositoryImpl implements InquiryRepository {
   );
 
   @override
+  Future<void> commitEndStay({
+    required String inquiryId,
+    required String propertyId,
+    required String endedBy,
+    required bool reopensVacancy,
+  }) => _guard(
+    () => _remote.commitEndStay(
+      inquiryId: inquiryId,
+      propertyId: propertyId,
+      endedBy: endedBy,
+      reopensVacancy: reopensVacancy,
+    ),
+  );
+
+  @override
   Stream<InquiryDoc?> watchInquiry(String inquiryId) =>
       _remote.watchInquiry(inquiryId);
 

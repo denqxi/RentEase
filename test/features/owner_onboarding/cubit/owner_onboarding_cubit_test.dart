@@ -19,12 +19,15 @@ class _FakeRepo implements OwnerOnboardingRepository {
     String? diditSessionId,
     String idSource = 'upload',
   }) async {
+    submitCalls++;
     submitted = documents;
     submittedIdSource = idSource;
     return 'pending';
   }
 
   String? submittedIdSource;
+  int submitCalls = 0;
+  int createCalls = 0;
 
   @override
   Future<OwnerCredentials> fetchCredentials(String ownerId) async =>
@@ -51,6 +54,7 @@ class _FakeRepo implements OwnerOnboardingRepository {
 
   @override
   Future<String> createProperty(PropertyDoc property) async {
+    createCalls++;
     created = property;
     return 'p1';
   }
@@ -200,6 +204,29 @@ void main() {
       );
       expect(cubit.state.status, OwnerOnboardingStatus.saved);
       expect(repo.submitted, isEmpty);
+    });
+  });
+
+  group('double tap', () {
+    test('a second verification submit while saving writes nothing', () async {
+      final repo = _FakeRepo();
+      final cubit = OwnerOnboardingCubit(repository: repo);
+      await Future.wait([
+        cubit.submitForVerification('u1', documents: _docs(3)),
+        cubit.submitForVerification('u1', documents: _docs(3)),
+      ]);
+      expect(repo.submitCalls, 1);
+    });
+
+    test('a second publish while saving creates only one listing', () async {
+      final repo = _FakeRepo();
+      final cubit = OwnerOnboardingCubit(repository: repo);
+      _fill(cubit, rentalType: 'entire_place');
+      await Future.wait([
+        cubit.submitProperty(uid: 'u1'),
+        cubit.submitProperty(uid: 'u1'),
+      ]);
+      expect(repo.createCalls, 1);
     });
   });
 

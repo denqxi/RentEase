@@ -352,6 +352,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
   }
 
   Future<void> _post() async {
+    if (_posting) return;
     final uid = currentUidOrNull(context);
     if (uid == null) {
       _showError('Your session has expired. Please sign in again.');

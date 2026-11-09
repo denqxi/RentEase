@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../../core/debug/perf_counter.dart';
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/models.dart';
 import '../../../../core/firestore/property_ratings_aggregator.dart';
@@ -21,7 +22,7 @@ class HomeRemoteDataSource {
         .where('tenantId', isEqualTo: tenantId)
         .where('bScore', isEqualTo: 1)
         .orderBy('tenantCi', descending: true)
-        .get();
+        .countedGet('home.eligibleMatches');
     return snap.docs.map(MatchDoc.fromSnapshot).toList();
   }
 
@@ -36,7 +37,7 @@ class HomeRemoteDataSource {
         .where('isAvailable', isEqualTo: true)
         .orderBy('createdAt', descending: true)
         .limit(limit)
-        .get();
+        .countedGet('home.availableProperties');
     final list = snap.docs.map(PropertyDoc.fromSnapshot).toList();
     return PropertyRatingsAggregator.hydrateProperties(_firestore, list);
   }
@@ -45,7 +46,7 @@ class HomeRemoteDataSource {
     final snap = await _firestore
         .collection(FirestoreCollections.properties)
         .doc(propertyId)
-        .get();
+        .countedGet('home.property');
     if (!snap.exists) return null;
     final prop = PropertyDoc.fromSnapshot(snap);
     return PropertyRatingsAggregator.hydrateProperty(_firestore, prop);
@@ -55,7 +56,7 @@ class HomeRemoteDataSource {
     final snap = await _firestore
         .collection(FirestoreCollections.users)
         .doc(uid)
-        .get();
+        .countedGet('home.user');
     if (!snap.exists) return null;
     return UserDoc.fromSnapshot(snap);
   }
@@ -69,7 +70,7 @@ class HomeRemoteDataSource {
     final snap = await _firestore
         .collection(FirestoreCollections.ownerProfiles)
         .doc(ownerId)
-        .get();
+        .countedGet('home.ownerProfile');
     if (!snap.exists) return null;
     return OwnerProfileDoc.fromSnapshot(snap);
   }

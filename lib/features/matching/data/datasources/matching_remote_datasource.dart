@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../../core/debug/perf_counter.dart';
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/models.dart';
 import '../../../../core/firestore/tenant_profile_loader.dart';
@@ -16,7 +17,7 @@ class MatchingRemoteDataSource {
     final snap = await _firestore
         .collection(FirestoreCollections.users)
         .doc(uid)
-        .get();
+        .countedGet('matching.userGender');
     if (!snap.exists) return null;
     return snap.data()?['gender'] as String?;
   }
@@ -33,7 +34,7 @@ class MatchingRemoteDataSource {
     final snap = await _firestore
         .collection(FirestoreCollections.properties)
         .where('isAvailable', isEqualTo: true)
-        .get();
+        .countedGet('matching.availableListings');
     return snap.docs.map(PropertyDoc.fromSnapshot).toList();
   }
 
@@ -44,7 +45,7 @@ class MatchingRemoteDataSource {
         .collection(FirestoreCollections.matches)
         .where('tenantId', isEqualTo: tenantId)
         .where('bScore', isEqualTo: 1)
-        .get();
+        .countedGet('matching.eligibleMatches');
     return snap.docs.map(MatchDoc.fromSnapshot).toList();
   }
 
@@ -59,7 +60,7 @@ class MatchingRemoteDataSource {
         final snap = await _firestore
             .collection(FirestoreCollections.properties)
             .doc(id)
-            .get();
+            .countedGet('matching.propertyById');
         return snap.exists
             ? MapEntry(id, PropertyDoc.fromSnapshot(snap))
             : null;
@@ -84,7 +85,9 @@ class MatchingRemoteDataSource {
     final collection = _firestore.collection(FirestoreCollections.matches);
     for (var i = 0; i < results.length; i += _maxBatchSize) {
       final batch = _firestore.batch();
-      for (final result in results.skip(i).take(_maxBatchSize)) {
+      final chunk = results.skip(i).take(_maxBatchSize);
+      PerfCounter.write('matching.topsisCiWrite', chunk.length);
+      for (final result in chunk) {
         batch.update(collection.doc(result.matchId), {
           'tenantCi': result.ci,
           'tenantRank': result.rank,
@@ -111,6 +114,8 @@ class MatchingRemoteDataSource {
         (batch) => batch.delete(collection.doc('${tenantId}_$propertyId')),
     ];
 
+    PerfCounter.write('matching.filterSet', eligibleMatches.length);
+    PerfCounter.write('matching.filterDelete', ineligiblePropertyIds.length);
     for (var i = 0; i < ops.length; i += _maxBatchSize) {
       final batch = _firestore.batch();
       final chunk = ops.skip(i).take(_maxBatchSize);

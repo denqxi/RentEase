@@ -146,6 +146,21 @@ class InquiryThreadCubit extends Cubit<InquiryThreadState> {
     return ok;
   }
 
+  /// Either participant marks the tenant as moved out; unlocks rating.
+  Future<bool> endStay({bool reopensVacancy = false}) async {
+    final ok = await _run(
+      (i) => _service.endStay(
+        inquiry: i,
+        userId: uid,
+        reopensVacancy: reopensVacancy,
+      ),
+    );
+    if (ok && state.inquiry != null && !isClosed) {
+      emit(state.copyWith(inquiry: state.inquiry!.copyWith(status: 'ended')));
+    }
+    return ok;
+  }
+
   /// Ignores a second send while one is in flight (fast double tap or
   /// keyboard submit). Separate from `isBusy`, which a stream error resets.
   Future<bool> sendMessage(String text) async {

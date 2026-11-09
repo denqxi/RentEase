@@ -50,6 +50,16 @@ abstract class InquiryRepository {
     required List<String> otherInquiryIds,
   });
 
+  /// Atomically marks a booked [inquiryId] as `ended` (the tenant moved out),
+  /// recording [endedBy]. When [reopensVacancy] (owner only), the same batch
+  /// puts [propertyId] back on the market.
+  Future<void> commitEndStay({
+    required String inquiryId,
+    required String propertyId,
+    required String endedBy,
+    required bool reopensVacancy,
+  });
+
   Stream<InquiryDoc?> watchInquiry(String inquiryId);
 
   Stream<List<InquiryDoc>> watchTenantInquiries(String tenantId);

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../../core/debug/perf_counter.dart';
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/models.dart';
 import '../../domain/repositories/notification_repository.dart';
@@ -26,7 +27,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
         .where('recipientId', isEqualTo: uid)
         .orderBy('createdAt', descending: true)
         .limit(limit)
-        .snapshots()
+        .countedSnapshots('notifications.feed')
         .map(_sortedNewestFirst);
   }
 
@@ -37,7 +38,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
     return _col
         .where('recipientId', isEqualTo: uid)
         .where('isRead', isEqualTo: false)
-        .snapshots()
+        .countedSnapshots('notifications.unread')
         .map(_sortedNewestFirst);
   }
 
@@ -62,6 +63,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
           ? notifIds.length
           : i + _batchSize;
       final batch = _firestore.batch();
+      PerfCounter.write('notifications.markRead', end - i);
       for (final id in notifIds.sublist(i, end)) {
         batch.update(_col.doc(id), {'isRead': true});
       }
@@ -74,7 +76,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
     final snap = await _col
         .where('recipientId', isEqualTo: uid)
         .where('isRead', isEqualTo: false)
-        .get();
+        .countedGet('notifications.markAllRead');
     await markRead([for (final d in snap.docs) d.id]);
   }
 

@@ -406,6 +406,7 @@ class _ChangePasswordBottomSheetState
   }
 
   Future<void> _updatePassword() async {
+    if (_isUpdating) return;
     final current = _currentPasswordController.text;
     final newPass = _newPasswordController.text;
     final confirm = _confirmPasswordController.text;

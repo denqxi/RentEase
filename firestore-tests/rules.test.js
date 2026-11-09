@@ -352,7 +352,7 @@ describe('ownerProfiles / properties — owners can only read/write their own', 
         await db.doc(`matches/${MATCH_ID}`).set({ tenantId: TENANT_A, ownerId: OWNER_A, propertyId: PROPERTY, bScore: 1 });
         await db.doc(`inquiries/${INQ}`).set({
           matchId: MATCH_ID, tenantId: TENANT_A, ownerId: OWNER_A, propertyId: PROPERTY,
-          stage: 2, ownerDecision: 'accepted', status: 'booked',
+          stage: 2, ownerDecision: 'accepted', status: 'ended',
         });
         await db.doc(`properties/${PROPERTY}/rooms/room1`).set({ name: 'Room 101', rent: 2000 });
       });
@@ -424,7 +424,7 @@ describe('ownerProfiles / properties — owners can only read/write their own', 
       b.update(db.doc(`ownerProfiles/${OWNER_A}`), bump(5));
       await assertFails(b.commit());
     });
-    it('a stranger without a booked inquiry cannot rate or bump', async () => {
+    it('a stranger without an ended stay cannot rate or bump', async () => {
       const db = asTenant(TENANT_B);
       const b = db.batch();
       b.set(db.doc(`ratings/${INQ}_${TENANT_B}`), { ...rating(5), raterId: TENANT_B });
@@ -778,6 +778,33 @@ describe('inquiries — the exact writes and queries InquiryService makes', () =
     await assertSucceeds(asTenant(TENANT_A).doc(`inquiries/${INQ}`).update({ updatedAt: FieldValue.serverTimestamp() }));
   });
 
+  it('either participant can end a booked stay (move-out), stamped as themselves', async () => {
+    const end = (uid) => ({
+      status: 'ended', endedBy: uid,
+      endedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
+    });
+    await seedInquiry({ stage: 2, ownerDecision: 'accepted', status: 'booked' });
+    await assertSucceeds(asTenant(TENANT_A).doc(`inquiries/${INQ}`).update(end(TENANT_A)));
+    await seedInquiry({ stage: 2, ownerDecision: 'accepted', status: 'booked' });
+    await assertSucceeds(asOwner(OWNER_A).doc(`inquiries/${INQ}`).update(end(OWNER_A)));
+  });
+
+  it('end-stay cannot be forged: not before booking, not for someone else, no extra keys, no stranger', async () => {
+    const end = (uid, extra = {}) => ({
+      status: 'ended', endedBy: uid,
+      endedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), ...extra,
+    });
+    await seedInquiry({ stage: 2, ownerDecision: 'accepted', status: 'active' });
+    await assertFails(asTenant(TENANT_A).doc(`inquiries/${INQ}`).update(end(TENANT_A)));
+    await seedInquiry({ stage: 2, ownerDecision: 'accepted', status: 'booked' });
+    await assertFails(asTenant(TENANT_A).doc(`inquiries/${INQ}`).update(end(OWNER_A)));
+    await assertFails(asTenant(TENANT_A).doc(`inquiries/${INQ}`).update(end(TENANT_A, { stage: 1 })));
+    await assertFails(
+      asTenant(TENANT_A).doc(`inquiries/${INQ}`).update({ ...end(TENANT_A), endedAt: new Date('2020-01-01') }),
+    );
+    await assertFails(asTenant(TENANT_B).doc(`inquiries/${INQ}`).update(end(TENANT_B)));
+  });
+
   it('no new inquiry can be opened on a fully booked property', async () => {
     await seed(async (db) => {
       await db
@@ -828,14 +855,16 @@ describe('inquiries — the exact writes and queries InquiryService makes', () =
     );
   });
 
-  it('both sides can rate once booked — never before', async () => {
-    await seedInquiry({ stage: 2, ownerDecision: 'accepted', status: 'active' });
-    await assertFails(
-      asTenant(TENANT_A).doc(`ratings/${INQ}_${TENANT_A}`).set({
-        inquiryId: INQ, raterId: TENANT_A, ratedId: OWNER_A, raterRole: 'tenant', stars: 5,
-      }),
-    );
-    await seedInquiry({ stage: 2, ownerDecision: 'accepted', status: 'booked' });
+  it('both sides can rate once the stay has ended — never before', async () => {
+    for (const status of ['active', 'booked']) {
+      await seedInquiry({ stage: 2, ownerDecision: 'accepted', status });
+      await assertFails(
+        asTenant(TENANT_A).doc(`ratings/${INQ}_${TENANT_A}`).set({
+          inquiryId: INQ, raterId: TENANT_A, ratedId: OWNER_A, raterRole: 'tenant', stars: 5,
+        }),
+      );
+    }
+    await seedInquiry({ stage: 2, ownerDecision: 'accepted', status: 'ended' });
     await assertSucceeds(
       asTenant(TENANT_A).doc(`ratings/${INQ}_${TENANT_A}`).set({
         inquiryId: INQ, raterId: TENANT_A, ratedId: OWNER_A, raterRole: 'tenant', stars: 5,
@@ -1035,8 +1064,21 @@ describe('messages — participants only, free chat gated to stage 2 accepted', 
     );
   });
 
-  it('no chat writes once the thread is booked / closed / declined', async () => {
-    for (const status of ['booked', 'closed', 'declined']) {
+  it('chat stays open while the tenant is staying (booked)', async () => {
+    await seed((db) =>
+      db.doc('inquiries/inq1').set({
+        matchId: MATCH_ID, tenantId: TENANT_A, ownerId: OWNER_A, propertyId: PROPERTY,
+        stage: 2, ownerDecision: 'accepted', status: 'booked',
+      }),
+    );
+    await assertSucceeds(
+      asTenant(TENANT_A).doc('inquiries/inq1/messages/m1')
+        .set({ senderId: TENANT_A, senderRole: 'tenant', content: 'hi', isAutoGenerated: false }),
+    );
+  });
+
+  it('no chat writes once the stay ended / thread closed / declined', async () => {
+    for (const status of ['ended', 'closed', 'declined']) {
       await seed((db) =>
         db.doc('inquiries/inq1').set({
           matchId: MATCH_ID, tenantId: TENANT_A, ownerId: OWNER_A, propertyId: PROPERTY,

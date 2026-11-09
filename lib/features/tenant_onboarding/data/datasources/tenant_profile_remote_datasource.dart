@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../../core/debug/perf_counter.dart';
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/models.dart';
 import '../../../../core/firestore/tenant_profile_loader.dart';
@@ -19,6 +20,7 @@ class TenantProfileRemoteDataSource {
   /// private prefs (map pin + weights) are written in ONE batch, and any
   /// legacy private fields still on the public doc are deleted with it.
   Future<void> setProfile(TenantProfileDoc profile) {
+    PerfCounter.write('tenant.saveProfile', 2);
     final batch = _firestore.batch();
     batch.set(
       _doc(profile.userId),
@@ -39,6 +41,7 @@ class TenantProfileRemoteDataSource {
 
   /// Merge-writes only [fields] (plus updatedAt) of the private prefs doc.
   Future<void> updatePrefs(String uid, Map<String, dynamic> fields) {
+    PerfCounter.write('tenant.updatePrefs');
     return tenantPrefsRef(_firestore, uid).set({
       ...fields,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -48,6 +51,7 @@ class TenantProfileRemoteDataSource {
   /// Partial update — touches only [fields] (plus updatedAt), so an edit
   /// screen can never clobber anything it doesn't own.
   Future<void> updateFields(String uid, Map<String, dynamic> fields) {
+    PerfCounter.write('tenant.updateFields');
     return _doc(uid).update({
       ...fields,
       'updatedAt': FieldValue.serverTimestamp(),

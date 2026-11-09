@@ -183,6 +183,7 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
   }
 
   Future<void> _handleSave() async {
+    if (_isSaving) return;
     final isRoom = widget.property.isRoom;
     final name = _nameController.text.trim();
     final roomName = _roomNameController.text.trim();

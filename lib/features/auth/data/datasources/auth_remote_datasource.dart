@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../../../../core/debug/perf_counter.dart';
 import '../../../../core/firestore/firestore_collections.dart';
 import '../../../../core/firestore/models/tenant_private_prefs_doc.dart';
 import '../../../../core/firestore/models/user_contact_doc.dart';
@@ -214,7 +215,10 @@ class AuthRemoteDataSource {
 
   Future<UserDoc?> fetchUserDoc(String uid) async {
     final snap =
-        await _firestore.collection(FirestoreCollections.users).doc(uid).get();
+        await _firestore
+            .collection(FirestoreCollections.users)
+            .doc(uid)
+            .countedGet('auth.userDoc');
     if (!snap.exists) return null;
     return UserDoc.fromSnapshot(snap);
   }
@@ -224,7 +228,7 @@ class AuthRemoteDataSource {
   Stream<String?> watchUserStatus(String uid) => _firestore
       .collection(FirestoreCollections.users)
       .doc(uid)
-      .snapshots()
+      .countedSnapshots('auth.suspensionWatch')
       .map((snap) => snap.data()?['status'] as String?)
       .handleError((_) {});
 

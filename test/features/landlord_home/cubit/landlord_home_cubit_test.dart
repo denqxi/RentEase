@@ -46,11 +46,15 @@ class _FakeOwnerRepo implements OwnerPropertyRepository {
   @override
   Future<void> publishListings(Iterable<String> propertyIds) async {}
 
-  @override
-  Future<void> updateProperty(String id, Map<String, dynamic> f) async {}
+  final updates = <String>[];
+  final deletes = <String>[];
 
   @override
-  Future<void> deleteProperty(String id) async {}
+  Future<void> updateProperty(String id, Map<String, dynamic> f) async =>
+      updates.add(id);
+
+  @override
+  Future<void> deleteProperty(String id) async => deletes.add(id);
 }
 
 class _FakeTenantsRepo implements FindTenantsRepository {
@@ -217,6 +221,27 @@ void main() {
     cubit.retry();
     expect(cubit.state.errorMessage, isNull);
     expect(cubit.state.isLoading, isTrue);
+    await cubit.close();
+  });
+
+  test('a double tap on a listing write or delete hits Firestore once', () async {
+    final cubit = build();
+    await Future.wait([
+      cubit.updateProperty('p1', {'monthlyRent': 4000}),
+      cubit.updateProperty('p1', {'monthlyRent': 4000}),
+      // A different listing is not blocked by p1's write.
+      cubit.updateProperty('p2', {'monthlyRent': 4000}),
+      cubit.setVacancy('p3', 'booked'),
+      cubit.setVacancy('p3', 'booked'),
+    ]);
+    expect(owner.updates, ['p1', 'p2', 'p3']);
+
+    await Future.wait([cubit.deleteProperty('p1'), cubit.deleteProperty('p1')]);
+    expect(owner.deletes, ['p1']);
+
+    // Once a write finishes, the same listing can be written again.
+    await cubit.updateProperty('p1', {'monthlyRent': 4200});
+    expect(owner.updates, ['p1', 'p2', 'p3', 'p1']);
     await cubit.close();
   });
 }

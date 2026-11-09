@@ -315,6 +315,7 @@ class _InquiryList extends StatelessWidget {
             isUnread: isUnread,
             resolvedStatus: switch (inquiry.status) {
               'booked' => 'Booked',
+              'ended' => 'Stay ended',
               'declined' => 'Declined',
               'closed' => 'Closed',
               _ => null,
@@ -465,7 +466,8 @@ class _InquiryCard extends StatelessWidget {
   final int phase;
   final String date;
 
-  /// 'Booked' | 'Declined' | 'Closed' for resolved inquiries, else null.
+  /// 'Booked' | 'Stay ended' | 'Declined' | 'Closed' for resolved inquiries,
+  /// else null.
   final String? resolvedStatus;
 
   bool get isResolved => resolvedStatus != null;
@@ -654,6 +656,12 @@ class _InquiryCard extends StatelessWidget {
         textColor = context.appColors.textSecondary;
         borderColor = context.appColors.fieldBorder;
         icon = Icons.cancel_outlined;
+      } else if (resolvedStatus == 'Stay ended') {
+        label = 'Stay ended';
+        bg = context.appColors.fieldFill;
+        textColor = context.appColors.textSecondary;
+        borderColor = context.appColors.fieldBorder;
+        icon = Icons.home_outlined;
       } else {
         label = 'Closed';
         bg = context.appColors.fieldFill;
