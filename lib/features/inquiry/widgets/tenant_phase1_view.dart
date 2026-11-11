@@ -4,7 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/firestore/models/inquiry_doc.dart';
 import '../../../core/firestore/models/property_doc.dart';
+import '../../../core/utils/currency_utils.dart';
 import '../../../core/utils/date_utils.dart';
+import '../../../core/utils/payment_breakdown.dart';
 import '../../home/view/property_detail_screen.dart';
 import '../cubit/inquiry_thread_cubit.dart';
 import '../domain/services/inquiry_service.dart';
@@ -310,7 +312,19 @@ class _PropertyInformationCard extends StatelessWidget {
                 _row(context, 'Curfew:', formatCurfew(p.curfewHours)),
                 _row(context, 'Deposit:', '₱${p.depositAmount}'),
                 _row(context, 'Advance:', advanceText),
-                _row(context, 'Monthly rent:', '₱${p.monthlyRent}', isLast: true),
+                _row(context, 'Monthly rent:', '₱${p.monthlyRent}'),
+                _row(
+                  context,
+                  'Total due at move-in:',
+                  CurrencyUtils.formatDollars(
+                    PaymentBreakdown(
+                      monthlyRent: p.monthlyRent,
+                      advanceMonths: p.advanceMonths,
+                      depositAmount: p.depositAmount,
+                    ).moveInTotal,
+                  ),
+                  isLast: true,
+                ),
               ],
             ],
           ),

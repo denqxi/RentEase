@@ -13,7 +13,9 @@ import '../../../core/firestore/models/models.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/date_utils.dart';
+import '../../../core/utils/payment_breakdown.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/payment_breakdown_card.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../../registration/widgets/registration_app_bar.dart';
@@ -319,9 +321,29 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
     }
   }
 
+  /// True while the owner is fixing one section opened from the review step;
+  /// Continue and Back then return straight to review instead of walking
+  /// through every step in between.
+  bool _editingFromReview = false;
+
+  void _editFromReview(int step) {
+    _editingFromReview = true;
+    _goTo(step);
+  }
+
+  void _returnToReview() {
+    FocusScope.of(context).unfocus();
+    _editingFromReview = false;
+    _goTo(_stepCount - 1);
+  }
+
   void _back() {
     if (_showInfoPopup) {
       setState(() => _showInfoPopup = false);
+      return;
+    }
+    if (_editingFromReview) {
+      _returnToReview();
       return;
     }
     if (_step <= _minStep) {
@@ -333,6 +355,10 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
 
   void _next() {
     if (!_canContinue) return;
+    if (_editingFromReview) {
+      _returnToReview();
+      return;
+    }
     if (_step < _stepCount - 1) {
       FocusScope.of(context).unfocus();
       _goTo(_step + 1);
@@ -504,7 +530,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
     final isLast = _step == _stepCount - 1;
 
     return PopScope(
-      canPop: _step <= _minStep && !_showInfoPopup,
+      canPop: _step <= _minStep && !_showInfoPopup && !_editingFromReview,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
           if (_showInfoPopup) {
@@ -577,7 +603,9 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
                         builder: (context, _) => AppPrimaryButton(
                           label: isLast
                               ? (_posting ? _s.posting : _s.postListing)
-                              : _s.continueLabel,
+                              : _editingFromReview
+                                  ? _s.backToReview
+                                  : _s.continueLabel,
                           onPressed: isLast
                               ? (_posting ? null : _post)
                               : (_canContinue ? _next : null),
@@ -1130,7 +1158,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
       children: [
         ReviewSectionCard(
           title: _s.reviewListing,
-          onEdit: () => _goTo(1),
+          onEdit: () => _editFromReview(1),
           child: Column(
             children: [
               ReviewLine(_s.listingName, _listingName.isEmpty ? '—' : _listingName),
@@ -1146,7 +1174,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         const SizedBox(height: AppSpacing.md),
         ReviewSectionCard(
           title: _s.reviewRentalType,
-          onEdit: () => _goTo(0),
+          onEdit: () => _editFromReview(0),
           child: Text(
             _isRoom ? _s.reviewRoomType : _s.reviewPlaceType,
             style: AppTextStyles.body(
@@ -1157,7 +1185,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         const SizedBox(height: AppSpacing.md),
         ReviewSectionCard(
           title: _s.reviewPhotos,
-          onEdit: () => _goTo(1),
+          onEdit: () => _editFromReview(1),
           child: photos.isEmpty
               ? Text(_s.noPhotos, style: AppTextStyles.caption(context))
               : SizedBox(
@@ -1190,7 +1218,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         const SizedBox(height: AppSpacing.md),
         ReviewSectionCard(
           title: _s.reviewHouseRules,
-          onEdit: () => _goTo(2),
+          onEdit: () => _editFromReview(2),
           child: Column(
             children: [
               ReviewLine(_s.reviewDeposit, _peso(_int(_depositController, 0))),
@@ -1214,7 +1242,7 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
         const SizedBox(height: AppSpacing.md),
         ReviewSectionCard(
           title: _s.reviewRent,
-          onEdit: () => _goTo(3),
+          onEdit: () => _editFromReview(3),
           child: Column(
             children: [
               ReviewLine(_s.reviewMonthlyRent, _peso(_int(_rentController, 0))),
@@ -1230,9 +1258,24 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
+        PaymentBreakdownCard(
+          title: _s.breakdownTitle,
+          monthlyRentLabel: _s.reviewMonthlyRent,
+          advanceLabel: _s.reviewAdvance,
+          depositLabel: _s.reviewDeposit,
+          totalLabel: _s.breakdownTotal,
+          noneLabel: _s.breakdownNone,
+          monthsLabel: (n) => _s.months(n.round()),
+          breakdown: PaymentBreakdown(
+            monthlyRent: _int(_rentController, 0),
+            advanceMonths: _int(_advanceController, 1),
+            depositAmount: _int(_depositController, 0),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
         ReviewSectionCard(
           title: _s.reviewAmenities,
-          onEdit: () => _goTo(4),
+          onEdit: () => _editFromReview(4),
           child: amenityList.isEmpty
               ? Text(_s.noneSelected, style: AppTextStyles.caption(context))
               : Wrap(

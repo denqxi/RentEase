@@ -71,7 +71,9 @@ class PrivacyNoticeContent {
           'cannot be guessed, but anyone who has a link can open it. '
           'OpenStreetMap map tiles and Google Fonts are loaded from their '
           'servers, which means your IP address is disclosed to them when '
-          'you use maps or when fonts are downloaded.',
+          'you use maps or when fonts are downloaded. When an owner pins or '
+          'searches a property location, the map position or search text is '
+          'sent to OpenStreetMap\'s Nominatim service to look up the address.',
     ),
     PrivacySection(
       'How long we keep it',

@@ -44,7 +44,78 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
   bool _isLocatingCurrent = false;
   int _geocodeRequestId = 0;
 
+  // Place search. Suggestions while typing are offline only; the online
+  // (Nominatim) search runs only when the owner taps the search button,
+  // as its usage policy forbids search-as-you-type.
+  final _searchController = TextEditingController();
+  List<GeocodingResult> _results = const [];
+  bool _isSearching = false;
+  String? _searchMessage;
+  int _searchRequestId = 0;
+
   LatLng? get _pinnedLocation => widget.pin;
+
+  void _onSearchChanged(String text) {
+    _searchRequestId++; // drop any online search still in flight
+    setState(() {
+      _results = GeocodingService.searchOffline(text);
+      _isSearching = false;
+      _searchMessage = null;
+    });
+  }
+
+  Future<void> _searchOnline() async {
+    final query = _searchController.text.trim();
+    if (query.length < 3 || _isSearching) return;
+    final requestId = ++_searchRequestId;
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _isSearching = true;
+      _searchMessage = null;
+    });
+    final offline = GeocodingService.searchOffline(query);
+    try {
+      final online = await _geocodingService.searchOnline(query);
+      if (requestId != _searchRequestId || !mounted) return;
+      setState(() {
+        _results = [...offline, ...online];
+        _isSearching = false;
+        _searchMessage = _results.isEmpty
+            ? 'No places found. Try a nearby landmark or barangay, or tap '
+                  'the map to set the pin.'
+            : null;
+      });
+    } on GeocodingException {
+      if (requestId != _searchRequestId || !mounted) return;
+      setState(() {
+        _results = offline;
+        _isSearching = false;
+        _searchMessage =
+            'Could not search right now. Check your internet, or tap the '
+            'map to set the pin.';
+      });
+    }
+  }
+
+  /// Same effect as tapping the map at the result, but the address comes
+  /// from the result itself (no extra lookup).
+  void _selectResult(GeocodingResult result) {
+    _geocodeRequestId++; // cancel a pending reverse lookup
+    _searchRequestId++;
+    final latLng = LatLng(result.lat, result.lng);
+    widget.onPinChanged(latLng);
+    widget.addressController.text = result.address;
+    _searchController.clear();
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _results = const [];
+      _searchMessage = null;
+      _isSearching = false;
+      _isResolvingAddress = false;
+    });
+    widget.onChanged(false);
+    _mapController.move(latLng, 16);
+  }
 
   Future<void> _onMapTapped(LatLng latLng) async {
     final requestId = ++_geocodeRequestId;
@@ -94,6 +165,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
   @override
   void dispose() {
     _mapController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -133,6 +205,83 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
           ),
         ),
         const SizedBox(height: 6),
+        AppTextField(
+          controller: _searchController,
+          hintText: 'Search a place, street or barangay',
+          inputFormatters: [LengthLimitingTextInputFormatter(100)],
+          onChanged: _onSearchChanged,
+          suffixIcon: _isSearching
+              ? const Padding(
+                  padding: EdgeInsets.all(14),
+                  child: SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : IconButton(
+                  tooltip: 'Search',
+                  onPressed: _searchOnline,
+                  icon: const Icon(
+                    Icons.search_rounded,
+                    color: AppColors.primary,
+                  ),
+                ),
+        ),
+        if (_results.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Container(
+            decoration: BoxDecoration(
+              color: context.appColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: context.appColors.fieldBorder),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (final (i, result) in _results.indexed) ...[
+                  if (i > 0)
+                    Divider(height: 1, color: context.appColors.fieldBorder),
+                  InkWell(
+                    onTap: () => _selectResult(result),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.place_outlined,
+                            size: 18,
+                            color: AppColors.accent,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              result.address,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.caption(context).copyWith(
+                                fontSize: 13,
+                                color: context.appColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+        if (_searchMessage != null) ...[
+          const SizedBox(height: 6),
+          Text(_searchMessage!, style: AppTextStyles.caption(context)),
+        ],
+        const SizedBox(height: 8),
         Container(
           height: 164,
           decoration: BoxDecoration(
@@ -265,6 +414,11 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                 ),
             ],
           ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Map and search data © OpenStreetMap contributors',
+          style: AppTextStyles.caption(context).copyWith(fontSize: 10.5),
         ),
         if (_isResolvingAddress) ...[
           const SizedBox(height: 6),

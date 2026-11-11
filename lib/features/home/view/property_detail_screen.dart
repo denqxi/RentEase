@@ -13,7 +13,9 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/firestore/firestore_collections.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../core/utils/date_utils.dart';
+import '../../../core/utils/payment_breakdown.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
+import '../../../shared/widgets/payment_breakdown_card.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../inquiry/view/start_inquiry.dart';
 import '../../landlord_home/view/owner_detail_screen.dart';
@@ -2426,6 +2428,14 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
                 _row(context,
                   'Maximum occupants',
                   '${widget.maxOccupants} ${widget.maxOccupants == 1 ? 'occupant' : 'occupants'}',
+                ),
+                const SizedBox(height: 10),
+                PaymentBreakdownCard(
+                  breakdown: PaymentBreakdown(
+                    monthlyRent: widget.monthlyRent,
+                    advanceMonths: widget.advanceMonths,
+                    depositAmount: widget.depositAmount,
+                  ),
                 ),
               ],
             ),

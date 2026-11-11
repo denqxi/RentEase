@@ -11,8 +11,10 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/cloudinary_config.dart';
 import '../../../core/firestore/models/models.dart';
+import '../../../core/utils/payment_breakdown.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
+import '../../../shared/widgets/payment_breakdown_card.dart';
 import '../../owner_onboarding/view/create_listing_wizard_screen.dart';
 import '../../owner_onboarding/widgets/listing_form_widgets.dart';
 import '../../uploads/data/repositories/cloudinary_image_upload_repository.dart';
@@ -755,6 +757,16 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                           _ExpandableRulesSection(
                             property: currentProperty,
                             cubit: cubit,
+                          ),
+                          const SizedBox(height: 12),
+
+                          PaymentBreakdownCard(
+                            title: 'Payment breakdown (what tenants pay)',
+                            breakdown: PaymentBreakdown(
+                              monthlyRent: currentProperty.monthlyRent,
+                              advanceMonths: currentProperty.advanceMonths,
+                              depositAmount: currentProperty.depositAmount,
+                            ),
                           ),
                           const SizedBox(height: 12),
 

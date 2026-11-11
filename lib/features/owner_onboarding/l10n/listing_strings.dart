@@ -328,6 +328,12 @@ class ListingStrings {
   String get reviewDeposit => _t('Security deposit', 'Deposito');
   String get reviewAdvance => _t('Advance rent', 'Advance na upa');
   String months(int n) => _t('$n month(s)', '$n buwan');
+  String get backToReview => _t('Save and back to review', 'I-save at bumalik sa review');
+  String get breakdownTitle =>
+      _t('Payment breakdown', 'Detalye ng bayarin');
+  String get breakdownTotal =>
+      _t('Total due at move-in', 'Kabuuang bayad sa paglipat');
+  String get breakdownNone => _t('None', 'Wala');
   String get reviewWhoCanRent =>
       _t('Who can rent', 'Sino ang puwedeng umupa');
   String get reviewSmoking => _t('Smoking', 'Paninigarilyo');
