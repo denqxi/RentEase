@@ -14,6 +14,7 @@ import '../../uploads/data/repositories/cloudinary_image_upload_repository.dart'
 import '../../uploads/domain/entities/uploaded_image.dart';
 import '../../uploads/presentation/cubit/image_upload_cubit.dart';
 import '../../uploads/presentation/widgets/image_upload_slot.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 const List<String> kBuildingTypes = [
   'Boarding House',
@@ -234,11 +235,10 @@ class _EditPropertySheetState extends State<_EditPropertySheet> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update property: $e'),
-          backgroundColor: AppColors.destructive,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        "Couldn't update the property. Check your connection and try again.",
+        kind: AppSnackKind.error,
       );
     }
   }

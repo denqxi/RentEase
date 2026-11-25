@@ -14,6 +14,7 @@ import '../../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../../features/registration/view/registration_flow_screen.dart';
 import '../../../../features/registration/model/user_role.dart';
 import '../bloc/auth_bloc.dart';
+import '../../../../shared/widgets/app_snack_bar.dart';
 
 class EmailVerificationScreen extends StatefulWidget {
   const EmailVerificationScreen({this.isOwner = false, super.key});
@@ -119,11 +120,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
   }
 
   void _showMessage(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? AppColors.destructive : null,
-      ),
+    AppSnackBar.show(
+      ScaffoldMessenger.of(context),
+      message,
+      kind: isError ? AppSnackKind.error : AppSnackKind.info,
     );
   }
 
@@ -277,10 +277,10 @@ class _EmailVerificationBodyState extends State<_EmailVerificationBody>
   Future<void> _handleOpenEmailApp() async {
     final opened = await openEmailApp();
     if (!opened && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not open email app. Please check your inbox.'),
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        'Could not open email app. Please check your inbox.',
+        kind: AppSnackKind.error,
       );
     }
   }

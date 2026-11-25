@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/router/app_router.dart';
 import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../cubit/tenant_onboarding_cubit.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// Screen 4/4 — TOPSIS Preference Priority Allocation.
 /// Lets tenants divide a 100% budget across Monthly Rent, Travel Distance,
@@ -103,13 +104,10 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
 
     final uid = _currentUid(context);
     if (uid == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Your session has expired. Please sign in again.',
-          ),
-          backgroundColor: AppColors.destructive,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        'Your session has expired. Please sign in again.',
+        kind: AppSnackKind.error,
       );
       return;
     }
@@ -143,13 +141,10 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
             arguments: false, // tenant
           );
         } else if (state.status == TenantOnboardingStatus.failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                state.errorMessage ?? 'Could not save your profile.',
-              ),
-              backgroundColor: AppColors.destructive,
-            ),
+          AppSnackBar.show(
+            ScaffoldMessenger.of(context),
+            state.errorMessage ?? 'Could not save your profile.',
+            kind: AppSnackKind.error,
           );
         }
       },

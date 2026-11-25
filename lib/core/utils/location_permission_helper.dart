@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:rentease/core/constants/app_colors.dart';
+import '../../shared/widgets/app_snack_bar.dart';
 
 /// Centralized utility for checking location services, requesting app permissions,
 /// prompting dialogs with direct redirects to device/app settings, and retrieving
@@ -42,14 +43,10 @@ class LocationPermissionHelper {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Location permission was denied. Tap on the map to choose a position manually.',
-                ),
-                backgroundColor: AppColors.slate900,
-                duration: Duration(seconds: 3),
-              ),
+            AppSnackBar.show(
+              ScaffoldMessenger.of(context),
+              'Location permission was denied. Tap on the map to choose a position manually.',
+              kind: AppSnackKind.error,
             );
           }
           return null;
@@ -114,26 +111,18 @@ class LocationPermissionHelper {
         }
       } else if (errorStr.contains('timeout')) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Location request timed out. Please check your GPS signal or tap on the map.',
-              ),
-              backgroundColor: AppColors.slate900,
-              duration: Duration(seconds: 3),
-            ),
+          AppSnackBar.show(
+            ScaffoldMessenger.of(context),
+            'Location request timed out. Please check your GPS signal or tap on the map.',
+            kind: AppSnackKind.error,
           );
         }
       } else {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Could not retrieve your location. Please ensure GPS is active or tap on the map.',
-              ),
-              backgroundColor: AppColors.slate900,
-              duration: Duration(seconds: 3),
-            ),
+          AppSnackBar.show(
+            ScaffoldMessenger.of(context),
+            'Could not retrieve your location. Please ensure GPS is active or tap on the map.',
+            kind: AppSnackKind.error,
           );
         }
       }

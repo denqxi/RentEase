@@ -16,6 +16,7 @@ import '../../matching/domain/services/filtering_service.dart';
 import '../../matching/domain/services/topsis_service.dart';
 import '../../tenant_onboarding/data/repositories/tenant_profile_repository_impl.dart';
 import '../cubit/edit_preferences_cubit.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// Shared by both Profile edit screens: an [EditPreferencesCubit] for the
 /// signed-in tenant, or a sign-in prompt.
@@ -98,11 +99,10 @@ class _EditConstraintsViewState extends State<_EditConstraintsView> {
         if (state.status == EditPreferencesStatus.saved) {
           Navigator.of(context).pop(true);
         } else if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: AppColors.destructive,
-            ),
+          AppSnackBar.show(
+            ScaffoldMessenger.of(context),
+            state.errorMessage!,
+            kind: AppSnackKind.error,
           );
         }
       },

@@ -19,6 +19,7 @@ import '../widgets/inquiry_chat_view.dart';
 import '../widgets/owner_invite_view.dart';
 import '../widgets/owner_phase1_view.dart';
 import '../widgets/tenant_phase1_view.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// One inquiry, for either side. Follows the inquiry live and renders the
 /// view for the current stage — so the tenant's locked Phase 1 screen
@@ -75,11 +76,10 @@ class _ThreadView extends StatelessWidget {
         // Load failures render in the body; action failures (accept, send,
         // …) keep the thread on screen and surface as a snackbar.
         if (state.inquiry == null) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.errorMessage!),
-            backgroundColor: AppColors.destructive,
-          ),
+        AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          state.errorMessage!,
+          kind: AppSnackKind.error,
         );
         context.read<InquiryThreadCubit>().clearError();
       },

@@ -527,16 +527,33 @@ service cloud.firestore {
           .affectedKeys().hasAny(['ratingSum', 'totalRatings', 'avgRating',
                                   'lastRatingId']);
       }
+      // Monthly rent must be at least PHP 1,000; a security deposit is 0
+      // (none) or at least PHP 1,000 (mirrors Validators.minRentalAmount).
+      // Only a changed amount is checked, so a listing saved before this
+      // rule can still be edited.
+      function amountsOk() {
+        let d = request.resource.data;
+        let old = resource == null ? {} : resource.data;
+        return (!('monthlyRent' in d)
+                || d.monthlyRent == old.get('monthlyRent', null)
+                || (d.monthlyRent is number && d.monthlyRent >= 1000))
+          && (!('depositAmount' in d)
+                || d.depositAmount == old.get('depositAmount', null)
+                || (d.depositAmount is number
+                    && (d.depositAmount == 0 || d.depositAmount >= 1000)));
+      }
       allow create: if ownerMayWrite()
         && request.resource.data.ownerId == request.auth.uid
         && publishOk()
         && validAmenities()
+        && amountsOk()
         && noRatingFieldChange();
       allow update: if (ownerMayWrite()
           && resource.data.ownerId == request.auth.uid
           && request.resource.data.ownerId == resource.data.ownerId
           && publishOk()
           && validAmenities()
+          && amountsOk()
           && noRatingFieldChange()
           // Admin unlisting (adminUnlisted) cannot be undone by the owner.
           && request.resource.data.get('adminUnlisted', false)

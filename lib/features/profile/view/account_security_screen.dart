@@ -13,6 +13,7 @@ import '../../auth/presentation/current_uid.dart';
 import '../../auth/presentation/screens/privacy_notice_screen.dart';
 import '../../auth/presentation/screens/terms_and_conditions_screen.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 class AccountSecurityScreen extends StatelessWidget {
   const AccountSecurityScreen({super.key, this.isOwner = true});
@@ -449,8 +450,10 @@ class _ChangePasswordBottomSheetState
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password updated successfully.')),
+        AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          'Password updated successfully.',
+          kind: AppSnackKind.success,
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -694,8 +697,10 @@ class _DeleteAccountBottomSheetState extends State<_DeleteAccountBottomSheet> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     context.read<AuthBloc>().add(const AuthSignOutRequested());
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Your account has been deleted.')),
+    AppSnackBar.show(
+      messenger,
+      'Your account has been deleted.',
+      kind: AppSnackKind.success,
     );
     navigator.pushNamedAndRemoveUntil(AppRouter.signIn, (_) => false);
   }

@@ -93,7 +93,8 @@ class OwnerOnboardingState extends Equatable {
       latitude != null &&
       longitude != null &&
       photos.isNotEmpty &&
-      monthlyRent > 0;
+      monthlyRent >= Validators.minRentalAmount &&
+      (depositAmount == 0 || depositAmount >= Validators.minRentalAmount);
 
   OwnerOnboardingState copyWith({
     OwnerOnboardingStatus? status,

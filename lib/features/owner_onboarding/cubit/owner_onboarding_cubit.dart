@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/firestore/models/models.dart';
 import '../../../core/constants/cloudinary_config.dart';
+import '../../../core/utils/validators.dart';
 import '../../uploads/domain/entities/uploaded_image.dart';
 import '../domain/entities/submitted_documents.dart';
 import '../domain/repositories/owner_onboarding_repository.dart';
@@ -170,7 +171,8 @@ class OwnerOnboardingCubit extends Cubit<OwnerOnboardingState> {
           status: OwnerOnboardingStatus.failure,
           errorMessage:
               'Some steps are incomplete. Please go back and fill in the '
-              'property name, address, map pin, at least one photo and monthly rent.',
+              'property name, address, map pin, at least one photo and a monthly '
+              'rent of at least ₱1,000.',
         ),
       );
       return;

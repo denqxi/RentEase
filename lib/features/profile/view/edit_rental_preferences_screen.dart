@@ -12,6 +12,7 @@ import '../../../shared/widgets/map_zoom_controls.dart';
 import '../../tenant_onboarding/view/poi_setup_screen.dart';
 import '../cubit/edit_preferences_cubit.dart';
 import 'edit_constraints_screen.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// Unified Rental Preferences editor screen.
 /// Combines Must-haves, Commute, Amenities, and Priorities into an organized,
@@ -262,24 +263,14 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
   // ── Validation and Save ─────────────────────────────────────────────────
   void _save() {
     if (_budget == null || _budget! < 1000) {
+      // The budget field shows the error inline on this tab.
       setState(() => _selectedTabIndex = 0);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid monthly budget of at least ₱1,000.'),
-          backgroundColor: AppColors.destructive,
-        ),
-      );
       return;
     }
 
     if (!_isBalanced) {
+      // The priorities tab shows the running total inline.
       setState(() => _selectedTabIndex = 3);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Your priorities must add up to exactly 100%.'),
-          backgroundColor: AppColors.destructive,
-        ),
-      );
       return;
     }
 
@@ -307,19 +298,17 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
     return BlocConsumer<EditPreferencesCubit, EditPreferencesState>(
       listener: (context, state) {
         if (state.status == EditPreferencesStatus.saved) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Rental preferences updated! Matches refreshed.'),
-              backgroundColor: AppColors.primaryCyan,
-            ),
+          AppSnackBar.show(
+            ScaffoldMessenger.of(context),
+            'Rental preferences updated! Matches refreshed.',
+            kind: AppSnackKind.success,
           );
           Navigator.of(context).pop(true);
         } else if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: AppColors.destructive,
-            ),
+          AppSnackBar.show(
+            ScaffoldMessenger.of(context),
+            state.errorMessage!,
+            kind: AppSnackKind.error,
           );
         }
       },

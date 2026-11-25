@@ -216,6 +216,37 @@ describe('ownerProfiles / properties — owners can only read/write their own', 
     );
   });
 
+  it('rent must be at least 1,000; a deposit is 0 (none) or at least 1,000', async () => {
+    const db = asOwner(OWNER_A);
+    const base = { ownerId: OWNER_A, ...AMENITIES };
+    await assertFails(db.doc('properties/amt1').set({ ...base, monthlyRent: 999 }));
+    await assertFails(db.doc('properties/amt1').set({ ...base, monthlyRent: 0 }));
+    await assertFails(db.doc('properties/amt1').set({ ...base, monthlyRent: '5000' }));
+    await assertFails(
+      db.doc('properties/amt1').set({ ...base, monthlyRent: 3000, depositAmount: 500 }),
+    );
+    await assertSucceeds(
+      db.doc('properties/amt1').set({ ...base, monthlyRent: 1000, depositAmount: 0 }),
+    );
+    await assertSucceeds(db.doc('properties/amt1').update({ depositAmount: 1000 }));
+    await assertFails(db.doc('properties/amt1').update({ monthlyRent: 500 }));
+    await assertFails(db.doc('properties/amt1').update({ depositAmount: 999 }));
+  });
+
+  it('a listing saved below the minimum can still be edited, but not to another low amount', async () => {
+    await seed((db) =>
+      db.doc('properties/oldLow').set({
+        ownerId: OWNER_A, monthlyRent: 800, depositAmount: 300, isAvailable: true, ...AMENITIES,
+      }),
+    );
+    const db = asOwner(OWNER_A);
+    await assertSucceeds(
+      db.doc('properties/oldLow').update({ vacancyStatus: 'booked', isAvailable: false }),
+    );
+    await assertFails(db.doc('properties/oldLow').update({ monthlyRent: 900 }));
+    await assertSucceeds(db.doc('properties/oldLow').update({ monthlyRent: 1500 }));
+  });
+
   it('a pending owner can create and edit their own unpublished property', async () => {
     await seed((db) =>
       db.doc(`ownerProfiles/${OWNER_B}`).set({ verificationStatus: 'pending' }),

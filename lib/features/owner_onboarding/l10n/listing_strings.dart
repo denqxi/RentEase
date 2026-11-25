@@ -242,6 +242,14 @@ class ListingStrings {
     'Paid once when the tenant moves in.',
     'Isang beses binabayaran pagpasok ng tenant.',
   );
+  String get depositMinError => _t(
+    'Security deposit must be at least ₱1,000. Leave it blank if there is no deposit.',
+    'Hindi bababa sa ₱1,000 ang deposito. Iwanang blangko kung walang deposito.',
+  );
+  String get rentMinError => _t(
+    'Monthly rent must be at least ₱1,000.',
+    'Hindi bababa sa ₱1,000 ang buwanang upa.',
+  );
   String get advance =>
       _t('Advance rent (months)', 'Advance na upa (buwan)');
   String get advanceCaption => _t(

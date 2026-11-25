@@ -25,6 +25,7 @@ class AppTextField extends StatelessWidget {
     this.focusNode,
     this.enabledBorderColor,
     this.focusedBorderColor,
+    this.errorText,
     super.key,
   });
 
@@ -46,6 +47,9 @@ class AppTextField extends StatelessWidget {
   final FocusNode? focusNode;
   final Color? enabledBorderColor;
   final Color? focusedBorderColor;
+
+  /// Inline validation message shown under the field (with a red border).
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -115,6 +119,21 @@ class AppTextField extends StatelessWidget {
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: context.appColors.fieldBorder),
+        ),
+        errorText: errorText,
+        errorMaxLines: 3,
+        errorStyle: const TextStyle(
+          fontFamily: 'DM Sans',
+          fontSize: 12,
+          color: AppColors.destructive,
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.destructive),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.destructive, width: 1.5),
         ),
       ),
     );

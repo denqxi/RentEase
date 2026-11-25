@@ -27,6 +27,7 @@ import '../../uploads/domain/entities/uploaded_image.dart';
 import '../../uploads/domain/repositories/image_upload_repository.dart';
 import '../../uploads/presentation/cubit/image_upload_cubit.dart';
 import '../cubit/owner_onboarding_cubit.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// Step 1/2 of Owner Verification — "Verify your account".
 ///
@@ -216,11 +217,10 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
   Future<void> _openIdCheckUrl(String url) async {
     final opened = await const UrlLauncherOpener().open(Uri.parse(url));
     if (!opened && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not open the ID check. Try again.'),
-          backgroundColor: AppColors.destructive,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        'Could not open the ID check. Try again.',
+        kind: AppSnackKind.error,
       );
     }
   }
@@ -271,14 +271,11 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
         await prefs.remove(_diditStatusKey(uid));
       } catch (_) {}
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "The ID check isn't available right now. Please upload photos "
-            'of your ID instead.',
-          ),
-          backgroundColor: AppColors.matchMedium,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        "The ID check isn't available right now. Please upload photos "
+        'of your ID instead.',
+        kind: AppSnackKind.error,
       );
     } finally {
       if (mounted) setState(() => _startingIdCheck = false);
@@ -424,11 +421,10 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
     if (_submitting) return;
     final uid = currentUidOrNull(context);
     if (uid == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Your session has expired. Please sign in again.'),
-          backgroundColor: AppColors.destructive,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        'Your session has expired. Please sign in again.',
+        kind: AppSnackKind.error,
       );
       return;
     }
@@ -458,11 +454,10 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
 
     final state = cubit.state;
     if (state.status == OwnerOnboardingStatus.failure) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(state.errorMessage ?? 'Could not submit. Try again.'),
-          backgroundColor: AppColors.destructive,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        state.errorMessage ?? 'Could not submit. Try again.',
+        kind: AppSnackKind.error,
       );
       return;
     }
@@ -489,16 +484,14 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
           final status = await Permission.camera.request();
           if (status.isPermanentlyDenied) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text(
-                  'Camera permission is denied. Please allow camera access in Settings.',
-                ),
-                action: SnackBarAction(
-                  label: 'Settings',
-                  textColor: AppColors.matchHigh,
-                  onPressed: openAppSettings,
-                ),
+            AppSnackBar.show(
+              ScaffoldMessenger.of(context),
+              'Camera permission is denied. Please allow camera access in Settings.',
+              kind: AppSnackKind.error,
+              action: SnackBarAction(
+              label: 'Settings',
+              textColor: AppColors.matchHigh,
+              onPressed: openAppSettings,
               ),
             );
             return;
@@ -514,16 +507,14 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
           }
           if (status.isPermanentlyDenied) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text(
-                  'Photos and files access is denied. Please allow access in Settings.',
-                ),
-                action: SnackBarAction(
-                  label: 'Settings',
-                  textColor: AppColors.matchHigh,
-                  onPressed: openAppSettings,
-                ),
+            AppSnackBar.show(
+              ScaffoldMessenger.of(context),
+              'Photos and files access is denied. Please allow access in Settings.',
+              kind: AppSnackKind.error,
+              action: SnackBarAction(
+              label: 'Settings',
+              textColor: AppColors.matchHigh,
+              onPressed: openAppSettings,
               ),
             );
             return;
@@ -540,14 +531,10 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
         }
       } on MissingPluginException {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Please stop and restart the app ("flutter run") to link native Android permissions.',
-            ),
-            backgroundColor: AppColors.destructive,
-            duration: Duration(seconds: 4),
-          ),
+        AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          "Couldn't open the picker. Close the app, reopen it and try again.",
+          kind: AppSnackKind.error,
         );
         return;
       } catch (_) {

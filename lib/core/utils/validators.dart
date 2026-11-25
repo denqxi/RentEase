@@ -66,4 +66,32 @@ class Validators {
     }
     return null;
   }
+
+  /// Smallest monthly rent or security deposit (PHP) an owner may enter.
+  /// Mirrored in firestore.rules (properties: amountsOk).
+  static const int minRentalAmount = 1000;
+
+  /// Monthly rent is required and must be at least [minRentalAmount].
+  static String? monthlyRent(String? value) {
+    final amount = int.tryParse(value?.trim() ?? '');
+    if (amount == null) return 'Monthly rent is required.';
+    if (amount < minRentalAmount) {
+      return 'Monthly rent must be at least ₱1,000.';
+    }
+    return null;
+  }
+
+  /// A security deposit is optional (blank or 0 = no deposit), but an
+  /// entered amount must be at least [minRentalAmount].
+  static String? securityDeposit(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) return null;
+    final amount = int.tryParse(trimmed);
+    if (amount == null) return 'Enter a valid amount.';
+    if (amount != 0 && amount < minRentalAmount) {
+      return 'Security deposit must be at least ₱1,000. '
+          'Leave it blank if there is no deposit.';
+    }
+    return null;
+  }
 }

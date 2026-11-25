@@ -26,6 +26,7 @@ import '../../profile/view/saved_screen.dart';
 import '../../saved/data/repositories/saved_listings_repository_impl.dart';
 import '../cubit/shell_cubit.dart';
 import '../widgets/floating_nav_bar.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 class MainShell extends StatelessWidget {
   const MainShell({this.sessionRole = UserRole.tenant, super.key});
@@ -138,10 +139,10 @@ class _ShellView extends StatelessWidget {
       child: BlocListener<HomeCubit, HomeState>(
         // A heart write failed and was rolled back (the cubit bumps the counter).
         listenWhen: (prev, curr) => prev.saveFailures != curr.saveFailures,
-        listener: (context, _) => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Couldn't update your saved listings. Try again."),
-          ),
+        listener: (context, _) => AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          "Couldn't update your saved listings. Try again.",
+          kind: AppSnackKind.error,
         ),
         child: Scaffold(
           extendBody: true,

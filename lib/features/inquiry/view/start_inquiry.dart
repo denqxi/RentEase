@@ -7,6 +7,7 @@ import '../data/repositories/inquiry_repository_impl.dart';
 import '../domain/services/inquiry_service.dart';
 import '../widgets/contact_consent_notice.dart';
 import 'inquiry_thread_screen.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// Properties with an inquiry flow open (dialog or write in flight), so a
 /// double tap can't stack two dialogs or send the inquiry twice.
@@ -24,8 +25,9 @@ Future<void> startInquiry(
   final messenger = ScaffoldMessenger.of(context);
   final uid = currentUidOrNull(context);
   if (uid == null) {
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Sign in to send an inquiry.')),
+    AppSnackBar.show(
+      messenger,
+      'Sign in to send an inquiry.',
     );
     return;
   }
@@ -92,11 +94,10 @@ Future<void> _startInquiry(
       ),
     );
   } catch (e) {
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(inquiryErrorMessage(e)),
-        backgroundColor: AppColors.destructive,
-      ),
+    AppSnackBar.show(
+      messenger,
+      inquiryErrorMessage(e),
+      kind: AppSnackKind.error,
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// Centered spinner for admin lists.
 class AdminLoadingView extends StatelessWidget {
@@ -103,8 +104,9 @@ Future<bool> confirmAdminAction(
 
 void showAdminNotice(BuildContext context, String? message) {
   if (message == null) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message), backgroundColor: context.appColors.ink),
+  AppSnackBar.show(
+    ScaffoldMessenger.of(context),
+    message,
   );
 }
 

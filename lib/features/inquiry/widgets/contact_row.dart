@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/url_opener.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// "Contact" row for an accepted thread: the other party's phone with Call
 /// and Copy buttons. Renders nothing when [phone] is null/empty (not shared
@@ -82,8 +83,10 @@ class ContactRow extends StatelessWidget {
       Uri(scheme: 'tel', path: number.replaceAll(RegExp(r'[^0-9+]'), '')),
     );
     if (!opened) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Could not open the dialer.')),
+      AppSnackBar.show(
+        messenger,
+        'Could not open the dialer.',
+        kind: AppSnackKind.error,
       );
     }
   }
@@ -91,8 +94,10 @@ class ContactRow extends StatelessWidget {
   Future<void> _copy(BuildContext context, String number) async {
     final messenger = ScaffoldMessenger.of(context);
     await Clipboard.setData(ClipboardData(text: number));
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Phone number copied.')),
+    AppSnackBar.show(
+      messenger,
+      'Phone number copied.',
+      kind: AppSnackKind.success,
     );
   }
 }

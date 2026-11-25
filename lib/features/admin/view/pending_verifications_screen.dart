@@ -16,6 +16,7 @@ import '../cubit/verifications_cubit.dart';
 import '../domain/entities/admin_entities.dart';
 import '../widgets/admin_page_header.dart';
 import '../widgets/admin_state_views.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 class PendingVerificationsScreen extends StatelessWidget {
   const PendingVerificationsScreen({
@@ -1365,15 +1366,11 @@ class BusinessPermitCheckButton extends StatelessWidget {
       Uri.parse(AppLinks.dtiNegosyoKonekSearch),
     );
     if (opened) return;
-    messenger.showSnackBar(
-      const SnackBar(
-        backgroundColor: AppColors.destructive,
-        content: Text(
-          'Could not open the NegosyoKonek page. Please try again or open '
-          'it in your browser.',
-          style: TextStyle(color: AppColors.onInk),
-        ),
-      ),
+    AppSnackBar.show(
+      messenger,
+      'Could not open the NegosyoKonek page. Please try again or open '
+      'it in your browser.',
+      kind: AppSnackKind.error,
     );
   }
 

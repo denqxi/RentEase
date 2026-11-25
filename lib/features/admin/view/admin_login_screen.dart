@@ -13,6 +13,7 @@ import '../cubit/admin_login_cubit.dart';
 import '../data/repositories/admin_repository_impl.dart';
 import '../domain/repositories/admin_repository.dart';
 import 'admin_shell.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// Admin sign-in — card-over-hero like the tenant/owner auth screens, but
 /// with a dark ink hero to signal the elevated role. No create-account link:
@@ -58,11 +59,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         MaterialPageRoute<void>(builder: (_) => AdminShell(repository: _repo)),
       );
     } else if (state.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(state.errorMessage!),
-          backgroundColor: context.appColors.ink,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        state.errorMessage!,
+        kind: AppSnackKind.error,
       );
     }
   }

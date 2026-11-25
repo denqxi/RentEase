@@ -17,6 +17,7 @@ import '../../../registration/view/registration_flow_screen.dart';
 import '../../domain/entities/auth.dart';
 import '../bloc/auth_bloc.dart';
 import 'email_verification_screen.dart';
+import '../../../../shared/widgets/app_snack_bar.dart';
 
 /// Sign-in screen featuring a hardware-accelerated pull-up/pull-down card over
 /// a hero building background with zero-rebuild transitions.
@@ -37,6 +38,8 @@ class _SignInScreenState extends State<SignInScreen>
     with TickerProviderStateMixin, RouteAware {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  String? _emailError;
+  String? _passwordError;
   final _scrollController = ScrollController();
 
   /// Tracks whether the card is in the expanded interaction state (>= 0.5)
@@ -215,11 +218,10 @@ class _SignInScreenState extends State<SignInScreen>
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.destructive,
-      ),
+    AppSnackBar.show(
+      ScaffoldMessenger.of(context),
+      message,
+      kind: AppSnackKind.error,
     );
   }
 
@@ -227,12 +229,12 @@ class _SignInScreenState extends State<SignInScreen>
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final emailError = Validators.email(email);
-    if (emailError != null) {
-      _showError(emailError);
-      return;
-    }
-    if (password.isEmpty) {
-      _showError('Enter your password.');
+    final passwordError = password.isEmpty ? 'Enter your password.' : null;
+    if (emailError != null || passwordError != null) {
+      setState(() {
+        _emailError = emailError;
+        _passwordError = passwordError;
+      });
       return;
     }
     _getAuthBloc()?.add(
@@ -245,7 +247,10 @@ class _SignInScreenState extends State<SignInScreen>
     final email = _emailController.text.trim();
     final emailError = Validators.email(email);
     if (emailError != null) {
-      _showError('Enter your email above first, then tap "Forgot password?".');
+      setState(
+        () => _emailError =
+            'Enter your email here first, then tap "Forgot password?".',
+      );
       return;
     }
     setState(() => _forgotPasswordCountdown = 40);
@@ -338,10 +343,10 @@ class _SignInScreenState extends State<SignInScreen>
     } else if (state is AuthSuspended) {
       _showError(AuthBloc.suspendedMessage);
     } else if (state is AuthPasswordResetEmailSent) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Password reset link sent to ${state.email}.'),
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        'Password reset link sent to ${state.email}.',
+        kind: AppSnackKind.success,
       );
     }
   }
@@ -413,6 +418,16 @@ class _SignInScreenState extends State<SignInScreen>
               bottomInset: bottomInset,
               emailController: _emailController,
               passwordController: _passwordController,
+              emailError: _emailError,
+              passwordError: _passwordError,
+              onEmailChanged: (_) {
+                if (_emailError != null) setState(() => _emailError = null);
+              },
+              onPasswordChanged: (_) {
+                if (_passwordError != null) {
+                  setState(() => _passwordError = null);
+                }
+              },
               rememberMe: _rememberMe,
               obscurePassword: _obscurePassword,
               isLoading: isLoading,
@@ -776,6 +791,10 @@ class _ExpandedCardContent extends StatelessWidget {
     required this.bottomInset,
     required this.emailController,
     required this.passwordController,
+    this.emailError,
+    this.passwordError,
+    this.onEmailChanged,
+    this.onPasswordChanged,
     required this.rememberMe,
     required this.obscurePassword,
     required this.onRememberMeChanged,
@@ -794,6 +813,10 @@ class _ExpandedCardContent extends StatelessWidget {
   final double bottomInset;
   final TextEditingController emailController;
   final TextEditingController passwordController;
+  final String? emailError;
+  final String? passwordError;
+  final ValueChanged<String>? onEmailChanged;
+  final ValueChanged<String>? onPasswordChanged;
   final bool rememberMe;
   final bool obscurePassword;
   final bool isLoading;
@@ -897,6 +920,8 @@ class _ExpandedCardContent extends StatelessWidget {
                     hintText: 'Enter your email',
                     keyboardType: TextInputType.emailAddress,
                     focusedBorderColor: blueFocused,
+                    errorText: emailError,
+                    onChanged: onEmailChanged,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -907,6 +932,8 @@ class _ExpandedCardContent extends StatelessWidget {
                     hintText: 'Enter your password',
                     obscureText: obscurePassword,
                     focusedBorderColor: blueFocused,
+                    errorText: passwordError,
+                    onChanged: onPasswordChanged,
                     suffixIcon: Semantics(
                       button: true,
                       label: obscurePassword ? 'Show password' : 'Hide password',

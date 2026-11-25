@@ -18,6 +18,7 @@ import '../widgets/live_navigation_bottom_bar.dart';
 import '../../../core/utils/location_permission_helper.dart';
 import '../widgets/live_user_puck.dart';
 import 'property_detail_screen.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 // Compiled once instead of on every call.
 final RegExp _kThousandsRe = RegExp(r'(\d)(?=(\d{3})+(?!\d))');
@@ -230,14 +231,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
     final destLat = (property['latitude'] as num?)?.toDouble();
     final destLng = (property['longitude'] as num?)?.toDouble();
     if (destLat == null || destLng == null || destLat == 0.0 || destLng == 0.0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Property coordinates are unavailable for navigation',
-            style: TextStyle(fontFamily: 'DM Sans'),
-          ),
-          duration: Duration(seconds: 2),
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        'Property coordinates are unavailable for navigation',
+        kind: AppSnackKind.error,
       );
       return;
     }
@@ -2378,14 +2375,9 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                             widget.onDirectionsTap!();
                           } else {
                             ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Directions feature coming soon',
-                                  style: TextStyle(fontFamily: 'DM Sans'),
-                                ),
-                                duration: Duration(seconds: 2),
-                              ),
+                            AppSnackBar.show(
+                              ScaffoldMessenger.of(context),
+                              'Directions feature coming soon',
                             );
                           }
                         },

@@ -12,6 +12,7 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/cloudinary_config.dart';
 import '../../../core/firestore/models/models.dart';
 import '../../../core/utils/payment_breakdown.dart';
+import '../../../core/utils/validators.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/payment_breakdown_card.dart';
@@ -23,6 +24,7 @@ import '../cubit/landlord_home_cubit.dart';
 import '../widgets/edit_property_sheet.dart';
 import 'edit_entire_property_screen.dart';
 import 'property_reviews_screen.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 // Compiled once instead of on every call.
 final RegExp _kThousandsRe = RegExp(r'(\d)(?=(\d{3})+(?!\d))');
@@ -141,19 +143,17 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
       try {
         await cubit.setVacancy(room.propertyId, targetStatus);
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Room status updated to $targetLabel.'),
-            backgroundColor: AppColors.slate900,
-          ),
+        AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          'Room status updated to $targetLabel.',
+          kind: AppSnackKind.success,
         );
       } catch (e) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update status: $e'),
-            backgroundColor: AppColors.destructive,
-          ),
+        AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          "Couldn't update the status. Check your connection and try again.",
+          kind: AppSnackKind.error,
         );
       }
     }
@@ -511,11 +511,10 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
     } catch (e) {
       if (context.mounted) {
         Navigator.of(context, rootNavigator: true).pop();
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: AppColors.red600,
-          ),
+        AppSnackBar.show(
+          messenger,
+          e.toString().replaceFirst('Exception: ', ''),
+          kind: AppSnackKind.error,
         );
       }
       return;
@@ -1231,11 +1230,10 @@ class _EntirePropertyPhotoCarouselState
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.destructive,
-      ),
+    AppSnackBar.show(
+      ScaffoldMessenger.of(context),
+      message,
+      kind: AppSnackKind.error,
     );
   }
 
@@ -1275,16 +1273,15 @@ class _EntirePropertyPhotoCarouselState
         _selectedPhotoIndex = updatedPhotos.length - 1;
         _isUploading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Photo added successfully.'),
-          backgroundColor: AppColors.slate900,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        'Photo added successfully.',
+        kind: AppSnackKind.success,
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isUploading = false);
-      _showError('Failed to upload photo: $e');
+      _showError("Couldn't upload the photo. Check your connection and try again.");
     }
   }
 
@@ -1676,11 +1673,10 @@ class _FullScreenPhotoGalleryState extends State<_FullScreenPhotoGallery> {
   Future<void> _confirmAndRemoveCurrent() async {
     if (_isRemoving) return;
     if (_photos.length <= 1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('A listing must have at least one photo.'),
-          backgroundColor: AppColors.destructive,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        'A listing must have at least one photo.',
+        kind: AppSnackKind.error,
       );
       return;
     }
@@ -1741,20 +1737,18 @@ class _FullScreenPhotoGalleryState extends State<_FullScreenPhotoGallery> {
         _isRemoving = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Photo removed.'),
-          backgroundColor: AppColors.slate900,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        'Photo removed.',
+        kind: AppSnackKind.success,
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isRemoving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to remove photo: $e'),
-          backgroundColor: AppColors.destructive,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        "Couldn't remove the photo. Check your connection and try again.",
+        kind: AppSnackKind.error,
       );
     }
   }
@@ -1991,19 +1985,17 @@ class _EntirePropertyMainCard extends StatelessWidget {
       try {
         await cubit.setVacancy(property.propertyId, targetStatus);
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Rental status updated to $targetLabel.'),
-            backgroundColor: AppColors.slate900,
-          ),
+        AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          'Rental status updated to $targetLabel.',
+          kind: AppSnackKind.success,
         );
       } catch (e) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update status: $e'),
-            backgroundColor: AppColors.destructive,
-          ),
+        AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          "Couldn't update the status. Check your connection and try again.",
+          kind: AppSnackKind.error,
         );
       }
     }
@@ -2436,6 +2428,8 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
   bool _isSaving = false;
   late final TextEditingController _rentCtrl;
   late final TextEditingController _maxOccupantsCtrl;
+  String? _rentError;
+  String? _occupantsError;
 
   static String _fmt(num value) => value
       .round()
@@ -2482,22 +2476,15 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
     final rent = int.tryParse(_rentCtrl.text.trim()) ?? 0;
     final maxOccupants = int.tryParse(_maxOccupantsCtrl.text.trim()) ?? 1;
 
-    if (rent <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Monthly rent must be greater than 0.'),
-          backgroundColor: AppColors.red600,
-        ),
-      );
-      return;
-    }
-    if (maxOccupants < 1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Maximum occupants must be at least 1.'),
-          backgroundColor: AppColors.red600,
-        ),
-      );
+    final rentError = Validators.monthlyRent(_rentCtrl.text);
+    final occupantsError = maxOccupants < 1
+        ? 'Maximum occupants must be at least 1.'
+        : null;
+    if (rentError != null || occupantsError != null) {
+      setState(() {
+        _rentError = rentError;
+        _occupantsError = occupantsError;
+      });
       return;
     }
 
@@ -2512,19 +2499,17 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
         },
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Rent & capacity updated.'),
-          backgroundColor: AppColors.slate900,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        'Rent & capacity updated.',
+        kind: AppSnackKind.success,
       );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not save rent & capacity.'),
-          backgroundColor: AppColors.red600,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        "Couldn't save rent & capacity. Check your connection and try again.",
+        kind: AppSnackKind.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -2664,6 +2649,12 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                             ],
+                            errorText: _rentError,
+                            onChanged: (_) {
+                              if (_rentError != null) {
+                                setState(() => _rentError = null);
+                              }
+                            },
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -2676,6 +2667,12 @@ class _ExpandableRentSectionState extends State<_ExpandableRentSection> {
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                             ],
+                            errorText: _occupantsError,
+                            onChanged: (_) {
+                              if (_occupantsError != null) {
+                                setState(() => _occupantsError = null);
+                              }
+                            },
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -2719,6 +2716,7 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
 
   late final TextEditingController _depositCtrl;
   late final TextEditingController _advanceCtrl;
+  String? _depositError;
   late String _allowedGender;
   late bool _smokingAllowed;
   late bool _petsAllowed;
@@ -2797,22 +2795,9 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
     final deposit = int.tryParse(_depositCtrl.text.trim()) ?? 0;
     final advanceMonths = int.tryParse(_advanceCtrl.text.trim()) ?? 1;
 
-    if (deposit < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Security deposit cannot be negative.'),
-          backgroundColor: AppColors.red600,
-        ),
-      );
-      return;
-    }
-    if (advanceMonths < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Advance rent cannot be negative.'),
-          backgroundColor: AppColors.red600,
-        ),
-      );
+    final depositError = Validators.securityDeposit(_depositCtrl.text);
+    if (depositError != null) {
+      setState(() => _depositError = depositError);
       return;
     }
 
@@ -2831,19 +2816,17 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
         },
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('House rules updated.'),
-          backgroundColor: AppColors.slate900,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        'House rules updated.',
+        kind: AppSnackKind.success,
       );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not save house rules.'),
-          backgroundColor: AppColors.red600,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        "Couldn't save house rules. Check your connection and try again.",
+        kind: AppSnackKind.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -2987,6 +2970,12 @@ class _ExpandableRulesSectionState extends State<_ExpandableRulesSection> {
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                             ],
+                            errorText: _depositError,
+                            onChanged: (_) {
+                              if (_depositError != null) {
+                                setState(() => _depositError = null);
+                              }
+                            },
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -3128,19 +3117,17 @@ class _ExpandableAmenitiesSectionState
         },
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Amenities updated.'),
-          backgroundColor: AppColors.slate900,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        'Amenities updated.',
+        kind: AppSnackKind.success,
       );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not save amenities.'),
-          backgroundColor: AppColors.red600,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        "Couldn't save amenities. Check your connection and try again.",
+        kind: AppSnackKind.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);

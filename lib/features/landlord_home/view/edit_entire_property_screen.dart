@@ -14,6 +14,7 @@ import '../../uploads/data/repositories/cloudinary_image_upload_repository.dart'
 import '../../uploads/domain/entities/uploaded_image.dart';
 import '../../uploads/domain/repositories/image_upload_repository.dart';
 import '../../uploads/presentation/cubit/image_upload_cubit.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// Dedicated screen for editing basic details & photos of an entire-property
 /// or room listing.
@@ -52,6 +53,8 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _roomNameController;
   late final TextEditingController _addressController;
+  String? _nameError;
+  String? _roomNameError;
 
   // Form State
   late String _propertyType;
@@ -191,12 +194,12 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
 
     if (isRoom) {
       if (roomName.isEmpty) {
-        _showError('Room name or number cannot be empty.');
+        setState(() => _roomNameError = 'Enter a room name or number.');
         return;
       }
     } else {
       if (name.isEmpty) {
-        _showError('Property name cannot be empty.');
+        setState(() => _nameError = 'Enter the property name.');
         return;
       }
       if (address.isEmpty) {
@@ -247,20 +250,17 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
       await widget.onSave(updates);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isRoom
-                ? 'Room details saved successfully.'
-                : 'Property details saved successfully.',
-          ),
-          backgroundColor: AppColors.slate900,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        isRoom
+        ? 'Room details saved successfully.'
+        : 'Property details saved successfully.',
+        kind: AppSnackKind.success,
       );
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      _showError('Failed to save changes: $e');
+      _showError("Couldn't save your changes. Check your connection and try again.");
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -269,11 +269,10 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.destructive,
-      ),
+    AppSnackBar.show(
+      ScaffoldMessenger.of(context),
+      message,
+      kind: AppSnackKind.error,
     );
   }
 
@@ -513,7 +512,8 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
             controller: _nameController,
             hintText: 'e.g. La Boarding House',
             inputFormatters: [LengthLimitingTextInputFormatter(120)],
-            onChanged: (_) => setState(() {}),
+            errorText: _nameError,
+            onChanged: (_) => setState(() => _nameError = null),
           ),
         ),
         const SizedBox(height: 12),
@@ -561,7 +561,8 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
             controller: _roomNameController,
             hintText: 'e.g. Room 101',
             inputFormatters: [LengthLimitingTextInputFormatter(60)],
-            onChanged: (_) => setState(() {}),
+            errorText: _roomNameError,
+            onChanged: (_) => setState(() => _roomNameError = null),
           ),
         ),
         const SizedBox(height: 12),

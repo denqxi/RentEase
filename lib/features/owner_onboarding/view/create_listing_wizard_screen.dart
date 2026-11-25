@@ -14,6 +14,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/utils/payment_breakdown.dart';
+import '../../../core/utils/validators.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/payment_breakdown_card.dart';
 import '../../../shared/widgets/app_text_field.dart';
@@ -30,6 +31,7 @@ import '../l10n/listing_strings.dart';
 import '../widgets/listing_form_widgets.dart';
 import '../widgets/listing_location_picker.dart';
 import '../widgets/new_property_sheet.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// 6-step "Create listing" wizard (Rental type → Details → House rules →
 /// Rent & occupants → Amenities → Review). Replaces the old 3-screen
@@ -297,8 +299,11 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
             _placeType!.trim().isNotEmpty &&
             _placeAddressController.text.trim().isNotEmpty &&
             _placePin != null;
+      case 2:
+        return Validators.securityDeposit(_depositController.text) == null;
       case 3:
-        return _int(_rentController, 0) > 0 && _int(_occupantsController, 0) >= 1;
+        return Validators.monthlyRent(_rentController.text) == null &&
+            _int(_occupantsController, 0) >= 1;
       default:
         return true;
     }
@@ -436,12 +441,18 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
     Navigator.of(
       context,
     ).pushNamedAndRemoveUntil(AppRouter.landlordHome, (_) => false);
-    messenger.showSnackBar(SnackBar(content: Text(_s.posted)));
+    AppSnackBar.show(
+      messenger,
+      _s.posted,
+      kind: AppSnackKind.success,
+    );
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.destructive),
+    AppSnackBar.show(
+      ScaffoldMessenger.of(context),
+      message,
+      kind: AppSnackKind.error,
     );
   }
 
@@ -955,6 +966,11 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
             prefixText: '₱ ',
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            onChanged: (_) => setState(() {}),
+            errorText:
+                Validators.securityDeposit(_depositController.text) == null
+                ? null
+                : _s.depositMinError,
           ),
         ),
         const SizedBox(height: 4),
@@ -1063,6 +1079,12 @@ class _CreateListingWizardScreenState extends State<CreateListingWizardScreen> {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (_) => setState(() {}),
+            // Quiet while empty: Continue is simply disabled until filled.
+            errorText:
+                _rentController.text.trim().isEmpty ||
+                    Validators.monthlyRent(_rentController.text) == null
+                ? null
+                : _s.rentMinError,
           ),
         ),
         const SizedBox(height: AppSpacing.md),

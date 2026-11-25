@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 class RatingScreen extends StatefulWidget {
   /// Tenant-side variant: rate the property after booking a room.
@@ -75,18 +76,19 @@ class _RatingScreenState extends State<RatingScreen> {
       if (!mounted) return;
       setState(() => _submitting = false);
       if (!ok) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Thanks — your rating was submitted.')),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        'Thanks — your rating was submitted.',
+        kind: AppSnackKind.success,
       );
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       setState(() => _submitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceAll('Exception: ', '')),
-          backgroundColor: AppColors.destructive,
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        e.toString().replaceAll('Exception: ', ''),
+        kind: AppSnackKind.error,
       );
     }
   }

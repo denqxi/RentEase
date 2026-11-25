@@ -20,6 +20,7 @@ import '../widgets/landlord_home_header.dart';
 import '../cubit/landlord_home_cubit.dart';
 import '../../../shared/widgets/app_svg_icon.dart';
 import 'property_manager_screen.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 // Compiled once instead of on every call.
 final RegExp _kThousandsRe = RegExp(r'(\d)(?=(\d{3})+(?!\d))');
@@ -270,11 +271,10 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
                         prev.errorMessage != curr.errorMessage &&
                         curr.properties.isNotEmpty,
                     listener: (context, state) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(state.errorMessage!),
-                          backgroundColor: AppColors.destructive,
-                        ),
+                      AppSnackBar.show(
+                        ScaffoldMessenger.of(context),
+                        state.errorMessage!,
+                        kind: AppSnackKind.error,
                       );
                       context.read<LandlordHomeCubit>().clearError();
                     },

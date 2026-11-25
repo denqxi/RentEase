@@ -25,6 +25,7 @@ import '../../shell/cubit/shell_cubit.dart';
 import 'account_security_screen.dart';
 import 'edit_owner_profile_screen.dart';
 import 'owner_reviews_screen.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 class OwnerProfileScreen extends StatefulWidget {
   const OwnerProfileScreen({super.key});
@@ -1075,11 +1076,10 @@ class _ShowCredentialsItemState extends State<_ShowCredentialsItem> {
       await _repo.setShowCredentials(uid, value);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not update this setting. Try again.'),
-            backgroundColor: AppColors.destructive,
-          ),
+        AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          'Could not update this setting. Try again.',
+          kind: AppSnackKind.error,
         );
       }
     } finally {

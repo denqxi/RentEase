@@ -14,6 +14,7 @@ import '../../inquiry/domain/services/inquiry_service.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
 import '../../landlord_home/view/tenant_detail_screen.dart';
 import '../../owner/model/compatible_tenant.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 // Compiled once instead of on every call.
 final RegExp _kThousandsRe = RegExp(r'(\d)(?=(\d{3})+(?!\d))');
@@ -175,11 +176,10 @@ class _PropertyCompatibleTenantsScreenState
     if (confirmed != true || !mounted) return;
 
     if (ownerId == null) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Unable to identify owner account. Please sign in again.'),
-          backgroundColor: AppColors.slate900,
-        ),
+      AppSnackBar.show(
+        messenger,
+        'Unable to identify owner account. Please sign in again.',
+        kind: AppSnackKind.error,
       );
       return;
     }
@@ -193,11 +193,10 @@ class _PropertyCompatibleTenantsScreenState
       if (mounted) {
         setState(() => _notifiedMatchIds.add(tenant.matchId));
         widget.onNotifiedMatchIdsChanged?.call(_notifiedMatchIds);
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('${tenant.name} has been notified.'),
-            backgroundColor: AppColors.slate900,
-          ),
+        AppSnackBar.show(
+          messenger,
+          '${tenant.name} has been notified.',
+          kind: AppSnackKind.success,
         );
       }
     } catch (e) {
@@ -207,11 +206,12 @@ class _PropertyCompatibleTenantsScreenState
           setState(() => _notifiedMatchIds.add(tenant.matchId));
           widget.onNotifiedMatchIdsChanged?.call(_notifiedMatchIds);
         }
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: AppColors.slate900,
-          ),
+        AppSnackBar.show(
+          messenger,
+          msg,
+          kind: msg.toLowerCase().contains('already')
+              ? AppSnackKind.info
+              : AppSnackKind.error,
         );
       }
     }
@@ -232,11 +232,9 @@ class _PropertyCompatibleTenantsScreenState
         .toList();
 
     if (unnotified.isEmpty) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('All compatible tenants for this unit are already notified.'),
-          backgroundColor: AppColors.slate900,
-        ),
+      AppSnackBar.show(
+        messenger,
+        'All compatible tenants for this unit are already notified.',
       );
       return;
     }
@@ -314,11 +312,10 @@ class _PropertyCompatibleTenantsScreenState
     if (confirmed != true || !mounted) return;
 
     if (ownerId == null) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Unable to identify owner account. Please sign in again.'),
-          backgroundColor: AppColors.slate900,
-        ),
+      AppSnackBar.show(
+        messenger,
+        'Unable to identify owner account. Please sign in again.',
+        kind: AppSnackKind.error,
       );
       return;
     }
@@ -346,17 +343,18 @@ class _PropertyCompatibleTenantsScreenState
     if (mounted) {
       setState(() => _isNotifyingAll = false);
       widget.onNotifiedMatchIdsChanged?.call(_notifiedMatchIds);
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            failedCount > 0
-                ? '$sentCount notified, $failedCount failed. Please try again for the rest.'
-                : sentCount > 0
-                ? '$sentCount compatible tenant${sentCount == 1 ? '' : 's'} have been notified.'
-                : 'All eligible compatible tenants have already been notified.',
-          ),
-          backgroundColor: AppColors.slate900,
-        ),
+      AppSnackBar.show(
+        messenger,
+        failedCount > 0
+        ? '$sentCount notified, $failedCount failed. Please try again for the rest.'
+        : sentCount > 0
+        ? '$sentCount compatible tenant${sentCount == 1 ? '' : 's'} have been notified.'
+        : 'All eligible compatible tenants have already been notified.',
+        kind: failedCount > 0
+            ? AppSnackKind.error
+            : sentCount > 0
+            ? AppSnackKind.success
+            : AppSnackKind.info,
       );
     }
   }
@@ -1147,19 +1145,17 @@ class _ReadOnlyPropertyDetailCard extends StatelessWidget {
       try {
         await cubit.setVacancy(property.propertyId, targetStatus);
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Rental status updated to $targetLabel.'),
-            backgroundColor: AppColors.slate900,
-          ),
+        AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          'Rental status updated to $targetLabel.',
+          kind: AppSnackKind.success,
         );
       } catch (e) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update status: $e'),
-            backgroundColor: AppColors.destructive,
-          ),
+        AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          "Couldn't update the status. Check your connection and try again.",
+          kind: AppSnackKind.error,
         );
       }
     }

@@ -19,6 +19,7 @@ import 'preferences_step_view.dart';
 import 'property_step_view.dart';
 import 'role_selection_view.dart';
 import 'success_view.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// Host for the multi-step registration flow.
 ///
@@ -85,21 +86,17 @@ class RegistrationFlowScreen extends StatelessWidget {
           } else if (state is AuthEmailAlreadyRegistered) {
             _showAlreadyRegisteredDialog(context, state, onSignIn);
           } else if (state is AuthPasswordResetEmailSent) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'We sent a password reset link to ${state.email}. Open it, '
-                  'set a new password, then log in.',
-
-                ),
-              ),
+            AppSnackBar.show(
+              ScaffoldMessenger.of(context),
+              'We sent a password reset link to ${state.email}. Open it, '
+              'set a new password, then log in.',
+              kind: AppSnackKind.success,
             );
           } else if (state is AuthOperationFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.destructive,
-              ),
+            AppSnackBar.show(
+              ScaffoldMessenger.of(context),
+              state.message,
+              kind: AppSnackKind.error,
             );
           }
         },

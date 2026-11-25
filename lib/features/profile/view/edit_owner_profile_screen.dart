@@ -12,6 +12,7 @@ import '../../landlord_home/cubit/landlord_home_cubit.dart';
 import '../../uploads/data/repositories/cloudinary_image_upload_repository.dart';
 import '../../uploads/domain/entities/uploaded_image.dart';
 import '../cubit/profile_cubit.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key, this.isOwner = true});
@@ -84,6 +85,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _middleNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
+  String? _firstNameError;
+  String? _lastNameError;
+  String? _phoneError;
   final _emailController = TextEditingController();
 
   bool _isLoading = true;
@@ -176,14 +180,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              CloudinaryConfig.isConfigured
-                  ? 'Failed to upload photo. Please try again.'
-                  : 'Photo uploaded in preview mode.',
-            ),
-          ),
+        AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          CloudinaryConfig.isConfigured
+          ? 'Failed to upload photo. Please try again.'
+          : 'Photo uploaded in preview mode.',
+          kind: AppSnackKind.error,
         );
       }
     }
@@ -198,22 +200,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final lastName = _lastNameController.text.trim();
     final phone = _phoneController.text.trim();
 
-    if (firstName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your first name.')),
-      );
-      return;
-    }
-    if (lastName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your last name.')),
-      );
-      return;
-    }
-    if (phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your phone number.')),
-      );
+    final firstNameError = firstName.isEmpty ? 'Enter your first name.' : null;
+    final lastNameError = lastName.isEmpty ? 'Enter your last name.' : null;
+    final phoneError = phone.isEmpty ? 'Enter your phone number.' : null;
+    if (firstNameError != null || lastNameError != null || phoneError != null) {
+      setState(() {
+        _firstNameError = firstNameError;
+        _lastNameError = lastNameError;
+        _phoneError = phoneError;
+      });
       return;
     }
 
@@ -258,16 +253,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         try {
           context.read<HomeCubit>().refresh();
         } catch (_) {}
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully.')),
+        AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          'Profile updated successfully.',
+          kind: AppSnackKind.success,
         );
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save profile: $e')),
+        AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          "Couldn't save your profile. Check your connection and try again.",
+          kind: AppSnackKind.error,
         );
       }
     }
@@ -407,6 +406,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       hint: 'Enter your first name',
                       cardColor: cardColor,
                       textColor: textColor,
+                      errorText: _firstNameError,
+                      onChanged: (_) {
+                        if (_firstNameError != null) {
+                          setState(() => _firstNameError = null);
+                        }
+                      },
                     ),
 
                     const SizedBox(height: 16),
@@ -431,6 +436,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       hint: 'Enter your last name',
                       cardColor: cardColor,
                       textColor: textColor,
+                      errorText: _lastNameError,
+                      onChanged: (_) {
+                        if (_lastNameError != null) {
+                          setState(() => _lastNameError = null);
+                        }
+                      },
                     ),
 
                     const SizedBox(height: 16),
@@ -443,6 +454,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       hint: '+63 9XX XXX XXXX',
                       cardColor: cardColor,
                       textColor: textColor,
+                      errorText: _phoneError,
+                      onChanged: (_) {
+                        if (_phoneError != null) {
+                          setState(() => _phoneError = null);
+                        }
+                      },
                       keyboardType: TextInputType.phone,
                     ),
                     const SizedBox(height: 6),
@@ -589,17 +606,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     bool readOnly = false,
     Widget? suffixIcon,
     TextInputType? keyboardType,
+    String? errorText,
+    ValueChanged<String>? onChanged,
   }) {
-    return Container(
+    final field = Container(
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(14),
+        border: errorText != null
+            ? Border.all(color: AppColors.destructive)
+            : null,
         boxShadow: readOnly ? null : EditOwnerProfileScreen.cardShadow,
       ),
       child: TextField(
         controller: controller,
         readOnly: readOnly,
         keyboardType: keyboardType,
+        onChanged: onChanged,
         style: TextStyle(
           fontFamily: 'DM Sans',
           fontSize: 14.5,
@@ -620,6 +643,38 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           isDense: true,
         ),
       ),
+    );
+    if (errorText == null) return field;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        field,
+        const SizedBox(height: 6),
+        // Icon + text (not colour alone), announced to screen readers.
+        Semantics(
+          liveRegion: true,
+          child: Row(
+            children: [
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 14,
+                color: AppColors.destructive,
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  errorText,
+                  style: const TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 12,
+                    color: AppColors.destructive,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

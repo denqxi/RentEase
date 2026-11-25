@@ -9,6 +9,7 @@ import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../../shared/widgets/match_score_card.dart';
 import '../cubit/listing_detail_cubit.dart';
 import '../model/listing_detail.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// Full-screen detail view for a rental listing (tenant perspective).
 class ListingDetailScreen extends StatelessWidget {
@@ -512,11 +513,10 @@ class _BottomBar extends StatelessWidget {
             child: SizedBox(
               height: AppSizes.buttonHeight,
               child: ElevatedButton(
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Inquiry sent to $landlordName!'),
-                    backgroundColor: context.appColors.ink,
-                  ),
+                onPressed: () => AppSnackBar.show(
+                  ScaffoldMessenger.of(context),
+                  'Inquiry sent to $landlordName!',
+                  kind: AppSnackKind.success,
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.appColors.ink,

@@ -26,6 +26,7 @@ import '../../profile/view/edit_rental_preferences_screen.dart';
 import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
 import 'map_view_screen.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 // Compiled once instead of on every call.
 final RegExp _kThousandsRe = RegExp(r'(\d)(?=(\d{3})+(?!\d))');
@@ -450,12 +451,9 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     final title = _property['propertyName'] ?? _property['title'] ?? 'RentEase Property';
     final address = _property['address'] ?? '';
     final rent = _property['monthlyRent'] ?? _property['price'] ?? '';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Sharing "$title" (₱$rent/mo, $address)'),
-        backgroundColor: AppColors.slate900,
-        duration: const Duration(seconds: 2),
-      ),
+    AppSnackBar.show(
+      ScaffoldMessenger.of(context),
+      'Sharing "$title" (₱$rent/mo, $address)',
     );
   }
 

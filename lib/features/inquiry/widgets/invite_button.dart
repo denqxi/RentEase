@@ -11,6 +11,7 @@ import '../cubit/invite_cubit.dart';
 import '../data/repositories/inquiry_repository_impl.dart';
 import '../domain/services/inquiry_service.dart';
 import '../model/invite_option.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// "Invite" for one compatible tenant (owner side).
 ///
@@ -128,15 +129,10 @@ class _InviteView extends StatelessWidget {
       listener: (context, state) {
         final sent = state.sentTitle;
         final error = state.errorMessage;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              error ?? '$tenantName has been notified for $sent.',
-            ),
-            backgroundColor: error != null
-                ? AppColors.destructive
-                : context.appColors.ink,
-          ),
+        AppSnackBar.show(
+          ScaffoldMessenger.of(context),
+          error ?? '$tenantName has been notified for $sent.',
+          kind: error != null ? AppSnackKind.error : AppSnackKind.success,
         );
         context.read<InviteCubit>().clearMessages();
       },

@@ -101,6 +101,8 @@ void _fill(
   String? roomName,
   String? parent,
   List<String> amenities = const ['WiFi', 'Electric fan'],
+  int depositAmount = 1500,
+  int monthlyRent = 3500,
 }) {
   cubit.saveListing(
     rentalType: rentalType,
@@ -112,14 +114,14 @@ void _fill(
     latitude: 7.07,
     longitude: 125.6,
     photos: _docs(1),
-    depositAmount: 500,
+    depositAmount: depositAmount,
     advanceMonths: 1,
     allowedGender: 'Mixed / Any',
     smokingAllowed: false,
     petsAllowed: false,
     curfewHours: null,
     maxOccupants: 2,
-    monthlyRent: 3500,
+    monthlyRent: monthlyRent,
     isAvailable: true,
     amenities: amenities,
   );
@@ -231,6 +233,22 @@ void main() {
   });
 
   group('create listing', () {
+    test('rent or deposit below 1,000 is never published', () async {
+      for (final (rent, deposit) in [(999, 0), (3500, 500)]) {
+        final repo = _FakeRepo();
+        final cubit = OwnerOnboardingCubit(repository: repo);
+        _fill(
+          cubit,
+          rentalType: 'entire_place',
+          monthlyRent: rent,
+          depositAmount: deposit,
+        );
+        await cubit.submitProperty(uid: 'u1');
+        expect(cubit.state.status, OwnerOnboardingStatus.failure);
+        expect(repo.created, isNull);
+      }
+    });
+
     test('entire place: no room/parent fields, amenityScore == list length',
         () async {
       final repo = _FakeRepo();

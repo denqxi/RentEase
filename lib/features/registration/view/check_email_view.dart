@@ -10,6 +10,7 @@ import '../../../core/utils/url_opener.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../cubit/registration_cubit.dart';
+import '../../../shared/widgets/app_snack_bar.dart';
 
 /// Shown immediately after account creation — prompts the user to verify
 /// the email address they entered before continuing the flow.
@@ -65,10 +66,10 @@ class _CheckEmailViewState extends State<CheckEmailView> {
   Future<void> _handleOpenEmailApp() async {
     final opened = await openEmailApp();
     if (!opened && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not open email app. Please check your inbox.'),
-        ),
+      AppSnackBar.show(
+        ScaffoldMessenger.of(context),
+        'Could not open email app. Please check your inbox.',
+        kind: AppSnackKind.error,
       );
     }
   }
