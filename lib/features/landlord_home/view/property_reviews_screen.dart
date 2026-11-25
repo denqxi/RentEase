@@ -510,11 +510,11 @@ class _PropertyReviewsScreenState extends State<PropertyReviewsScreen> {
                 alignment: Alignment.center,
                 child: Text(
                   review.initials,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
+                    color: context.appColors.link,
                   ),
                 ),
               ),

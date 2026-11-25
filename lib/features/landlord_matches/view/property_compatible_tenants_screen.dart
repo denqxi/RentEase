@@ -6,24 +6,21 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/firestore/models/models.dart';
-import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../activity/data/repositories/notification_repository_impl.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../../inquiry/data/repositories/inquiry_repository_impl.dart';
 import '../../inquiry/domain/services/inquiry_service.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
+import '../../landlord_home/view/property_manager_screen.dart';
 import '../../landlord_home/view/tenant_detail_screen.dart';
+import 'property_header.dart';
 import '../../owner/model/compatible_tenant.dart';
 import '../../../shared/widgets/app_snack_bar.dart';
 
-// Compiled once instead of on every call.
-final RegExp _kThousandsRe = RegExp(r'(\d)(?=(\d{3})+(?!\d))');
-
 /// Dedicated screen opened when tapping a property or room card in the Matches
 /// tab. Displays:
-/// 1. Read-only property/room photo carousel on top (with full-screen zoom)
-/// 2. Read-only property detail card with ONLY the Rental Status selector
-/// 3. Compatible Tenants list with Notify / Notify All actions and minimal,
+/// 1. A slim property header with the rental status (tap for the property)
+/// 2. Compatible Tenants list with Notify / Notify All actions and minimal,
 ///    modern pagination (with 2, 3, 5, 10 page-size selector).
 class PropertyCompatibleTenantsScreen extends StatefulWidget {
   const PropertyCompatibleTenantsScreen({
@@ -110,7 +107,7 @@ class _PropertyCompatibleTenantsScreenState
         surfaceTintColor: AppColors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Notify ${tenant.name}?',
+          'Invite ${tenant.name}?',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 17,
@@ -119,7 +116,7 @@ class _PropertyCompatibleTenantsScreenState
           ),
         ),
         content: Text(
-          'Notify ${tenant.name} that "$listingLabel" is available?',
+          'Invite ${tenant.name} to view "$listingLabel"?',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 13.5,
@@ -146,7 +143,7 @@ class _PropertyCompatibleTenantsScreenState
               const SizedBox(width: 8),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.accent,
                   foregroundColor: AppColors.surface,
                   elevation: 0,
                   minimumSize: const Size(100, 42),
@@ -160,7 +157,7 @@ class _PropertyCompatibleTenantsScreenState
                 ),
                 onPressed: () => Navigator.of(dialogCtx).pop(true),
                 child: const Text(
-                  'Notify',
+                  'Invite',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontWeight: FontWeight.w700,
@@ -195,7 +192,7 @@ class _PropertyCompatibleTenantsScreenState
         widget.onNotifiedMatchIdsChanged?.call(_notifiedMatchIds);
         AppSnackBar.show(
           messenger,
-          '${tenant.name} has been notified.',
+          '${tenant.name} has been invited.',
           kind: AppSnackKind.success,
         );
       }
@@ -234,7 +231,7 @@ class _PropertyCompatibleTenantsScreenState
     if (unnotified.isEmpty) {
       AppSnackBar.show(
         messenger,
-        'All compatible tenants for this unit are already notified.',
+        'All compatible tenants for this unit are already invited.',
       );
       return;
     }
@@ -246,7 +243,7 @@ class _PropertyCompatibleTenantsScreenState
         surfaceTintColor: AppColors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Notify all compatible tenants?',
+          'Invite all compatible tenants?',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 17,
@@ -255,7 +252,7 @@ class _PropertyCompatibleTenantsScreenState
           ),
         ),
         content: Text(
-          'Notify all ${unnotified.length} compatible tenant${unnotified.length == 1 ? '' : 's'} that "$listingLabel" is available?',
+          'Invite ${unnotified.length} compatible tenant${unnotified.length == 1 ? '' : 's'} to view "$listingLabel"?',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 13.5,
@@ -282,7 +279,7 @@ class _PropertyCompatibleTenantsScreenState
               const SizedBox(width: 8),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.accent,
                   foregroundColor: AppColors.surface,
                   elevation: 0,
                   minimumSize: const Size(100, 42),
@@ -296,7 +293,7 @@ class _PropertyCompatibleTenantsScreenState
                 ),
                 onPressed: () => Navigator.of(dialogCtx).pop(true),
                 child: const Text(
-                  'Notify',
+                  'Invite',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontWeight: FontWeight.w700,
@@ -346,10 +343,10 @@ class _PropertyCompatibleTenantsScreenState
       AppSnackBar.show(
         messenger,
         failedCount > 0
-        ? '$sentCount notified, $failedCount failed. Please try again for the rest.'
+        ? '$sentCount invited, $failedCount failed. Please try again for the rest.'
         : sentCount > 0
-        ? '$sentCount compatible tenant${sentCount == 1 ? '' : 's'} have been notified.'
-        : 'All eligible compatible tenants have already been notified.',
+        ? '$sentCount compatible tenant${sentCount == 1 ? ' has' : 's have'} been invited.'
+        : 'All eligible compatible tenants have already been invited.',
         kind: failedCount > 0
             ? AppSnackKind.error
             : sentCount > 0
@@ -413,12 +410,6 @@ class _PropertyCompatibleTenantsScreenState
             ? '$buildingName ($displayName)'
             : displayName;
 
-        final displayType =
-            (currentProperty.propertyType?.trim().isNotEmpty ?? false)
-                ? currentProperty.propertyType!.trim()
-                : (currentProperty.isRoom ? 'Boarding House' : 'Apartment');
-
-        final seed = currentProperty.propertyId.hashCode % 5 + 1;
         final unitTenants = _matchesForUnit(state, currentProperty.propertyId);
 
         // Compute pagination bounds safely
@@ -537,19 +528,26 @@ class _PropertyCompatibleTenantsScreenState
                     const SizedBox(height: 12),
                   ],
 
-                  // 1. Read-Only Top Photo Carousel
-                  _ReadOnlyPropertyPhotoCarousel(
-                    property: currentProperty,
-                    seed: seed,
-                  ),
-                  const SizedBox(height: 14),
-
-                  // 2. Read-Only Property Detail Card (No Edit button, ONLY Status Change)
-                  _ReadOnlyPropertyDetailCard(
+                  // 1. Slim property header
+                  PropertyHeader(
                     property: currentProperty,
                     displayName: displayName,
-                    displayType: displayType,
-                    cubit: cubit,
+                    onSetStatus: (status) => cubit.setVacancy(
+                      currentProperty.propertyId,
+                      status,
+                    ),
+                    onOpen: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => BlocProvider.value(
+                          value: cubit,
+                          child: PropertyManagerScreen(
+                            initialProperty: currentProperty,
+                            initialRooms: [currentProperty],
+                            isSingleRoomView: true,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 14),
 
@@ -661,830 +659,12 @@ class _RoomSelectorPill extends StatelessWidget {
                   fontFamily: 'DM Sans',
                   fontSize: 10.5,
                   fontWeight: FontWeight.w700,
-                  color: isSelected ? context.appColors.surface : AppColors.primary,
+                  color: isSelected ? context.appColors.surface : context.appColors.link,
                 ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 1. READ-ONLY PHOTO CAROUSEL (HERO IMAGE + THUMBNAILS + FULLSCREEN VIEW)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _ReadOnlyPropertyPhotoCarousel extends StatefulWidget {
-  const _ReadOnlyPropertyPhotoCarousel({
-    required this.property,
-    required this.seed,
-  });
-
-  final PropertyDoc property;
-  final int seed;
-
-  @override
-  State<_ReadOnlyPropertyPhotoCarousel> createState() =>
-      _ReadOnlyPropertyPhotoCarouselState();
-}
-
-class _ReadOnlyPropertyPhotoCarouselState
-    extends State<_ReadOnlyPropertyPhotoCarousel> {
-  int _selectedPhotoIndex = 0;
-
-  @override
-  void didUpdateWidget(covariant _ReadOnlyPropertyPhotoCarousel oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.property.propertyId != widget.property.propertyId) {
-      _selectedPhotoIndex = 0;
-    }
-  }
-
-  void _openFullScreenViewer(List<String> photos, int initialIndex) {
-    if (photos.isEmpty) return;
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        fullscreenDialog: true,
-        builder: (_) => _ReadOnlyFullScreenGallery(
-          photos: photos,
-          initialIndex: initialIndex,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final photos = widget.property.photos.isNotEmpty
-        ? widget.property.photos
-        : (widget.property.effectiveBuildingCoverPhoto != null
-            ? <String>[widget.property.effectiveBuildingCoverPhoto!]
-            : const <String>[]);
-
-    final safeIndex = photos.isEmpty
-        ? 0
-        : _selectedPhotoIndex.clamp(0, photos.length - 1);
-    final activePhotoUrl = photos.isNotEmpty ? photos[safeIndex] : null;
-
-    final status = widget.property.vacancyStatus.isNotEmpty
-        ? widget.property.vacancyStatus
-        : (widget.property.isAvailable ? 'available' : 'booked');
-
-    final statusLabel = switch (status) {
-      'available' => 'Available',
-      'pending' => 'Pending',
-      _ => 'Occupied',
-    };
-
-    final statusDotColor = switch (status) {
-      'available' => AppColors.matchHigh,
-      'pending' => AppColors.matchMedium,
-      _ => context.appColors.hint,
-    };
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onTap: photos.isNotEmpty
-              ? () => _openFullScreenViewer(photos, safeIndex)
-              : null,
-          child: Container(
-            height: 210,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              color: context.appColors.fieldFill,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.slate900.withValues(alpha: 0.06),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  clipBehavior: Clip.antiAlias,
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 220),
-                    child: SizedBox.expand(
-                      key: ValueKey<String>(activePhotoUrl ?? 'placeholder'),
-                      child: ListingImagePlaceholder(
-                        seed: widget.seed,
-                        photoUrl: activePhotoUrl,
-                      ),
-                    ),
-                  ),
-                ),
-                // Top-Right Status Pill Badge
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.scrim.withValues(alpha: 0.65),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: statusDotColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          statusLabel,
-                          style: const TextStyle(
-                            fontFamily: 'DM Sans',
-                            color: AppColors.surface,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Bottom-Right Photo Counter Badge
-                if (photos.isNotEmpty)
-                  Positioned(
-                    bottom: 10,
-                    right: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.scrim.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.photo_library_outlined,
-                            color: AppColors.surface,
-                            size: 12,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${safeIndex + 1} / ${photos.length}',
-                            style: const TextStyle(
-                              fontFamily: 'DM Sans',
-                              color: AppColors.surface,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        if (photos.length > 1) ...[
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 56,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: photos.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final isSelected = index == safeIndex;
-                final thumbUrl = photos[index];
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedPhotoIndex = index),
-                  child: SizedBox(
-                    width: 56,
-                    height: 56,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          clipBehavior: Clip.antiAlias,
-                          child: Image.network(
-                            thumbUrl,
-                            cacheWidth: 168,
-                            fit: BoxFit.cover,
-                            filterQuality: FilterQuality.medium,
-                            errorBuilder: (_, _, _) => Container(
-                              color: context.appColors.fieldFill,
-                              child: Icon(
-                                Icons.broken_image,
-                                size: 18,
-                                color: context.appColors.hint,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : context.appColors.fieldBorder,
-                                  width: isSelected ? 2 : 1,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _ReadOnlyFullScreenGallery extends StatefulWidget {
-  const _ReadOnlyFullScreenGallery({
-    required this.photos,
-    required this.initialIndex,
-  });
-
-  final List<String> photos;
-  final int initialIndex;
-
-  @override
-  State<_ReadOnlyFullScreenGallery> createState() =>
-      _ReadOnlyFullScreenGalleryState();
-}
-
-class _ReadOnlyFullScreenGalleryState
-    extends State<_ReadOnlyFullScreenGallery> {
-  late int _currentIndex;
-  late PageController _pageController;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentIndex = widget.initialIndex.clamp(0, widget.photos.length - 1);
-    _pageController = PageController(initialPage: _currentIndex);
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.scrim.withValues(alpha: 0.94),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            PageView.builder(
-              controller: _pageController,
-              itemCount: widget.photos.length,
-              onPageChanged: (idx) => setState(() => _currentIndex = idx),
-              itemBuilder: (context, index) {
-                return InteractiveViewer(
-                  minScale: 1.0,
-                  maxScale: 4.0,
-                  child: Center(
-                    child: Image.network(
-                      widget.photos[index],
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) => Icon(
-                        Icons.broken_image_outlined,
-                        color: AppColors.surface.withValues(alpha: 0.54),
-                        size: 48,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-            Positioned(
-              top: 12,
-              left: 16,
-              right: 16,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: context.appColors.surface.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${_currentIndex + 1} / ${widget.photos.length}',
-                      style: const TextStyle(
-                        fontFamily: 'DM Sans',
-                        color: AppColors.surface,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () => Navigator.of(context).pop(),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: context.appColors.surface.withValues(alpha: 0.18),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.close_rounded,
-                        color: AppColors.surface,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 2. READ-ONLY PROPERTY DETAIL CARD (NO EDIT BUTTON, ONLY STATUS CHANGE)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _ReadOnlyPropertyDetailCard extends StatelessWidget {
-  const _ReadOnlyPropertyDetailCard({
-    required this.property,
-    required this.displayName,
-    required this.displayType,
-    required this.cubit,
-  });
-
-  final PropertyDoc property;
-  final String displayName;
-  final String displayType;
-  final LandlordHomeCubit cubit;
-
-  static String _fmt(num value) => value
-      .round()
-      .toString()
-      .replaceAllMapped(_kThousandsRe, (m) => '${m[1]},');
-
-  Future<void> _selectStatus(BuildContext context, String targetStatus) async {
-    final currentStatus = property.vacancyStatus.isNotEmpty
-        ? property.vacancyStatus
-        : (property.isAvailable ? 'available' : 'booked');
-    if (targetStatus == currentStatus) return;
-    final targetLabel =
-        targetStatus == 'available' ? 'Available' : 'Occupied';
-
-    final explanation = targetStatus == 'available'
-        ? 'Marking this listing as Available will display it in tenant search results and allow compatible tenants to send inquiries.'
-        : 'Marking this listing as Occupied will hide it from public search results and prevent new tenant inquiries.';
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Change Status to $targetLabel?',
-          style: const TextStyle(
-            fontFamily: 'DM Sans',
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        content: Text(
-          explanation,
-          style: TextStyle(
-            fontFamily: 'DM Sans',
-            fontSize: 13,
-            color: context.appColors.textSecondary,
-            height: 1.4,
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogCtx).pop(false),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontWeight: FontWeight.w600,
-                    color: context.appColors.textSecondary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.surface,
-                  elevation: 0,
-                  minimumSize: const Size(110, 42),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: () => Navigator.of(dialogCtx).pop(true),
-                child: const Text(
-                  'Confirm',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && context.mounted) {
-      try {
-        await cubit.setVacancy(property.propertyId, targetStatus);
-        if (!context.mounted) return;
-        AppSnackBar.show(
-          ScaffoldMessenger.of(context),
-          'Rental status updated to $targetLabel.',
-          kind: AppSnackKind.success,
-        );
-      } catch (e) {
-        if (!context.mounted) return;
-        AppSnackBar.show(
-          ScaffoldMessenger.of(context),
-          "Couldn't update the status. Check your connection and try again.",
-          kind: AppSnackKind.error,
-        );
-      }
-    }
-  }
-
-  Widget _buildPropertyTypeSvg({double size = 18}) {
-    return SvgPicture.string(
-      '''<svg xmlns="http://www.w3.org/2000/svg" width="$size" height="$size" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M3 21l18 0" />
-  <path d="M5 21v-14l8 -4v18" />
-  <path d="M19 21v-10l-6 -4" />
-  <path d="M9 9l0 .01" />
-  <path d="M9 12l0 .01" />
-  <path d="M9 15l0 .01" />
-  <path d="M9 18l0 .01" />
-</svg>''',
-      width: size,
-      height: size,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final status = property.vacancyStatus.isNotEmpty
-        ? property.vacancyStatus
-        : (property.isAvailable ? 'available' : 'booked');
-    final buildingName = (property.propertyName?.trim().isNotEmpty ?? false)
-        ? property.propertyName!.trim()
-        : (property.title.contains(' – ')
-            ? property.title.split(' – ').first.trim()
-            : '');
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: context.appColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.slate900.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: AppColors.slate900.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Primary Heading: Room / Property Title (No Edit button)
-          Text(
-            displayName,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: context.appColors.textPrimary,
-              letterSpacing: -0.4,
-              height: 1.2,
-            ),
-          ),
-
-          // Secondary Subheading: Parent Property Name (for room listings)
-          if (property.isRoom &&
-              buildingName.isNotEmpty &&
-              buildingName != displayName) ...[
-            const SizedBox(height: 4),
-            Text(
-              buildingName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: context.appColors.textPrimary,
-                letterSpacing: -0.1,
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 8),
-
-          // Tertiary Text: Full Wrapping Address Row with Theme Blue Pin
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 1.5),
-                child: Icon(
-                  Icons.location_on_outlined,
-                  size: 14.5,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(
-                  property.address,
-                  softWrap: true,
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: context.appColors.textSecondary,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-          Divider(height: 1, thickness: 0.8, color: context.appColors.fieldFill),
-          const SizedBox(height: 14),
-
-          // Property Details Row (Building Type on left, Price on right)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    _buildPropertyTypeSvg(size: 18),
-                    const SizedBox(width: 7),
-                    Flexible(
-                      child: Text(
-                        displayType,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w400,
-                          color: context.appColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    '₱${_fmt(property.monthlyRent)}',
-                    style: const TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '/ month',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: context.appColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-          Divider(height: 1, thickness: 0.8, color: context.appColors.fieldFill),
-          const SizedBox(height: 16),
-
-          // Rental Status Row with Dropdown (Only editable control)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Rental Status',
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: context.appColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Manage availability',
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w400,
-                        color: context.appColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              _buildStatusDropdown(context, status),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusDropdown(BuildContext context, String currentStatus) {
-    final isAvailable = currentStatus == 'available';
-    final label = isAvailable ? 'Available' : 'Occupied';
-    final color = isAvailable ? AppColors.green600 : context.appColors.textSecondary;
-
-    return PopupMenuButton<String>(
-      tooltip: 'Change Rental Status',
-      onSelected: (targetStatus) => _selectStatus(context, targetStatus),
-      offset: const Offset(0, 32),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: context.appColors.fieldBorder, width: 1),
-      ),
-      color: context.appColors.surface,
-      elevation: 4,
-      itemBuilder: (context) => [
-        _buildPopupMenuItem(
-          context,
-          value: 'available',
-          label: 'Available',
-          dotColor: AppColors.green600,
-          isSelected: isAvailable,
-        ),
-        _buildPopupMenuItem(
-          context,
-          value: 'booked',
-          label: 'Occupied',
-          dotColor: context.appColors.textSecondary,
-          isSelected: !isAvailable,
-        ),
-      ],
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: context.appColors.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: context.appColors.hint,
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: context.appColors.textPrimary,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 15,
-              color: context.appColors.textSecondary,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  PopupMenuItem<String> _buildPopupMenuItem(
-    BuildContext context, {
-    required String value,
-    required String label,
-    required Color dotColor,
-    required bool isSelected,
-  }) {
-    return PopupMenuItem<String>(
-      value: value,
-      height: 36,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: dotColor,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? AppColors.primary : context.appColors.textPrimary,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1547,54 +727,30 @@ class _CompatibleTenantsSectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Section Header + Notify All Button ──────────────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(
-                child: Column(
+              Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            'Compatible Tenants',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: 'DM Sans',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: context.appColors.textPrimary,
-                              letterSpacing: -0.2,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${allTenants.length}',
-                            style: const TextStyle(
-                              fontFamily: 'DM Sans',
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      allTenants.length == 1
+                          ? '1 tenant'
+                          : '${allTenants.length} tenants',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: context.appColors.textPrimary,
+                        letterSpacing: -0.2,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Tap a tenant to view full compatibility details',
+                      'Tap a tenant for details',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 12,
@@ -1604,9 +760,7 @@ class _CompatibleTenantsSectionCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
               if (allTenants.isNotEmpty) ...[
-                const SizedBox(width: 8),
                 Material(
                   color: AppColors.transparent,
                   child: InkWell(
@@ -1645,7 +799,7 @@ class _CompatibleTenantsSectionCard extends StatelessWidget {
                             _buildSendIcon(color: context.appColors.surface, size: 12.5),
                           const SizedBox(width: 5),
                           Text(
-                            allNotified ? 'All Notified' : 'Notify All',
+                            allNotified ? 'All invited' : 'Invite all',
                             style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 12,
@@ -1934,25 +1088,8 @@ class CompatibleTenantRow extends StatelessWidget {
     return '₱${budget.round()}/mo budget';
   }
 
-  /// Fit % from the cached Ci score only; null when none is cached yet
-  /// (never fabricate a score).
-  int? _computeFitPercent(CompatibleTenant t) {
-    if (t.tenantCi != null && t.tenantCi! > 0) {
-      return ((t.tenantCi! * 100).round()).clamp(0, 100);
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final pct = _computeFitPercent(tenant);
-    final bool isHighFit = pct != null && pct >= 85;
-    final fitBg = isHighFit
-        ? AppColors.green100
-        : AppColors.primary.withValues(alpha: 0.12);
-    final fitText =
-        isHighFit ? AppColors.green700 : AppColors.primary;
-
     final notifyButton = Material(
       color: AppColors.transparent,
       child: InkWell(
@@ -1985,12 +1122,12 @@ class CompatibleTenantRow extends StatelessWidget {
                 _buildSendIcon(color: AppColors.primary, size: 12),
               const SizedBox(width: 4),
               Text(
-                isNotified ? 'Notified' : 'Notify',
+                isNotified ? 'Invited' : 'Invite',
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: isNotified ? AppColors.green700 : AppColors.primary,
+                  color: isNotified ? AppColors.green700 : context.appColors.link,
                 ),
               ),
             ],
@@ -2019,6 +1156,7 @@ class CompatibleTenantRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Initials circle avatar
+                if (MediaQuery.textScalerOf(context).scale(1) <= 1.5) ...[
                 Container(
                   width: 40,
                   height: 40,
@@ -2029,15 +1167,16 @@ class CompatibleTenantRow extends StatelessWidget {
                   alignment: Alignment.center,
                   child: Text(
                     tenant.initials,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 13.5,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
+                      color: context.appColors.link,
                     ),
                   ),
                 ),
                 const SizedBox(width: 10),
+                ],
 
                 // The name gets the full remaining width; badges and the
                 // Notify button wrap onto their own line below it so a
@@ -2052,8 +1191,6 @@ class CompatibleTenantRow extends StatelessWidget {
                           Expanded(
                             child: Text(
                               tenant.name,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 14,
@@ -2071,69 +1208,48 @@ class CompatibleTenantRow extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      Text(
+                      for (final line in [
+                        tenant.genderAndGroup,
+                        tenant.occupationLabel,
+                        tenant.moveInLabel,
                         _formatBudget(tenant.maxBudget.toDouble()),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: context.appColors.textSecondary,
+                      ])
+                        Text(
+                          line,
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 12.5,
+                            color: context.appColors.textSecondary,
+                            height: 1.4,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        crossAxisAlignment: WrapCrossAlignment.center,
+                      const SizedBox(height: 2),
+                      Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                          // A star only once there is a rating to show.
+                          if (tenant.ratingCount > 0) ...[
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 15,
+                              color: AppColors.matchMedium,
                             ),
-                            decoration: BoxDecoration(
-                              color: fitBg,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            const SizedBox(width: 3),
+                          ],
+                          Flexible(
                             child: Text(
-                              pct == null ? 'Compatible' : '$pct% fit',
+                              tenant.ratingLabel,
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
-                                fontSize: 11.5,
+                                fontSize: 12.5,
                                 fontWeight: FontWeight.w700,
-                                color: fitText,
+                                color: context.appColors.textPrimary,
                               ),
                             ),
                           ),
-                          if (pct != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.indigo50,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppColors.indigo200,
-                                  width: 0.8,
-                                ),
-                              ),
-                              child: Text(
-                                'ci=${(tenant.tenantCi?.toDouble() ?? (pct / 100.0)).toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontFamily: 'DM Sans',
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.indigo600,
-                                ),
-                              ),
-                            ),
-                          notifyButton,
                         ],
                       ),
+                      const SizedBox(height: 8),
+                      notifyButton,
                     ],
                   ),
                 ),

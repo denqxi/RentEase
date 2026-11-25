@@ -37,7 +37,7 @@ void openPropertyDetail(
   );
 }
 
-/// "Compatible properties" vertical list section on the home screen — sorted
+/// "Your matches" vertical list section on the home screen — sorted
 /// by TOPSIS Ci score, styled with the modern owner card aesthetic.
 class NearbySection extends StatelessWidget {
   const NearbySection({super.key});
@@ -69,7 +69,7 @@ class NearbySection extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                isGuest ? 'Newest listings' : 'Compatible properties',
+                isGuest ? 'Newest listings' : 'Your matches',
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 16,

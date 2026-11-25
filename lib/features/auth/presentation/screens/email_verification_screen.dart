@@ -74,10 +74,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
+            child: Text(
               'Yes',
               style: TextStyle(
-                color: AppColors.primary,
+                color: context.appColors.link,
                 fontWeight: FontWeight.bold,
               ),
             ),

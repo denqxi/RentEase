@@ -1,9 +1,8 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/mock_data.dart';
 import '../../../core/firestore/models/models.dart';
+import '../../matching/domain/entities/match_reason.dart';
 
 /// A rental property listing displayed across home, matches, and saved screens.
 class Listing extends Equatable {
@@ -28,6 +27,9 @@ class Listing extends Equatable {
     this.rating,
     this.reviewCount,
     this.tenantCi,
+    this.isMatch = false,
+    this.distanceKm,
+    this.maxBudget,
   });
 
   final String id;
@@ -71,11 +73,24 @@ class Listing extends Equatable {
 
   final double? tenantCi;
 
-  double get effectiveCi => tenantCi ?? (matchPercent > 0 ? matchPercent / 100.0 : 0.0);
+  /// True when this card is one of the tenant's matches (B_score = 1).
+  final bool isMatch;
 
-  /// Indicator dot color driven by [matchPercent].
-  Color get matchDotColor =>
-      matchPercent >= 80 ? AppColors.matchHigh : AppColors.matchMedium;
+  /// Distance from the tenant's pinned place, cached on the match doc.
+  final num? distanceKm;
+
+  /// The tenant's saved max budget, for the budget-margin reason.
+  final num? maxBudget;
+
+  /// Why this match suits the tenant; empty for non-matches and guests.
+  List<MatchReason> get matchReasons => isMatch
+      ? MatchReason.forListing(
+          distanceKm: distanceKm,
+          rent: pricePerMonth,
+          maxBudget: maxBudget,
+          amenityCount: amenityScore,
+        )
+      : const [];
 
   /// Returns a copy with [isSaved] / [matchPercent] overridden.
   Listing copyWith({
@@ -84,6 +99,9 @@ class Listing extends Equatable {
     String? propertyName,
     String? roomName,
     double? tenantCi,
+    bool? isMatch,
+    num? distanceKm,
+    num? maxBudget,
   }) {
     return Listing(
       id: id,
@@ -106,17 +124,20 @@ class Listing extends Equatable {
       rating: rating,
       reviewCount: reviewCount,
       tenantCi: tenantCi ?? this.tenantCi,
+      isMatch: isMatch ?? this.isMatch,
+      distanceKm: distanceKm ?? this.distanceKm,
+      maxBudget: maxBudget ?? this.maxBudget,
     );
   }
 
   /// Built from a real `matches`/`properties` pair — [ci] is the tenant-side
-  /// TOPSIS closeness coefficient (0.00–1.00), shown as a rounded percent
-  /// per CLAUDE.md's "match display should be consistent" note (percent on
-  /// carousels, raw Ci on the search/comparison screens).
+  /// TOPSIS closeness coefficient (0.00–1.00). Cards never print it; only the
+  /// detail screen's "Why this rank?" section does.
   factory Listing.fromMatch({
     required MatchDoc match,
     required PropertyDoc property,
     required int imageSeed,
+    num? maxBudget,
   }) {
     return Listing(
       id: property.propertyId,
@@ -130,6 +151,11 @@ class Listing extends Equatable {
       baths: 1,
       matchPercent: (((match.tenantCi ?? 0) * 100).round()),
       tenantCi: match.tenantCi?.toDouble(),
+      isMatch: match.bScore == 1,
+      distanceKm: match.distanceKm,
+      maxBudget: maxBudget,
+      amenityScore: (property.amenityScore ?? property.amenityList.length)
+          .toInt(),
       imageSeed: imageSeed,
       photoUrl: property.photos.isNotEmpty ? property.photos.first : null,
       propertyType: property.propertyType,
@@ -188,6 +214,7 @@ class Listing extends Equatable {
         amenityScore: (p['amenityScore'] as num?)?.toInt() ?? 0,
         imageSeed: i % 5 + 1,
         isSaved: p['propertyId'] == 'bh002',
+        isMatch: true,
       ),
   ];
 
@@ -213,5 +240,8 @@ class Listing extends Equatable {
     rating,
     reviewCount,
     tenantCi,
+    isMatch,
+    distanceKm,
+    maxBudget,
   ];
 }

@@ -117,7 +117,7 @@ class NotificationTile extends StatelessWidget {
                           fontSize: 11,
                           fontWeight: isUnread ? FontWeight.w600 : FontWeight.w400,
                           color: isUnread
-                              ? AppColors.primary
+                              ? context.appColors.link
                               : context.appColors.hint,
                         ),
                       ),

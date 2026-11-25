@@ -219,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: OtherListingsSection(),
                           ),
                           const SliverToBoxAdapter(
-                            child: SizedBox(height: 100),
+                            child: SizedBox(height: 24),
                           ),
                         ],
                       ],
@@ -362,13 +362,13 @@ class _EmptyState extends StatelessWidget {
                             width: 1.1,
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Explore Other Listings',
                           style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
+                            color: context.appColors.link,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

@@ -17,8 +17,11 @@ import '../../activity/view/activity_screen.dart';
 import '../../app_update/cubit/app_update_cubit.dart';
 import '../../shell/cubit/shell_cubit.dart';
 import '../widgets/landlord_home_header.dart';
+import '../widgets/portfolio_stats_row.dart';
+import '../widgets/waiting_inquiries_section.dart';
+import '../../inquiry/cubit/inquiry_list_cubit.dart';
+import '../../inquiry/view/inquiry_thread_screen.dart';
 import '../cubit/landlord_home_cubit.dart';
-import '../../../shared/widgets/app_svg_icon.dart';
 import 'property_manager_screen.dart';
 import '../../../shared/widgets/app_snack_bar.dart';
 
@@ -380,10 +383,16 @@ class _LandlordHomeScreenState extends State<LandlordHomeScreen>
                                           child: SizedBox(height: 8),
                                         ),
                                         SliverToBoxAdapter(
-                                          child: _StatsRow(state: state),
+                                          child: PortfolioStatsRow(
+                                            total: state.properties.length,
+                                            available: state.availableCount,
+                                          ),
                                         ),
                                         const SliverToBoxAdapter(
-                                          child: SizedBox(height: 32),
+                                          child: _WaitingInquiries(),
+                                        ),
+                                        const SliverToBoxAdapter(
+                                          child: SizedBox(height: 24),
                                         ),
                                         SliverToBoxAdapter(
                                           child: _ActivePropertiesHeader(
@@ -479,266 +488,29 @@ class _ErrorState extends StatelessWidget {
   }
 }
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
+// ── Waiting inquiries ─────────────────────────────────────────────────────
 
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.state});
-
-  final LandlordHomeState state;
-
-  static const String _portfolioHomeSvg = '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 403 326" fill="none">
-  <path
-    d="M89 155 C89 141 95 128 107 119 L173 69 C187 58 205 58 220 69 L286 119 C298 128 305 141 305 155 L305 225 C305 250 286 270 261 270 L133 270 C108 270 89 250 89 225 Z"
-    stroke="black"
-    stroke-width="22"
-    stroke-linecap="round"
-    stroke-linejoin="round"/>
-  <path
-    d="M156 270 V222 C156 200 174 182 197 182 C220 182 237 200 237 222 V270"
-    stroke="black"
-    stroke-width="22"
-    stroke-linecap="round"
-    stroke-linejoin="round"/>
-</svg>
-''';
+class _WaitingInquiries extends StatelessWidget {
+  const _WaitingInquiries();
 
   @override
   Widget build(BuildContext context) {
-    final total = state.properties.length;
-    final available = state.availableCount;
-    final notAvailable = total - available;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.appColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: context.appColors.fieldFill, width: 1.2),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: AppColors.slate900.withValues(alpha: 0.05),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-            BoxShadow(
-              color: AppColors.slate900.withValues(alpha: 0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // Header Row: Portfolio Overview + analytics icon
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'Portfolio Overview',
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 16.5,
-                        fontWeight: FontWeight.w800,
-                        color: context.appColors.textPrimary,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Your listings at a glance',
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w400,
-                        color: context.appColors.hint,
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.25),
-                      width: 1,
-                    ),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.bar_chart_rounded,
-                    size: 20,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            // 3 Stat Cards Row
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: _StatCard(
-                    svgString: _portfolioHomeSvg,
-                    iconBgColor: AppColors.primary.withValues(alpha: 0.12),
-                    iconBorderColor: AppColors.primary.withValues(alpha: 0.35),
-                    iconColor: AppColors.primary,
-                    value: '$total',
-                    label: 'Total Listings',
-                    subtitle: 'All posted',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _StatCard(
-                    icon: Icons.check_circle_outline_rounded,
-                    iconBgColor: AppColors.green100,
-                    iconBorderColor: AppColors.green300,
-                    iconColor: AppColors.green600,
-                    value: '$available',
-                    label: 'Available',
-                    subtitle: 'Ready to rent',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _StatCard(
-                    icon: Icons.access_time_rounded,
-                    iconBgColor: AppColors.warningFill,
-                    iconBorderColor: AppColors.amberBorder200,
-                    iconColor: AppColors.amber600,
-                    value: '$notAvailable',
-                    label: 'Unavailable',
-                    subtitle: 'Not for rent',
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    this.icon,
-    this.svgString,
-    required this.iconBgColor,
-    required this.iconBorderColor,
-    required this.iconColor,
-    required this.value,
-    required this.label,
-    required this.subtitle,
-  }) : assert(icon != null || svgString != null);
-
-  final IconData? icon;
-  final String? svgString;
-  final Color iconBgColor;
-  final Color iconBorderColor;
-  final Color iconColor;
-  final String value;
-  final String label;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
-      decoration: BoxDecoration(
-        color: context.appColors.fieldFill.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: context.appColors.fieldBorder.withValues(alpha: 0.65),
-          width: 0.65,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          // Top Row: Rounded Edge Icon with border on Left, Large Value on Right
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: iconBgColor,
-                  border: Border.all(
-                    color: iconBorderColor.withValues(alpha: 0.7),
-                    width: 0.65,
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: svgString != null
-                    ? AppSvgIcon(
-                        svgString: svgString!,
-                        size: 17,
-                        color: iconColor,
-                      )
-                    : Icon(icon, size: 17, color: iconColor),
-              ),
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: context.appColors.textPrimary,
-                      height: 1.0,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+    // Provided by the shell; absent when signed out and in previews.
+    final inbox = context.watch<InquiryListCubit?>()?.state;
+    return WaitingInquiriesSection(
+      items: inbox?.items ?? const [],
+      onSeeAll: () =>
+          context.read<ShellCubit?>()?.selectTab(ShellTab.inquiries),
+      onOpen: (summary) {
+        final id = summary.inquiry.inquiryId;
+        context.read<ActivityCubit?>()?.markInquiryRead(id);
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                InquiryThreadScreen(inquiryId: id, isOwner: true),
           ),
-          const SizedBox(height: 10),
-          // Label
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 12.0,
-              fontWeight: FontWeight.w700,
-              color: context.appColors.textPrimary,
-              height: 1.15,
-            ),
-          ),
-          const SizedBox(height: 2),
-          // Subtitle
-          Text(
-            subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 10.5,
-              fontWeight: FontWeight.w400,
-              color: context.appColors.hint,
-              height: 1.15,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -768,14 +540,16 @@ class _ActivePropertiesHeader extends StatelessWidget {
           // Title row: "Active Properties (count)" + Add Button
           Row(
             children: <Widget>[
-              Text(
-                'Active Properties',
-                style: TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: context.appColors.textPrimary,
-                  letterSpacing: -0.2,
+              Flexible(
+                child: Text(
+                  'Your properties',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: context.appColors.textPrimary,
+                    letterSpacing: -0.2,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -799,36 +573,6 @@ class _ActivePropertiesHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              const Spacer(),
-              GestureDetector(
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRouter.addProperty),
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: context.appColors.surface,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: context.appColors.fieldBorder,
-                      width: 1,
-                    ),
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: AppColors.scrim.withValues(alpha: 0.04),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.add_rounded,
-                    color: context.appColors.textPrimary,
-                    size: 18,
-                  ),
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 3),
@@ -845,7 +589,7 @@ class _ActivePropertiesHeader extends StatelessWidget {
 
           // Search Bar
           Container(
-            height: 44,
+            constraints: const BoxConstraints(minHeight: 44),
             decoration: BoxDecoration(
               color: context.appColors.surface,
               borderRadius: BorderRadius.circular(14),
@@ -1191,11 +935,17 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                         ),
                       ),
 
-                        // Top-left: property type (themed light pill)
+                        // Top: property type and availability pills
                         Positioned(
                           top: 10,
                           left: 10,
-                          child: Container(
+                          right: 10,
+                          child: Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                          Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
                               vertical: 5,
@@ -1222,23 +972,19 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                 const SizedBox(width: 5),
                                 Text(
                                   displayType,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.primary,
+                                    color: context.appColors.link,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
 
-                        // Top-right: availability (dark pill + status dot)
-                        Positioned(
-                          top: 10,
-                          right: 10,
-                          child: Container(
+                          // Availability (dark pill + status dot)
+                          Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
                               vertical: 5,
@@ -1272,6 +1018,8 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                 ),
                               ],
                             ),
+                          ),
+                            ],
                           ),
                         ),
 
@@ -1342,8 +1090,6 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                             children: [
                               Text(
                                 displayName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 17,
@@ -1364,8 +1110,6 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                   Expanded(
                                     child: Text(
                                       property.address,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 11,
@@ -1390,12 +1134,15 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                       color: context.appColors.fieldFill,
                     ),
                     const SizedBox(height: 11),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    SizedBox(
+                      width: double.infinity,
+                      child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
-                        Flexible(
-                          child: Container(
+                        Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
                               vertical: 4.5,
@@ -1418,31 +1165,27 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                                     countToDisplay == 1
                                         ? '1 compatible tenant'
                                         : '$countToDisplay compatible tenants',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
-                                      color: AppColors.primary,
+                                      color: context.appColors.link,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
                         Text.rich(
                           TextSpan(
                             children: [
                               TextSpan(
                                 text: formattedPrice,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 20,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.primary,
+                                  color: context.appColors.link,
                                   letterSpacing: -0.3,
                                 ),
                               ),
@@ -1459,6 +1202,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
                           ),
                         ),
                       ],
+                    ),
                     ),
                   ],
                 ),
@@ -1497,13 +1241,13 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Icon(
-          Icons.star_rounded,
-          size: 16,
-          color: AppColors.matchMedium,
-        ),
-        const SizedBox(width: 3.5),
         if (hasRating) ...[
+          const Icon(
+            Icons.star_rounded,
+            size: 16,
+            color: AppColors.matchMedium,
+          ),
+          const SizedBox(width: 3.5),
           Text(
             effectiveAvg.toStringAsFixed(1),
             style: TextStyle(
@@ -1525,7 +1269,7 @@ class _ModernPropertyCardState extends State<_ModernPropertyCard> {
           ),
         ] else ...[
           Text(
-            '0',
+            'No reviews yet',
             style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 12,

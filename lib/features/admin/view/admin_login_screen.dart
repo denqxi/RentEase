@@ -253,14 +253,14 @@ class _AdminHero extends StatelessWidget {
                         borderRadius: BorderRadius.circular(AppRadii.chip),
                         border: Border.all(color: AppColors.accent, width: 0.5),
                       ),
-                      child: const Text(
+                      child: Text(
                         'ADMIN',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 1,
-                          color: AppColors.primary,
+                          color: context.appColors.link,
                         ),
                       ),
                     ),

@@ -16,8 +16,12 @@ abstract final class AppColors {
   /// Primary body text.
   static const Color textPrimary = Color(0xFF1A1A2E);
 
-  /// Muted secondary text (subtitles, hints).
-  static const Color textSecondary = Color(0xFF7A7A8C);
+  /// Muted secondary text (subtitles, hints). At least 4.5:1 on surface,
+  /// fieldFill and accentSoft.
+  static const Color textSecondary = Color(0xFF666678);
+
+  /// Teal text and links on light backgrounds ([primary] is only 2.3:1).
+  static const Color linkText = Color(0xFF176B79);
 
   /// Inactive page-indicator dots and subtle dividers.
   static const Color indicatorInactive = Color(0xFFD9D9E0);
@@ -38,7 +42,7 @@ abstract final class AppColors {
   static const Color fieldBorder = Color(0xFFE3E5E9);
 
   /// Placeholder / hint text inside fields.
-  static const Color hint = Color(0xFFA0A3AD);
+  static const Color hint = Color(0xFF6B6E79);
 
   /// Green dot for high match scores (≥ 80%).
   static const Color matchHigh = Color(0xFF22C55E);
@@ -181,6 +185,7 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
     required this.ink,
     required this.indicatorInactive,
     required this.accentSoft,
+    required this.link,
   });
 
   final Color surface;
@@ -192,6 +197,7 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
   final Color ink;
   final Color indicatorInactive;
   final Color accentSoft;
+  final Color link;
 
   static const light = AppAdaptiveColors(
     surface:           AppColors.surface,
@@ -203,6 +209,7 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
     ink:               AppColors.ink,
     indicatorInactive: AppColors.indicatorInactive,
     accentSoft:        AppColors.accentSoft,
+    link:              AppColors.linkText,
   );
 
   static const dark = AppAdaptiveColors(
@@ -211,10 +218,11 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
     textSecondary:     Color(0xFFA8A8B8),
     fieldBorder:       AppColors.darkDivider,
     fieldFill:         AppColors.darkField,
-    hint:              AppColors.textSecondary,
+    hint:              Color(0xFF9090A0),
     ink:               Color(0xFFE4E4EF),
     indicatorInactive: AppColors.darkDivider,
     accentSoft:        AppColors.darkAccentSoft,
+    link:              AppColors.primary,
   );
 
   @override
@@ -228,6 +236,7 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
     Color? ink,
     Color? indicatorInactive,
     Color? accentSoft,
+    Color? link,
   }) => AppAdaptiveColors(
     surface:           surface           ?? this.surface,
     textPrimary:       textPrimary       ?? this.textPrimary,
@@ -238,6 +247,7 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
     ink:               ink               ?? this.ink,
     indicatorInactive: indicatorInactive ?? this.indicatorInactive,
     accentSoft:        accentSoft        ?? this.accentSoft,
+    link:              link              ?? this.link,
   );
 
   @override
@@ -253,6 +263,7 @@ class AppAdaptiveColors extends ThemeExtension<AppAdaptiveColors> {
       ink:               Color.lerp(ink,               other.ink,               t)!,
       indicatorInactive: Color.lerp(indicatorInactive, other.indicatorInactive, t)!,
       accentSoft:        Color.lerp(accentSoft,        other.accentSoft,        t)!,
+      link:              Color.lerp(link,              other.link,              t)!,
     );
   }
 }

@@ -145,7 +145,6 @@ class _ShellView extends StatelessWidget {
           kind: AppSnackKind.error,
         ),
         child: Scaffold(
-          extendBody: true,
           body: Stack(
             children: [
               IndexedStack(index: tab.index, children: _screens),

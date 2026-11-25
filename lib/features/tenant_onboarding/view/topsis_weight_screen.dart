@@ -5,6 +5,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/router/app_router.dart';
 import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../cubit/tenant_onboarding_cubit.dart';
+import '../../matching/domain/entities/priority_weights.dart';
+import '../../../shared/widgets/priority_sliders.dart';
 import '../../../shared/widgets/app_snack_bar.dart';
 
 /// Screen 4/4 — TOPSIS Preference Priority Allocation.
@@ -32,7 +34,6 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
   // Theme Color Tokens
   static const Color _primaryTeal = AppColors.primary;
   static const Color _midnightNavy = AppColors.ink;
-  static const Color _surfaceTint = AppColors.accentSoft;
   Color get _borderStroke => context.appColors.fieldBorder;
   Color get _textPrimary => context.appColors.textPrimary;
   Color get _textSecondary => context.appColors.textSecondary;
@@ -53,38 +54,11 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
     _amenities = (widget.initialAmenities * 100).round();
   }
 
-  void _onRentChanged(double rawVal) {
-    final rounded = (rawVal / 5).round() * 5;
-    final newRent = rounded.clamp(0, 100);
+  void _onWeightsChanged(PriorityWeights next) {
     setState(() {
-      _rent = newRent;
-      final remaining = 100 - _rent;
-      if (_distance > remaining) {
-        _distance = remaining;
-        _amenities = 0;
-      } else {
-        _amenities = remaining - _distance;
-      }
-    });
-  }
-
-  void _onDistanceChanged(double rawVal) {
-    final rounded = (rawVal / 5).round() * 5;
-    final maxDistance = 100 - _rent;
-    final newDistance = rounded.clamp(0, maxDistance);
-    setState(() {
-      _distance = newDistance;
-      _amenities = 100 - _rent - _distance;
-    });
-  }
-
-  void _onAmenitiesChanged(double rawVal) {
-    final rounded = (rawVal / 5).round() * 5;
-    final maxAmenities = 100 - _rent;
-    final newAmenities = rounded.clamp(0, maxAmenities);
-    setState(() {
-      _amenities = newAmenities;
-      _distance = 100 - _rent - _amenities;
+      _rent = next.rent;
+      _distance = next.distance;
+      _amenities = next.amenities;
     });
   }
 
@@ -159,7 +133,10 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                 // Top Bar: Back button, Progress bar (4 / 4), Step indicator
                 Row(
                   children: [
-                    GestureDetector(
+                    Semantics(
+                      button: true,
+                      label: 'Back',
+                      child: GestureDetector(
                       onTap: () => Navigator.of(context).pop(),
                       behavior: HitTestBehavior.opaque,
                       child: Container(
@@ -178,6 +155,7 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                           size: 24,
                         ),
                       ),
+                    ),
                     ),
                     const SizedBox(width: 14),
                     if (widget.onSave == null) ...[
@@ -241,100 +219,14 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
                         ),
                         const SizedBox(height: 18),
 
-                        // 2. Criteria Slider Cards
-                        // Card 1: Monthly Rent
-                        _CriteriaSliderCard(
-                          label: 'Lower Monthly Rent',
-                          subtext: 'Show cheaper rates first',
-                          value: _rent,
-                          onChanged: _onRentChanged,
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Card 2: Distance from POI
-                        _CriteriaSliderCard(
-                          label: 'Shorter Daily Commute',
-                          subtext:
-                              'Show rooms closer to your school or work first',
-                          value: _distance,
-                          onChanged: _onDistanceChanged,
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Card 3: Amenities
-                        _CriteriaSliderCard(
-                          label: 'More Amenities & Inclusions',
-                          subtext:
-                              'Show rooms with Wi-Fi, AC, and bath first',
-                          value: _amenities,
-                          onChanged: _onAmenitiesChanged,
-                        ),
-                        const SizedBox(height: 16),
-
-                        // 3. Footnote & Allocation Indicator Box
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
+                        // 2. The rule, then the three priority sliders
+                        PrioritySliders(
+                          weights: PriorityWeights(
+                            rent: _rent,
+                            distance: _distance,
+                            amenities: _amenities,
                           ),
-                          decoration: BoxDecoration(
-                            color: _isBalanced
-                                ? _surfaceTint
-                                : AppColors.amberFill50,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: _isBalanced
-                                  ? _primaryTeal.withValues(alpha: 0.35)
-                                  : AppColors.amberBorder200,
-                              width: 1.2,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    _isBalanced
-                                        ? Icons.check_circle_rounded
-                                        : Icons.info_outline_rounded,
-                                    color: _isBalanced
-                                        ? _primaryTeal
-                                        : AppColors.amber600,
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      _isBalanced
-                                          ? 'Total weight: 100%'
-                                          : 'Total: $_total% / 100% (${100 - _total}% remaining)',
-                                      style: TextStyle(
-                                        fontFamily: 'DM Sans',
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: _isBalanced
-                                            ? _primaryTeal
-                                            : AppColors.amber800,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'You have 100% to divide across all three. Setting one sets the limit for the rest.',
-                                style: TextStyle(
-                                  fontFamily: 'DM Sans',
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w500,
-                                  color: _textSecondary,
-                                  height: 1.35,
-                                ),
-                              ),
-                            ],
-                          ),
+                          onChanged: _onWeightsChanged,
                         ),
                         if (widget.onSave != null) ...[
                           const SizedBox(height: 12),
@@ -409,134 +301,3 @@ class _TopsisWeightScreenState extends State<TopsisWeightScreen> {
   }
 }
 
-/// Outlined rounded-2xl card for each allocation criterion.
-class _CriteriaSliderCard extends StatelessWidget {
-  const _CriteriaSliderCard({
-    required this.label,
-    required this.subtext,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final String label;
-  final String subtext;
-  final int value;
-  final ValueChanged<double> onChanged;
-
-  static const Color _primaryTeal = AppColors.primary;
-  static const Color _midnightNavy = AppColors.ink;
-  static const Color _surfaceTint = AppColors.accentSoft;
-
-  @override
-  Widget build(BuildContext context) {
-    final borderStroke = context.appColors.fieldBorder;
-    final textSecondary = context.appColors.textSecondary;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-      decoration: BoxDecoration(
-        color: AppColors.onInk,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderStroke),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                        color: _midnightNavy,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtext,
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        color: textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _surfaceTint,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '$value%',
-                  style: const TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w700,
-                    color: _primaryTeal,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackShape: const _FullWidthSliderTrackShape(),
-              activeTrackColor: _primaryTeal,
-              inactiveTrackColor: borderStroke,
-              thumbColor: _primaryTeal,
-              overlayColor: _primaryTeal.withValues(alpha: 0.15),
-              trackHeight: 3.5,
-              thumbShape: const RoundSliderThumbShape(
-                enabledThumbRadius: 8,
-              ),
-            ),
-            child: Slider(
-              value: value.toDouble().clamp(0.0, 100.0),
-              min: 0.0,
-              max: 100.0,
-              divisions: 20,
-              onChanged: onChanged,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Slider track shape that spans edge-to-edge across the parent container.
-class _FullWidthSliderTrackShape extends RoundedRectSliderTrackShape {
-  const _FullWidthSliderTrackShape();
-
-  @override
-  Rect getPreferredRect({
-    required RenderBox parentBox,
-    Offset offset = Offset.zero,
-    required SliderThemeData sliderTheme,
-    bool isEnabled = false,
-    bool isDiscrete = false,
-  }) {
-    final double trackHeight = sliderTheme.trackHeight ?? 3.5;
-    final double trackTop =
-        offset.dy + (parentBox.size.height - trackHeight) / 2;
-    return Rect.fromLTWH(
-      offset.dx,
-      trackTop,
-      parentBox.size.width,
-      trackHeight,
-    );
-  }
-}

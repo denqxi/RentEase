@@ -47,7 +47,6 @@ class _AdminShellState extends State<AdminShell> {
       child: AdminProviders(
         repository: widget.repository,
         child: Scaffold(
-          extendBody: true,
           body: IndexedStack(
             index: _index,
             children: <Widget>[

@@ -704,7 +704,7 @@ class _PropertyMatchesCard extends StatelessWidget {
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: matchCount > 0
-                          ? AppColors.primary
+                          ? context.appColors.link
                           : context.appColors.textSecondary,
                     ),
                   ),
@@ -770,7 +770,7 @@ class _UnitSummaryRow extends StatelessWidget {
 
     final matchesText = matchCount == 0
         ? '0 Matches'
-        : '$matchCount Compatible ${matchCount == 1 ? 'Match' : 'Matches'}';
+        : '$matchCount ${matchCount == 1 ? 'Match' : 'Matches'}';
 
     return Material(
       color: context.appColors.fieldFill,
@@ -825,7 +825,8 @@ class _UnitSummaryRow extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Row(
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(
                           '₱${_fmt(unit.monthlyRent)} / month',
@@ -891,7 +892,7 @@ class _UnitSummaryRow extends StatelessWidget {
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w700,
                                   color: matchCount > 0
-                                      ? AppColors.primary
+                                      ? context.appColors.link
                                       : context.appColors.textSecondary,
                                 ),
                               ),
@@ -1035,10 +1036,10 @@ class _EmptyOrErrorCard extends StatelessWidget {
               onPressed: onAction,
               child: Text(
                 actionLabel!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
+                  color: context.appColors.link,
                 ),
               ),
             ),

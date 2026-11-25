@@ -40,7 +40,7 @@ class OwnerInviteView extends StatelessWidget {
             Icons.block_rounded,
             AppColors.destructive,
             'This inquiry is closed',
-            'The listing is fully booked.',
+            'The listing is now occupied.',
           ),
           _ => (
             Icons.access_time_rounded,
@@ -66,7 +66,7 @@ class OwnerInviteView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '$tenantName has been notified',
+                '$tenantName has been invited',
                 style: AppTextStyles.label(
                   context,
                 ).copyWith(color: context.appColors.textPrimary),

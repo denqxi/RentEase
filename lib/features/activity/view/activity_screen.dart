@@ -139,7 +139,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                               fontSize: 12.5,
                               fontWeight: FontWeight.w700,
                               color: unreadCount > 0
-                                  ? AppColors.primary
+                                  ? context.appColors.link
                                   : context.appColors.hint,
                             ),
                           ),

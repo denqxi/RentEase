@@ -240,7 +240,7 @@ class _PropertyInformationCard extends StatelessWidget {
                     size: 18,
                   ),
                   const SizedBox(width: 6),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Property information',
                       maxLines: 1,
@@ -249,7 +249,7 @@ class _PropertyInformationCard extends StatelessWidget {
                         fontFamily: 'DM Sans',
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: context.appColors.link,
                       ),
                     ),
                   ),
@@ -399,7 +399,7 @@ class _InvitationNotificationCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'The owner of $propertyTitle has notified you that their property is available and matches your preferences.',
+                  'The owner of $propertyTitle has invited you to view it. It is available and matches your preferences.',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,
@@ -524,13 +524,13 @@ class _ActionButtons extends StatelessWidget {
                   width: 1.5,
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'Not interested',
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 14.5,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
+                  color: context.appColors.link,
                 ),
               ),
             ),
@@ -577,7 +577,7 @@ class _StatusNoticeCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             closed
-                ? 'This listing is now fully booked'
+                ? 'This listing is now occupied'
                 : declined
                     ? (invite
                         ? 'You declined this property notification'

@@ -1,12 +1,10 @@
+import '../../auth/presentation/confirm_sign_out.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
-import '../../../core/router/app_router.dart';
-import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../cubit/tenant_onboarding_cubit.dart';
 import 'soft_preferences_step_screen.dart';
 
@@ -124,15 +122,7 @@ class _HardConstraintsScreenState extends State<HardConstraintsScreen> {
                     // Nothing to go back to: offer a way out so users can
                     // sign in with a different account.
                     GestureDetector(
-                      onTap: () {
-                        context.read<AuthBloc>().add(
-                          const AuthSignOutRequested(),
-                        );
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          AppRouter.signIn,
-                          (_) => false,
-                        );
-                      },
+                      onTap: () => confirmSignOutToSignIn(context),
                       behavior: HitTestBehavior.opaque,
                       child: Container(
                         width: 42,
@@ -144,16 +134,10 @@ class _HardConstraintsScreenState extends State<HardConstraintsScreen> {
                             color: context.appColors.fieldBorder,
                           ),
                         ),
-                        child: Center(
-                          child: SvgPicture.asset(
-                            'assets/images/arrow_bar_left.svg',
-                            width: 22,
-                            height: 22,
-                            colorFilter: ColorFilter.mode(
-                              context.appColors.textPrimary,
-                              BlendMode.srcIn,
-                            ),
-                          ),
+                        child: Icon(
+                          Icons.chevron_left_rounded,
+                          color: context.appColors.textPrimary,
+                          size: 24,
                         ),
                       ),
                     ),

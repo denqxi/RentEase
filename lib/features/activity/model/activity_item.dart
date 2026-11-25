@@ -53,8 +53,8 @@ class ActivityItem extends Equatable {
     return ActivityItem(
       id: n.notifId,
       type: type,
-      title: _sanitizeNotificationText(n.title),
-      body: _sanitizeNotificationText(n.body),
+      title: _inviteWording(n.title),
+      body: _inviteWording(n.body),
       relatedId: n.relatedId,
       relatedType: n.relatedType,
       rawType: n.type,
@@ -64,84 +64,19 @@ class ActivityItem extends Equatable {
     );
   }
 
-  /// Sanitizes notification copy to use "notify / notified / notification"
-  /// instead of "invite / invited / invitation".
-  static String _sanitizeNotificationText(String text) {
-    if (text.isEmpty) return text;
-    var sanitized = text;
-    sanitized = sanitized.replaceAll(
-      'You were invited to a property',
-      'A landlord notified you about a property',
-    );
-    sanitized = sanitized.replaceAll(
-      'Your invitation was accepted',
-      'Your property notification was accepted',
-    );
-    sanitized = sanitized.replaceAll(
-      'Your invitation was declined',
-      'Your property notification was declined',
-    );
-    sanitized = sanitized.replaceAll(
-      'The tenant declined your invitation.',
-      'The tenant declined your notification.',
-    );
-    sanitized = sanitized.replaceAll(
-      'declined your invitation',
-      'declined your notification',
-    );
-    sanitized = sanitized.replaceAll(
-      'invited you to view',
-      'notified you about',
-    );
-    sanitized = sanitized.replaceAll(
-      'invited you to',
-      'notified you about',
-    );
-    sanitized = sanitized.replaceAll(
-      'invited you',
-      'notified you',
-    );
-    sanitized = sanitized.replaceAll(
-      'new property invitation',
-      'new property notification',
-    );
-    sanitized = sanitized.replaceAll(
-      'an invitation',
-      'a notification',
-    );
-    sanitized = sanitized.replaceAll(
-      'An invitation',
-      'A notification',
-    );
-    sanitized = sanitized.replaceAll(
-      'this invitation',
-      'this notification',
-    );
-    sanitized = sanitized.replaceAll(
-      'invitations',
-      'notifications',
-    );
-    sanitized = sanitized.replaceAll(
-      'Invitations',
-      'Notifications',
-    );
-    sanitized = sanitized.replaceAll(
-      'invitation',
-      'notification',
-    );
-    sanitized = sanitized.replaceAll(
-      'Invitation',
-      'Notification',
-    );
-    sanitized = sanitized.replaceAll(
-      'invited',
-      'notified',
-    );
-    sanitized = sanitized.replaceAll(
-      'Invited',
-      'Notified',
-    );
-    return sanitized;
+  /// Older invitations were stored with "notify" wording; show them as
+  /// invitations, like new ones.
+  static String _inviteWording(String text) {
+    const old = {
+      'A landlord notified you about a property':
+          'A landlord invited you to view a property',
+      'An owner notified you that': 'An owner invited you:',
+      'Your property notification was accepted': 'Your invitation was accepted',
+      'Your property notification was declined': 'Your invitation was declined',
+      'The tenant declined your notification.':
+          'The tenant declined your invitation.',
+    };
+    return old.entries.fold(text, (s, e) => s.replaceAll(e.key, e.value));
   }
 
   /// "Just now", "5 minutes ago", "Yesterday", "3 days ago"...
@@ -184,7 +119,7 @@ class ActivityItem extends Equatable {
       id: '1',
       type: ActivityType.message,
       rawType: 'invitation',
-      title: 'Owner notified you about Cozy Studio',
+      title: 'Owner invited you to view Cozy Studio',
       body: 'You have a new property notification.',
       timeAgo: '2 hours ago',
       isRead: false,

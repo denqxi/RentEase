@@ -95,7 +95,7 @@ class _InviteView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Notify $tenantName about which property?',
+                'Invite $tenantName to which property?',
                 style: AppTextStyles.title(sheetContext).copyWith(fontSize: 16),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -131,7 +131,7 @@ class _InviteView extends StatelessWidget {
         final error = state.errorMessage;
         AppSnackBar.show(
           ScaffoldMessenger.of(context),
-          error ?? '$tenantName has been notified for $sent.',
+          error ?? '$tenantName has been invited to $sent.',
           kind: error != null ? AppSnackKind.error : AppSnackKind.success,
         );
         context.read<InviteCubit>().clearMessages();
@@ -140,7 +140,7 @@ class _InviteView extends StatelessWidget {
         // Absent, never disabled, when there is nothing to invite to.
         if (!state.canInvite) return const SizedBox.shrink();
         return AppButton(
-          label: state.isSending ? 'Notifying...' : 'Notify',
+          label: state.isSending ? 'Inviting...' : 'Invite',
           variant: compact ? AppButtonVariant.outline : AppButtonVariant.primary,
           isSmall: compact,
           isFullWidth: !compact,

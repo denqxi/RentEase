@@ -182,7 +182,7 @@ class LocationPermissionHelper {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: AppColors.accent,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -259,7 +259,7 @@ class LocationPermissionHelper {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: AppColors.accent,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),

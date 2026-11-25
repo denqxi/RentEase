@@ -138,10 +138,10 @@ class _InquiryChatViewState extends State<InquiryChatView> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
+            child: Text(
               'Confirm',
               style: TextStyle(
-                color: AppColors.primary,
+                color: context.appColors.link,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -223,10 +223,10 @@ class _InquiryChatViewState extends State<InquiryChatView> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
+            child: Text(
               'Confirm',
               style: TextStyle(
-                color: AppColors.primary,
+                color: context.appColors.link,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -875,7 +875,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                               inquiry.status == 'active' &&
                               !state.isBusy &&
                               !isCounterpartDeleted)
-                            const PopupMenuItem<String>(
+                            PopupMenuItem<String>(
                               value: 'mark_booked',
                               height: 38,
                               child: Row(
@@ -892,7 +892,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                       fontFamily: 'DM Sans',
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.primary,
+                                      color: context.appColors.link,
                                     ),
                                   ),
                                 ],
@@ -914,11 +914,11 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                                     widget.isOwner
                                         ? 'Mark as moved out'
                                         : "I've moved out",
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.primary,
+                                      color: context.appColors.link,
                                     ),
                                   ),
                                 ],
@@ -1602,11 +1602,11 @@ class _QuickReplyChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 11.5,
             fontWeight: FontWeight.w600,
-            color: AppColors.primary,
+            color: context.appColors.link,
           ),
         ),
       ),
@@ -1627,8 +1627,8 @@ class _ClosedPanel extends StatelessWidget {
         top: false,
         child: Text(
           isOwner
-              ? 'Closed — you marked this listing fully booked.'
-              : 'This listing is now fully booked, so the chat is closed.',
+              ? 'Closed — you marked this listing occupied.'
+              : 'This listing is now occupied, so the chat is closed.',
           style: AppTextStyles.body(
             context,
           ).copyWith(color: context.appColors.textSecondary),

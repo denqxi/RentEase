@@ -84,10 +84,11 @@ class _Thumbnail extends StatelessWidget {
               photoUrl: listing.photoUrl,
             ),
           ),
+          if (isGuest || listing.isMatch)
           Positioned(
             bottom: 6,
             left: 6,
-            child: MatchBadge(percent: listing.matchPercent, isLocked: isGuest),
+            child: MatchBadge(isLocked: isGuest),
           ),
           Positioned(
             top: 6,

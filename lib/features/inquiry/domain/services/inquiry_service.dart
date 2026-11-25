@@ -173,7 +173,7 @@ class InquiryService {
       }
       if (existing.status == 'closed') {
         throw const InquiryException(
-          'This listing is fully booked and no longer taking inquiries.',
+          'This listing is now occupied and no longer taking inquiries.',
         );
       }
       return existing.inquiryId;
@@ -191,7 +191,7 @@ class InquiryService {
     final property = await _repository.fetchProperty(match.propertyId);
     if (property == null || !property.isAvailable) {
       throw const InquiryException(
-        'This listing is fully booked and no longer taking inquiries.',
+        'This listing is now occupied and no longer taking inquiries.',
       );
     }
 
@@ -337,7 +337,7 @@ class InquiryService {
         !property.isAvailable ||
         property.ownerId != ownerId) {
       throw const InquiryException(
-        'This listing is fully booked and no longer taking tenants.',
+        'This listing is now occupied and no longer taking tenants.',
       );
     }
     final threads = await _repository.fetchInquiriesBetween(
@@ -367,8 +367,8 @@ class InquiryService {
     await _notify(
       recipientId: invitation.tenantId,
       type: 'invitation',
-      title: 'A landlord notified you about a property',
-      body: 'An owner notified you that ${property.title} is available and matches your preferences.',
+      title: 'A landlord invited you to view a property',
+      body: 'An owner invited you to view ${property.title}. It is available and matches your preferences.',
       inquiryId: invitation.inquiryId,
     );
     return invitation.inquiryId;
@@ -390,7 +390,7 @@ class InquiryService {
     await _notify(
       recipientId: inquiry.ownerId,
       type: 'invitation_accepted',
-      title: 'Your property notification was accepted',
+      title: 'Your invitation was accepted',
       body: 'Chat is now open with the tenant.',
       inquiryId: inquiry.inquiryId,
     );
@@ -412,8 +412,8 @@ class InquiryService {
     await _notify(
       recipientId: inquiry.ownerId,
       type: 'invitation_declined',
-      title: 'Your property notification was declined',
-      body: 'The tenant declined your notification.',
+      title: 'Your invitation was declined',
+      body: 'The tenant declined your invitation.',
       inquiryId: inquiry.inquiryId,
     );
   }

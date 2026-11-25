@@ -48,6 +48,11 @@ class _OwnerInquiriesScreenState extends State<OwnerInquiriesScreen> {
       );
     }
 
+    // The owner shell shares one inbox with Home; stand alone otherwise.
+    if (context.read<InquiryListCubit?>() != null) {
+      return _OwnerInquiriesView(searchController: _searchController);
+    }
+
     return BlocProvider(
       create: (_) => InquiryListCubit(
         uid: uid,
@@ -559,44 +564,6 @@ class _OwnerInquiryCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (inquiry.tenantCiSnapshot > 0) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                            decoration: BoxDecoration(
-                              color: AppColors.emerald50,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: AppColors.green300, width: 0.8),
-                            ),
-                            child: Text(
-                              '${(inquiry.tenantCiSnapshot * 100).round()}%',
-                              style: const TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.green700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
-                            decoration: BoxDecoration(
-                              color: context.appColors.fieldFill,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: context.appColors.fieldBorder, width: 0.8),
-                            ),
-                            child: Text(
-                              'ci=${inquiry.tenantCiSnapshot.toDouble().toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w700,
-                                color: context.appColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                     const SizedBox(height: 3),

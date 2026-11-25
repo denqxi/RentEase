@@ -1,10 +1,10 @@
+import '../../auth/presentation/confirm_sign_out.dart';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show MissingPluginException;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,7 +18,6 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/url_opener.dart';
 import '../../../features/registration/widgets/registration_app_bar.dart';
 import '../../../shared/widgets/app_button.dart';
-import '../../auth/presentation/bloc/auth_bloc.dart';
 import '../../auth/presentation/current_uid.dart';
 import '../../id_verification/data/repositories/didit_id_verification_repository.dart';
 import '../../id_verification/domain/repositories/id_verification_repository.dart';
@@ -26,6 +25,7 @@ import '../../uploads/data/repositories/cloudinary_image_upload_repository.dart'
 import '../../uploads/domain/entities/uploaded_image.dart';
 import '../../uploads/domain/repositories/image_upload_repository.dart';
 import '../../uploads/presentation/cubit/image_upload_cubit.dart';
+import '../cubit/document_submit_blocker.dart';
 import '../cubit/owner_onboarding_cubit.dart';
 import '../../../shared/widgets/app_snack_bar.dart';
 
@@ -68,10 +68,6 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
   bool _diditUnavailable = false;
   bool get _useDidit => DiditConfig.isConfigured && !_diditUnavailable;
 
-  /// Submit is allowed once Didit has a result or is reviewing it; the admin
-  /// still checks the actual result with Didit before approving.
-  bool get _idCheckDone =>
-      _diditStatus == 'Approved' || _diditStatus == 'In Review';
   String? _diditSessionId;
   String? _diditUrl;
   bool _startingIdCheck = false;
@@ -90,18 +86,6 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
     'Awaiting User',
     'Resubmitted',
   };
-
-  /// Didit mode: the ownership document is uploaded and nothing is still
-  /// uploading or broken (the ID slots aren't used).
-  bool _diditDocsReady(ImageUploadState state) {
-    final docs = [state.slots[2], state.slots[3]];
-
-    return !docs.any(
-          (s) =>
-              s.status == SlotStatus.uploading ||
-              s.status == SlotStatus.failure,
-        );
-  }
 
   static String _diditSessionKey(String uid) => 'didit_session_id_$uid';
   static String _diditUrlKey(String uid) => 'didit_url_$uid';
@@ -378,12 +362,12 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
                     : GestureDetector(
                         onTap: _refreshIdCheckStatus,
                         behavior: HitTestBehavior.opaque,
-                        child: const Text(
+                        child: Text(
                           'Check again',
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
+                            color: context.appColors.link,
                           ),
                         ),
                       ),
@@ -570,24 +554,7 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
                       stepCount: 2,
                     )
                   : RegistrationAppBar(
-                      onBack: () {
-                        context.read<AuthBloc>().add(
-                          const AuthSignOutRequested(),
-                        );
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          AppRouter.signIn,
-                          (_) => false,
-                        );
-                      },
-                      icon: SvgPicture.asset(
-                        'assets/images/arrow_bar_left.svg',
-                        width: 22,
-                        height: 22,
-                        colorFilter: ColorFilter.mode(
-                          context.appColors.textPrimary,
-                          BlendMode.srcIn,
-                        ),
-                      ),
+                      onBack: () => confirmSignOutToSignIn(context),
                       stepNumber: 1,
                       stepCount: 2,
                     ),
@@ -749,25 +716,40 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen>
                     BlocBuilder<ImageUploadCubit, ImageUploadState>(
                       bloc: _uploads,
                       builder: (context, state) {
-                        final ready = _useDidit
-                            ? _diditDocsReady(state) && _idCheckDone
-                            : state.isReady;
+                        final blocker = documentSubmitBlocker(
+                          state,
+                          useDidit: _useDidit,
+                          idCheckStarted: _diditSessionId != null,
+                          idCheckStatus: _diditStatus,
+                        );
                         return Column(
                           children: [
+                            // The reason sits above the button it explains.
+                            if (blocker != null && !_submitting) ...[
+                              Semantics(
+                                liveRegion: true,
+                                child: Text(
+                                  blocker,
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: context.appColors.textPrimary,
+                                    height: 1.35,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                            ],
                             AppPrimaryButton(
                               label: _submitting
                                   ? 'Submitting...'
                                   : 'Submit for verification',
-                              onPressed: ready && !_submitting ? _submit : null,
+                              onPressed: blocker == null && !_submitting
+                                  ? _submit
+                                  : null,
                             ),
-                            if (_useDidit && !_idCheckDone) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                'Finish the ID check above to submit.',
-                                style: AppTextStyles.caption(context),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
                           ],
                         );
                       },
@@ -1466,7 +1448,7 @@ class _VerificationFaqDialogState extends State<_VerificationFaqDialog> {
                                         ? FontWeight.w700
                                         : FontWeight.w600,
                                     color: _expandedIndex == i
-                                        ? AppColors.primary
+                                        ? context.appColors.link
                                         : context.appColors.textPrimary,
                                   ),
                                 ),
@@ -1532,7 +1514,7 @@ class _VerificationFaqDialogState extends State<_VerificationFaqDialog> {
                                       ? FontWeight.w700
                                       : FontWeight.w600,
                                   color: _expandedIndex == _faqs.length
-                                      ? AppColors.primary
+                                      ? context.appColors.link
                                       : context.appColors.textPrimary,
                                 ),
                               ),
@@ -1590,9 +1572,9 @@ class _VerificationFaqDialogState extends State<_VerificationFaqDialog> {
                                       fontFamily: 'DM Sans',
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.primary,
+                                      color: context.appColors.link,
                                       decoration: TextDecoration.underline,
-                                      decorationColor: AppColors.primary,
+                                      decorationColor: context.appColors.link,
                                     ),
                                   ),
                                   const SizedBox(width: 4),

@@ -113,12 +113,12 @@ class _RoleSelectionViewState extends State<RoleSelectionView>
               child: FadeTransition(
                 opacity: _headerFade,
                 child: StepHeader(
-                  titleSpans: const <InlineSpan>[
+                  titleSpans: <InlineSpan>[
                     TextSpan(text: 'Join '),
                     TextSpan(
                       text: 'RentEase',
                       style: TextStyle(
-                        color: AppColors.primary,
+                        color: context.appColors.link,
                         fontWeight: FontWeight.w800,
                       ),
                     ),

@@ -280,8 +280,29 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
     }
   }
 
-  String _formatDate(DateTime? dt) {
-    if (dt == null) return 'Flexible';
+  /// The first value that holds any text.
+  String? _filled(String? a, [String? b]) {
+    for (final v in [a, b]) {
+      if (v != null && v.trim().isNotEmpty) return v.trim();
+    }
+    return null;
+  }
+
+  /// Rows for the values that exist, with dividers between them.
+  List<Widget> _detailRows(List<(String, String?, IconData?)> rows) {
+    final filled = [
+      for (final row in rows)
+        if (row.$2 != null) row,
+    ];
+    return [
+      for (final (i, row) in filled.indexed) ...[
+        if (i > 0) _divider(),
+        _detailRow(label: row.$1, value: row.$2!, icon: row.$3),
+      ],
+    ];
+  }
+
+  String _formatDate(DateTime dt) {
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
@@ -296,23 +317,23 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
     final profile = _profile;
 
     final photoUrl = user?.profilePhoto;
-    final phoneText = (widget.phone != null && widget.phone!.trim().isNotEmpty)
-        ? widget.phone!.trim()
-        : (user?.phone.isNotEmpty == true ? user!.phone : 'Shared in inquiry');
-    final emailText = user?.email.isNotEmpty == true ? user!.email : '—';
+    final phoneText = _filled(widget.phone, user?.phone);
+    final emailText = _filled(user?.email);
+    final genderText = _filled(tenant.gender, user?.gender);
+    final occupationText = _filled(profile?.occupation, tenant.occupation);
+    final schoolText = _filled(profile?.school, tenant.school);
+    final groupSize = profile?.groupSize;
+    final groupSizeText = groupSize == null || groupSize <= 0
+        ? null
+        : groupSize == 1
+        ? '1 person'
+        : '$groupSize people';
 
-    final genderText = tenant.gender.isNotEmpty
-        ? tenant.gender
-        : (user?.gender.isNotEmpty == true ? user!.gender : '—');
-    final occupationText = profile?.occupation ?? tenant.occupation ?? '—';
-    final schoolText = profile?.school ?? tenant.school ?? '—';
-    final groupSizeText = '${profile?.groupSize ?? 1} person(s)';
-
-    final budgetText = '₱${profile?.maxBudget ?? tenant.maxBudget}/month';
-    final moveInText = _formatDate(profile?.moveInDate?.toDate());
-    final roomTypeText = profile?.roomType?.isNotEmpty == true
-        ? profile!.roomType!
-        : 'Any room type';
+    final budget = profile?.maxBudget ?? tenant.maxBudget;
+    final budgetText = budget > 0 ? '₱$budget/month' : null;
+    final moveIn = profile?.moveInDate?.toDate();
+    final moveInText = moveIn == null ? null : _formatDate(moveIn);
+    final roomTypeText = _filled(profile?.roomType);
     final smokingText = (profile?.isSmoker ?? false) ? 'Smoker' : 'Non-smoker';
     final petText = (profile?.hasPet ?? false) ? 'Has pet' : 'No pets';
     final wifiText = (profile?.needsWifi ?? false)
@@ -506,7 +527,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                                                 ),
                                                 SizedBox(width: 4),
                                                 Text(
-                                                  'Compatible Match',
+                                                  'Matches',
                                                   style: TextStyle(
                                                     fontFamily: 'DM Sans',
                                                     fontSize: 11.5,
@@ -609,43 +630,31 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                         const SizedBox(height: 16),
 
                         // ── Section 1: Contact Information ──────────────────
-                        CollapsibleDetailCard(
-                          icon: Icons.contact_phone_outlined,
-                          title: 'Contact details',
-                          child: Column(
-                            children: [
-                              _detailRow(
-                                icon: Icons.phone_outlined,
-                                label: 'Phone',
-                                value: phoneText,
-                              ),
-                              _divider(),
-                              _detailRow(
-                                icon: Icons.mail_outline_rounded,
-                                label: 'Email',
-                                value: emailText,
-                                isLast: true,
-                              ),
-                            ],
+                        if (phoneText != null || emailText != null) ...[
+                          CollapsibleDetailCard(
+                            icon: Icons.contact_phone_outlined,
+                            title: 'Contact details',
+                            child: Column(
+                              children: _detailRows([
+                                ('Phone', phoneText, Icons.phone_outlined),
+                                ('Email', emailText, Icons.mail_outline_rounded),
+                              ]),
+                            ),
                           ),
-                        ),
-
-                        const SizedBox(height: 12),
+                          const SizedBox(height: 12),
+                        ],
 
                         // ── Section 2: Personal Profile ─────────────────────
                         CollapsibleDetailCard(
                           icon: Icons.person_outline_rounded,
                           title: 'Personal details',
                           child: Column(
-                            children: [
-                              _detailRow(label: 'Gender', value: genderText),
-                              _divider(),
-                              _detailRow(label: 'Occupation', value: occupationText),
-                              _divider(),
-                              _detailRow(label: 'School / Workplace', value: schoolText),
-                              _divider(),
-                              _detailRow(label: 'Group size', value: groupSizeText, isLast: true),
-                            ],
+                            children: _detailRows([
+                              ('Gender', genderText, null),
+                              ('Occupation', occupationText, null),
+                              ('School / Workplace', schoolText, null),
+                              ('Group size', groupSizeText, null),
+                            ]),
                           ),
                         ),
 
@@ -657,17 +666,14 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
                           title: 'Rental & living preferences',
                           child: Column(
                             children: [
-                              _detailRow(label: 'Maximum budget', value: budgetText),
-                              _divider(),
-                              _detailRow(label: 'Target move-in', value: moveInText),
-                              _divider(),
-                              _detailRow(label: 'Room preference', value: roomTypeText),
-                              _divider(),
-                              _detailRow(label: 'Smoking policy', value: smokingText),
-                              _divider(),
-                              _detailRow(label: 'Pet policy', value: petText),
-                              _divider(),
-                              _detailRow(label: 'Internet', value: wifiText),
+                              ..._detailRows([
+                                ('Maximum budget', budgetText, null),
+                                ('Target move-in', moveInText, null),
+                                ('Room preference', roomTypeText, null),
+                                ('Smoking policy', smokingText, null),
+                                ('Pet policy', petText, null),
+                                ('Internet', wifiText, null),
+                              ]),
                               if (profile?.preferredAmenities?.isNotEmpty ?? false) ...[
                                 _divider(),
                                 _amenitiesRow(
@@ -711,7 +717,6 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> {
     required String label,
     required String value,
     IconData? icon,
-    bool isLast = false,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

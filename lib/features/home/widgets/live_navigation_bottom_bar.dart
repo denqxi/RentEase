@@ -437,7 +437,7 @@ class LiveNavigationBottomBar extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: onLaunchGoogleMaps,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: AppColors.accent,
                       foregroundColor: AppColors.surface,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(horizontal: 12),

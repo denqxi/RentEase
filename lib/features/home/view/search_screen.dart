@@ -9,12 +9,16 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/app_options.dart';
 import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/firestore/models/models.dart';
+import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_svg_icon.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
+import '../../../shared/widgets/match_reasons_line.dart';
 import '../../auth/presentation/current_uid.dart';
+import '../../matching/domain/entities/match_reason.dart';
 import '../../matching/domain/entities/mismatch_reason.dart';
 import '../../profile/cubit/profile_cubit.dart';
+import '../../profile/view/edit_rental_preferences_screen.dart';
 import '../../registration/model/user_role.dart';
 import '../../tenant/view/session_filter_sheet.dart';
 import '../cubit/home_cubit.dart';
@@ -221,6 +225,18 @@ class _SearchViewState extends State<_SearchView> {
     setState(() {
       _selectedTab = _userSelectedTab;
     });
+  }
+
+  /// Opens the saved preferences. A save re-runs matching on Home, which
+  /// reloads Search when it finishes.
+  Future<void> _updatePreferences() async {
+    final homeCubit = context.read<HomeCubit>();
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => const EditRentalPreferencesScreen(),
+      ),
+    );
+    if (saved == true) await homeCubit.refresh();
   }
 
   /// The filter sheet opens on the current session, or on the tenant's own
@@ -445,14 +461,14 @@ class _SearchViewState extends State<_SearchView> {
     required bool hasActiveSession,
   }) {
     return SizedBox(
-      height: 28,
+      width: double.infinity,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         child: Row(
           children: [
             _TabPill(
-              label: 'Compatible',
+              label: 'Matches',
               count: compatibleCount,
               isSelected: effectiveTab == SearchCategoryTab.compatible,
               onTap: () => _selectTab(SearchCategoryTab.compatible),
@@ -460,7 +476,7 @@ class _SearchViewState extends State<_SearchView> {
             if (filterMatchesCount > 0 || hasActiveSession) ...[
               const SizedBox(width: 6),
               _TabPill(
-                label: 'Filter Matches',
+                label: 'This search',
                 count: filterMatchesCount,
                 isSelected: effectiveTab == SearchCategoryTab.filterMatches,
                 isAmber: true,
@@ -469,7 +485,7 @@ class _SearchViewState extends State<_SearchView> {
             ],
             const SizedBox(width: 6),
             _TabPill(
-              label: 'Other',
+              label: "Doesn't match",
               count: otherCount,
               isSelected: effectiveTab == SearchCategoryTab.other,
               onTap: () => _selectTab(SearchCategoryTab.other),
@@ -586,6 +602,7 @@ class _SearchViewState extends State<_SearchView> {
                                 ),
                           poiLabel: widget.profile?.poiLabel,
                           poiType: widget.profile?.poiType,
+                          maxBudget: widget.profile?.maxBudget,
                         ),
                       ),
                     ),
@@ -791,7 +808,10 @@ class _SearchViewState extends State<_SearchView> {
 
             const SizedBox(height: 10),
 
-            if (!widget.isLoading && widget.errorMessage == null)
+            // Tenants read the count on the tabs; guests have none.
+            if (widget.isGuest &&
+                !widget.isLoading &&
+                widget.errorMessage == null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: Text(
@@ -827,25 +847,33 @@ class _SearchViewState extends State<_SearchView> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    final query = _queryController.text.trim();
     final String? message;
+    // Only offered when the saved preferences are why nothing shows.
+    var offerPreferences = false;
     if (widget.errorMessage != null) {
       message = widget.errorMessage;
-    } else if (widget.results.isEmpty && widget.nonMatches.isEmpty) {
-      message =
-          'No compatible properties yet. Try widening your budget or '
-          'distance from your profile.';
-    } else if (properties.isEmpty) {
-      if (_queryController.text.trim().isNotEmpty) {
-        message = 'No results for "${_queryController.text.trim()}".';
-      } else if (_effectiveTab == SearchCategoryTab.filterMatches) {
-        message = 'No properties matched your temporary search adjustments.';
-      } else if (_effectiveTab == SearchCategoryTab.other) {
-        message = 'No other properties found outside your preferences.';
-      } else {
-        message = 'No compatible properties found.';
-      }
-    } else {
+    } else if (widget.isGuest) {
+      message = properties.isNotEmpty
+          ? null
+          : query.isEmpty
+          ? 'No listings yet. Pull down to check again.'
+          : 'No results for "$query".';
+    } else if (properties.isNotEmpty) {
       message = null;
+    } else if (query.isNotEmpty) {
+      message = 'No results for "$query".';
+    } else if (_effectiveTab == SearchCategoryTab.filterMatches) {
+      message = 'No extra listings fit this search.';
+    } else if (_effectiveTab == SearchCategoryTab.other) {
+      message = 'No listings outside your preferences.';
+    } else if (_hasActiveSessionFilter) {
+      message = 'No matches in this search. Reset it to see all your matches.';
+    } else {
+      message =
+          'No matches yet. Try a higher budget or a wider distance in your '
+          'preferences.';
+      offerPreferences = true;
     }
 
     final list = message != null
@@ -854,14 +882,27 @@ class _SearchViewState extends State<_SearchView> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 14,
-                    color: context.appColors.textSecondary,
-                  ),
+                child: Column(
+                  children: [
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 14,
+                        height: 1.4,
+                        color: context.appColors.textSecondary,
+                      ),
+                    ),
+                    if (offerPreferences) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      AppButton(
+                        label: 'Update preferences',
+                        isFullWidth: false,
+                        onPressed: _updatePreferences,
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],
@@ -889,6 +930,7 @@ class _SearchViewState extends State<_SearchView> {
                 // Guests have no TOPSIS ranking; a stale 0 rank shows none.
                 rank: widget.isGuest || rank == 0 ? null : rank,
                 isGuest: widget.isGuest,
+                maxBudget: widget.profile?.maxBudget,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => PropertyDetailScreen(
@@ -1024,8 +1066,8 @@ class _TabPill extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          height: 26,
-          padding: const EdgeInsets.symmetric(horizontal: 9),
+          constraints: const BoxConstraints(minHeight: 26),
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(14),
@@ -1047,7 +1089,6 @@ class _TabPill extends StatelessWidget {
                 ),
             ],
           ),
-          alignment: Alignment.center,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1095,8 +1136,10 @@ class _PropertyCard extends StatelessWidget {
     required this.onTap,
     required this.isSaved,
     required this.onSavedToggle,
+    this.maxBudget,
   });
 
+  final num? maxBudget;
   final Map<String, dynamic> property;
   final bool isSaved;
   final VoidCallback onSavedToggle;
@@ -1116,8 +1159,6 @@ class _PropertyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int seed = (property['propertyId'] as String).hashCode.abs() % 5 + 1;
-    final tenantCi = property['tenantCi'] as num?;
-    final int matchPercent = tenantCi != null ? (tenantCi * 100).round() : 0;
     final int rent = (property['monthlyRent'] as num).toInt();
     final num? distance = property['distance'] as num?;
     final bool isNonMatch = property['isNonMatch'] == true;
@@ -1163,8 +1204,14 @@ class _PropertyCard extends StatelessWidget {
         0;
     final bool hasRating = avgRating != null && totalRatings > 0;
 
-    final Color matchDotColor =
-        matchPercent >= 80 ? AppColors.matchHigh : AppColors.matchMedium;
+    final matchReasons = isGuest || isNonMatch
+        ? const <MatchReason>[]
+        : MatchReason.forListing(
+            distanceKm: distance,
+            rent: rent,
+            maxBudget: maxBudget,
+            amenityCount: property['amenityScore'] as num?,
+          );
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -1229,7 +1276,10 @@ class _PropertyCard extends StatelessWidget {
                         ),
                       ),
 
-                      // Top-left: Match score pill & Rank badge (clean white pill with soft shadow)
+                      // Top-left: Rank or match pill (clean white pill with soft shadow)
+                      if (isGuest ||
+                          rank != null ||
+                          MatchStatus.of(property) != null)
                       Positioned(
                         top: 10,
                         left: 10,
@@ -1260,7 +1310,7 @@ class _PropertyCard extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  "Doesn't match",
+                                  MatchStatus.doesNotMatch.label,
                                   style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 11.5,
@@ -1277,7 +1327,7 @@ class _PropertyCard extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Filter Match',
+                                  MatchStatus.thisSearch.label,
                                   style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 11.5,
@@ -1318,33 +1368,15 @@ class _PropertyCard extends StatelessWidget {
                                     letterSpacing: -0.2,
                                   ),
                                 ),
-                                const SizedBox(width: 6),
-                                Container(
-                                  width: 1,
-                                  height: 11,
-                                  color: context.appColors.hint,
-                                ),
-                                const SizedBox(width: 6),
-                                if (!isGuest)
-                                  Text(
-                                    '$matchPercent% Match',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: context.appColors.textPrimary,
-                                      letterSpacing: -0.1,
-                                    ),
-                                  ),
                               ] else if (!isGuest) ...[
-                                Icon(
-                                  Icons.auto_awesome,
+                                const Icon(
+                                  Icons.check_circle_rounded,
                                   size: 12,
-                                  color: matchDotColor,
+                                  color: AppColors.matchHigh,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '$matchPercent% Match',
+                                  MatchStatus.matches.label,
                                   style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 11.5,
@@ -1415,84 +1447,48 @@ class _PropertyCard extends StatelessWidget {
                         ),
                       ),
 
-                      // Bottom-right: Ci score badge (for testing) & Photo count badge (clean white pills)
-                      if (!isGuest || photoCount > 0)
+                      // Bottom-right: Photo count badge
+                      if (photoCount > 0)
                         Positioned(
                           bottom: 8,
                           right: 8,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (!isGuest) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 7.5,
-                                    vertical: 3.5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: context.appColors.surface,
-                                    borderRadius: BorderRadius.circular(10),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.slate900.withValues(alpha: 0.12),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    'Ci = ${(tenantCi?.toDouble() ?? (matchPercent / 100.0)).toStringAsFixed(4)}',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: context.appColors.textPrimary,
-                                      letterSpacing: -0.1,
-                                    ),
-                                  ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7.5,
+                              vertical: 3.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: context.appColors.surface,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.slate900.withValues(alpha: 0.12),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
                                 ),
-                                if (photoCount > 0) const SizedBox(width: 5),
                               ],
-                              if (photoCount > 0)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 7.5,
-                                    vertical: 3.5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: context.appColors.surface,
-                                    borderRadius: BorderRadius.circular(10),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.slate900.withValues(alpha: 0.12),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.photo_outlined,
-                                        size: 12,
-                                        color: context.appColors.textSecondary,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '$photoCount',
-                                        style: TextStyle(
-                                          fontFamily: 'DM Sans',
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          color: context.appColors.textPrimary,
-                                          letterSpacing: -0.1,
-                                        ),
-                                      ),
-                                    ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.photo_outlined,
+                                  size: 12,
+                                  color: context.appColors.textSecondary,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$photoCount',
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: context.appColors.textPrimary,
+                                    letterSpacing: -0.1,
                                   ),
                                 ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                     ],
@@ -1542,42 +1538,54 @@ class _PropertyCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.star_rounded,
-                              size: 15.5,
-                              color: AppColors.matchMedium,
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              hasRating ? avgRating.toStringAsFixed(1) : '0',
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: context.appColors.textPrimary,
-                              ),
-                            ),
-                            if (hasRating && totalRatings > 0) ...[
-                              const SizedBox(width: 2),
+                        if (hasRating) ...[
+                          const SizedBox(width: 8),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                                                            const Icon(
+                                  Icons.star_rounded,
+                                  size: 15.5,
+                                  color: AppColors.matchMedium,
+                                ),
+                                const SizedBox(width: 3),
                               Text(
-                                '($totalRatings)',
+                                avgRating.toStringAsFixed(1),
                                 style: TextStyle(
                                   fontFamily: 'DM Sans',
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: context.appColors.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: context.appColors.textPrimary,
                                 ),
                               ),
+                              if (totalRatings > 0) ...[
+                                const SizedBox(width: 2),
+                                Text(
+                                  '($totalRatings)',
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: context.appColors.textSecondary,
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
-                        ),
+                          ),
+                        ],
                       ],
                     ),
+                    if (!hasRating)
+                      Text(
+                        'No reviews yet',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: context.appColors.textSecondary,
+                        ),
+                      ),
                     const SizedBox(height: 4),
 
                     // Address row: restricted to 70% width
@@ -1594,10 +1602,7 @@ class _PropertyCard extends StatelessWidget {
                           const SizedBox(width: 3),
                           Expanded(
                             child: Text(
-                              [
-                                (property['address'] as String?) ?? '',
-                                if (!isGuest && distance != null) '$distance km',
-                              ].join(' · '),
+                              (property['address'] as String?) ?? '',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -1611,6 +1616,11 @@ class _PropertyCard extends StatelessWidget {
                         ],
                       ),
                     ),
+
+                    if (matchReasons.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      MatchReasonsLine(reasons: matchReasons),
+                    ],
 
                     if (isNonMatch && reasons.isNotEmpty) ...[
                       const SizedBox(height: 5),
@@ -1663,7 +1673,7 @@ class _PropertyCard extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 [
-                                  'Outside session filter',
+                                  'Outside this search',
                                   if (budgetExcess > 0) '₱$budgetExcess over budget',
                                   if (distanceExcess > 0) '$distanceExcess km farther',
                                 ].join(' · '),
@@ -1722,11 +1732,11 @@ class _PropertyCard extends StatelessWidget {
                             children: [
                               TextSpan(
                                 text: '₱${_fmtRent(rent)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.primary,
+                                  color: context.appColors.link,
                                   letterSpacing: -0.3,
                                 ),
                               ),

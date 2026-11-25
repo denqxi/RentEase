@@ -1072,9 +1072,9 @@ class _DocumentViewerDialogState extends State<DocumentViewerDialog> {
                                 size: 16,
                                 color: AppColors.primary,
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Copy public ID',
-                                style: TextStyle(color: AppColors.primary),
+                                style: TextStyle(color: context.appColors.link),
                               ),
                             ),
                           ],

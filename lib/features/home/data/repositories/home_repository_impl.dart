@@ -28,10 +28,13 @@ class HomeRepositoryImpl implements HomeRepository {
   Future<List<Listing>> fetchCompatibleListings(String tenantId) async {
     final matches = await _remote.fetchEligibleMatches(tenantId);
     final listings = <Listing>[];
+    // One extra read: the saved budget behind each card's budget margin.
+    final profileFuture = _remote.fetchTenantProfile(tenantId);
     // Parallel fetch (same read count, latency of one read instead of N).
     final fetched = await Future.wait(
       matches.map((m) => _tryFetchProperty(m.propertyId)),
     );
+    final maxBudget = (await profileFuture)?.maxBudget;
     for (var i = 0; i < matches.length; i++) {
       final match = matches[i];
       final property = fetched[i];
@@ -44,6 +47,7 @@ class HomeRepositoryImpl implements HomeRepository {
           match: match,
           property: property,
           imageSeed: i % 5 + 1,
+          maxBudget: maxBudget,
         ),
       );
     }

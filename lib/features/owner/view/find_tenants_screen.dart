@@ -290,29 +290,6 @@ class _TenantCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const CompatibleBadge(),
-                      if (tenant.tenantCi != null) ...[
-                        const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.indigo50,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: AppColors.indigo200,
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Text(
-                            'ci=${tenant.tenantCi!.toDouble().toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontFamily: 'DM Sans',
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.indigo600,
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                   const SizedBox(height: AppSpacing.sm),

@@ -34,7 +34,7 @@ class BudgetRangeField extends StatelessWidget {
             ),
             Text(
               '${CurrencyUtils.formatDollars(value)}/mo',
-              style: AppTextStyles.label(context).copyWith(color: AppColors.primary),
+              style: AppTextStyles.label(context).copyWith(color: context.appColors.link),
             ),
           ],
         ),

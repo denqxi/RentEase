@@ -21,6 +21,7 @@ import '../../owner_onboarding/widgets/listing_form_widgets.dart';
 import '../../uploads/data/repositories/cloudinary_image_upload_repository.dart';
 import '../../uploads/domain/entities/uploaded_image.dart';
 import '../cubit/landlord_home_cubit.dart';
+import 'remove_listing_dialogs.dart';
 import '../widgets/edit_property_sheet.dart';
 import 'edit_entire_property_screen.dart';
 import 'property_reviews_screen.dart';
@@ -112,7 +113,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
               const SizedBox(width: 8),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.accent,
                   foregroundColor: AppColors.surface,
                   elevation: 0,
                   minimumSize: const Size(110, 42),
@@ -307,20 +308,22 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
           splashColor: AppColors.redFill50,
           highlightColor: AppColors.redFill50,
           onTap: () => _handleRemoveListing(context, rooms, cubit),
-          child: const Padding(
-            padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.delete_outline_rounded,
                   size: 18,
                   color: AppColors.destructive,
                 ),
-                SizedBox(width: 6),
+                const SizedBox(width: 6),
                 Text(
-                  'Remove Listing',
-                  style: TextStyle(
+                  widget.isSingleRoomView && rooms.first.isRoom
+                      ? 'Remove Room'
+                      : 'Remove Listing',
+                  style: const TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13.5,
                     fontWeight: FontWeight.w600,
@@ -342,111 +345,32 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
   ) async {
     final messenger = ScaffoldMessenger.of(context);
 
-    // 1. Confirmation Dialog
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogCtx) => Dialog(
-        backgroundColor: context.appColors.surface,
-        surfaceTintColor: AppColors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: const BoxDecoration(
-                  color: AppColors.redFill50,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.delete_outline_rounded,
-                  color: AppColors.destructive,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Remove This Listing?',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 16.5,
-                  fontWeight: FontWeight.w800,
-                  color: context.appColors.textPrimary,
-                  letterSpacing: -0.2,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Are you sure you want to remove this listing? This action cannot be undone.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w400,
-                  color: context.appColors.textSecondary,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 42,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.destructive,
-                    foregroundColor: AppColors.surface,
-                    elevation: 2,
-                    shadowColor: AppColors.destructive.withValues(alpha: 0.25),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () => Navigator.of(dialogCtx).pop(true),
-                  child: const Text(
-                    'Remove Listing',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                height: 42,
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: context.appColors.textPrimary,
-                    side: BorderSide(color: context.appColors.fieldBorder, width: 1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () => Navigator.of(dialogCtx).pop(false),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    // 1. Confirmation: names what goes and how many rooms.
+    final first = rooms.first;
+    final parent = first.parentPropertyId ?? '';
+    final inBuilding = parent.isEmpty
+        ? rooms.length
+        : cubit.state.properties
+              .where((p) => p.parentPropertyId == parent)
+              .length;
+    final targets = await confirmListingRemoval(
+      context,
+      rooms: rooms,
+      isRoomView: widget.isSingleRoomView,
+      roomsInBuilding: inBuilding,
     );
+    if (targets == null || !context.mounted) return;
 
-    if (confirmed != true || !context.mounted) return;
+    // Whether this removal empties the listing this screen is showing, and
+    // whether anything of the building is left to go back to.
+    final clearsScreen = targets.length == rooms.length;
+    final clearsBuilding = targets.length >= inBuilding;
+    final what = targets.length == 1
+        ? (targets.first.isRoom
+              ? roomLabel(targets.first)
+              : buildingLabel(targets.first))
+        : '${targets.length} rooms in ${buildingLabel(first)}';
+    var removed = 0;
 
     // 2. Removing Process (Loading Dialog)
     showDialog<void>(
@@ -473,7 +397,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Removing listing...',
+                'Removing $what...',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'DM Sans',
@@ -503,17 +427,21 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
       await Future.wait([
         Future<void>.delayed(const Duration(milliseconds: 600)),
         Future(() async {
-          for (final r in rooms) {
+          for (final r in targets) {
             await cubit.deleteProperty(r.propertyId);
+            removed++;
           }
         }),
       ]);
     } catch (e) {
       if (context.mounted) {
         Navigator.of(context, rootNavigator: true).pop();
+        final reason = e.toString().replaceFirst('Exception: ', '');
         AppSnackBar.show(
           messenger,
-          e.toString().replaceFirst('Exception: ', ''),
+          removed > 0
+              ? 'Removed $removed of ${targets.length} rooms. $reason'
+              : reason,
           kind: AppSnackKind.error,
         );
       }
@@ -523,6 +451,16 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
     if (!context.mounted) return;
     // Close loading dialog
     Navigator.of(context, rootNavigator: true).pop();
+
+    // Other rooms are still on this screen: say so and stay.
+    if (!clearsScreen) {
+      AppSnackBar.show(
+        messenger,
+        '$what removed.',
+        kind: AppSnackKind.success,
+      );
+      return;
+    }
 
     // 3. Success Message Dialog
     await showDialog<void>(
@@ -553,7 +491,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                'Listing Removed',
+                '$what removed',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'DM Sans',
@@ -565,7 +503,9 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'The listing has been successfully removed.',
+                clearsBuilding
+                    ? 'It no longer appears in your properties.'
+                    : 'The other rooms are still listed.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'DM Sans',
@@ -581,7 +521,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                 height: 42,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: AppColors.accent,
                     foregroundColor: AppColors.surface,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -590,9 +530,9 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                   ),
                   onPressed: () => Navigator.of(dialogCtx).pop(),
                   child: Text(
-                    widget.isSingleRoomView
+                    !clearsBuilding
                         ? 'Back to Property Management'
-                        : 'Back to My Listings',
+                        : 'Back to your properties',
                     style: const TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 13,
@@ -607,7 +547,11 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
       ),
     );
 
-    if (context.mounted) {
+    if (!context.mounted) return;
+    // With the last room gone, the building screen behind has nothing to show.
+    if (clearsBuilding && widget.isSingleRoomView) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } else {
       Navigator.of(context).pop();
     }
   }
@@ -701,16 +645,20 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
             ),
             titleSpacing: 10,
             centerTitle: false,
-            title: Text(
-              widget.isSingleRoomView
-                  ? 'Room Management'
-                  : 'Property Management',
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: context.appColors.textPrimary,
-                letterSpacing: -0.2,
+            actions: const [SizedBox(width: 16)],
+            title: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                widget.isSingleRoomView
+                    ? 'Room Management'
+                    : 'Property Management',
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: context.appColors.textPrimary,
+                  letterSpacing: -0.2,
+                ),
               ),
             ),
           ),
@@ -904,7 +852,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                                           color: AppColors.primary.withValues(alpha: 0.12),
                                           borderRadius: BorderRadius.circular(20),
                                         ),
-                                        child: const Row(
+                                        child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Icon(
@@ -917,7 +865,7 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                                               'Edit',
                                               style: TextStyle(
                                                 fontFamily: 'DM Sans',
-                                                color: AppColors.primary,
+                                                color: context.appColors.link,
                                                 fontSize: 11.5,
                                                 fontWeight: FontWeight.w700,
                                               ),
@@ -975,12 +923,15 @@ class _PropertyManagerScreenState extends State<PropertyManagerScreen> {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(
-                                          Icons.star_rounded,
-                                          size: 16.5,
-                                          color: AppColors.matchMedium,
-                                        ),
-                                        const SizedBox(width: 4),
+                                        if (_formatPropertyRatingLabel(currentProperty, currentRooms) !=
+                                            _noReviews) ...[
+                                          const Icon(
+                                            Icons.star_rounded,
+                                            size: 16.5,
+                                            color: AppColors.matchMedium,
+                                          ),
+                                          const SizedBox(width: 4),
+                                        ],
                                         Text(
                                           _formatPropertyRatingLabel(
                                             currentProperty,
@@ -1012,42 +963,44 @@ const SizedBox(height: 14),
                                 ),
                                 const SizedBox(height: 14),
 
-                                // Property Type on left, Room Listing count on right
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                // Property type and room count; wraps at large text
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: Wrap(
+                                  alignment: WrapAlignment.spaceBetween,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 8,
+                                  runSpacing: 6,
                                   children: [
-                                    Expanded(
-                                      child: Row(
-                                        children: [
-                                          _buildMultiRoomPropertyTypeSvg(size: 18),
-                                          const SizedBox(width: 7),
-                                          Flexible(
-                                            child: Text(
-                                              displayType,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                fontFamily: 'DM Sans',
-                                                fontSize: 12.5,
-                                                fontWeight: FontWeight.w400,
-                                                color: context.appColors.textPrimary,
-                                              ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        _buildMultiRoomPropertyTypeSvg(size: 18),
+                                        const SizedBox(width: 7),
+                                        Flexible(
+                                          child: Text(
+                                            displayType,
+                                            style: TextStyle(
+                                              fontFamily: 'DM Sans',
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w400,
+                                              color: context.appColors.textPrimary,
                                             ),
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 8),
                                     Text(
                                       '${currentRooms.length} ${currentRooms.length == 1 ? 'Room Listing' : 'Room Listings'}',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 12.5,
                                         fontWeight: FontWeight.w600,
-                                        color: AppColors.primary,
+                                        color: context.appColors.link,
                                       ),
                                     ),
                                   ],
+                                ),
                                 ),
                               ],
                             ),
@@ -1077,10 +1030,13 @@ const SizedBox(height: 14),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: Wrap(
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  alignment: WrapAlignment.spaceBetween,
+                                  spacing: 12,
+                                  runSpacing: 8,
                                   children: [
                                     Text(
                                       'Room Listings',
@@ -1108,7 +1064,7 @@ const SizedBox(height: 14),
                                             borderRadius:
                                                 BorderRadius.circular(20),
                                           ),
-                                          child: const Row(
+                                          child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Icon(
@@ -1123,7 +1079,7 @@ const SizedBox(height: 14),
                                                   fontFamily: 'DM Sans',
                                                   fontSize: 11.5,
                                                   fontWeight: FontWeight.w700,
-                                                  color: AppColors.primary,
+                                                  color: context.appColors.link,
                                                 ),
                                               ),
                                             ],
@@ -1131,6 +1087,7 @@ const SizedBox(height: 14),
                                         ),
                                       ),
                                   ],
+                                ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
@@ -1954,7 +1911,7 @@ class _EntirePropertyMainCard extends StatelessWidget {
               const SizedBox(width: 8),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.accent,
                   foregroundColor: AppColors.surface,
                   elevation: 0,
                   minimumSize: const Size(110, 42),
@@ -2066,7 +2023,7 @@ class _EntirePropertyMainCard extends StatelessWidget {
                     color: AppColors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
@@ -2079,7 +2036,7 @@ class _EntirePropertyMainCard extends StatelessWidget {
                         'Edit',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
-                          color: AppColors.primary,
+                          color: context.appColors.link,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                         ),
@@ -2155,12 +2112,15 @@ class _EntirePropertyMainCard extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.star_rounded,
-                    size: 16.5,
-                    color: AppColors.matchMedium,
-                  ),
-                  const SizedBox(width: 4),
+                  if (_formatPropertyRatingLabel(property) !=
+                      _noReviews) ...[
+                    const Icon(
+                      Icons.star_rounded,
+                      size: 16.5,
+                      color: AppColors.matchMedium,
+                    ),
+                    const SizedBox(width: 4),
+                  ],
                   Text(
                     _formatPropertyRatingLabel(property),
                     style: TextStyle(
@@ -2218,11 +2178,11 @@ const SizedBox(height: 14),
                 children: [
                   Text(
                     '₱${_fmt(property.monthlyRent)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
+                      color: context.appColors.link,
                       letterSpacing: -0.4,
                     ),
                   ),
@@ -2326,13 +2286,15 @@ const SizedBox(height: 14),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: 11.5,
-                fontWeight: FontWeight.w700,
-                color: color,
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
               ),
             ),
             const SizedBox(width: 4),
@@ -3326,7 +3288,7 @@ class _ExpandableSaveButton extends StatelessWidget {
       height: 46,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.accent,
           foregroundColor: AppColors.surface,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -3408,6 +3370,7 @@ class _UnitRow extends StatelessWidget {
         child: Row(
           children: [
             // Room First Photo Thumbnail (replaces number card)
+            if (MediaQuery.textScalerOf(context).scale(1) <= 1.5) ...[
             Container(
               width: 52,
               height: 52,
@@ -3432,14 +3395,13 @@ class _UnitRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     roomTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 15,
@@ -3449,16 +3411,20 @@ class _UnitRow extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 3),
-                  Text.rich(
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text.rich(
+                    maxLines: 1,
                     TextSpan(
                       children: [
                         TextSpan(
                           text: '₱${_fmt(room.monthlyRent)}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 13.5,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
+                            color: context.appColors.link,
                           ),
                         ),
                         TextSpan(
@@ -3473,11 +3439,12 @@ class _UnitRow extends StatelessWidget {
                       ],
                     ),
                   ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildRoomStatusDropdown(context, currentStatus),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            _buildRoomStatusDropdown(context, currentStatus),
             const SizedBox(width: 4),
             Icon(
               Icons.chevron_right_rounded,
@@ -3601,6 +3568,8 @@ class _UnitRow extends StatelessWidget {
   }
 }
 
+const _noReviews = 'No reviews yet';
+
 String _formatPropertyRatingLabel(PropertyDoc property, [List<PropertyDoc> rooms = const []]) {
   num? avg = property.effectiveAvgRating ?? property.avgRating;
   num count = property.totalRatings ?? 0;
@@ -3623,5 +3592,5 @@ String _formatPropertyRatingLabel(PropertyDoc property, [List<PropertyDoc> rooms
   if (avg != null && count > 0) {
     return '${avg.toStringAsFixed(1)} ($count)';
   }
-  return '0';
+  return _noReviews;
 }

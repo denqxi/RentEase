@@ -259,7 +259,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// Loads the Saved screen: the available properties among the current saved
   /// ids, in chunks of 30 (ceil(n/30) reads of up to 30 docs). Cards of
-  /// compatible listings keep their match percent; others show none.
+  /// matching listings keep their reasons; others show none.
   Future<void> loadSaved() async {
     final repo = _savedRepository;
     if (repo == null || state.isGuest) return;
@@ -267,14 +267,17 @@ class HomeCubit extends Cubit<HomeState> {
     try {
       final fetched = await repo.fetchSavedListings(state.savedIds.toList());
       if (isClosed) return;
-      final percentById = {for (final l in state.listings) l.id: l.matchPercent};
+      final matchById = {for (final l in state.listings) l.id: l};
       emit(
         state.copyWith(
           savedListings: [
             for (final l in fetched)
               l.copyWith(
                 isSaved: true,
-                matchPercent: percentById[l.id] ?? l.matchPercent,
+                matchPercent: matchById[l.id]?.matchPercent,
+                isMatch: matchById[l.id]?.isMatch,
+                distanceKm: matchById[l.id]?.distanceKm,
+                maxBudget: matchById[l.id]?.maxBudget,
               ),
           ],
           isLoadingSaved: false,

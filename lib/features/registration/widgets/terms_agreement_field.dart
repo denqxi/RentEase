@@ -69,13 +69,13 @@ class TermsAgreementField extends StatelessWidget {
                               builder: (_) => const TermsAndConditionsScreen(),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Terms and Agreement',
                             style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
+                              color: context.appColors.link,
                             ),
                           ),
                         ),
@@ -85,13 +85,13 @@ class TermsAgreementField extends StatelessWidget {
                         alignment: PlaceholderAlignment.middle,
                         child: GestureDetector(
                           onTap: () => PrivacyNoticeScreen.open(context),
-                          child: const Text(
+                          child: Text(
                             'Privacy Notice',
                             style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
+                              color: context.appColors.link,
                             ),
                           ),
                         ),

@@ -314,7 +314,7 @@ class _InquiryList extends StatelessWidget {
             date: inquiryDateLabel(inquiry.updatedAt?.toDate()),
             isUnread: isUnread,
             resolvedStatus: switch (inquiry.status) {
-              'booked' => 'Booked',
+              'booked' => 'Occupied',
               'ended' => 'Stay ended',
               'declined' => 'Declined',
               'closed' => 'Closed',
@@ -466,7 +466,7 @@ class _InquiryCard extends StatelessWidget {
   final int phase;
   final String date;
 
-  /// 'Booked' | 'Stay ended' | 'Declined' | 'Closed' for resolved inquiries,
+  /// 'Occupied' | 'Stay ended' | 'Declined' | 'Closed' for resolved inquiries,
   /// else null.
   final String? resolvedStatus;
 
@@ -568,7 +568,7 @@ class _InquiryCard extends StatelessWidget {
                     fontFamily: 'DM Sans',
                     fontSize: 11.5,
                     fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
-                    color: isUnread ? AppColors.primary : context.appColors.hint,
+                    color: isUnread ? context.appColors.link : context.appColors.hint,
                   ),
                 ),
               if (isUnread) ...[
@@ -625,8 +625,8 @@ class _InquiryCard extends StatelessWidget {
     final Color borderColor;
     final IconData icon;
 
-    // Unbadged, clean colored text and non-bold with icon for Booked in History
-    if (isResolved && resolvedStatus == 'Booked') {
+    // Unbadged, clean colored text and non-bold with icon for Occupied in History
+    if (isResolved && resolvedStatus == 'Occupied') {
       return const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -637,7 +637,7 @@ class _InquiryCard extends StatelessWidget {
           ),
           SizedBox(width: 4),
           Text(
-            'Booked',
+            'Occupied',
             style: TextStyle(
               fontFamily: 'DM Sans',
               fontSize: 12,

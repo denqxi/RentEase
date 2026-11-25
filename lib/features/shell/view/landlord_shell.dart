@@ -8,6 +8,8 @@ import '../../activity/cubit/activity_cubit.dart';
 import '../../activity/data/repositories/notification_repository_impl.dart';
 import '../../app_update/widgets/update_banner.dart';
 import '../../auth/presentation/current_uid.dart';
+import '../../inquiry/cubit/inquiry_list_cubit.dart';
+import '../../inquiry/data/repositories/inquiry_repository_impl.dart';
 import '../../landlord_home/cubit/landlord_home_cubit.dart';
 import '../../landlord_home/view/landlord_home_screen.dart';
 import '../../landlord_matches/view/landlord_matches_screen.dart';
@@ -47,6 +49,14 @@ class LandlordShell extends StatelessWidget {
             );
           },
         ),
+        if (currentUidOrNull(context) case final uid?)
+          BlocProvider<InquiryListCubit>(
+            create: (_) => InquiryListCubit(
+              uid: uid,
+              isOwner: true,
+              repository: InquiryRepositoryImpl(),
+            ),
+          ),
         BlocProvider<ShellCubit>(create: (_) => ShellCubit()),
       ],
       child: const _LandlordShellView(),
@@ -68,12 +78,14 @@ class _LandlordShellView extends StatelessWidget {
 
   static List<FloatingNavBarItem> _items([int unreadInquiries = 0]) => <FloatingNavBarItem>[
     const FloatingNavBarItem(svgString: AppSvgIcons.home, label: 'Home'),
-    const FloatingNavBarItem(svgString: AppSvgIcons.save, label: 'Matches'),
+    const FloatingNavBarItem(
+      icon: Icons.people_outline_rounded,
+      label: 'Matches',
+    ),
     const FloatingNavBarItem(
       svgString: AppSvgIcons.ownerAdd,
       label: 'Add',
-      iconSize: 23,
-      activeIconSize: 21,
+      iconSize: 24,
     ),
     FloatingNavBarItem(
       svgString: AppSvgIcons.inquiry,
@@ -102,7 +114,6 @@ class _LandlordShellView extends StatelessWidget {
         }
       },
       child: Scaffold(
-        extendBody: true,
         body: Stack(
           children: [
             IndexedStack(

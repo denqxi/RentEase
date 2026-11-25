@@ -99,7 +99,7 @@ class OwnerPhase1View extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              const Row(
+              Row(
                 children: [
                   Icon(
                     Icons.smart_toy_outlined,
@@ -113,7 +113,7 @@ class OwnerPhase1View extends StatelessWidget {
                       fontFamily: 'DM Sans',
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                      color: context.appColors.link,
                     ),
                   ),
                 ],
@@ -150,7 +150,9 @@ class OwnerPhase1View extends StatelessWidget {
                     ),
                     _SummaryRow(
                       'Group size',
-                      '${profile?.groupSize ?? 1} person(s)',
+                      (profile?.groupSize ?? 1) == 1
+                          ? '1 person'
+                          : '${profile?.groupSize} people',
                     ),
                     _SummaryRow(
                       'Budget',
@@ -257,7 +259,7 @@ class OwnerPhase1View extends StatelessWidget {
                     )
                   : Text(
                       inquiry.status == 'closed'
-                          ? 'Closed — you marked this listing fully booked.'
+                          ? 'Closed — you marked this listing occupied.'
                           : 'You declined this inquiry.',
                       style: AppTextStyles.body(context),
                       textAlign: TextAlign.center,

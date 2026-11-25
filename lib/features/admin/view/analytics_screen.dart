@@ -174,7 +174,7 @@ class _Body extends StatelessWidget {
               _MetricCard(
                 label: 'Bookings',
                 value: '${stats.bookings}',
-                delta: 'marked as booked',
+                delta: 'marked as occupied',
                 icon: Icons.event_available_rounded,
                 color: AppColors.primary,
               ),

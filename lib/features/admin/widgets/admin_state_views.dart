@@ -45,9 +45,9 @@ class AdminMessageView extends StatelessWidget {
             if (onRetry != null)
               TextButton(
                 onPressed: onRetry,
-                child: const Text(
+                child: Text(
                   'Try again',
-                  style: TextStyle(color: AppColors.primary),
+                  style: TextStyle(color: context.appColors.link),
                 ),
               ),
           ],

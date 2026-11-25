@@ -5,6 +5,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_svg_icons.dart';
 import '../../../shared/widgets/app_svg_icon.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
+import '../../../shared/widgets/match_reasons_line.dart';
+import '../../matching/domain/entities/match_reason.dart';
 import '../model/listing.dart';
 
 /// Large card matching the modern owner property card styling (`_ModernPropertyCard`),
@@ -175,7 +177,8 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                             ),
                           ),
 
-                          // Top-left: Match score pill & Rank badge (clean white pill with soft shadow)
+                          // Top-left: Rank or match pill (clean white pill with soft shadow)
+                          if (isGuest || widget.rank != null || listing.isMatch)
                           Positioned(
                             top: 10,
                             left: 10,
@@ -229,24 +232,26 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                                         letterSpacing: -0.2,
                                       ),
                                     ),
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      width: 1,
-                                      height: 11,
-                                      color: context.appColors.hint,
-                                    ),
-                                    const SizedBox(width: 6),
+                                    if (isGuest) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        width: 1,
+                                        height: 11,
+                                        color: context.appColors.hint,
+                                      ),
+                                      const SizedBox(width: 6),
+                                    ],
                                   ] else if (!isGuest) ...[
-                                    Icon(
-                                      Icons.auto_awesome,
+                                    const Icon(
+                                      Icons.check_circle_rounded,
                                       size: 12,
-                                      color: listing.matchDotColor,
+                                      color: AppColors.matchHigh,
                                     ),
                                     const SizedBox(width: 4),
                                   ],
-                                  if (!isGuest)
+                                  if (!isGuest && widget.rank == null)
                                     Text(
-                                      '${listing.matchPercent}% Match',
+                                      MatchStatus.matches.label,
                                       style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 11.5,
@@ -255,7 +260,7 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                                         letterSpacing: -0.1,
                                       ),
                                     )
-                                  else ...[
+                                  else if (isGuest) ...[
                                     if (widget.rank == null) ...[
                                       Icon(
                                         Icons.lock_outline,
@@ -290,88 +295,50 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                             ),
                           ),
 
-                          // Bottom-right: Ci score badge (for testing) & Photo count badge (clean white pills)
-                          if (!isGuest || photoCount > 0)
+                          // Bottom-right: Photo count badge
+                          if (photoCount > 0)
                             Positioned(
                               bottom: 8,
                               right: 8,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (!isGuest) ...[
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 7.5,
-                                        vertical: 3.5,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: context.appColors.surface,
-                                        borderRadius: BorderRadius.circular(10),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppColors.slate900.withValues(alpha: 0.12),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Text(
-                                        'Ci = ${listing.effectiveCi.toStringAsFixed(4)}',
-                                        style: TextStyle(
-                                          fontFamily: 'DM Sans',
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          color: context.appColors.textPrimary,
-                                          letterSpacing: -0.1,
-                                        ),
-                                      ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7.5,
+                                  vertical: 3.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: context.appColors.surface,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.slate900.withValues(alpha: 0.12),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
                                     ),
-                                    if (photoCount > 0) const SizedBox(width: 5),
                                   ],
-                                  if (photoCount > 0)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 7.5,
-                                        vertical: 3.5,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: context.appColors.surface,
-                                        borderRadius: BorderRadius.circular(10),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppColors.slate900.withValues(alpha: 0.12),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.photo_outlined,
-                                            size: 12,
-                                            color: context.appColors.textSecondary,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '$photoCount',
-                                            style: TextStyle(
-                                              fontFamily: 'DM Sans',
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w700,
-                                              color: context.appColors.textPrimary,
-                                              letterSpacing: -0.1,
-                                            ),
-                                          ),
-                                        ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.photo_outlined,
+                                      size: 12,
+                                      color: context.appColors.textSecondary,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '$photoCount',
+                                      style: TextStyle(
+                                        fontFamily: 'DM Sans',
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: context.appColors.textPrimary,
+                                        letterSpacing: -0.1,
                                       ),
                                     ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-
-
                         ],
                       ),
                     ),
@@ -468,44 +435,54 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.star_rounded,
-                  size: 15.5,
-                  color: AppColors.matchMedium,
-                ),
-                const SizedBox(width: 3),
-                Text(
-                  hasRating
-                      ? effectiveRating!.toStringAsFixed(1)
-                      : '0',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: context.appColors.textPrimary,
-                  ),
-                ),
-                if (hasRating && effectiveReviewCount > 0) ...[
-                  const SizedBox(width: 2),
+            if (hasRating) ...[
+              const SizedBox(width: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                                    const Icon(
+                      Icons.star_rounded,
+                      size: 15.5,
+                      color: AppColors.matchMedium,
+                    ),
+                    const SizedBox(width: 3),
                   Text(
-                    '($effectiveReviewCount)',
+                    effectiveRating!.toStringAsFixed(1),
                     style: TextStyle(
                       fontFamily: 'DM Sans',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: context.appColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: context.appColors.textPrimary,
                     ),
                   ),
+                  if (effectiveReviewCount > 0) ...[
+                    const SizedBox(width: 2),
+                    Text(
+                      '($effectiveReviewCount)',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: context.appColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
-            ),
+              ),
+            ],
           ],
         ),
+        if (!hasRating)
+          Text(
+            'No reviews yet',
+            style: TextStyle(
+              fontFamily: 'DM Sans',
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: context.appColors.textSecondary,
+            ),
+          ),
         const SizedBox(height: 4),
 
         // Address row: constrained to 70% width, tap to expand full address
@@ -556,6 +533,11 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
           ),
         ),
 
+        if (!widget.isGuest && listing.matchReasons.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          MatchReasonsLine(reasons: listing.matchReasons),
+        ],
+
         // Space below address (uncluttered) & pushes footer to bottom
         if (isBounded) ...[
           SizedBox(height: _isAddressExpanded ? 2 : 8),
@@ -576,7 +558,7 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Left: Property Type with SVG icon
-            Row(
+            Flexible(child: Row(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -586,17 +568,21 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                   color: context.appColors.textPrimary,
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  displayType,
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w500,
-                    color: context.appColors.textPrimary,
+                Flexible(
+                  child: Text(
+                    displayType,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: context.appColors.textPrimary,
+                    ),
                   ),
                 ),
               ],
-            ),
+            )),
 
             // Right: Rent
             Text.rich(
@@ -604,11 +590,11 @@ class _ListingCardLargeState extends State<ListingCardLarge> {
                 children: [
                   TextSpan(
                     text: '₱${ListingCardLarge._fmt(listing.pricePerMonth)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
+                      color: context.appColors.link,
                       letterSpacing: -0.3,
                     ),
                   ),

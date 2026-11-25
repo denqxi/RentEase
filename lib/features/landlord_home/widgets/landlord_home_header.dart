@@ -51,7 +51,7 @@ class LandlordHomeHeader extends StatelessWidget {
         AppSpacing.sm,
       ),
       child: Container(
-        height: 60,
+        constraints: const BoxConstraints(minHeight: 60),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
           color: context.appColors.surface,
@@ -153,8 +153,6 @@ class LandlordHomeHeader extends StatelessWidget {
                       color: context.appColors.hint,
                       height: 1.15,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Row(
@@ -171,7 +169,7 @@ class LandlordHomeHeader extends StatelessWidget {
                             letterSpacing: -0.2,
                             height: 1.15,
                           ),
-                          maxLines: 1,
+                          maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 
-/// Green "Compatible" badge shown on matched properties.
+/// Green "Matches" badge shown on matched properties.
 class CompatibleBadge extends StatelessWidget {
   const CompatibleBadge({super.key});
 
@@ -15,7 +15,7 @@ class CompatibleBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: const Text(
-        'Compatible',
+        'Matches',
         style: TextStyle(
           fontFamily: 'DM Sans',
           fontSize: 10,

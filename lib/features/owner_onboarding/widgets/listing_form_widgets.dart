@@ -152,7 +152,7 @@ class _ListingDropdownState<T> extends State<ListingDropdown<T>>
                                     ? FontWeight.w600
                                     : FontWeight.w400,
                                 color: isSelected
-                                    ? AppColors.primary
+                                    ? context.appColors.link
                                     : context.appColors.textPrimary,
                               ),
                               child: item.child,
@@ -428,7 +428,7 @@ class _PropertyTypeDropdownState extends State<PropertyTypeDropdown>
                                         ? FontWeight.w600
                                         : FontWeight.w400,
                                     color: _isOptionSelected(option)
-                                        ? AppColors.primary
+                                        ? context.appColors.link
                                         : context.appColors.textPrimary,
                                   ),
                                 ),

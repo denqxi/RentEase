@@ -17,10 +17,14 @@ class PaymentBreakdownCard extends StatelessWidget {
     this.totalLabel = 'Total due at move-in',
     this.noneLabel = 'None',
     this.monthsLabel,
+    this.showMonthlyRent = true,
     super.key,
   });
 
   final PaymentBreakdown breakdown;
+
+  /// Off where the screen already shows the rent.
+  final bool showMonthlyRent;
   final String title;
   final String monthlyRentLabel;
   final String advanceLabel;
@@ -63,17 +67,20 @@ class PaymentBreakdownCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          _line(
+          if (showMonthlyRent)
+            _line(
             context,
             monthlyRentLabel,
             CurrencyUtils.formatDollars(b.monthlyRent),
           ),
           _line(
             context,
-            b.advanceMonths > 0
+            b.advanceMonths <= 0
+                ? advanceLabel
+                : showMonthlyRent
                 ? '$advanceLabel ($months × '
                       '${CurrencyUtils.formatDollars(b.monthlyRent)})'
-                : advanceLabel,
+                : '$advanceLabel ($months)',
             b.advanceMonths > 0
                 ? CurrencyUtils.formatDollars(b.advanceTotal)
                 : noneLabel,
@@ -107,36 +114,46 @@ class PaymentBreakdownCard extends StatelessWidget {
     String value, {
     bool emphasised = false,
   }) {
+    final labelText = Text(
+      label,
+      style: TextStyle(
+        fontFamily: 'DM Sans',
+        fontSize: emphasised ? 14 : 13,
+        fontWeight: emphasised ? FontWeight.w700 : FontWeight.w500,
+        color: emphasised
+            ? context.appColors.textPrimary
+            : context.appColors.textSecondary,
+      ),
+    );
+    final valueText = Text(
+      value,
+      style: TextStyle(
+        fontFamily: 'DM Sans',
+        fontSize: emphasised ? 15 : 13,
+        fontWeight: emphasised ? FontWeight.w800 : FontWeight.w700,
+        color: context.appColors.textPrimary,
+      ),
+    );
+    // Large text stacks the amount under its label so words stay whole.
+    final stacked = MediaQuery.textScalerOf(context).scale(1) > 1.3;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'DM Sans',
-                fontSize: emphasised ? 14 : 13,
-                fontWeight: emphasised ? FontWeight.w700 : FontWeight.w500,
-                color: emphasised
-                    ? context.appColors.textPrimary
-                    : context.appColors.textSecondary,
+      child: stacked
+          ? SizedBox(
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [labelText, valueText],
               ),
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: labelText),
+                const SizedBox(width: 12),
+                valueText,
+              ],
             ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            value,
-            style: TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: emphasised ? 15 : 13,
-              fontWeight: emphasised ? FontWeight.w800 : FontWeight.w700,
-              color: context.appColors.textPrimary,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

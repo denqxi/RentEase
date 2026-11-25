@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../shared/widgets/match_reasons_line.dart';
 import '../model/match_result.dart';
 
 /// Card summarising a top listing match on the success screen with a property
-/// thumbnail, match percent badge, location, and monthly price.
+/// thumbnail, match badge, location, and monthly price.
 class MatchCard extends StatelessWidget {
   const MatchCard({required this.match, super.key});
 
@@ -81,7 +82,7 @@ class MatchCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                // Percent Match Badge
+                // Match badge
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 6.5,
@@ -116,7 +117,7 @@ class MatchCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 3.5),
                       Text(
-                        '${match.scorePercent}% Match',
+                        'Matches',
                         style: const TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 10,
@@ -170,14 +171,19 @@ class MatchCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
 
+                if (match.reasons.isNotEmpty) ...[
+                  MatchReasonsLine(reasons: match.reasons),
+                  const SizedBox(height: 6),
+                ],
+
                 // Price
                 Text(
                   match.price ?? '₱8,500/mo',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
+                    color: context.appColors.link,
                   ),
                 ),
               ],

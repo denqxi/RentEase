@@ -608,11 +608,6 @@ class ProfileScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            AppSvgIcon(
-                              svgString: AppSvgIcons.chevronRight,
-                              color: context.appColors.hint,
-                              size: 16,
-                            ),
                           ],
                         ),
                       ),
@@ -623,7 +618,7 @@ class ProfileScreen extends StatelessWidget {
 
                   const SizedBox(width: double.infinity, child: UpdateSection()),
 
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -880,6 +875,16 @@ class _TopHeroWavePainter extends CustomPainter {
         ],
       ).createShader(rect);
     canvas.drawPath(leftWave, leftWavePaint);
+
+    // Last: fade everything into the page so the backdrop has no bottom edge.
+    final fadePaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [AppColors.surface.withValues(alpha: 0.0), AppColors.surface],
+        stops: const [0.55, 1.0],
+      ).createShader(rect);
+    canvas.drawRect(rect, fadePaint);
   }
 
   @override

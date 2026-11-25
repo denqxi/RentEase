@@ -460,7 +460,7 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
                       height: 46,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: AppColors.accent,
                           foregroundColor: AppColors.surface,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -609,11 +609,11 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
                     ),
                     child: Text(
                       _propertyType,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: context.appColors.link,
                       ),
                     ),
                   ),
@@ -752,7 +752,7 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
                             width: 1.2,
                           ),
                         ),
-                        child: const Column(
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
@@ -765,7 +765,7 @@ class _EditEntirePropertyScreenState extends State<EditEntirePropertyScreen> {
                               'Add Photo',
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
-                                color: AppColors.primary,
+                                color: context.appColors.link,
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
                               ),

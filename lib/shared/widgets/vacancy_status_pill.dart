@@ -37,7 +37,7 @@ class VacancyStatusPill extends StatelessWidget {
       case VacancyStatus.booked:
         bg = context.appColors.indicatorInactive;
         textColor = context.appColors.textSecondary;
-        label = 'Booked';
+        label = 'Occupied';
     }
 
     return Container(

@@ -12,19 +12,21 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/firestore/firestore_collections.dart';
 import '../../../core/firestore/models/models.dart';
-import '../../../core/utils/date_utils.dart';
 import '../../../core/utils/payment_breakdown.dart';
 import '../../../shared/widgets/guest_access_sheet.dart';
 import '../../../shared/widgets/payment_breakdown_card.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
 import '../../inquiry/view/start_inquiry.dart';
 import '../../landlord_home/view/owner_detail_screen.dart';
+import '../../matching/domain/entities/match_reason.dart';
 import '../../matching/domain/entities/mismatch_reason.dart';
 import '../../owner_onboarding/widgets/listing_form_widgets.dart'
     show amenityIconFor;
 import '../../profile/view/edit_rental_preferences_screen.dart';
 import '../cubit/home_cubit.dart';
 import '../model/listing.dart';
+import '../widgets/property_facts_strip.dart';
+import '../widgets/why_this_rank_card.dart';
 import 'map_view_screen.dart';
 import '../../../shared/widgets/app_snack_bar.dart';
 
@@ -128,7 +130,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         'photos': List<String>.from(doc.photos),
         'address': doc.address,
         'monthlyRent': doc.monthlyRent,
-        'distance': 0.0,
+        'distance': null,
         'amenityScore': doc.amenityScore ?? doc.amenityList.length,
         'tenantCi': ci,
         'isVerified': doc.isVerified,
@@ -169,14 +171,15 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         'photos': List<String>.from(l.photos),
         'address': l.location,
         'monthlyRent': l.pricePerMonth,
-        'distance': 0.0,
+        'distance': l.distanceKm,
         'amenityScore': l.amenityScore,
-        'tenantCi': l.matchPercent / 100.0,
+        'tenantCi': l.tenantCi ?? 0.0,
         'isVerified': false,
         'allowedGender': 'Any',
         'smokingAllowed': false,
         'petsAllowed': false,
         'curfewHours': null,
+        'termsKnown': false,
         'depositAmount': l.pricePerMonth,
         'advanceMonths': 1,
         'maxOccupants': 1,
@@ -204,6 +207,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       'title': 'Property',
       'address': 'Address loading...',
       'monthlyRent': 0,
+      'termsKnown': false,
       'bScore': 1,
       'isOutsidePreference': false,
       'isNonMatch': false,
@@ -373,6 +377,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       }
 
       if (!mounted) return;
+      if (detail.containsKey('depositAmount')) detail['termsKnown'] = true;
       if (detail.isNotEmpty) {
         setState(() {
           _property = mergePropertyDetail(
@@ -491,6 +496,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           poi: tenantPoi,
           poiLabel: _profile?.poiLabel,
           poiType: _profile?.poiType,
+          maxBudget: _profile?.maxBudget,
           isSinglePropertyMode: true,
         ),
       ),
@@ -559,10 +565,14 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             ? [_property['photoUrl'] as String]
             : const <String>[];
 
-    final int matchPercent = widget.initialListing?.matchPercent ??
-        (((_property['tenantCi'] as num?)?.toDouble() ?? 0.0) * 100).round();
-    final Color matchDotColor =
-        matchPercent >= 80 ? AppColors.matchHigh : AppColors.matchMedium;
+    // False while the map still holds placeholder rental terms.
+    final bool termsKnown = _property['termsKnown'] != false;
+
+    // Only a confirmed match has a rank to explain.
+    final double tenantCi = (_property['tenantCi'] as num?)?.toDouble() ?? 0.0;
+    final bool showRank = !widget.isGuest &&
+        MatchStatus.of(_property) == MatchStatus.matches &&
+        tenantCi > 0;
 
     return Scaffold(
       backgroundColor: context.appColors.surface,
@@ -635,17 +645,23 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          'Property Details',
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: context.appColors.textPrimary,
-                            letterSpacing: -0.2,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Property Details',
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: context.appColors.textPrimary,
+                              letterSpacing: -0.2,
+                            ),
                           ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       // Share Button
                       Container(
                         width: 38,
@@ -817,7 +833,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Text(
-                                    "Matches your temporary search filter",
+                                    "Matches this search",
                                     style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 12,
@@ -827,7 +843,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    "This listing fits your search adjustments, but is outside your saved profile. Update your profile preferences to run bilateral matching and send an inquiry.",
+                                    "It doesn't match your saved preferences. Update them to send an inquiry.",
                                     style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 11.5,
@@ -873,7 +889,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Text(
-                                    'Outside your session filter',
+                                    'Outside this search',
                                     style: TextStyle(
                                       fontFamily: 'DM Sans',
                                       fontSize: 12,
@@ -884,12 +900,9 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                                   Text(
                                     [
                                       if ((_property['distanceExcess'] ?? 0) > 0)
-                                        'Distance is ${_property['distanceExcess']} km over limit',
+                                        '${_property['distanceExcess']} km farther than this search',
                                       if ((_property['budgetExcess'] ?? 0) > 0)
-                                        'Budget is ₱${_property['budgetExcess']} over limit',
-                                      if ((_property['distanceExcess'] ?? 0) == 0 &&
-                                          (_property['budgetExcess'] ?? 0) == 0)
-                                        'Budget is within range',
+                                        '₱${_property['budgetExcess']} over the budget for this search',
                                     ].join(' · '),
                                     style: TextStyle(
                                       fontFamily: 'DM Sans',
@@ -916,12 +929,8 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                         context,
                         () => widget.homeCubit?.toggleSaved(propId),
                       ),
-                      matchPercent: matchPercent,
-                      tenantCi: (_property['tenantCi'] as num?)?.toDouble() ?? widget.initialListing?.effectiveCi,
-                      matchDotColor: matchDotColor,
                       isGuest: widget.isGuest,
-                      isNonMatch: isNonMatch,
-                      isFilterMatch: isFilterMatch,
+                      status: MatchStatus.of(_property),
                     ),
                     const SizedBox(height: 14),
 
@@ -939,19 +948,50 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                     ),
                     const SizedBox(height: 14),
 
+                    if (termsKnown) ...[
+                      PropertyFactsStrip(
+                        breakdown: PaymentBreakdown(
+                          monthlyRent: monthlyRent,
+                          advanceMonths: advanceMonths,
+                          depositAmount: depositAmount,
+                        ),
+                        distanceKm: widget.isGuest
+                            ? null
+                            : _property['distance'] as num?,
+                        curfewHours: curfewHours,
+                        allowedGender: allowedGender,
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+
+                    if (showRank) ...[
+                      WhyThisRankCard(
+                        ci: tenantCi,
+                        rank: (_property['tenantRank'] as num?)?.toInt(),
+                        reasons: MatchReason.forListing(
+                          distanceKm: _property['distance'] as num?,
+                          rent: monthlyRent,
+                          maxBudget: _profile?.maxBudget,
+                          amenityCount: _property['amenityScore'] as num?,
+                        ),
+                        profile: _profile,
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+
                     // ── 3. Rental Information Unified Card ─────────────────
+                    if (termsKnown) ...[
                     _RentalInformationCard(
                       monthlyRent: monthlyRent,
                       depositAmount: depositAmount,
                       advanceMonths: advanceMonths,
                       maxOccupants: maxOccupants,
-                      curfewHours: curfewHours,
-                      allowedGender: allowedGender,
                       smokingAllowed: smokingAllowed,
                       petsAllowed: petsAllowed,
                       amenities: amenities,
                     ),
                     const SizedBox(height: 14),
+                    ],
 
                     // ── 6. Host / Owner Information Card ───────────────────
                     _HostInformationCard(
@@ -1054,7 +1094,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                       // In-flow update preferences button (white button, subtle outline, soft shadow)
                       Container(
                         width: double.infinity,
-                        height: 42,
+                        constraints: const BoxConstraints(minHeight: 48),
                         decoration: BoxDecoration(
                           color: context.appColors.surface,
                           borderRadius: BorderRadius.circular(12),
@@ -1075,15 +1115,23 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                           child: InkWell(
                             borderRadius: BorderRadius.circular(12),
                             onTap: () => _editPreferences(context),
-                            child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Center(
+                              heightFactor: 1,
                               child: Text(
                                 'Update my preferences',
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: context.appColors.textPrimary,
                                 ),
+                              ),
                               ),
                             ),
                           ),
@@ -1111,9 +1159,11 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                   children: [
                     // Temporary filter match: bilateral check button to update profile
                     if (isFilterMatch)
-                      SizedBox(
-                        width: double.infinity,
-                        height: 42,
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minWidth: double.infinity,
+                          minHeight: 48,
+                        ),
                         child: ElevatedButton.icon(
                           onPressed: () => _guardGuestAction(
                             context,
@@ -1121,7 +1171,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                           ),
                           icon: const Icon(Icons.edit_note_rounded, size: 18),
                           label: Text(
-                            'Update Preferences to Inquire',
+                            'Update preferences to inquire', textAlign: TextAlign.center,
                             style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 14,
@@ -1142,9 +1192,11 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
 
                     // Match inquiry button (absent for non-matches and filter matches)
                     if (canInquire && !isOutside && !isNonMatch)
-                      SizedBox(
-                        width: double.infinity,
-                        height: 42,
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minWidth: double.infinity,
+                          minHeight: 48,
+                        ),
                         child: ElevatedButton(
                           onPressed: () => _guardGuestAction(
                             context,
@@ -1163,7 +1215,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                             ),
                           ),
                           child: Text(
-                            widget.isGuest ? 'Sign in to inquire' : 'Send Inquiry',
+                            widget.isGuest ? 'Sign in to inquire' : 'Send Inquiry', textAlign: TextAlign.center,
                             style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 14,
@@ -1177,9 +1229,11 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                     // Outside session filters buttons
                     if (isOutside) ...[
                       if (canInquire) ...[
-                        SizedBox(
-                          width: double.infinity,
-                          height: 42,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            minWidth: double.infinity,
+                            minHeight: 48,
+                          ),
                           child: ElevatedButton(
                             onPressed: () => _guardGuestAction(
                               context,
@@ -1198,7 +1252,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                               ),
                             ),
                             child: Text(
-                              'Send Inquiry Anyway',
+                              'Send Inquiry Anyway', textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 14,
@@ -1210,9 +1264,11 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                         ),
                         const SizedBox(height: 8),
                       ],
-                      SizedBox(
-                        width: double.infinity,
-                        height: 42,
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minWidth: double.infinity,
+                          minHeight: 48,
+                        ),
                         child: OutlinedButton(
                           onPressed: () => _guardGuestAction(
                             context,
@@ -1225,7 +1281,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                             ),
                           ),
                           child: Text(
-                            'Edit My Saved Preferences',
+                            'Edit My Saved Preferences', textAlign: TextAlign.center,
                             style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 14,
@@ -1483,12 +1539,8 @@ class _PropertyPhotoGallerySection extends StatefulWidget {
     this.propertyId,
     this.cubit,
     this.onSavedToggle,
-    required this.matchPercent,
-    this.tenantCi,
-    required this.matchDotColor,
+    required this.status,
     required this.isGuest,
-    required this.isNonMatch,
-    this.isFilterMatch = false,
   });
 
   final List<String> photos;
@@ -1496,12 +1548,8 @@ class _PropertyPhotoGallerySection extends StatefulWidget {
   final String? propertyId;
   final HomeCubit? cubit;
   final VoidCallback? onSavedToggle;
-  final int matchPercent;
-  final double? tenantCi;
-  final Color matchDotColor;
+  final MatchStatus? status;
   final bool isGuest;
-  final bool isNonMatch;
-  final bool isFilterMatch;
 
   @override
   State<_PropertyPhotoGallerySection> createState() =>
@@ -1689,7 +1737,8 @@ class _PropertyPhotoGallerySectionState
             ),
           ),
 
-          // Top-left: Match score / Mismatch badge (clean white pill with sparkle icon)
+          // Top-left: match status pill
+          if (widget.isGuest || widget.status != null)
           Positioned(
             top: 10,
             left: 10,
@@ -1712,16 +1761,16 @@ class _PropertyPhotoGallerySectionState
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (widget.isNonMatch) ...[
+                  if (widget.status == MatchStatus.doesNotMatch) ...[
                     const Icon(
                       Icons.info_outline_rounded,
                       size: 12,
                       color: AppColors.amber700,
                     ),
                     const SizedBox(width: 4),
-                    const Text(
-                      "Doesn't match",
-                      style: TextStyle(
+                    Text(
+                      widget.status!.label,
+                      style: const TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
@@ -1729,16 +1778,16 @@ class _PropertyPhotoGallerySectionState
                         letterSpacing: -0.1,
                       ),
                     ),
-                  ] else if (widget.isFilterMatch) ...[
+                  ] else if (widget.status == MatchStatus.thisSearch) ...[
                     const Icon(
                       Icons.tune_rounded,
                       size: 12,
                       color: AppColors.amber700,
                     ),
                     const SizedBox(width: 4),
-                    const Text(
-                      'Filter Match',
-                      style: TextStyle(
+                    Text(
+                      widget.status!.label,
+                      style: const TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
@@ -1746,40 +1795,20 @@ class _PropertyPhotoGallerySectionState
                         letterSpacing: -0.1,
                       ),
                     ),
-                  ] else if (!widget.isGuest &&
-                      widget.matchPercent > 0) ...[
-                    const Icon(
-                      Icons.auto_awesome,
-                      size: 12,
-                      color: AppColors.primaryCyan,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${widget.matchPercent}% Match',
-                      style: const TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.accent,
-                        letterSpacing: -0.1,
-                      ),
-                    ),
                   ] else if (!widget.isGuest) ...[
                     const Icon(
-                      Icons.auto_awesome,
+                      Icons.check_circle_rounded,
                       size: 12,
-                      color: AppColors.primaryCyan,
+                      color: AppColors.matchHigh,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      (widget.tenantCi != null && widget.tenantCi! > 0)
-                          ? '${(widget.tenantCi! * 100).round()}% Match'
-                          : '0% Match',
-                      style: const TextStyle(
+                      MatchStatus.matches.label,
+                      style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.accent,
+                        color: context.appColors.textPrimary,
                         letterSpacing: -0.1,
                       ),
                     ),
@@ -1932,7 +1961,7 @@ class _PropertyPhotoGallerySectionState
 // MAIN OVERVIEW (NAME, LOCATION, REVIEWS REDIRECT, RENT)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _PropertyMainOverviewCard extends StatefulWidget {
+class _PropertyMainOverviewCard extends StatelessWidget {
   const _PropertyMainOverviewCard({
     required this.displayName,
     required this.displayType,
@@ -1956,230 +1985,132 @@ class _PropertyMainOverviewCard extends StatefulWidget {
   final VoidCallback? onReviewsTap;
 
   @override
-  State<_PropertyMainOverviewCard> createState() =>
-      _PropertyMainOverviewCardState();
-}
-
-class _PropertyMainOverviewCardState
-    extends State<_PropertyMainOverviewCard> {
-  bool _isAddressExpanded = false;
-
-  @override
   Widget build(BuildContext context) {
-    final displayName = widget.displayName;
-    final displayType = widget.displayType;
-    final address = widget.address;
-    final monthlyRent = widget.monthlyRent;
-    final onAddressTap = widget.onAddressTap;
-
-    final double avg = (widget.avgRating != null && widget.avgRating! > 0)
-        ? widget.avgRating!
-        : ((widget.propertyDoc.avgRating != null &&
-                widget.propertyDoc.avgRating! > 0)
-            ? widget.propertyDoc.avgRating!.toDouble()
-            : 0.0);
-    final int count = (widget.totalRatings != null && widget.totalRatings! > 0)
-        ? widget.totalRatings!
-        :
-        widget.propertyDoc.totalRatings?.toInt() ??
-        0;
+    final double avg = (avgRating != null && avgRating! > 0)
+        ? avgRating!
+        : ((propertyDoc.avgRating != null && propertyDoc.avgRating! > 0)
+              ? propertyDoc.avgRating!.toDouble()
+              : 0.0);
+    final int count = (totalRatings != null && totalRatings! > 0)
+        ? totalRatings!
+        : propertyDoc.totalRatings?.toInt() ?? 0;
     final hasReviews = avg > 0 || count > 0;
+    final colors = context.appColors;
+    final secondary = TextStyle(
+      fontFamily: 'DM Sans',
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+      color: colors.textSecondary,
+      height: 1.35,
+    );
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Row 1: Top-left reviews (clickable) & Top-right price in one line (/ mo)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Top-left: Yellow Star rating and reviews text (optically aligned with title below)
-              Material(
-                color: AppColors.transparent,
-                child: InkWell(
-                  onTap: widget.onReviewsTap,
-                  borderRadius: BorderRadius.circular(6),
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 2, bottom: 2, right: 6),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Transform.translate(
-                          offset: const Offset(-1, 0),
-                          child: const Icon(
-                            Icons.star_rounded,
-                            size: 20,
-                            color: AppColors.matchMedium, // Vibrant yellow star
-                          ),
-                        ),
-                        const SizedBox(width: 3),
-                        Text(
-                          hasReviews
-                              ? '${avg.toStringAsFixed(1)} ($count ${count == 1 ? 'review' : 'reviews'})'
-                              : 'No reviews yet',
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontSize: 13,
-                            fontWeight:
-                                hasReviews ? FontWeight.w700 : FontWeight.w500,
-                            color: hasReviews
-                                ? context.appColors.textPrimary
-                                : context.appColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              // Top-right: Price on one line with / mo
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      '₱${_fmt(monthlyRent)}',
-                      style: const TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 21.5,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primaryCyan,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      '/ mo',
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: context.appColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          // Title (same size as price, slightly bigger)
-          Text(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.5,
+          child: Text(
             displayName,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontFamily: 'DM Sans',
-              fontSize: 21.5,
+              fontSize: 22,
               fontWeight: FontWeight.w800,
-              color: context.appColors.textPrimary,
+              color: colors.textPrimary,
               letterSpacing: -0.3,
               height: 1.25,
             ),
           ),
-          const SizedBox(height: 8),
+        ),
+        const SizedBox(height: 4),
+        Text(displayType, style: secondary),
+        const SizedBox(height: 10),
 
-          // Property type
-          Text(
-            displayType,
-            style: TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: context.appColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Location row: Lighter smaller gray pin + Address + Circular map button
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+        // Rent and reviews share a line, and wrap when the text is large.
+        SizedBox(
+          width: double.infinity,
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 4,
             children: [
-              Icon(
-                Icons.location_on_outlined,
-                size: 15,
-                color: context.appColors.hint,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    setState(() {
-                      _isAddressExpanded = !_isAddressExpanded;
-                    });
-                  },
-                  child: AnimatedSize(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeInOut,
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      address,
-                      maxLines: _isAddressExpanded ? null : 1,
-                      overflow: _isAddressExpanded
-                          ? TextOverflow.visible
-                          : TextOverflow.ellipsis,
-                      style: TextStyle(
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '₱${_fmt(monthlyRent)}',
+                      style: const TextStyle(
                         fontFamily: 'DM Sans',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                        color: context.appColors.textSecondary,
-                        height: 1.3,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.accent,
+                        letterSpacing: -0.3,
                       ),
                     ),
-                  ),
+                    TextSpan(text: ' / month', style: secondary),
+                  ],
                 ),
               ),
-              if (onAddressTap != null) ...[
-                const SizedBox(width: 8),
-                Material(
-                  color: AppColors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  child: InkWell(
-                    onTap: onAddressTap,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: context.appColors.surface,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: context.appColors.fieldBorder.withValues(alpha: 0.8),
-                          width: 1,
+              InkWell(
+                onTap: onReviewsTap,
+                borderRadius: BorderRadius.circular(8),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (hasReviews) ...[
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 20,
+                          color: AppColors.matchMedium,
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      Flexible(
+                        child: Text(
+                          hasReviews
+                              ? '${avg.toStringAsFixed(1)} ($count ${count == 1 ? 'review' : 'reviews'})'
+                              : 'No reviews yet',
+                          style: secondary.copyWith(
+                            fontWeight: hasReviews
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: hasReviews
+                                ? colors.textPrimary
+                                : colors.textSecondary,
+                          ),
                         ),
                       ),
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.map_outlined,
-                        size: 15,
-                        color: AppColors.primaryCyan,
-                      ),
-                    ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ],
           ),
+        ),
+        const SizedBox(height: 2),
 
-          const SizedBox(height: 14),
-
-          // Separation line below address
-          Divider(
-            height: 1,
-            thickness: 0.8,
-            color: context.appColors.fieldFill,
-          ),
-        ],
-      ),
+        // Full address, with the map button beside it.
+        Row(
+          children: [
+            Icon(Icons.location_on_outlined, size: 16, color: colors.hint),
+            const SizedBox(width: 6),
+            Expanded(child: Text(address, style: secondary)),
+            if (onAddressTap != null)
+              IconButton(
+                onPressed: onAddressTap,
+                tooltip: 'View on map',
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                icon: const Icon(
+                  Icons.map_outlined,
+                  size: 20,
+                  color: AppColors.accent,
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -2194,8 +2125,6 @@ class _RentalInformationCard extends StatefulWidget {
     required this.depositAmount,
     required this.advanceMonths,
     required this.maxOccupants,
-    required this.curfewHours,
-    required this.allowedGender,
     required this.smokingAllowed,
     required this.petsAllowed,
     required this.amenities,
@@ -2205,8 +2134,6 @@ class _RentalInformationCard extends StatefulWidget {
   final num depositAmount;
   final num advanceMonths;
   final int maxOccupants;
-  final num? curfewHours;
-  final String allowedGender;
   final bool smokingAllowed;
   final bool petsAllowed;
   final List<String> amenities;
@@ -2218,26 +2145,55 @@ class _RentalInformationCard extends StatefulWidget {
 class _RentalInformationCardState extends State<_RentalInformationCard> {
   int? _expandedIndex; // 0: Rent, 1: Rules, 2: Amenities
 
-  static String _fmt(num value) => value
-      .round()
-      .toString()
-      .replaceAllMapped(_kThousandsRe, (m) => '${m[1]},');
-
   static Widget _row(BuildContext context, String label, String value) {
+    if (MediaQuery.textScalerOf(context).scale(1) > 1.3) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: context.appColors.textSecondary,
+                ),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: context.appColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: context.appColors.textSecondary,
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: context.appColors.textSecondary,
+              ),
             ),
           ),
+          const SizedBox(width: 12),
           Flexible(
             child: Text(
               value,
@@ -2277,6 +2233,7 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
             child: Row(
               children: [
                 // Soft teal icon container
+                if (MediaQuery.textScalerOf(context).scale(1) <= 1.5) ...[
                 Container(
                   width: 36,
                   height: 36,
@@ -2292,6 +2249,7 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
                   ),
                 ),
                 const SizedBox(width: 12),
+                ],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2308,8 +2266,6 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 12.5,
@@ -2397,38 +2353,18 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
             ),
           ),
             const SizedBox(height: 12),
-            // Item 1: Rent & Capacity
+            // Item 1: Move-in cost and capacity (rent is in the header)
             _buildItem(
               icon: Icons.account_balance_wallet_outlined,
-              title: 'Rent & Capacity',
+              title: 'Move-in cost & capacity',
               subtitle:
-                  '₱${_fmt(widget.monthlyRent)} / month  ·  Max ${widget.maxOccupants} ${widget.maxOccupants == 1 ? 'occupant' : 'occupants'}',
+                  'Max ${widget.maxOccupants} ${widget.maxOccupants == 1 ? 'occupant' : 'occupants'}',
               isExpanded: _expandedIndex == 0,
               onToggle: () =>
                   setState(() => _expandedIndex = _expandedIndex == 0 ? null : 0),
               children: [
-                _row(context, 'Monthly rent', '₱${_fmt(widget.monthlyRent)}'),
-                _div(context),
-                _row(context,
-                  'Security deposit',
-                  widget.depositAmount > 0
-                      ? '₱${_fmt(widget.depositAmount)}'
-                      : 'None',
-                ),
-                _div(context),
-                _row(context,
-                  'Advance payment',
-                  widget.advanceMonths > 0
-                      ? '${widget.advanceMonths} ${widget.advanceMonths == 1 ? 'month' : 'months'}'
-                      : 'None',
-                ),
-                _div(context),
-                _row(context,
-                  'Maximum occupants',
-                  '${widget.maxOccupants} ${widget.maxOccupants == 1 ? 'occupant' : 'occupants'}',
-                ),
-                const SizedBox(height: 10),
                 PaymentBreakdownCard(
+                  showMonthlyRent: false,
                   breakdown: PaymentBreakdown(
                     monthlyRent: widget.monthlyRent,
                     advanceMonths: widget.advanceMonths,
@@ -2448,16 +2384,11 @@ class _RentalInformationCardState extends State<_RentalInformationCard> {
             _buildItem(
               icon: Icons.assignment_outlined,
               title: 'House Rules',
-              subtitle:
-                  '${formatCurfew(widget.curfewHours)}  ·  ${widget.allowedGender}',
+              subtitle: 'Smoking and pets',
               isExpanded: _expandedIndex == 1,
               onToggle: () =>
                   setState(() => _expandedIndex = _expandedIndex == 1 ? null : 1),
               children: [
-                _row(context, 'Curfew hours', formatCurfew(widget.curfewHours)),
-                _div(context),
-                _row(context, 'Gender policy', widget.allowedGender),
-                _div(context),
                 _row(context,
                   'Smoking policy',
                   widget.smokingAllowed ? 'Allowed' : 'Not allowed',
@@ -2647,8 +2578,11 @@ class _HostInformationCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  runSpacing: 4,
                   children: [
                     Text(
                       'Hosted by',
@@ -2669,7 +2603,7 @@ class _HostInformationCard extends StatelessWidget {
                             fontFamily: 'DM Sans',
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
+                            color: context.appColors.link,
                           ),
                         ),
                         SizedBox(width: 2),
@@ -2682,7 +2616,7 @@ class _HostInformationCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(width: double.infinity, height: 12),
                 Row(
                   children: [
                     CircleAvatar(
@@ -2696,11 +2630,11 @@ class _HostInformationCard extends StatelessWidget {
                       child: (ownerPhotoUrl == null || ownerPhotoUrl.isEmpty)
                           ? Text(
                               ownerInitials,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
+                                color: context.appColors.link,
                               ),
                             )
                           : null,
@@ -2710,13 +2644,13 @@ class _HostInformationCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              Flexible(
-                                child: Text(
+                                Text(
                                   ownerName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 15,
@@ -2724,9 +2658,7 @@ class _HostInformationCard extends StatelessWidget {
                                     color: context.appColors.textPrimary,
                                   ),
                                 ),
-                              ),
                               if (isVerified) ...[
-                                const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 6,
@@ -2737,7 +2669,7 @@ class _HostInformationCard extends StatelessWidget {
                                         .withValues(alpha: 0.10),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(
@@ -2752,7 +2684,7 @@ class _HostInformationCard extends StatelessWidget {
                                           fontFamily: 'DM Sans',
                                           fontSize: 10.5,
                                           fontWeight: FontWeight.w700,
-                                          color: AppColors.primary,
+                                          color: context.appColors.link,
                                         ),
                                       ),
                                     ],
@@ -3034,8 +2966,10 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 12,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
                 'Property reviews',
@@ -3081,8 +3015,12 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
           Divider(height: 1, thickness: 0.8, color: context.appColors.fieldFill),
           const SizedBox(height: 12),
 
-          SizedBox(
-            height: 260,
+          ConstrainedBox(
+            constraints: _isLoading || _reviews.isEmpty
+                ? const BoxConstraints(minWidth: double.infinity, minHeight: 160)
+                : BoxConstraints.tightFor(
+                    height: MediaQuery.textScalerOf(context).scale(260),
+                  ),
             child: _isLoading
                 ? const Center(
                     child: SizedBox(
@@ -3107,6 +3045,7 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                             const SizedBox(height: 8),
                             Text(
                               'No reviews yet for this property',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 13.5,
@@ -3117,10 +3056,11 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                             const SizedBox(height: 4),
                             Text(
                               'Reviews from verified tenants will appear here.',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 12,
-                                color: context.appColors.hint,
+                                color: context.appColors.textSecondary,
                               ),
                             ),
                           ],
@@ -3154,8 +3094,6 @@ class _PropertyReviewsCardState extends State<_PropertyReviewsCard> {
                                     Expanded(
                                       child: Text(
                                         rev.raterName,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                           fontFamily: 'DM Sans',
                                           fontSize: 13,

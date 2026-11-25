@@ -1707,39 +1707,25 @@ class _SpotlightTutorialOverlayState extends State<_SpotlightTutorialOverlay> {
           ),
         ),
 
-        // 2. Skip button on top right
-        Positioned(
-          top: 14,
-          right: 16,
-          child: SafeArea(
-            child: TextButton(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.white.withValues(alpha: 0.18),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 6,
-                ),
-              ),
-              onPressed: widget.onDismiss,
-              child: Text(
-                s.tutorialSkip,
-                style: const TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+        // 2. Tooltip card with pointer
+        if (MediaQuery.textScalerOf(context).scale(1) > 1.3)
+          // Large text: dock the card and let it scroll, so its buttons are
+          // always reachable.
+          Positioned(
+            left: 20,
+            right: 20,
+            bottom: 16,
+            child: SafeArea(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: screenSize.height * 0.75),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: _buildCard(s, item, index, total, isLast),
                 ),
               ),
             ),
-          ),
-        ),
-
-        // 3. Tooltip card with pointer
-        if (showAbove)
+          )
+        else if (showAbove)
           Positioned(
             bottom: (screenSize.height - rect.top) + 8,
             left: 20,
@@ -1816,81 +1802,118 @@ class _SpotlightTutorialOverlayState extends State<_SpotlightTutorialOverlay> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  item.title,
-                  style: const TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                    decoration: TextDecoration.none,
+          // The text scrolls when space is short; the buttons stay put.
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.title,
+                          style: const TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${index + 1} / $total',
+                          style: const TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black54,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${index + 1} / $total',
-                  style: const TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black54,
-                    decoration: TextDecoration.none,
+                  const SizedBox(height: 12),
+                  Text(
+                    item.body,
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.normal,
+                      height: 1.5,
+                      color: Colors.black87,
+                      decoration: TextDecoration.none,
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            item.body,
-            style: const TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 13.5,
-              fontWeight: FontWeight.normal,
-              height: 1.5,
-              color: Colors.black87,
-              decoration: TextDecoration.none,
             ),
           ),
           const SizedBox(height: 14),
-          Align(
-            alignment: Alignment.centerRight,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+          SizedBox(
+            width: double.infinity,
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (isLast)
+                  const SizedBox.shrink()
+                else
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.linkText,
+                      minimumSize: const Size(44, 44),
+                    ),
+                    onPressed: widget.onDismiss,
+                    child: Text(
+                      s.tutorialSkip,
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 10,
+                    ),
+                    elevation: 0,
+                    minimumSize: const Size(44, 44),
+                  ),
+                  onPressed: isLast ? widget.onDismiss : widget.onNext,
+                  child: Text(
+                    isLast
+                        ? s.tutorialGotIt
+                        : s.tutorialNextStep(index + 2, total),
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
-                elevation: 0,
-              ),
-              onPressed: isLast ? widget.onDismiss : widget.onNext,
-              child: Text(
-                isLast
-                    ? s.tutorialGotIt
-                    : s.tutorialNextStep(index + 2, total),
-                style: const TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                ),
-              ),
+              ],
             ),
           ),
         ],

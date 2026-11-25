@@ -11,6 +11,8 @@ import '../../../core/utils/location_permission_helper.dart';
 import '../../../shared/widgets/map_zoom_controls.dart';
 import '../../tenant_onboarding/view/poi_setup_screen.dart';
 import '../cubit/edit_preferences_cubit.dart';
+import '../../matching/domain/entities/priority_weights.dart';
+import '../../../shared/widgets/priority_sliders.dart';
 import 'edit_constraints_screen.dart';
 import '../../../shared/widgets/app_snack_bar.dart';
 
@@ -224,39 +226,11 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
     }
   }
 
-  // ── Priority Slider Auto-Balancing ──────────────────────────────────────
-  void _onRentChanged(double rawVal) {
-    final rounded = (rawVal / 5).round() * 5;
-    final newRent = rounded.clamp(0, 100);
+  void _onWeightsChanged(PriorityWeights next) {
     setState(() {
-      _rent = newRent;
-      final remaining = 100 - _rent;
-      if (_distance > remaining) {
-        _distance = remaining;
-        _amenities = 0;
-      } else {
-        _amenities = remaining - _distance;
-      }
-    });
-  }
-
-  void _onDistanceChanged(double rawVal) {
-    final rounded = (rawVal / 5).round() * 5;
-    final maxDistance = 100 - _rent;
-    final newDistance = rounded.clamp(0, maxDistance);
-    setState(() {
-      _distance = newDistance;
-      _amenities = 100 - _rent - _distance;
-    });
-  }
-
-  void _onAmenitiesChanged(double rawVal) {
-    final rounded = (rawVal / 5).round() * 5;
-    final maxAmenities = 100 - _rent;
-    final newAmenities = rounded.clamp(0, maxAmenities);
-    setState(() {
-      _amenities = newAmenities;
-      _distance = 100 - _rent - _amenities;
+      _rent = next.rent;
+      _distance = next.distance;
+      _amenities = next.amenities;
     });
   }
 
@@ -1321,13 +1295,13 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'What matters most to you?',
           style: TextStyle(
             fontFamily: 'DM Sans',
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: AppColors.ink,
+            color: context.appColors.textPrimary,
             letterSpacing: -0.2,
           ),
         ),
@@ -1344,167 +1318,16 @@ class _EditRentalPreferencesViewState extends State<_EditRentalPreferencesView> 
         ),
         const SizedBox(height: 12),
 
-        // Slider 1: Monthly Rent
-        _buildCriteriaSlider(
-          label: 'Lower Monthly Rent',
-          subtext: 'Show cheaper rates first',
-          value: _rent,
-          onChanged: _onRentChanged,
-        ),
-        const SizedBox(height: 8),
-
-        // Slider 2: Commute Distance
-        _buildCriteriaSlider(
-          label: 'Shorter Daily Commute',
-          subtext: 'Show rooms closer to your school or work first',
-          value: _distance,
-          onChanged: _onDistanceChanged,
-        ),
-        const SizedBox(height: 8),
-
-        // Slider 3: Amenities
-        _buildCriteriaSlider(
-          label: 'More Amenities & Inclusions',
-          subtext: 'Show rooms with Wi-Fi, AC, and bath first',
-          value: _amenities,
-          onChanged: _onAmenitiesChanged,
-        ),
-        const SizedBox(height: 12),
-
-        // Allocation Box
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          decoration: BoxDecoration(
-            color: _isBalanced ? AppColors.accentSoft : AppColors.amberFill50,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: _isBalanced
-                  ? AppColors.primaryCyan.withValues(alpha: 0.35)
-                  : AppColors.amberBorder200,
-              width: 1.0,
-            ),
+        // The rule, then the three priority sliders
+        PrioritySliders(
+          weights: PriorityWeights(
+            rent: _rent,
+            distance: _distance,
+            amenities: _amenities,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    _isBalanced ? Icons.check_circle_rounded : Icons.info_outline_rounded,
-                    color: _isBalanced ? AppColors.primaryCyan : AppColors.amber600,
-                    size: 15,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      _isBalanced
-                          ? 'Total weight: 100%'
-                          : 'Total: $_totalPriorities% / 100% (${100 - _totalPriorities}% remaining)',
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: _isBalanced ? AppColors.primaryCyan : AppColors.amber700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 3),
-              Text(
-                'You have 100% to divide across all three. Setting one sets the limit for the rest.',
-                style: TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: context.appColors.textSecondary,
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ),
+          onChanged: _onWeightsChanged,
         ),
       ],
-    );
-  }
-
-  Widget _buildCriteriaSlider({
-    required String label,
-    required String subtext,
-    required int value,
-    required ValueChanged<double> onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: context.appColors.fieldFill,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: context.appColors.fieldBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryCyan.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  '$value%',
-                  style: const TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primaryCyan,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 1),
-          Text(
-            subtext,
-            style: TextStyle(
-              fontFamily: 'DM Sans',
-              fontSize: 10.5,
-              fontWeight: FontWeight.w400,
-              color: context.appColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: AppColors.primaryCyan,
-              inactiveTrackColor: context.appColors.hint,
-              thumbColor: AppColors.primaryCyan,
-              overlayColor: AppColors.primaryCyan.withValues(alpha: 0.15),
-              trackHeight: 3,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.5),
-            ),
-            child: Slider(
-              value: value.toDouble(),
-              min: 0,
-              max: 100,
-              divisions: 20,
-              onChanged: onChanged,
-            ),
-          ),
-        ],
-      ),
     );
   }
 

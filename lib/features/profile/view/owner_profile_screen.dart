@@ -621,8 +621,12 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
 
                     // My reviews
                     _buildMenuItem(
-                      icon: Icons.star_rounded,
-                      iconColor: AppColors.matchMedium,
+                      icon: totalReviews > 0
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
+                      iconColor: totalReviews > 0
+                          ? AppColors.matchMedium
+                          : AppColors.primaryCyan,
                       title: 'My reviews',
                       textColor: textColor,
                       trailingText: totalReviews > 0
@@ -687,11 +691,6 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                                 color: AppColors.rose500,
                               ),
                             ),
-                          ),
-                          AppSvgIcon(
-                            svgString: AppSvgIcons.chevronRight,
-                            color: context.appColors.hint,
-                            size: 16,
                           ),
                         ],
                       ),
@@ -900,24 +899,27 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                       height: 1.3,
                     ),
                   ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusBg,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      pillLabel,
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: statusColor,
+                      ),
+                    ),
+                  ),
                 ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusBg,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                pillLabel,
-                style: TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                  color: statusColor,
-                ),
               ),
             ),
             if (!isVerified) ...[
@@ -962,28 +964,31 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
               Icon(icon, color: effectiveColor, size: 21),
             const SizedBox(width: 14),
             Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                  ),
+                  if (trailingText != null)
+                    Text(
+                      trailingText,
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: trailingTextColor ?? AppColors.primaryCyan,
+                      ),
+                    ),
+                ],
               ),
             ),
-            if (trailingText != null) ...[
-              Text(
-                trailingText,
-                style: TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                  color: trailingTextColor ?? AppColors.primaryCyan,
-                ),
-              ),
-              const SizedBox(width: 4),
-            ],
             AppSvgIcon(
               svgString: AppSvgIcons.chevronRight,
               color: context.appColors.hint,
@@ -1210,6 +1215,16 @@ class _TopHeroWavePainter extends CustomPainter {
         ],
       ).createShader(rect);
     canvas.drawPath(leftWave, leftWavePaint);
+
+    // Last: fade everything into the page so the backdrop has no bottom edge.
+    final fadePaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [AppColors.surface.withValues(alpha: 0.0), AppColors.surface],
+        stops: const [0.55, 1.0],
+      ).createShader(rect);
+    canvas.drawRect(rect, fadePaint);
   }
 
   @override

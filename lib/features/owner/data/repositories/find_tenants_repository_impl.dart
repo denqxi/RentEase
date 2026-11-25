@@ -103,6 +103,10 @@ class FindTenantsRepositoryImpl implements FindTenantsRepository {
           occupation: profile.occupation,
           school: profile.school,
           tenantCi: m.tenantCi,
+          groupSize: profile.groupSize.toInt(),
+          moveInDate: profile.moveInDate?.toDate(),
+          avgRating: profile.effectiveAvgRating,
+          ratingCount: profile.totalRatings?.toInt() ?? 0,
         ),
       );
     }

@@ -119,7 +119,8 @@ class _RecommendedSectionState extends State<RecommendedSection> {
         ),
         const SizedBox(height: AppSpacing.sm),
         SizedBox(
-          height: 296,
+          // The card's text grows with the system font size; the photo doesn't.
+          height: 168 + MediaQuery.textScalerOf(context).scale(179),
           child: PageView.builder(
             controller: _pageController,
             clipBehavior: Clip.none,

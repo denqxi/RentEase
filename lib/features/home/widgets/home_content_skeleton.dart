@@ -135,7 +135,7 @@ class _HomeContentSkeletonState extends State<HomeContentSkeleton>
 
             // ── Section 1 Horizontal Cards (First card + peeking card) ─
             SizedBox(
-              height: 295,
+              height: 331,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 physics: const NeverScrollableScrollPhysics(),

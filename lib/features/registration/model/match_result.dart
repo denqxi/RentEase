@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../core/firestore/models/models.dart';
 import '../../home/model/listing.dart';
+import '../../matching/domain/entities/match_reason.dart';
 
 /// A single listing match shown on the success screen.
 class MatchResult extends Equatable {
@@ -13,6 +14,7 @@ class MatchResult extends Equatable {
     this.imageAsset,
     this.imageUrl,
     this.propertyId,
+    this.reasons = const [],
   });
 
   /// Compatibility score, 0–100.
@@ -36,6 +38,9 @@ class MatchResult extends Equatable {
   /// Associated property document ID.
   final String? propertyId;
 
+  /// Why this listing matches; empty for sample and owner-side results.
+  final List<MatchReason> reasons;
+
   /// Converts a real matched [Listing] from TOPSIS into a [MatchResult].
   factory MatchResult.fromListing(Listing listing) {
     final formattedPrice =
@@ -49,6 +54,7 @@ class MatchResult extends Equatable {
       price: formattedPrice,
       imageUrl: photo,
       propertyId: listing.id,
+      reasons: listing.matchReasons,
     );
   }
 
@@ -135,5 +141,6 @@ class MatchResult extends Equatable {
         imageAsset,
         imageUrl,
         propertyId,
+        reasons,
       ];
 }

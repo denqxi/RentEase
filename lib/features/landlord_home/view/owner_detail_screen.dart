@@ -132,7 +132,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
     ),
     style: TextButton.styleFrom(
       padding: EdgeInsets.zero,
-      foregroundColor: AppColors.primary,
+      foregroundColor: context.appColors.link,
     ),
     icon: const Icon(Icons.open_in_new_rounded, size: 16),
     label: const Text(

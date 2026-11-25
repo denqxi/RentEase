@@ -203,7 +203,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Search Filters',
+                        'This search',
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 16,
@@ -214,7 +214,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Refine your search to find the right property',
+                        "Changes here aren't saved to your preferences",
                         style: TextStyle(
                           fontFamily: 'DM Sans',
                           fontSize: 11.5,
@@ -236,7 +236,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                     Navigator.of(context).pop();
                   },
                   borderRadius: BorderRadius.circular(8),
-                  child: const Padding(
+                  child: Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 4,
                       vertical: 2,
@@ -256,7 +256,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                             fontFamily: 'DM Sans',
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
+                            color: context.appColors.link,
                           ),
                         ),
                       ],
@@ -299,11 +299,11 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                           const Spacer(),
                           Text(
                             '₱${_budget.round()}/mo',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
+                              color: context.appColors.link,
                             ),
                           ),
                         ],
@@ -624,11 +624,11 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                           const Spacer(),
                           Text(
                             '${_distance.toStringAsFixed(1)} km',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DM Sans',
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
+                              color: context.appColors.link,
                             ),
                           ),
                         ],
@@ -724,7 +724,7 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                             _requireSmoking ||
                             _requirePets ||
                             _wifiRequired
-                        ? '$_groupSize person${_groupSize > 1 ? 's' : ''}'
+                        ? _groupSize == 1 ? '1 person' : '$_groupSize people'
                         : 'Standard',
                     children: [
                       // Occupancy Stepper
@@ -981,13 +981,13 @@ class _SessionFilterSheetState extends State<SessionFilterSheet> {
                                             ),
                                           );
                                         },
-                                        child: const Text(
+                                        child: Text(
                                           'Edit Profile',
                                           style: TextStyle(
                                             fontFamily: 'DM Sans',
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
-                                            color: AppColors.primary,
+                                            color: context.appColors.link,
                                           ),
                                         ),
                                       ),
@@ -1165,11 +1165,11 @@ class _ExpandableFilterSection extends StatelessWidget {
                   const Spacer(),
                   Text(
                     summaryBadge,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 11.5,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
+                      color: context.appColors.link,
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -1299,7 +1299,7 @@ class _FilterChip extends StatelessWidget {
                 fontFamily: 'DM Sans',
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? AppColors.primary : context.appColors.textPrimary,
+                color: isSelected ? context.appColors.link : context.appColors.textPrimary,
               ),
             ),
           ],
@@ -1356,7 +1356,7 @@ class _IconChip extends StatelessWidget {
                 fontFamily: 'DM Sans',
                 fontSize: 11.5,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? AppColors.primary : context.appColors.textPrimary,
+                color: isSelected ? context.appColors.link : context.appColors.textPrimary,
               ),
             ),
           ],

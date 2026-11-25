@@ -80,7 +80,7 @@ class OtherListingsSection extends StatelessWidget {
               ),
               const SizedBox(height: 1),
               Text(
-                'Properties that may not meet all your preferences.',
+                "These don't match your preferences. View only.",
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 11.5,
@@ -189,7 +189,6 @@ class OtherListingCard extends StatelessWidget {
         (property['reviewCount'] as num?)?.toInt() ??
         0;
     final bool hasRating = avgRating != null && totalRatings > 0;
-    final tenantCi = property['tenantCi'] as num?;
 
     return Container(
       decoration: BoxDecoration(
@@ -326,43 +325,14 @@ class OtherListingCard extends StatelessWidget {
                           ),
                         ),
 
-                      // Bottom-right: Ci badge (if present) & Photo count badge (clean white pill)
-                      if (photoCount > 0 || tenantCi != null)
+                      // Bottom-right: Photo count badge (clean white pill)
+                      if (photoCount > 0)
                         Positioned(
                           bottom: 8,
                           right: 8,
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              if (tenantCi != null) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 7,
-                                    vertical: 3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: context.appColors.surface,
-                                    borderRadius: BorderRadius.circular(10),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.slate900.withValues(alpha: 0.12),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    'Ci = ${tenantCi.toDouble().toStringAsFixed(4)}',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: context.appColors.textPrimary,
-                                    ),
-                                  ),
-                                ),
-                                if (photoCount > 0) const SizedBox(width: 5),
-                              ],
                               if (photoCount > 0)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -452,42 +422,54 @@ class OtherListingCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.star_rounded,
-                              size: 15.5,
-                              color: AppColors.matchMedium,
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              hasRating ? avgRating.toStringAsFixed(1) : '0',
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: context.appColors.textPrimary,
-                              ),
-                            ),
-                            if (hasRating && totalRatings > 0) ...[
-                              const SizedBox(width: 2),
+                        if (hasRating) ...[
+                          const SizedBox(width: 8),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                                                            const Icon(
+                                  Icons.star_rounded,
+                                  size: 15.5,
+                                  color: AppColors.matchMedium,
+                                ),
+                                const SizedBox(width: 3),
                               Text(
-                                '($totalRatings)',
+                                avgRating.toStringAsFixed(1),
                                 style: TextStyle(
                                   fontFamily: 'DM Sans',
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: context.appColors.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: context.appColors.textPrimary,
                                 ),
                               ),
+                              if (totalRatings > 0) ...[
+                                const SizedBox(width: 2),
+                                Text(
+                                  '($totalRatings)',
+                                  style: TextStyle(
+                                    fontFamily: 'DM Sans',
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: context.appColors.textSecondary,
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
-                        ),
+                          ),
+                        ],
                       ],
                     ),
+                    if (!hasRating)
+                      Text(
+                        'No reviews yet',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: context.appColors.textSecondary,
+                        ),
+                      ),
                     const SizedBox(height: 4),
 
                     // Address row: restricted to 70% width
@@ -589,11 +571,11 @@ class OtherListingCard extends StatelessWidget {
                             children: [
                               TextSpan(
                                 text: '₱${_fmt(rent)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.primary,
+                                  color: context.appColors.link,
                                   letterSpacing: -0.3,
                                 ),
                               ),

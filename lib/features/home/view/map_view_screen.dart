@@ -10,6 +10,8 @@ import '../../../core/constants/app_options.dart';
 import '../../../core/constants/app_svg_icons.dart';
 import '../../../shared/widgets/app_svg_icon.dart';
 import '../../../shared/widgets/listing_image_placeholder.dart';
+import '../../../shared/widgets/match_reasons_line.dart';
+import '../../matching/domain/entities/match_reason.dart';
 import '../cubit/home_cubit.dart';
 import '../model/navigation_models.dart';
 import '../services/navigation_service.dart';
@@ -49,6 +51,7 @@ class MapViewScreen extends StatefulWidget {
     this.poi,
     this.poiLabel,
     this.poiType,
+    this.maxBudget,
     this.homeCubit,
     this.initialPropertyId,
     this.isSinglePropertyMode = false,
@@ -65,6 +68,9 @@ class MapViewScreen extends StatefulWidget {
   final LatLng? poi;
   final String? poiLabel;
   final String? poiType;
+
+  /// The tenant's saved max budget, for the budget-margin reason.
+  final num? maxBudget;
 
   /// Passed on to the detail screens so their heart works.
   final HomeCubit? homeCubit;
@@ -473,6 +479,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
         poiLabel: widget.poiLabel,
         poiType: widget.poiType,
         isGuest: widget.isGuest,
+        maxBudget: widget.maxBudget,
         onSelectProperty: (property) {
           Navigator.of(sheetContext).pop();
           for (int ci = 0; ci < _clusters.length; ci++) {
@@ -1136,6 +1143,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 homeCubit: widget.homeCubit,
                 initialPropertyId: widget.initialPropertyId,
                 poi: widget.poi,
+                maxBudget: widget.maxBudget,
                 fmt: _fmt,
                 onDirectionsTap: () => _startNavigation(activeProperty),
               ),
@@ -1282,18 +1290,19 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
 
   @override
   Widget build(BuildContext context) {
-    final bool isNonMatch = (widget.property['isNonMatch'] == true) ||
-        (widget.property['bScore'] == 0);
-    final double ci = isNonMatch ? 0.0 : ((widget.property['tenantCi'] as num?)?.toDouble() ?? 0.0);
-    final int percent = (ci * 100).round();
-    final tier = _SubtleTierColor.forPercent(percent, isNonMatch: isNonMatch);
+    final bool isMatch =
+        MatchStatus.of(widget.property) == MatchStatus.matches;
+    final tier = _PinColor.of(isMatch: isMatch);
+    final rent = (widget.property['monthlyRent'] as num?) ?? 0;
+    final rentLabel = rent >= 1000
+        ? '₱${(rent / 1000).toStringAsFixed(rent % 1000 == 0 ? 0 : 1)}k'
+        : '₱${rent.round()}';
 
     final double pinW = widget.isSelected ? 32.0 : 26.0;
     final double pinH = widget.isSelected ? 44.0 : 36.0;
     final double iconSize = widget.isSelected ? 19.0 : 15.5;
 
-    final bool isGray = isNonMatch || percent <= 0;
-    final Color themeColor = isGray ? context.appColors.hint : AppColors.sky400;
+    final Color themeColor = !isMatch ? context.appColors.hint : AppColors.sky400;
 
     final Color pinFillColor = widget.isSelected ? themeColor : context.appColors.surface;
     final Color pinStrokeColor = widget.isSelected ? context.appColors.surface : themeColor;
@@ -1357,7 +1366,7 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Percentage / Status Capsule with glow & shadow
+              // Rent capsule with glow & shadow
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.8),
                 decoration: BoxDecoration(
@@ -1386,7 +1395,7 @@ class _PropertyPinMarkerState extends State<_PropertyPinMarker>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      isGray ? '0% Not Match' : '$percent%',
+                      rentLabel,
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: widget.isSelected ? 10.5 : 10,
@@ -1535,7 +1544,10 @@ class _NearbyPropertiesSheet extends StatefulWidget {
     required this.poiType,
     required this.isGuest,
     required this.onSelectProperty,
+    this.maxBudget,
   });
+
+  final num? maxBudget;
 
   final List<Map<String, dynamic>> properties;
   final String? poiLabel;
@@ -1685,7 +1697,7 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
               ),
               const SizedBox(width: 8),
               _FilterPill(
-                label: 'Highest match',
+                label: 'Best match',
                 isSelected: _sortBy == _SortOption.highestMatch,
                 onTap: () => setState(() => _sortBy = _SortOption.highestMatch),
               ),
@@ -1710,11 +1722,16 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
 
                 final monthlyRent = (property['monthlyRent'] as num?)?.round() ?? 0;
                 final dist = (property['distance'] as num?)?.toDouble();
-                final bool isNonMatch = (property['isNonMatch'] == true) ||
-                    (property['bScore'] == 0);
-                final double ci = isNonMatch ? 0.0 : ((property['tenantCi'] as num?)?.toDouble() ?? 0.0);
-                final int percent = (ci * 100).round();
-                final tier = _SubtleTierColor.forPercent(percent, isNonMatch: isNonMatch);
+                final status = MatchStatus.of(property);
+                final reasons = status == null ||
+                        status == MatchStatus.doesNotMatch
+                    ? const <MatchReason>[]
+                    : MatchReason.forListing(
+                        distanceKm: dist,
+                        rent: monthlyRent,
+                        maxBudget: widget.maxBudget,
+                        amenityCount: property['amenityScore'] as num?,
+                      );
 
                 final photoUrl = (property['photoUrl'] as String?) ??
                     ((property['photos'] as List?)?.firstOrNull as String?) ??
@@ -1798,7 +1815,10 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
                               const SizedBox(height: 2),
 
                               // Line 3: Distance from destination (11sp, muted gray)
-                              if (dist != null) ...[
+                              if (reasons.isNotEmpty) ...[
+                                MatchReasonsLine(reasons: reasons),
+                                const SizedBox(height: 3),
+                              ] else if (dist != null) ...[
                                 Text(
                                   '${dist.toStringAsFixed(1)} km from destination',
                                   style: TextStyle(
@@ -1817,11 +1837,11 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
                                   children: [
                                     TextSpan(
                                       text: '₱${_fmt(monthlyRent)}',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'DM Sans',
                                         fontSize: 14.5,
                                         fontWeight: FontWeight.w700,
-                                        color: AppColors.primary,
+                                        color: context.appColors.link,
                                       ),
                                     ),
                                     TextSpan(
@@ -1841,31 +1861,12 @@ class _NearbyPropertiesSheetState extends State<_NearbyPropertiesSheet> {
                         ),
                         const SizedBox(width: 8),
 
-                        // Right: Match % Rounded Pill Badge & Chevron
+                        // Right: status pill & chevron
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 3.5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: tier.bg,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: tier.borderColor, width: 1.0),
-                              ),
-                              child: Text(
-                                (isNonMatch || percent <= 0) ? '0% Not Match' : '$percent%',
-                                style: TextStyle(
-                                  fontFamily: 'DM Sans',
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: tier.textColor,
-                                ),
-                              ),
-                            ),
+                            if (status != null) _StatusPill(status),
                             const SizedBox(height: 20),
                             Icon(
                               Icons.chevron_right_rounded,
@@ -1936,7 +1937,10 @@ class _PropertyPreviewBottomCard extends StatefulWidget {
     this.clusterProperties,
     this.selectedRoomIndex = 0,
     this.onRoomSelected,
+    this.maxBudget,
   });
+
+  final num? maxBudget;
 
   final Map<String, dynamic> property;
   final bool isGuest;
@@ -1994,11 +1998,15 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
         !(propLat == 0 && propLng == 0) && poi != null) {
       dist = const Distance().as(LengthUnit.Kilometer, LatLng(propLat, propLng), poi);
     }
-    final bool isNonMatch = (property['isNonMatch'] == true) ||
-        (property['bScore'] == 0);
-    final double ci = isNonMatch ? 0.0 : ((property['tenantCi'] as num?)?.toDouble() ?? 0.0);
-    final int percent = (ci * 100).round();
-    final tier = _SubtleTierColor.forPercent(percent, isNonMatch: isNonMatch);
+    final status = MatchStatus.of(property);
+    // Distance has its own chip above the card.
+    final reasons = status == null || status == MatchStatus.doesNotMatch
+        ? const <MatchReason>[]
+        : MatchReason.forListing(
+            rent: monthlyRent,
+            maxBudget: widget.maxBudget,
+            amenityCount: property['amenityScore'] as num?,
+          );
 
     final photoUrl = (property['photoUrl'] as String?) ??
         ((property['photos'] as List?)?.firstOrNull as String?) ??
@@ -2113,27 +2121,10 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 3.5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: tier.bg,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: tier.borderColor, width: 1.0),
-                              ),
-                              child: Text(
-                                (isNonMatch || percent <= 0) ? '0% Not Match' : '$percent%',
-                                style: TextStyle(
-                                  fontFamily: 'DM Sans',
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: tier.textColor,
-                                ),
-                              ),
-                            ),
+                            if (status != null) ...[
+                              const SizedBox(width: 6),
+                              _StatusPill(status),
+                            ],
                           ],
                         ),
                         const SizedBox(height: 2),
@@ -2184,17 +2175,22 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                         ),
                         const SizedBox(height: 6),
 
+                        if (reasons.isNotEmpty) ...[
+                          MatchReasonsLine(reasons: reasons),
+                          const SizedBox(height: 4),
+                        ],
+
                         // Price: Rent number in app theme primary blue, /month small & unbolded gray
                         RichText(
                           text: TextSpan(
                             children: [
                               TextSpan(
                                 text: '₱${fmt(monthlyRent)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'DM Sans',
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.primary,
+                                  color: context.appColors.link,
                                 ),
                               ),
                               TextSpan(
@@ -2263,16 +2259,6 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                         explicitPropertyName: room['propertyName'] as String?,
                         explicitRoomName: room['roomName'] as String?,
                       );
-                      final bool rIsNonMatch =
-                          (room['isNonMatch'] == true) || (room['bScore'] == 0);
-                      final double rCi = rIsNonMatch
-                          ? 0.0
-                          : ((room['tenantCi'] as num?)?.toDouble() ?? 0.0);
-                      final int rPercent = (rCi * 100).round();
-                      final rTier = _SubtleTierColor.forPercent(
-                        rPercent,
-                        isNonMatch: rIsNonMatch,
-                      );
                       final rRent =
                           (room['monthlyRent'] as num?)?.round() ?? 0;
 
@@ -2310,35 +2296,9 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                                         ? FontWeight.w700
                                         : FontWeight.w600,
                                     color: isSelected
-                                        ? AppColors.primary
+                                        ? context.appColors.link
                                         : context.appColors.textPrimary,
                                     letterSpacing: -0.1,
-                                  ),
-                                ),
-                                const SizedBox(width: 5),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                    vertical: 1.5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: rTier.bg,
-                                    borderRadius: BorderRadius.circular(5),
-                                    border: Border.all(
-                                      color: rTier.borderColor,
-                                      width: 0.8,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    (rIsNonMatch || rPercent <= 0)
-                                        ? '0% Not Match'
-                                        : '$rPercent%',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: rTier.textColor,
-                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 5),
@@ -2392,11 +2352,11 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                                   widget.clusterProperties!.length > 1
                               ? 'Directions ($roomOrTitle)'
                               : 'Directions',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
+                            color: context.appColors.link,
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
@@ -2433,7 +2393,7 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
                         },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: AppColors.accent,
                           foregroundColor: AppColors.surface,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -2509,49 +2469,57 @@ class _PropertyPreviewBottomCardState extends State<_PropertyPreviewBottomCard> 
   }
 }
 
-class _SubtleTierColor {
-  final Color bg;
-  final Color fillColor;
-  final Color borderColor;
-  final Color textColor;
-
-  const _SubtleTierColor({
+/// Pin and pill colours: matching listings stand out, the rest stay neutral.
+class _PinColor {
+  const _PinColor({
     required this.bg,
-    required this.fillColor,
     required this.borderColor,
     required this.textColor,
   });
 
-  static _SubtleTierColor forPercent(int percent, {bool isNonMatch = false}) {
-    if (isNonMatch || percent <= 0) {
-      return const _SubtleTierColor(
-        bg: AppColors.fieldFill,
-        fillColor: AppColors.slate400, // Neutral gray for 0% / incompatible
-        borderColor: AppColors.slate300,
-        textColor: AppColors.slate500,
-      );
-    } else if (percent >= 80) {
-      return const _SubtleTierColor(
-        bg: AppColors.greenFill,
-        fillColor: AppColors.primaryTeal, // Soft pastel teal/emerald
-        borderColor: AppColors.emerald400,
-        textColor: AppColors.greenText,
-      );
-    } else if (percent >= 50) {
-      return const _SubtleTierColor(
-        bg: AppColors.amberFill50,
-        fillColor: AppColors.matchMedium, // Soft warm amber
-        borderColor: AppColors.amberBorder200,
-        textColor: AppColors.amber800,
-      );
-    } else {
-      return const _SubtleTierColor(
-        bg: AppColors.slate50,
-        fillColor: AppColors.slate500, // Soft cool slate
-        borderColor: AppColors.slate300,
-        textColor: AppColors.slate700,
-      );
-    }
+  final Color bg;
+  final Color borderColor;
+  final Color textColor;
+
+  static _PinColor of({required bool isMatch}) => isMatch
+      ? const _PinColor(
+          bg: AppColors.greenFill,
+          borderColor: AppColors.emerald400,
+          textColor: AppColors.greenText,
+        )
+      : const _PinColor(
+          bg: AppColors.fieldFill,
+          borderColor: AppColors.slate300,
+          textColor: AppColors.slate700,
+        );
+}
+
+/// "Matches" / "Doesn't match" / "This search" on map list and preview cards.
+class _StatusPill extends StatelessWidget {
+  const _StatusPill(this.status);
+
+  final MatchStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _PinColor.of(isMatch: status == MatchStatus.matches);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+      decoration: BoxDecoration(
+        color: color.bg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.borderColor, width: 1.0),
+      ),
+      child: Text(
+        status.label,
+        style: TextStyle(
+          fontFamily: 'DM Sans',
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color.textColor,
+        ),
+      ),
+    );
   }
 }
 

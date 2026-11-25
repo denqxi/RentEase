@@ -217,9 +217,9 @@ void _showAlreadyRegisteredDialog(
                   .read<AuthBloc>()
                   .add(AuthPasswordResetRequested(email: state.email));
             },
-            child: const Text(
+            child: Text(
               'Reset password',
-              style: TextStyle(color: AppColors.primary, fontWeight: bold),
+              style: TextStyle(color: context.appColors.link, fontWeight: bold),
             ),
           ),
         TextButton(
@@ -227,9 +227,9 @@ void _showAlreadyRegisteredDialog(
             Navigator.of(ctx).pop();
             onSignIn();
           },
-          child: const Text(
+          child: Text(
             'Log in',
-            style: TextStyle(color: AppColors.primary, fontWeight: bold),
+            style: TextStyle(color: context.appColors.link, fontWeight: bold),
           ),
         ),
       ],

@@ -26,7 +26,7 @@ class PendingListingBanner extends StatefulWidget {
       'Your listing is already live.';
 
   static const String pendingMessage =
-      'Your listings are visible to prospective renters.\n'
+      'Your properties are visible to prospective renters.\n'
       'Your verified badge will activate once admin checks your submitted documents.';
 
   static const String rejectedMessage =

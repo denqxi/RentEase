@@ -286,12 +286,12 @@ class _VerificationPendingScreenState extends State<VerificationPendingScreen> {
                             Center(
                               child: TextButton(
                                 onPressed: _goToDashboard,
-                                child: const Text(
+                                child: Text(
                                   'Skip for now',
                                   style: TextStyle(
                                     fontFamily: 'DM Sans',
                                     fontSize: 14,
-                                    color: AppColors.primary,
+                                    color: context.appColors.link,
                                   ),
                                 ),
                               ),
